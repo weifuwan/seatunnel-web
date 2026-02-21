@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.apache.seatunnel.admin.dao.SeatunnelJobInstanceMapper">
+
+    <select id="pageWithDefinition"
+            resultType="org.apache.seatunnel.communal.bean.vo.SeatunnelJobInstanceVO">
+
+        SELECT
+        i.id,
+        i.job_definition_id,
+        i.log_path,
+        i.job_config,
+        i.start_time,
+        i.end_time,
+        i.run_mode,
+        i.job_status,
+        i.job_engine_id,
+        i.job_type,
+        i.error_message,
+
+        d.job_name,
+        d.job_desc,
+        d.job_version,
+        d.source_type,
+        d.sink_type,
+        d.parallelism,
+
+        m.read_row_count AS readRowCount,
+        m.write_row_count AS writeRowCount,
+        m.read_qps AS readQps,
+        m.write_qps AS writeQps,
+        m.record_delay AS recordDelay,
+        m.status AS metricsStatus,
+        d.source_table AS sourceTable,
+        d.sink_table AS sinkTable,
+
+        s.cron_expression AS cronExpression,
+        s.schedule_status AS scheduleStatus,
+        s.last_schedule_time AS lastScheduleTime,
+        s.next_schedule_time AS nextScheduleTime
+
+        FROM t_seatunnel_job_instance i
+
+        LEFT JOIN t_seatunnel_job_definition d
+        ON i.job_definition_id = d.id
+
+        LEFT JOIN t_seatunnel_job_metrics m
+        ON i.id = m.job_instance_id
+
+        LEFT JOIN t_seatunnel_job_schedule s
+        ON i.job_definition_id = s.job_definition_id
+
+        <where>
+            <if test="dto.jobStatus != null and dto.jobStatus != ''">
+                AND i.job_status = #{dto.jobStatus}
+            </if>
+
+            <if test="dto.jobDefinitionId != null">
+                AND i.job_definition_id = #{dto.jobDefinitionId}
+            </if>
+
+            <if test="dto.runMode != null">
+                AND i.run_mode = #{dto.runMode}
+            </if>
+
+            <if test="dto.startTime != null and dto.endTime != null">
+                AND i.start_time BETWEEN #{dto.startTime}
+                AND #{dto.endTime}
+            </if>
+        </where>
+
+        ORDER BY i.start_time DESC
+
+    </select>
+
+
+</mapper>

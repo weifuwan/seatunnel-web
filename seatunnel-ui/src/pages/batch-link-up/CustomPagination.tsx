@@ -1,0 +1,65 @@
+import { Button, Pagination, PaginationProps } from 'antd';
+import { LeftOutlined, RightOutlined } from '@ant-design/icons';
+
+interface CustomPaginationProps {
+  total: number;
+  current?: number;
+  pageSize?: number;
+  onChange?: (page: number, pageSize: number) => void;
+}
+
+const CustomPagination: React.FC<CustomPaginationProps> = ({ 
+  total, 
+  current, 
+  pageSize, 
+  onChange 
+}) => {
+  const itemRender: PaginationProps['itemRender'] = (_, type, originalElement) => {
+    if (type === 'prev') {
+      return (
+        <Button
+          style={{ marginRight: 4 }}
+          size="small"
+          icon={
+            <LeftOutlined
+              style={{
+                bottom: 2,
+                position: 'relative',
+                paddingBottom: 5,
+                fontSize: 7,
+                color: 'rgba(185,185,185,1)',
+              }}
+            />
+          }
+        />
+      );
+    }
+    if (type === 'next') {
+      return (
+        <Button
+          style={{ marginLeft: 4, marginRight: 4 }}
+          size="small"
+          icon={
+            <RightOutlined
+              style={{ bottom: 2, position: 'relative', fontSize: 7, color: 'rgba(185,185,185,1)' }}
+            />
+          }
+        />
+      );
+    }
+    return originalElement;
+  };
+
+  return (
+    <Pagination 
+      total={total} 
+      current={current}
+      pageSize={pageSize}
+      itemRender={itemRender} 
+      size="small" 
+      onChange={onChange}
+    />
+  );
+};
+
+export default CustomPagination;

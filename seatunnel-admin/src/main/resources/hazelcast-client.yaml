@@ -1,0 +1,12 @@
+hazelcast-client:
+  cluster-name: seatunnel
+  properties:
+    hazelcast.logging.type: log4j2
+  connection-strategy:
+    async-start: true
+    connection-retry:
+      cluster-connect-timeout-millis: 3000
+    reconnect-mode: OFF
+  network:
+    cluster-members:
+      - 192.168.1.115:5801

@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.apache.seatunnel.admin.dao.SeatunnelJobDefinitionMapper">
+
+    <select id="selectPageWithLatestInstance"
+            resultType="org.apache.seatunnel.communal.bean.vo.SeatunnelBatchJobDefinitionVO">
+
+        SELECT
+        d.id AS id,
+        d.job_name AS jobName,
+        d.job_desc AS jobDesc,
+        d.job_definition_info AS jobDefinitionInfo,
+        d.job_version AS jobVersion,
+        d.client_id AS clientId,
+        d.whole_sync AS wholeSync,
+        d.parallelism AS parallelism,
+        d.source_type AS sourceType,
+        d.source_table AS sourceTable,
+        d.sink_type AS sinkType,
+        d.sink_table AS sinkTable,
+        d.create_time AS createTime,
+        d.update_time AS updateTime,
+
+        s.id AS scheduleId,
+        s.cron_expression AS cronExpression,
+        s.schedule_status AS scheduleStatus,
+        s.last_schedule_time AS lastScheduleTime,
+        s.next_schedule_time AS nextScheduleTime,
+        s.schedule_config AS scheduleConfig,
+
+        i.job_status AS lastJobStatus,
+        i.start_time AS lastStartTime,
+        i.end_time AS lastEndTime,
+        i.error_message AS errorMessage,
+        i.run_mode AS runMode,
+
+        CASE
+        WHEN i.start_time IS NULL THEN NULL
+        WHEN i.end_time IS NULL THEN TIMESTAMPDIFF(SECOND, i.start_time, NOW())
+        ELSE TIMESTAMPDIFF(SECOND, i.start_time, i.end_time)
+        END AS duration,
+
+        (IFNULL(m.read_qps, 0) + IFNULL(m.write_qps, 0)) AS qps,
+        m.read_row_count AS readRowCount,
+        m.write_row_count AS writeRowCount,
+        m.read_qps AS readQps,
+        m.write_qps AS writeQps,
+        m.record_delay AS recordDelay
+
+        FROM
+        (
+        SELECT *
+        FROM t_seatunnel_job_definition
+        ORDER BY create_time DESC
+        LIMIT #{offset}, #{pageSize}
+        ) d
+
+        LEFT JOIN
+        (
+        SELECT *
+        FROM
+        (
+        SELECT *,
+        ROW_NUMBER() OVER (
+        PARTITION BY job_definition_id
+        ORDER BY start_time DESC
+        ) rn
+        FROM t_seatunnel_job_instance
+        ) t
+        WHERE rn = 1
+        ) i
+        ON d.id = i.job_definition_id
+
+        LEFT JOIN t_seatunnel_job_metrics m
+        ON i.id = m.job_instance_id
+
+        LEFT JOIN t_seatunnel_job_schedule s
+        ON d.id = s.job_definition_id
+
+        <where>
+
+            <if test="dto.id != null">
+                AND d.id = #{dto.id}
+            </if>
+
+            <if test="dto.jobName != null and dto.jobName != ''">
+                AND d.job_name LIKE CONCAT('%', #{dto.jobName}, '%')
+            </if>
+
+            <if test="dto.createTimeStart != null">
+                AND d.create_time <![CDATA[ >= ]]> #{dto.createTimeStart}
+            </if>
+
+            <if test="dto.createTimeEnd != null">
+                AND d.create_time <![CDATA[ <= ]]> #{dto.createTimeEnd}
+            </if>
+
+            <if test="dto.status != null and dto.status != ''">
+                AND i.job_status = #{dto.status}
+            </if>
+
+            <if test="dto.sourceType != null and dto.sourceType != ''">
+                AND d.source_type = #{dto.sourceType}
+            </if>
+
+            <if test="dto.sinkType != null and dto.sinkType != ''">
+                AND d.sink_type = #{dto.sinkType}
+            </if>
+
+            <if test="dto.sourceTable != null and dto.sourceTable != ''">
+                AND d.source_table LIKE CONCAT('%', #{dto.sourceTable}, '%')
+            </if>
+
+            <if test="dto.sinkTable != null and dto.sinkTable != ''">
+                AND d.sink_table LIKE CONCAT('%', #{dto.sinkTable}, '%')
+            </if>
+
+        </where>
+
+        ORDER BY d.create_time DESC
+
+    </select>
+
+
+
+    <select id="selectDefinitionCount" resultType="java.lang.Long">
+        SELECT COUNT(1)
+        FROM t_seatunnel_job_definition
+        <where>
+            <if test="jobName != null and jobName != ''">
+                AND job_name = #{jobName}
+            </if>
+        </where>
+    </select>
+
+
+</mapper>

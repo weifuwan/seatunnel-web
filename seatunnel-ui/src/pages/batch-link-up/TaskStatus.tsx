@@ -112,7 +112,7 @@ const TaskStatus: React.FC<TaskStatusProps> = ({ status, errorMessage }) => {
                 </span>
                 <span
                   style={{
-                    color: "#e2e8f0",
+                    color: "rgb(0, 255, 136)",
                     whiteSpace: "pre-wrap",
                     wordBreak: "break-word",
                     flex: 1,

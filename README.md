@@ -16,10 +16,51 @@ wisdom:
 
 > **Note:** All the code in Seatunnel Web was generated using **DeepSeek**, a free large-model platform.
 
-## Batch Sync
+## Key Features
 
-![img.png](docs/images/img_9.png)
+### Batch Sync
 
-## Stream Sync
+- Full control over batch synchronization tasks, including configuration, scheduling, monitoring, and logging.
+- Dynamic table and column mapping, supporting complex ETL pipelines without writing a single line of code.
+- Integration with multiple databases, including MySQL, PostgreSQL, and Oracle.
+- Visualization of task progress and performance metrics.
 
-![img.png](docs/images/img_10.png)
+![Batch Sync Screenshot](docs/images/img_9.png)
+
+### Stream Sync
+
+- Real-time data synchronization across multiple sources.
+- Supports **CDC (Change Data Capture)** to keep your destination always up-to-date.
+- Stream monitoring with live logs and alerts.
+- Easy integration with message queues, such as Kafka and RabbitMQ.
+
+![Stream Sync Screenshot](docs/images/img_10.png)
+
+## Quick Start
+
+> Before installing Seatunnel Web, ensure your system meets the minimum requirements:
+
+- **CPU**: ≥2 cores
+- **Memory**: ≥4 GB RAM
+- **Disk**: ≥5 GB free space
+
+### Docker Deployment (Recommended)
+
+```bash
+# Navigate to project directory
+cd seatunnel-web
+
+# Copy and configure environment variables
+cp .env.example .env
+# For production, update APP_DOMAIN in .env
+
+# Start the application using Docker Compose
+docker compose up -d
+```
+
+## Contribution
+
+We welcome contributions! You can:
+
+- Submit an [Issue](https://github.com/weifuwan/seatunnel-web/issues/new/choose)
+- Open a [Pull Request](https://github.com/weifuwan/seatunnel-web/pulls)

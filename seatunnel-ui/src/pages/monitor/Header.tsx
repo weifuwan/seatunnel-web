@@ -39,14 +39,15 @@ const Header: React.FC<HeaderProps> = ({
           display: 'flex',
           alignItems: 'center',
           marginRight: 120,
+          fontWeight: 500
         }}
       >
-        任务状态总览
+       🎯 Job Overview
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ margin: '6px 0 ' }}>
-          <span style={{ fontWeight: 400, fontSize: 12 }}>任务类型：</span>
+          <span style={{ fontWeight: 400, fontSize: 12 }}>Job Mode：</span>
           <Select
             size="small"
             style={{ width: '30vh' }}

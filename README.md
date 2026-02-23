@@ -1,5 +1,7 @@
 # Seatunnel Web
 
+> **Note:**  The first release version will be available after Seatunnel web 2.3.13.
+
 **Seatunnel Web** is more than a web console — it is an **AI-native system engineering project**. Every part of the
 system, from architecture and domain modeling to UI, interactions, APIs, and implementation, was crafted through **
 structured AI prompting**, where information is provided to AI not as vague “context” but as **clearly defined

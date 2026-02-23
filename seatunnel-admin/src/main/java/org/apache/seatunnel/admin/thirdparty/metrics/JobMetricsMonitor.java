@@ -35,12 +35,6 @@ public class JobMetricsMonitor {
     private final Map<Long, String> monitoringJobs = new ConcurrentHashMap<>();
 
     /**
-     * In-memory aggregated metrics per job instance.
-     * Key: job instance ID
-     */
-    private final Map<Long, AggregatedMetrics> aggregates = new ConcurrentHashMap<>();
-
-    /**
      * Dedicated file logger per job instance.
      */
     private final Map<Long, JobFileLogger> loggers = new ConcurrentHashMap<>();
@@ -54,17 +48,14 @@ public class JobMetricsMonitor {
     @Resource
     private WorkflowWebSocketService webSocketService;
 
-
     /**
      * Register a job instance for real-time metrics monitoring.
      */
     public void register(JobRuntimeContext context) {
-
         Long instanceId = context.getInstanceId();
         String engineId = context.getEngineId();
 
         monitoringJobs.put(instanceId, engineId);
-        aggregates.put(instanceId, new AggregatedMetrics(instanceId));
 
         String logPath = instanceService.getById(instanceId).getLogPath();
         loggers.put(instanceId, new JobFileLogger(logPath));
@@ -74,28 +65,18 @@ public class JobMetricsMonitor {
 
     /**
      * Poll metrics from engine periodically and:
-     * 1. Update in-memory aggregation
-     * 2. Write to job-specific log file
-     * 3. Push to WebSocket for real-time UI update
+     * 1. Write to job-specific log file
+     * 2. Push to WebSocket for real-time UI update
      */
     @Scheduled(fixedDelayString = "${seatunnel.metrics.interval-ms:2000}")
     public void reportAllWebSocket() {
-
         monitoringJobs.forEach((instanceId, engineId) -> {
-
             try {
-
                 Map<Integer, SeatunnelJobMetricsPO> metrics =
                         metricsService.getJobMetricsFromEngineMap(engineId);
 
                 if (metrics == null || metrics.isEmpty()) {
                     return;
-                }
-
-                // Update in-memory aggregated metrics
-                AggregatedMetrics agg = aggregates.get(instanceId);
-                if (agg != null) {
-                    agg.merge(metrics.values());
                 }
 
                 // Write snapshot to job log file
@@ -116,14 +97,10 @@ public class JobMetricsMonitor {
         });
     }
 
-
     /**
-     * Persist final aggregated metrics to database.
-     * This method should be called when the job reaches a terminal state
-     * (FINISHED / FAILED / CANCELED).
+     * Persist final metrics to database.
      */
     public void finalizeAndPersist(Long instanceId) {
-
         String engineId = monitoringJobs.get(instanceId);
 
         if (engineId != null) {
@@ -132,17 +109,15 @@ public class JobMetricsMonitor {
                         metricsService.getJobMetricsFromEngineMap(engineId);
 
                 if (finalMetrics != null && !finalMetrics.isEmpty()) {
-
-                    AggregatedMetrics agg = aggregates.get(instanceId);
-                    if (agg != null) {
-                        agg.merge(finalMetrics.values());
-                    }
-
+                    // Write final snapshot to log
                     JobFileLogger logger = loggers.get(instanceId);
                     if (logger != null) {
                         logger.info("Final Metrics Snapshot:");
                         logger.info(formatMetrics(finalMetrics.values()));
                     }
+
+                    // Persist to database
+                    persistMetrics(instanceId, finalMetrics.values());
                 }
 
             } catch (Exception e) {
@@ -150,59 +125,56 @@ public class JobMetricsMonitor {
             }
         }
 
-        AggregatedMetrics agg = aggregates.get(instanceId);
-        if (agg == null) {
-            cleanup(instanceId);
-            return;
-        }
+        cleanup(instanceId);
+    }
 
+    private void persistMetrics(Long instanceId, Collection<SeatunnelJobMetricsPO> metricsList) {
         List<SeatunnelJobMetricsPO> finalList = new ArrayList<>();
 
-        agg.getPipelines().forEach((pipelineId, p) -> {
-
+        for (SeatunnelJobMetricsPO m : metricsList) {
             SeatunnelJobMetricsPO po = new SeatunnelJobMetricsPO();
-            po.setId(CodeGenerateUtils.getInstance().genCode());
+            try {
+                po.setId(CodeGenerateUtils.getInstance().genCode());
+            } catch (Exception e) {
+                po.setId(UUID.randomUUID().getMostSignificantBits() & Long.MAX_VALUE);
+            }
+
             po.setJobInstanceId(instanceId);
-            po.setPipelineId(pipelineId);
+            po.setPipelineId(m.getPipelineId());
 
-            // 基础指标
-            po.setReadRowCount(p.getTotalReadRows());
-            po.setWriteRowCount(p.getTotalWriteRows());
-            po.setReadQps(p.getLatestReadQps());
-            po.setWriteQps(p.getLatestWriteQps());
-            po.setRecordDelay(p.getLatestDelay());
 
-            po.setReadBytes(p.getTotalReadBytes());
-            po.setWriteBytes(p.getTotalWriteBytes());
-            po.setReadBps(p.getLatestReadBps());
-            po.setWriteBps(p.getLatestWriteBps());
-            po.setIntermediateQueueSize(p.getLatestIntermediateQueueSize());
-            po.setLagCount(p.getLatestLagCount());
-            po.setLossRate(p.getLatestLossRate());
-            po.setAvgRowSize(p.getLatestAvgRowSize());
+            po.setReadRowCount(m.getReadRowCount());
+            po.setWriteRowCount(m.getWriteRowCount());
+            po.setReadQps(m.getReadQps());
+            po.setWriteQps(m.getWriteQps());
+            po.setRecordDelay(m.getRecordDelay());
+            po.setReadBytes(m.getReadBytes());
+            po.setWriteBytes(m.getWriteBytes());
+            po.setReadBps(m.getReadBps());
+            po.setWriteBps(m.getWriteBps());
+            po.setIntermediateQueueSize(m.getIntermediateQueueSize());
+            po.setLagCount(m.getLagCount());
+            po.setLossRate(m.getLossRate());
+            po.setAvgRowSize(m.getAvgRowSize());
 
             po.setCreateTime(new Date());
             po.setUpdateTime(new Date());
 
             finalList.add(po);
-        });
+        }
 
         if (!finalList.isEmpty()) {
             metricsService.saveMetricsBatch(finalList);
-            log.info("Final metrics persisted for instance {}", instanceId);
+            log.info("Final metrics persisted for instance {}, {} pipelines",
+                    instanceId, finalList.size());
         }
-
-        cleanup(instanceId);
     }
-
 
     /**
      * Remove monitoring state and release resources.
      */
     private void cleanup(Long instanceId) {
-
         monitoringJobs.remove(instanceId);
-        aggregates.remove(instanceId);
 
         JobFileLogger logger = loggers.remove(instanceId);
         if (logger != null) {
@@ -211,7 +183,6 @@ public class JobMetricsMonitor {
 
         log.info("Metrics monitor cleaned for instance {}", instanceId);
     }
-
 
     /**
      * Build WebSocket payload.
@@ -309,143 +280,5 @@ public class JobMetricsMonitor {
         return String.format("%.2f %s", size, units[unitIndex]);
     }
 
-    /**
-     * Aggregated metrics container for a job instance.
-     */
-    private static class AggregatedMetrics {
 
-        private final Long jobInstanceId;
-
-        /**
-         * Key: pipeline ID
-         */
-        private final Map<Integer, PipelineMetrics> pipelines =
-                new ConcurrentHashMap<>();
-
-        public AggregatedMetrics(Long jobInstanceId) {
-            this.jobInstanceId = jobInstanceId;
-        }
-
-        /**
-         * Merge new metrics snapshot into in-memory aggregation.
-         */
-        public void merge(Collection<SeatunnelJobMetricsPO> metricsList) {
-
-            for (SeatunnelJobMetricsPO m : metricsList) {
-
-                pipelines.computeIfAbsent(
-                        m.getPipelineId(),
-                        id -> new PipelineMetrics()
-                ).merge(m);
-            }
-        }
-
-        public Map<Integer, PipelineMetrics> getPipelines() {
-            return pipelines;
-        }
-    }
-
-    /**
-     * Pipeline-level aggregated metrics.
-     * <p>
-     * Note:
-     * The engine already provides cumulative counters,
-     * so we simply overwrite totals instead of incrementing.
-     */
-    private static class PipelineMetrics {
-
-        // 基础指标
-        private long totalReadRows;
-        private long totalWriteRows;
-        private long latestReadQps;
-        private long latestWriteQps;
-        private long latestDelay;
-
-        // 新增指标
-        private Long totalReadBytes;
-        private Long totalWriteBytes;
-        private Long latestReadBps;
-        private Long latestWriteBps;
-        private Long latestIntermediateQueueSize;
-        private long latestLagCount;
-        private double latestLossRate;
-        private long latestAvgRowSize;
-
-        /**
-         * Merge incoming snapshot.
-         */
-        public synchronized void merge(SeatunnelJobMetricsPO m) {
-
-            // 基础指标 - 覆盖更新
-            this.totalReadRows = m.getReadRowCount();
-            this.totalWriteRows = m.getWriteRowCount();
-            this.latestReadQps = m.getReadQps();
-            this.latestWriteQps = m.getWriteQps();
-            this.latestDelay = m.getRecordDelay();
-
-            // 新增指标 - 覆盖更新
-            this.totalReadBytes = m.getReadBytes();
-            this.totalWriteBytes = m.getWriteBytes();
-            this.latestReadBps = m.getReadBps();
-            this.latestWriteBps = m.getWriteBps();
-            this.latestIntermediateQueueSize = m.getIntermediateQueueSize();
-            this.latestLagCount = m.getLagCount();
-            this.latestLossRate = m.getLossRate();
-            this.latestAvgRowSize = m.getAvgRowSize();
-        }
-
-        // Getters
-        public long getTotalReadRows() {
-            return totalReadRows;
-        }
-
-        public long getTotalWriteRows() {
-            return totalWriteRows;
-        }
-
-        public long getLatestReadQps() {
-            return latestReadQps;
-        }
-
-        public long getLatestWriteQps() {
-            return latestWriteQps;
-        }
-
-        public long getLatestDelay() {
-            return latestDelay;
-        }
-
-        public Long getTotalReadBytes() {
-            return totalReadBytes;
-        }
-
-        public Long getTotalWriteBytes() {
-            return totalWriteBytes;
-        }
-
-        public Long getLatestReadBps() {
-            return latestReadBps;
-        }
-
-        public Long getLatestWriteBps() {
-            return latestWriteBps;
-        }
-
-        public Long getLatestIntermediateQueueSize() {
-            return latestIntermediateQueueSize;
-        }
-
-        public long getLatestLagCount() {
-            return latestLagCount;
-        }
-
-        public double getLatestLossRate() {
-            return latestLossRate;
-        }
-
-        public long getLatestAvgRowSize() {
-            return latestAvgRowSize;
-        }
-
-    }
 }

@@ -475,3 +475,40 @@
     background-color: #f5f5f5;
   }
 }
+
+.metric-block {
+  padding: 16px;
+  border-radius: 12px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.02),
+    rgba(0, 0, 0, 0.02)
+  );
+  transition: all 0.3s ease;
+}
+
+.metric-block:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.metric-title {
+  font-size: 13px;
+  opacity: 0.7;
+}
+
+.metric-value {
+  font-size: 28px;
+  font-weight: 600;
+  margin-top: 6px;
+}
+
+.metric-unit {
+  font-size: 14px;
+  opacity: 0.6;
+}
+
+.metric-trend {
+  margin-top: 8px;
+  opacity: 0.6;
+}

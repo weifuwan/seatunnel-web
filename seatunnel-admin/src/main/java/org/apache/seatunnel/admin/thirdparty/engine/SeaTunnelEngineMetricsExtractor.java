@@ -15,7 +15,10 @@ import org.apache.seatunnel.engine.common.job.JobStatus;
 import org.apache.seatunnel.shade.com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.seatunnel.shade.com.fasterxml.jackson.databind.JsonNode;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 @Slf4j
 /** Engine metrics extractor SeaTunnel Engine implement. */
@@ -248,6 +251,11 @@ public class SeaTunnelEngineMetricsExtractor implements IEngineMetricsExtractor 
                     "SeaTunnel",
                     ExceptionUtils.getMessage(e));
         }
+    }
+
+    @Override
+    public JobStatus getJobStatus(@NonNull String jobEngineId) {
+        return seaTunnelEngineProxy.getJobStatus(jobEngineId);
     }
 
     public LinkedHashMap<Integer, String> getJobPipelineStatus(@NonNull String jobEngineId) {

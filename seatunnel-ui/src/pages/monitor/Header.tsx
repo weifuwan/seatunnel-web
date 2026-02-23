@@ -42,12 +42,12 @@ const Header: React.FC<HeaderProps> = ({
           fontWeight: 500
         }}
       >
-       🎯 Job Overview
+       📊 Job Overview
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ margin: '6px 0 ' }}>
-          <span style={{ fontWeight: 400, fontSize: 12 }}>Job Mode：</span>
+          <span style={{ fontWeight: 400, fontSize: 12 }}>✨ Job Mode：</span>
           <Select
             size="small"
             style={{ width: '30vh' }}

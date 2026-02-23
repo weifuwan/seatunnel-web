@@ -1,6 +1,8 @@
 package org.apache.seatunnel.admin.thirdparty.metrics;
 
+import lombok.NonNull;
 import org.apache.seatunnel.communal.bean.po.SeatunnelJobMetricsPO;
+import org.apache.seatunnel.engine.common.job.JobStatus;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -43,5 +45,8 @@ public interface IEngineMetricsExtractor {
      * @return map of vertex metrics, keyed by vertex ID
      */
     Map<Integer, SeatunnelJobMetricsPO> getMetricsByJobEngineIdRTMap(String jobEngineId);
+
+    JobStatus getJobStatus(@NonNull String jobEngineId);
+
 
 }

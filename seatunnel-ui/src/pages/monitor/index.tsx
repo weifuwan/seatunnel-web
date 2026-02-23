@@ -24,7 +24,7 @@ const App: React.FC = () => {
     successTasks: 0,
   });
   
-  const [taskType, setTaskType] = useState<TaskType>('SINGLE_TABLE');
+  const [taskType, setTaskType] = useState<TaskType>('BATCH');
   const [timeRange, setTimeRange] = useState<TimeRange>('24h');
   const ref = useRef(null);
 

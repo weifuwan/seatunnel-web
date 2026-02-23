@@ -16,7 +16,7 @@ export const timeRangeMap = {
 
 export const taskTypeOptions = [
   {
-    label: '单表同步',
-    value: 'SINGLE_TABLE',
+    label: 'BATCH',
+    value: 'BATCH',
   },
 ];

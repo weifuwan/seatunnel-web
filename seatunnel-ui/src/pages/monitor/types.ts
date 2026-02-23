@@ -23,4 +23,4 @@ export interface SummaryData {
 }
 
 export type TimeRange = '24h' | '48h' | 'week';
-export type TaskType = 'ALL' | 'SINGLE_TABLE';
+export type TaskType = 'STREAMING' | 'BATCH';

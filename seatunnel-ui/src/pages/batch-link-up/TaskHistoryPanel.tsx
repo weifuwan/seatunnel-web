@@ -1,7 +1,9 @@
 import {
+  CheckCircleFilled,
   CheckCircleOutlined,
   CloseCircleOutlined,
   Loading3QuartersOutlined,
+  SyncOutlined,
 } from '@ant-design/icons';
 import { Alert, List, message, Select, Typography } from 'antd';
 import React, { useEffect, useState } from 'react';
@@ -49,11 +51,11 @@ const TaskHistoryPanel: React.FC<TaskHistoryPanelProps> = ({
   const getBadgeStatus = (status: HistoryItem['jobStatus']) => {
     switch (status) {
       case 'FAILED':
-        return <CloseCircleOutlined style={{ color: 'red' }} />;
-      case 'COMPLETED':
-        return <CheckCircleOutlined style={{ color: 'green' }} />;
+        return <CloseCircleOutlined style={{ color: '#ff4d4f' }} />;
+      case 'FINISHED':
+        return <CheckCircleFilled style={{ color: '#52c41a' }} />;
       case 'RUNNING':
-        return <Loading3QuartersOutlined style={{ color: 'blue' }} spin />;
+        return <SyncOutlined style={{ color: '#1677ff' }} spin />;
       default:
         return 'default';
     }

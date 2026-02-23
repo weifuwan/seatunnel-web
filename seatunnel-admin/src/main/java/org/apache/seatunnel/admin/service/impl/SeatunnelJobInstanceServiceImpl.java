@@ -124,6 +124,7 @@ public class SeatunnelJobInstanceServiceImpl
                 .startTime(new Date())
                 .jobConfig(jobConfig)
                 .logPath(buildLogPath(id))
+                .jobStatus(JobStatus.RUNNING.toString())
                 .runMode(runMode)
                 .build();
     }

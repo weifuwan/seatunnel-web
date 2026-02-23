@@ -5,6 +5,7 @@ import org.apache.seatunnel.admin.service.SeatunnelJobInstanceService;
 import org.apache.seatunnel.admin.service.SeatunnelJobMetricsService;
 import org.apache.seatunnel.admin.websocket.WorkflowWebSocketService;
 import org.apache.seatunnel.communal.bean.po.SeatunnelJobMetricsPO;
+import org.apache.seatunnel.communal.utils.CodeGenerateUtils;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -129,6 +130,7 @@ public class JobMetricsMonitor {
                 List<SeatunnelJobMetricsPO> toFlush = new ArrayList<>();
                 SeatunnelJobMetricsPO m;
                 while ((m = buffer.poll()) != null) {
+                    m.setId(CodeGenerateUtils.getInstance().genCode());
                     toFlush.add(m);
                 }
 

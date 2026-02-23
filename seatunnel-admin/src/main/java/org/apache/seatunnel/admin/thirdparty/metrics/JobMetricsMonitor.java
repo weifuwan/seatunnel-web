@@ -13,26 +13,35 @@ import javax.annotation.Resource;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
+/**
+ * Enterprise-level metrics monitor for Seatunnel job instances.
+ * <p>
+ * Design principles:
+ * 1. Real-time metrics are pushed to WebSocket and written to job log files.
+ * 2. Database only stores the final aggregated result when the job finishes.
+ * 3. No time-series storage in MySQL.
+ * 4. No periodic DB flushing to avoid lock contention.
+ */
 @Component
 @Slf4j
 public class JobMetricsMonitor {
 
     /**
-     * Map of currently monitored jobs.
-     * Key: instanceId, Value: engineId
+     * Currently monitored jobs.
+     * Key: job instance ID
+     * Value: engine ID
      */
     private final Map<Long, String> monitoringJobs = new ConcurrentHashMap<>();
 
     /**
-     * In-memory sliding window buffer for metrics aggregation.
-     * Key: instanceId, Value: queue of collected metrics
+     * In-memory aggregated metrics per job instance.
+     * Key: job instance ID
      */
-    private final Map<Long, Queue<SeatunnelJobMetricsPO>> metricsBuffer = new ConcurrentHashMap<>();
+    private final Map<Long, AggregatedMetrics> aggregates = new ConcurrentHashMap<>();
 
     /**
-     * Logger per job instance for writing metrics to job-specific log files
+     * Dedicated file logger per job instance.
      */
     private final Map<Long, JobFileLogger> loggers = new ConcurrentHashMap<>();
 
@@ -45,50 +54,37 @@ public class JobMetricsMonitor {
     @Resource
     private WorkflowWebSocketService webSocketService;
 
+
     /**
-     * Register a job instance for metrics monitoring
-     *
-     * @param context runtime context of the job
+     * Register a job instance for real-time metrics monitoring.
      */
     public void register(JobRuntimeContext context) {
+
         Long instanceId = context.getInstanceId();
+        String engineId = context.getEngineId();
 
-        // Add to monitoring list
-        monitoringJobs.put(instanceId, context.getEngineId());
+        monitoringJobs.put(instanceId, engineId);
+        aggregates.put(instanceId, new AggregatedMetrics(instanceId));
 
-        // Initialize metrics buffer
-        metricsBuffer.put(instanceId, new ConcurrentLinkedQueue<>());
-
-        // Get job log path and create a file logger
         String logPath = instanceService.getById(instanceId).getLogPath();
-        JobFileLogger logger = new JobFileLogger(logPath);
-        loggers.put(instanceId, logger);
+        loggers.put(instanceId, new JobFileLogger(logPath));
 
-        logger.info("Metrics monitor registered: " + instanceId);
-        log.info("Metrics monitor registered: {}", instanceId);
+        log.info("Metrics monitor registered for instance {}", instanceId);
     }
 
     /**
-     * Unregister a job instance from monitoring
-     *
-     * @param instanceId job instance ID
+     * Poll metrics from engine periodically and:
+     * 1. Update in-memory aggregation
+     * 2. Write to job-specific log file
+     * 3. Push to WebSocket for real-time UI update
      */
-    public void unregister(Long instanceId) {
-        monitoringJobs.remove(instanceId);
-        metricsBuffer.remove(instanceId);
-        log.info("Metrics monitor unregistered: {}", instanceId);
-    }
-
-    /**
-     * Scheduled task to push metrics to WebSocket every 2s (default)
-     * Pushes current metrics snapshot to the front-end for live monitoring.
-     */
-    @Scheduled(fixedDelayString = "${seatunnel.metrics.interval-seconds:2000}")
+    @Scheduled(fixedDelayString = "${seatunnel.metrics.interval-ms:2000}")
     public void reportAllWebSocket() {
+
         monitoringJobs.forEach((instanceId, engineId) -> {
-            JobFileLogger logger = loggers.get(instanceId);
+
             try {
-                // Fetch metrics from engine
+
                 Map<Integer, SeatunnelJobMetricsPO> metrics =
                         metricsService.getJobMetricsFromEngineMap(engineId);
 
@@ -96,74 +92,160 @@ public class JobMetricsMonitor {
                     return;
                 }
 
-                // Store metrics in in-memory buffer for later DB aggregation
-                Queue<SeatunnelJobMetricsPO> buffer = metricsBuffer.get(instanceId);
-                buffer.addAll(metrics.values());
-
-                // Log metrics to job-specific file
-                if (logger != null) {
-                    String formatted = formatMetrics(metrics.values());
-                    logger.info(formatted);
+                // Update in-memory aggregated metrics
+                AggregatedMetrics agg = aggregates.get(instanceId);
+                if (agg != null) {
+                    agg.merge(metrics.values());
                 }
 
-                // Build WebSocket payload and send
-                Map<String, Object> message = buildPayload(instanceId, engineId, metrics);
-                webSocketService.sendMessage(buildChannel(instanceId, engineId), message);
+                // Write snapshot to job log file
+                JobFileLogger logger = loggers.get(instanceId);
+                if (logger != null) {
+                    logger.info(formatMetrics(metrics.values()));
+                }
+
+                // Push metrics snapshot to WebSocket
+                webSocketService.sendMessage(
+                        buildChannel(instanceId, engineId),
+                        buildPayload(instanceId, engineId, metrics)
+                );
 
             } catch (Exception e) {
-                log.warn("Metrics fetch failed: {}", instanceId, e);
+                log.warn("Failed to fetch metrics for instance {}", instanceId, e);
             }
         });
     }
 
+
     /**
-     * Scheduled task to flush aggregated metrics to the database every 30s (default)
-     * Aggregates all metrics in memory and writes them in batch to improve performance.
+     * Persist final aggregated metrics to database.
+     * This method should be called when the job reaches a terminal state
+     * (FINISHED / FAILED / CANCELED).
      */
-    @Scheduled(fixedDelayString = "${seatunnel.metrics.flush-interval:30000}")
-    public void flushMetricsToDB() {
-        monitoringJobs.keySet().forEach(instanceId -> {
-            Queue<SeatunnelJobMetricsPO> buffer = metricsBuffer.get(instanceId);
-            JobFileLogger logger = loggers.get(instanceId);
+    public void finalizeAndPersist(Long instanceId) {
 
-            if (buffer != null && !buffer.isEmpty()) {
-                List<SeatunnelJobMetricsPO> toFlush = new ArrayList<>();
-                SeatunnelJobMetricsPO m;
-                while ((m = buffer.poll()) != null) {
-                    m.setId(CodeGenerateUtils.getInstance().genCode());
-                    toFlush.add(m);
-                }
+        String engineId = monitoringJobs.get(instanceId);
 
-                try {
-                    // Save metrics batch to database
-                    metricsService.saveMetricsBatch(toFlush);
-                    log.info("Flushed {} metrics to DB for instance {}", toFlush.size(), instanceId);
-                    if (logger != null) {
-                        logger.info("Flushed " + toFlush.size() + " metrics to DB");
+        if (engineId != null) {
+            try {
+                Map<Integer, SeatunnelJobMetricsPO> finalMetrics =
+                        metricsService.getJobMetricsFromEngineMap(engineId);
+
+                if (finalMetrics != null && !finalMetrics.isEmpty()) {
+
+                    AggregatedMetrics agg = aggregates.get(instanceId);
+                    if (agg != null) {
+                        agg.merge(finalMetrics.values());
                     }
-                } catch (Exception e) {
-                    log.warn("Failed to flush metrics for instance {}", instanceId, e);
+
+                    JobFileLogger logger = loggers.get(instanceId);
                     if (logger != null) {
-                        logger.error("Failed to flush metrics", e);
-                        // Optionally re-add metrics back to buffer if DB save fails
-                        buffer.addAll(toFlush);
+                        logger.info("Final Metrics Snapshot:");
+                        logger.info(formatMetrics(finalMetrics.values()));
                     }
                 }
+
+            } catch (Exception e) {
+                log.warn("Failed to fetch final metrics for instance {}", instanceId, e);
             }
+        }
+
+        AggregatedMetrics agg = aggregates.get(instanceId);
+        if (agg == null) {
+            cleanup(instanceId);
+            return;
+        }
+
+        List<SeatunnelJobMetricsPO> finalList = new ArrayList<>();
+
+        agg.getPipelines().forEach((pipelineId, p) -> {
+
+            SeatunnelJobMetricsPO po = new SeatunnelJobMetricsPO();
+            po.setId(CodeGenerateUtils.getInstance().genCode());
+            po.setJobInstanceId(instanceId);
+            po.setPipelineId(pipelineId);
+
+            po.setReadRowCount(p.getTotalReadRows());
+            po.setWriteRowCount(p.getTotalWriteRows());
+            po.setReadQps(p.getLatestReadQps());
+            po.setWriteQps(p.getLatestWriteQps());
+            po.setRecordDelay(p.getLatestDelay());
+            po.setStatus(p.getLatestStatus());
+
+            finalList.add(po);
         });
+
+        if (!finalList.isEmpty()) {
+            metricsService.saveMetricsBatch(finalList);
+            log.info("Final metrics persisted for instance {}", instanceId);
+        }
+
+        cleanup(instanceId);
+    }
+
+
+    /**
+     * Remove monitoring state and release resources.
+     */
+    private void cleanup(Long instanceId) {
+
+        monitoringJobs.remove(instanceId);
+        aggregates.remove(instanceId);
+
+        JobFileLogger logger = loggers.remove(instanceId);
+        if (logger != null) {
+            logger.close();
+        }
+
+        log.info("Metrics monitor cleaned for instance {}", instanceId);
+    }
+
+
+    /**
+     * Build WebSocket payload.
+     */
+    private Map<String, Object> buildPayload(Long instanceId,
+                                             String engineId,
+                                             Map<Integer, SeatunnelJobMetricsPO> metrics) {
+
+        Map<String, Object> message = new HashMap<>();
+        message.put("type", "METRICS");
+        message.put("instanceId", instanceId);
+        message.put("engineId", engineId);
+        message.put("metrics", metrics);
+        message.put("timestamp", Instant.now().toEpochMilli());
+
+        return message;
     }
 
     /**
-     * Format metrics for logging in a human-readable tabular format
+     * Construct WebSocket channel name.
+     */
+    private String buildChannel(Long instanceId, String engineId) {
+        return "job-" + instanceId + "-" + engineId;
+    }
+
+    /**
+     * Format metrics snapshot into human-readable table for log file.
      */
     private String formatMetrics(Collection<SeatunnelJobMetricsPO> metrics) {
+
         StringBuilder sb = new StringBuilder();
         sb.append("Metrics Snapshot:\n");
-        sb.append(String.format("%-10s %-15s %-15s %-10s %-10s %-10s %-10s\n",
-                "PipelineID", "ReadRows", "WriteRows", "ReadQPS", "WriteQPS", "Delay(ms)", "Status"));
+        sb.append(String.format(
+                "%-10s %-15s %-15s %-10s %-10s %-10s %-10s\n",
+                "PipelineID",
+                "ReadRows",
+                "WriteRows",
+                "ReadQPS",
+                "WriteQPS",
+                "Delay(ms)",
+                "Status"
+        ));
 
         for (SeatunnelJobMetricsPO m : metrics) {
-            sb.append(String.format("%-10s %-15s %-15s %-10s %-10s %-10s %-10s\n",
+            sb.append(String.format(
+                    "%-10s %-15s %-15s %-10s %-10s %-10s %-10s\n",
                     m.getPipelineId(),
                     m.getReadRowCount(),
                     m.getWriteRowCount(),
@@ -173,28 +255,99 @@ public class JobMetricsMonitor {
                     m.getStatus()
             ));
         }
+
         return sb.toString();
     }
 
     /**
-     * Build the WebSocket message payload for a job instance
+     * Aggregated metrics container for a job instance.
      */
-    private Map<String, Object> buildPayload(Long instanceId,
-                                             String engineId,
-                                             Map<Integer, SeatunnelJobMetricsPO> metrics) {
-        Map<String, Object> message = new HashMap<>();
-        message.put("type", "METRICS");
-        message.put("instanceId", instanceId);
-        message.put("engineId", engineId);
-        message.put("metrics", metrics);
-        message.put("timestamp", Instant.now().toEpochMilli());
-        return message;
+    private static class AggregatedMetrics {
+
+        private final Long jobInstanceId;
+
+        /**
+         * Key: pipeline ID
+         */
+        private final Map<Integer, PipelineMetrics> pipelines =
+                new ConcurrentHashMap<>();
+
+        public AggregatedMetrics(Long jobInstanceId) {
+            this.jobInstanceId = jobInstanceId;
+        }
+
+        /**
+         * Merge new metrics snapshot into in-memory aggregation.
+         */
+        public void merge(Collection<SeatunnelJobMetricsPO> metricsList) {
+
+            for (SeatunnelJobMetricsPO m : metricsList) {
+
+                pipelines.computeIfAbsent(
+                        m.getPipelineId(),
+                        id -> new PipelineMetrics()
+                ).merge(m);
+            }
+        }
+
+        public Map<Integer, PipelineMetrics> getPipelines() {
+            return pipelines;
+        }
     }
 
     /**
-     * Construct the WebSocket channel name for a job instance
+     * Pipeline-level aggregated metrics.
+     * <p>
+     * Note:
+     * The engine already provides cumulative counters,
+     * so we simply overwrite totals instead of incrementing.
      */
-    private String buildChannel(Long instanceId, String engineId) {
-        return "job-" + instanceId + "-" + engineId;
+    private static class PipelineMetrics {
+
+        private long totalReadRows;
+        private long totalWriteRows;
+
+        private long latestReadQps;
+        private long latestWriteQps;
+
+        private long latestDelay;
+        private String latestStatus;
+
+        /**
+         * Merge incoming snapshot.
+         */
+        public synchronized void merge(SeatunnelJobMetricsPO m) {
+
+            this.totalReadRows = m.getReadRowCount();
+            this.totalWriteRows = m.getWriteRowCount();
+            this.latestReadQps = m.getReadQps();
+            this.latestWriteQps = m.getWriteQps();
+            this.latestDelay = m.getRecordDelay();
+            this.latestStatus = m.getStatus();
+        }
+
+        public long getTotalReadRows() {
+            return totalReadRows;
+        }
+
+        public long getTotalWriteRows() {
+            return totalWriteRows;
+        }
+
+        public long getLatestReadQps() {
+            return latestReadQps;
+        }
+
+        public long getLatestWriteQps() {
+            return latestWriteQps;
+        }
+
+        public long getLatestDelay() {
+            return latestDelay;
+        }
+
+        public String getLatestStatus() {
+            return latestStatus;
+        }
     }
 }

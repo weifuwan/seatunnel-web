@@ -23,10 +23,10 @@ const statusConfig: Record<
     text: string;
   }
 > = {
-  COMPLETED: {
+  FINISHED: {
     color: "#52c41a",
     icon: <CheckCircleFilled />,
-    text: "COMPLETED",
+    text: "FINISHED",
   },
   RUNNING: {
     color: "#1677ff",

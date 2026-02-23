@@ -244,6 +244,7 @@ public class SeaTunnelEngineMetricsExtractor implements IEngineMetricsExtractor 
             }
 
             JsonNode jsonNode = JsonUtils.stringToJsonNode(metricsContent);
+            log.info("jsonNode -> " + jsonNode);
             return extractMetrics(jobPipelineStatus, jsonNode);
         } catch (JsonProcessingException e) {
             throw new SeatunnelException(

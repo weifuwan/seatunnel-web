@@ -27,9 +27,11 @@ public class JobResultHandler {
      * Service for operating on job instance persistence layer.
      */
     private final SeatunnelJobInstanceService instanceService;
+    private final JobMetricsMonitor jobMetricsMonitor;
 
-    public JobResultHandler(SeatunnelJobInstanceService instanceService) {
+    public JobResultHandler(SeatunnelJobInstanceService instanceService, JobMetricsMonitor jobMetricsMonitor) {
         this.instanceService = instanceService;
+        this.jobMetricsMonitor = jobMetricsMonitor;
     }
 
     /**
@@ -109,5 +111,6 @@ public class JobResultHandler {
         po.setErrorMessage(errorMessage);
 
         instanceService.updateById(po);
+        jobMetricsMonitor.finalizeAndPersist(jobInstanceId);
     }
 }

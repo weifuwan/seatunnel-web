@@ -60,7 +60,6 @@ public class JobResultWatcher {
                 resultHandler.handleFailure(context.getInstanceId(), e);
             } finally {
                 // Always unregister metrics monitoring after job completion
-                metricsMonitor.unregister(context.getInstanceId());
 
                 log.info("Job result watcher finished: {}",
                         context.getInstanceId());

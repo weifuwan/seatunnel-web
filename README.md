@@ -36,31 +36,3 @@ wisdom:
 
 ![Stream Sync Screenshot](docs/images/img_10.png)
 
-## Quick Start
-
-> Before installing Seatunnel Web, ensure your system meets the minimum requirements:
-
-- **CPU**: ≥2 cores
-- **Memory**: ≥4 GB RAM
-- **Disk**: ≥5 GB free space
-
-### Docker Deployment (Recommended)
-
-```bash
-# Navigate to project directory
-cd seatunnel-web
-
-# Copy and configure environment variables
-cp .env.example .env
-# For production, update APP_DOMAIN in .env
-
-# Start the application using Docker Compose
-docker compose up -d
-```
-
-## Contribution
-
-We welcome contributions! You can:
-
-- Submit an [Issue](https://github.com/weifuwan/seatunnel-web/issues/new/choose)
-- Open a [Pull Request](https://github.com/weifuwan/seatunnel-web/pulls)

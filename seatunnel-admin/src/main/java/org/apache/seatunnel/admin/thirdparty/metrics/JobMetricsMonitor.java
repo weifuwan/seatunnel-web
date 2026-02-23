@@ -170,7 +170,6 @@ public class JobMetricsMonitor {
             po.setReadQps(p.getLatestReadQps());
             po.setWriteQps(p.getLatestWriteQps());
             po.setRecordDelay(p.getLatestDelay());
-            po.setStatus(p.getLatestStatus());
 
             finalList.add(po);
         });
@@ -245,14 +244,13 @@ public class JobMetricsMonitor {
 
         for (SeatunnelJobMetricsPO m : metrics) {
             sb.append(String.format(
-                    "%-10s %-15s %-15s %-10s %-10s %-10s %-10s\n",
+                    "%-10s %-15s %-15s %-10s %-10s %-10s\n",
                     m.getPipelineId(),
                     m.getReadRowCount(),
                     m.getWriteRowCount(),
                     m.getReadQps(),
                     m.getWriteQps(),
-                    m.getRecordDelay(),
-                    m.getStatus()
+                    m.getRecordDelay()
             ));
         }
 
@@ -323,7 +321,6 @@ public class JobMetricsMonitor {
             this.latestReadQps = m.getReadQps();
             this.latestWriteQps = m.getWriteQps();
             this.latestDelay = m.getRecordDelay();
-            this.latestStatus = m.getStatus();
         }
 
         public long getTotalReadRows() {

@@ -1,6 +1,6 @@
-import React from "react";
 import { Card, Descriptions, DescriptionsProps } from "antd";
-import "../index.less"
+import React from "react";
+import "../index.less";
 
 interface ScheduleTabProps {
   instanceItem: any;
@@ -33,22 +33,7 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ instanceItem }) => {
     {
       key: "10",
       label: "Schedule Info",
-      children: (
-        <>
-          Data disk type: MongoDB
-          <br />
-          Database version: 3.4
-          <br />
-          Package: dds.mongo.mid
-          <br />
-          Storage space: 10 GB
-          <br />
-          Replication factor: 3
-          <br />
-          Region: East China 1
-          <br />
-        </>
-      ),
+      children: <></>,
     },
   ];
 

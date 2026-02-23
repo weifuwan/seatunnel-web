@@ -50,11 +50,6 @@ public class SeatunnelJobMetricsPO {
     @TableField("record_delay")
     private long recordDelay;
 
-    @TableField("status")
-    private String status;
-
-
-
     @TableField("create_time")
     private Date createTime;
 

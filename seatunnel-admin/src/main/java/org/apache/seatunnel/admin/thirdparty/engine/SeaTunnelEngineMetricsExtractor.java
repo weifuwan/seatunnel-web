@@ -297,7 +297,6 @@ public class SeaTunnelEngineMetricsExtractor implements IEngineMetricsExtractor 
         SeatunnelJobMetricsPO currPipelineMetrics = metricsMap.get(pipelineId);
         if (currPipelineMetrics == null) {
             currPipelineMetrics = new SeatunnelJobMetricsPO();
-            currPipelineMetrics.setStatus(JobStatus.RUNNING.toString());
             currPipelineMetrics.setPipelineId(pipelineId);
             metricsMap.put(pipelineId, currPipelineMetrics);
         }
@@ -312,10 +311,6 @@ public class SeaTunnelEngineMetricsExtractor implements IEngineMetricsExtractor 
         if (currPipelineMetrics == null) {
             currPipelineMetrics = new SeatunnelJobMetricsPO();
             metricsMap.put(pipelineId, currPipelineMetrics);
-            currPipelineMetrics.setStatus(
-                    "DEPLOYING".equals(jobPipelineStatus.get(pipelineId))
-                            ? JobStatus.SCHEDULED.toString()
-                            : JobStatus.valueOf(jobPipelineStatus.get(pipelineId)).toString());
             currPipelineMetrics.setPipelineId(pipelineId);
         }
         return currPipelineMetrics;

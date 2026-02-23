@@ -144,28 +144,28 @@ public class SeaTunnelEngineMetricsExtractor implements IEngineMetricsExtractor 
         try {
             switch (pureMetric) {
                 case "SourceReceivedCount":
-                    po.setReadRowCount(po.getReadRowCount() + longValue);
+                    po.setReadRowCount(longValue); 
                     break;
                 case "SinkWriteCount":
-                    po.setWriteRowCount(po.getWriteRowCount() + longValue);
+                    po.setWriteRowCount(longValue);
                     break;
                 case "SourceReceivedQPS":
-                    po.setReadQps(po.getReadQps() + (long) doubleValue);
+                    po.setReadQps((long) doubleValue); 
                     break;
                 case "SinkWriteQPS":
-                    po.setWriteQps(po.getWriteQps() + (long) doubleValue);
+                    po.setWriteQps((long) doubleValue);
                     break;
                 case "SourceReceivedBytes":
-                    po.setReadBytes(po.getReadBytes() + longValue);
+                    po.setReadBytes(longValue);
                     break;
                 case "SinkWriteBytes":
-                    po.setWriteBytes(po.getWriteBytes() + longValue);
+                    po.setWriteBytes(longValue);
                     break;
                 case "SourceReceivedBytesPerSeconds":
-                    po.setReadBps(po.getReadBps() + (long) doubleValue);
+                    po.setReadBps((long) doubleValue);
                     break;
                 case "SinkWriteBytesPerSeconds":
-                    po.setWriteBps(po.getWriteBps() + (long) doubleValue);
+                    po.setWriteBps((long) doubleValue);
                     break;
                 case "IntermediateQueueSize":
                     po.setIntermediateQueueSize(longValue);

@@ -67,6 +67,12 @@ public class SeaTunnelEngineMetricsExtractor implements IEngineMetricsExtractor 
     private LinkedHashMap<Integer, SeatunnelJobMetricsPO> extractMetrics(JsonNode root) {
 
         LinkedHashMap<Integer, SeatunnelJobMetricsPO> metricsMap = new LinkedHashMap<>();
+        log.info("root -> " + root);
+
+        if (root == null || !root.isObject()) {
+            log.warn("Root node is null or not an object");
+            return metricsMap;
+        }
 
         Iterator<Map.Entry<String, JsonNode>> fields = root.fields();
 
@@ -80,28 +86,42 @@ public class SeaTunnelEngineMetricsExtractor implements IEngineMetricsExtractor 
             }
 
             for (JsonNode node : metricArray) {
+                try {
+                    JsonNode tags = node.get("tags");
+                    if (tags == null || !tags.has("pipelineId")) {
+                        log.debug("Missing tags or pipelineId in metric node: {}", node);
+                        continue;
+                    }
 
-                Integer pipelineId =
-                        node.get("tags").get("pipelineId").asInt();
+                    Integer pipelineId = tags.get("pipelineId").asInt();
 
-                SeatunnelJobMetricsPO po =
-                        metricsMap.computeIfAbsent(
-                                pipelineId,
-                                k -> {
-                                    SeatunnelJobMetricsPO m = new SeatunnelJobMetricsPO();
-                                    m.setPipelineId(pipelineId);
-                                    return m;
-                                });
+                    JsonNode valueNode = node.get("value");
+                    if (valueNode == null) {
+                        log.debug("Missing value in metric node: {}", node);
+                        continue;
+                    }
 
-                long longValue = node.get("value").asLong();
-                double doubleValue = node.get("value").asDouble();
+                    SeatunnelJobMetricsPO po =
+                            metricsMap.computeIfAbsent(
+                                    pipelineId,
+                                    k -> {
+                                        SeatunnelJobMetricsPO m = new SeatunnelJobMetricsPO();
+                                        m.setPipelineId(pipelineId);
+                                        return m;
+                                    });
 
-                accumulateMetric(po, metricName, longValue, doubleValue);
+                    long longValue = valueNode.asLong();
+                    double doubleValue = valueNode.asDouble();
+
+                    accumulateMetric(po, metricName, longValue, doubleValue);
+
+                } catch (Exception e) {
+                    log.warn("Error processing metric node: {}", node, e);
+                }
             }
         }
 
         calculateDerivedMetrics(metricsMap);
-
         return metricsMap;
     }
 
@@ -112,50 +132,49 @@ public class SeaTunnelEngineMetricsExtractor implements IEngineMetricsExtractor 
             long longValue,
             double doubleValue) {
 
+        if (po == null || metricName == null) {
+            log.warn("PO or metricName is null");
+            return;
+        }
+
         String pureMetric = metricName.contains("#")
                 ? metricName.substring(0, metricName.indexOf("#"))
                 : metricName;
 
-        switch (pureMetric) {
-
-            case "SourceReceivedCount":
-                po.setReadRowCount(po.getReadRowCount() + longValue);
-                break;
-
-            case "SinkWriteCount":
-                po.setWriteRowCount(po.getWriteRowCount() + longValue);
-                break;
-
-            case "SourceReceivedQPS":
-                po.setReadQps(po.getReadQps() + (long) doubleValue);
-                break;
-
-            case "SinkWriteQPS":
-                po.setWriteQps(po.getWriteQps() + (long) doubleValue);
-                break;
-
-            case "SourceReceivedBytes":
-                po.setReadBytes(po.getReadBytes() + longValue);
-                break;
-
-            case "SinkWriteBytes":
-                po.setWriteBytes(po.getWriteBytes() + longValue);
-                break;
-
-            case "SourceReceivedBytesPerSeconds":
-                po.setReadBps(po.getReadBps() + (long) doubleValue);
-                break;
-
-            case "SinkWriteBytesPerSeconds":
-                po.setWriteBps(po.getWriteBps() + (long) doubleValue);
-                break;
-
-            case "IntermediateQueueSize":
-                po.setIntermediateQueueSize(longValue);
-                break;
-
-            default:
-                break;
+        try {
+            switch (pureMetric) {
+                case "SourceReceivedCount":
+                    po.setReadRowCount(po.getReadRowCount() + longValue);
+                    break;
+                case "SinkWriteCount":
+                    po.setWriteRowCount(po.getWriteRowCount() + longValue);
+                    break;
+                case "SourceReceivedQPS":
+                    po.setReadQps(po.getReadQps() + (long) doubleValue);
+                    break;
+                case "SinkWriteQPS":
+                    po.setWriteQps(po.getWriteQps() + (long) doubleValue);
+                    break;
+                case "SourceReceivedBytes":
+                    po.setReadBytes(po.getReadBytes() + longValue);
+                    break;
+                case "SinkWriteBytes":
+                    po.setWriteBytes(po.getWriteBytes() + longValue);
+                    break;
+                case "SourceReceivedBytesPerSeconds":
+                    po.setReadBps(po.getReadBps() + (long) doubleValue);
+                    break;
+                case "SinkWriteBytesPerSeconds":
+                    po.setWriteBps(po.getWriteBps() + (long) doubleValue);
+                    break;
+                case "IntermediateQueueSize":
+                    po.setIntermediateQueueSize(longValue);
+                    break;
+                default:
+                    break;
+            }
+        } catch (Exception e) {
+            log.warn("Error accumulating metric: {}", pureMetric, e);
         }
     }
 

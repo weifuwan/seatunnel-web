@@ -86,28 +86,28 @@ public class SeatunnelJobMetricsPO {
     /**
      * Total bytes read from source(s).
      */
-    private Long readBytes;
+    private long readBytes;
 
     /**
      * Total bytes written to sink(s).
      */
-    private Long writeBytes;
+    private long writeBytes;
 
     /**
      * Read throughput in bytes per second.
      */
-    private Long readBps;
+    private long readBps;
 
     /**
      * Write throughput in bytes per second.
      */
-    private Long writeBps;
+    private long writeBps;
 
     /**
      * Size of intermediate processing queue.
      * Indicates buffering/backpressure level.
      */
-    private Long intermediateQueueSize;
+    private long intermediateQueueSize;
 
     /**
      * Lag count (e.g., unprocessed records or backlog).

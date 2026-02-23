@@ -165,11 +165,24 @@ public class JobMetricsMonitor {
             po.setJobInstanceId(instanceId);
             po.setPipelineId(pipelineId);
 
+            // 基础指标
             po.setReadRowCount(p.getTotalReadRows());
             po.setWriteRowCount(p.getTotalWriteRows());
             po.setReadQps(p.getLatestReadQps());
             po.setWriteQps(p.getLatestWriteQps());
             po.setRecordDelay(p.getLatestDelay());
+
+            po.setReadBytes(p.getTotalReadBytes());
+            po.setWriteBytes(p.getTotalWriteBytes());
+            po.setReadBps(p.getLatestReadBps());
+            po.setWriteBps(p.getLatestWriteBps());
+            po.setIntermediateQueueSize(p.getLatestIntermediateQueueSize());
+            po.setLagCount(p.getLatestLagCount());
+            po.setLossRate(p.getLatestLossRate());
+            po.setAvgRowSize(p.getLatestAvgRowSize());
+
+            po.setCreateTime(new Date());
+            po.setUpdateTime(new Date());
 
             finalList.add(po);
         });
@@ -230,31 +243,70 @@ public class JobMetricsMonitor {
     private String formatMetrics(Collection<SeatunnelJobMetricsPO> metrics) {
 
         StringBuilder sb = new StringBuilder();
-        sb.append("Metrics Snapshot:\n");
+        sb.append("\n==================== Metrics Snapshot ====================\n");
         sb.append(String.format(
-                "%-10s %-15s %-15s %-10s %-10s %-10s %-10s\n",
+                "%-10s %-12s %-12s %-8s %-8s %-8s %-12s %-12s %-8s %-8s %-10s %-8s %-8s %-8s\n",
                 "PipelineID",
                 "ReadRows",
                 "WriteRows",
                 "ReadQPS",
                 "WriteQPS",
                 "Delay(ms)",
-                "Status"
+                "ReadBytes",
+                "WriteBytes",
+                "ReadBPS",
+                "WriteBPS",
+                "QueueSize",
+                "LagCount",
+                "LossRate",
+                "AvgRowSize"
         ));
+        sb.append("--------------------------------------------------------------------------------\n");
 
         for (SeatunnelJobMetricsPO m : metrics) {
             sb.append(String.format(
-                    "%-10s %-15s %-15s %-10s %-10s %-10s\n",
+                    "%-10s %-12s %-12s %-8s %-8s %-8s %-12s %-12s %-8s %-8s %-10s %-8s %-8.4f %-8s\n",
                     m.getPipelineId(),
-                    m.getReadRowCount(),
-                    m.getWriteRowCount(),
+                    formatNumber(m.getReadRowCount()),
+                    formatNumber(m.getWriteRowCount()),
                     m.getReadQps(),
                     m.getWriteQps(),
-                    m.getRecordDelay()
+                    m.getRecordDelay(),
+                    formatBytes(m.getReadBytes()),
+                    formatBytes(m.getWriteBytes()),
+                    formatBytes(m.getReadBps()),
+                    formatBytes(m.getWriteBps()),
+                    m.getIntermediateQueueSize() != null ? m.getIntermediateQueueSize() : 0,
+                    m.getLagCount(),
+                    m.getLossRate(),
+                    m.getAvgRowSize()
             ));
         }
+        sb.append("============================================================\n");
 
         return sb.toString();
+    }
+
+    /**
+     * 格式化数字，添加千位分隔符
+     */
+    private String formatNumber(long number) {
+        return String.format("%,d", number);
+    }
+
+    /**
+     * 格式化字节大小为可读格式
+     */
+    private String formatBytes(Long bytes) {
+        if (bytes == null || bytes == 0) {
+            return "0 B";
+        }
+
+        String[] units = {"B", "KB", "MB", "GB", "TB"};
+        int unitIndex = (int) (Math.log10(bytes) / Math.log10(1024));
+        double size = bytes / Math.pow(1024, unitIndex);
+
+        return String.format("%.2f %s", size, units[unitIndex]);
     }
 
     /**
@@ -302,27 +354,47 @@ public class JobMetricsMonitor {
      */
     private static class PipelineMetrics {
 
+        // 基础指标
         private long totalReadRows;
         private long totalWriteRows;
-
         private long latestReadQps;
         private long latestWriteQps;
-
         private long latestDelay;
-        private String latestStatus;
+
+        // 新增指标
+        private Long totalReadBytes;
+        private Long totalWriteBytes;
+        private Long latestReadBps;
+        private Long latestWriteBps;
+        private Long latestIntermediateQueueSize;
+        private long latestLagCount;
+        private double latestLossRate;
+        private long latestAvgRowSize;
 
         /**
          * Merge incoming snapshot.
          */
         public synchronized void merge(SeatunnelJobMetricsPO m) {
 
+            // 基础指标 - 覆盖更新
             this.totalReadRows = m.getReadRowCount();
             this.totalWriteRows = m.getWriteRowCount();
             this.latestReadQps = m.getReadQps();
             this.latestWriteQps = m.getWriteQps();
             this.latestDelay = m.getRecordDelay();
+
+            // 新增指标 - 覆盖更新
+            this.totalReadBytes = m.getReadBytes();
+            this.totalWriteBytes = m.getWriteBytes();
+            this.latestReadBps = m.getReadBps();
+            this.latestWriteBps = m.getWriteBps();
+            this.latestIntermediateQueueSize = m.getIntermediateQueueSize();
+            this.latestLagCount = m.getLagCount();
+            this.latestLossRate = m.getLossRate();
+            this.latestAvgRowSize = m.getAvgRowSize();
         }
 
+        // Getters
         public long getTotalReadRows() {
             return totalReadRows;
         }
@@ -343,8 +415,37 @@ public class JobMetricsMonitor {
             return latestDelay;
         }
 
-        public String getLatestStatus() {
-            return latestStatus;
+        public Long getTotalReadBytes() {
+            return totalReadBytes;
         }
+
+        public Long getTotalWriteBytes() {
+            return totalWriteBytes;
+        }
+
+        public Long getLatestReadBps() {
+            return latestReadBps;
+        }
+
+        public Long getLatestWriteBps() {
+            return latestWriteBps;
+        }
+
+        public Long getLatestIntermediateQueueSize() {
+            return latestIntermediateQueueSize;
+        }
+
+        public long getLatestLagCount() {
+            return latestLagCount;
+        }
+
+        public double getLatestLossRate() {
+            return latestLossRate;
+        }
+
+        public long getLatestAvgRowSize() {
+            return latestAvgRowSize;
+        }
+
     }
 }

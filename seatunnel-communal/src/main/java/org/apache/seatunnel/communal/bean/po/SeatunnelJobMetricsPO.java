@@ -1,7 +1,6 @@
 package org.apache.seatunnel.communal.bean.po;
 
 import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.AllArgsConstructor;
@@ -13,9 +12,9 @@ import java.util.Date;
 
 /**
  * Persistence object representing job-level metrics for a SeaTunnel job instance.
- *
+ * <p>
  * This entity maps to table: t_seatunnel_job_metrics
- *
+ * <p>
  * It stores aggregated runtime metrics such as throughput, QPS,
  * data volume, delay, and data quality indicators.
  */
@@ -39,6 +38,11 @@ public class SeatunnelJobMetricsPO {
     private Long jobInstanceId;
 
     /**
+     * Job definition ID
+     */
+    private Long jobDefinitionId;
+
+    /**
      * Pipeline ID within the job.
      * A single job may contain multiple pipelines.
      */
@@ -53,16 +57,6 @@ public class SeatunnelJobMetricsPO {
      * Total number of rows written to sink(s).
      */
     private long writeRowCount;
-
-    /**
-     * Comma-separated list of source table names.
-     */
-    private String sourceTableNames;
-
-    /**
-     * Comma-separated list of sink table names.
-     */
-    private String sinkTableNames;
 
     /**
      * Current read QPS (rows per second).

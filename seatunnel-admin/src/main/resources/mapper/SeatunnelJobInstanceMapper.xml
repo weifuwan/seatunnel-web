@@ -30,7 +30,7 @@
         m.read_qps AS readQps,
         m.write_qps AS writeQps,
         m.record_delay AS recordDelay,
-        m.status AS metricsStatus,
+        i.job_status AS metricsStatus,
         d.source_table AS sourceTable,
         d.sink_table AS sinkTable,
 

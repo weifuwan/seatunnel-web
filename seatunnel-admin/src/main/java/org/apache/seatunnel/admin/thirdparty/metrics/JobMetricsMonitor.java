@@ -276,7 +276,7 @@ public class JobMetricsMonitor {
                     formatBytes(m.getWriteBytes()),
                     formatBytes(m.getReadBps()),
                     formatBytes(m.getWriteBps()),
-                    m.getIntermediateQueueSize() != null ? m.getIntermediateQueueSize() : 0,
+                    m.getIntermediateQueueSize(),
                     m.getLagCount(),
                     m.getLossRate(),
                     m.getAvgRowSize()

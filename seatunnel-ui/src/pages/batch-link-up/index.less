@@ -310,3 +310,168 @@
 .custom-form-item .ant-form-item-label {
   text-align: start !important;
 }
+
+.css-1qqgizd {
+    height: 128px;
+    background-color: rgb(246, 246, 246);
+    border-radius: 2px;
+    padding: 12px;
+}
+
+.css-1qqgizd .title {
+    font-weight: 400;
+    font-size: 12px;
+    color: #7a7f85;
+    line-height: 16px;
+}
+
+.css-1qqgizd .big-number {
+    font-weight: 400;
+    font-size: 24px;
+    color: #10121a;
+    line-height: 24px;
+    margin: 12px 0px 16px;
+}
+
+.css-1qqgizd .small-number:first-child {
+    margin-bottom: 8px;
+}
+
+.css-1qqgizd .small-number {
+    font-size: 12px;
+    line-height: 14px;
+    font-weight: 400;
+}
+
+
+.di-process-summary-container {
+    // background-color: rgba(246, 246, 246, 1);
+    padding: 0 16px 16px;
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.di-process-summary-container>.col-2:not(:nth-child(2n)) {
+    margin-right: 16px;
+}
+
+.di-process-summary-container>.col-2 {
+    width: calc((100% - 16px) / 2);
+    margin-top: 16px;
+}
+
+.echart-container {
+    background: white;
+    position: relative;
+    overflow: hidden;
+}
+
+.dc-loading {
+    position: relative;
+}
+
+.dc-loading-inline {
+    display: inline-block;
+}
+
+.di-process-summary-container>.col-2 .dc-loading-wrap {
+    overflow: hidden;
+}
+
+
+.task-detail-empty {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  color: #999;
+  font-size: 16px;
+}
+
+.task-detail-content {
+  background-color: #f6f6f6;
+  height: calc(100vh - 46px);
+  overflow-y: auto;
+}
+
+.task-detail-tabs {
+  margin: 16px;
+  padding: 16px;
+  background-color: white;
+  border-radius: 6px;
+}
+
+// Metric Card
+.metric-card {
+  flex: 1;
+  width: 100%;
+  
+  .title {
+    font-size: 14px;
+    color: #666;
+  }
+  
+  .big-number {
+    font-size: 24px;
+    font-weight: bold;
+    color: #333;
+  }
+  
+  .small-number {
+    font-size: 12px;
+    color: #999;
+  }
+}
+
+// Metrics Container
+.metrics-container {
+  background: white;
+  overflow-x: auto;
+}
+
+.metrics-grid {
+  display: flex;
+  gap: 16px;
+  flex-wrap: nowrap;
+  width: 100%;
+}
+
+// Log Content
+.log-content {
+  background: #1e1e1e;
+  color: #00ff88;
+  padding: 16px;
+  border-radius: 6px;
+  max-height: 500px;
+  overflow: auto;
+  font-size: 12px;
+}
+
+// Hocon Content
+.hocon-content {
+  background: #f5f5f5;
+  padding: 16px;
+  border-radius: 6px;
+  max-height: 500px;
+  overflow: auto;
+  font-size: 12px;
+}
+
+// Table Tab
+.table-tab-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.table-tab-sink {
+  text-align: right;
+}
+
+.custom-table-row {
+  cursor: pointer;
+  
+  &:hover {
+    background-color: #f5f5f5;
+  }
+}

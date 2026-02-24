@@ -14,6 +14,6 @@ public class MySQLConnectionProvider
 
     @Override
     protected String resolveDriverLocation(MySQLConnectionParam t) {
-        return t.getDriverLocation();
+        return defaultBaseUrl() + t.getDriverLocation();
     }
 }

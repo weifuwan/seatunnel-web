@@ -38,6 +38,10 @@ public abstract class AbstractJdbcConnectionProvider<T extends BaseConnectionPar
      */
     protected abstract String defaultDriverClass();
 
+    protected String defaultBaseUrl() {
+        return System.getProperty("user.dir") + File.separator + "jdbc-drivers" + File.separator;
+    }
+
     /**
      * Resolve the location of the JDBC driver for the specific connection.
      *

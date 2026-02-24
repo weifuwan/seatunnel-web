@@ -18,23 +18,21 @@ wisdom:
 
 > **Note:** All the code in Seatunnel Web was generated using **DeepSeek**, a free large-model platform.
 
-## Key Features
+## Partial screenshot
 
-### Batch Sync
-
-- Full control over batch synchronization tasks, including configuration, scheduling, monitoring, and logging.
-- Dynamic table and column mapping, supporting complex ETL pipelines without writing a single line of code.
-- Integration with multiple databases, including MySQL, PostgreSQL, and Oracle.
-- Visualization of task progress and performance metrics.
-
+![Batch Sync Screenshot](docs/images/img.png)
+![Batch Sync Screenshot](docs/images/img_1.png)
+![Batch Sync Screenshot](docs/images/img_2.png)
+![Batch Sync Screenshot](docs/images/img_3.png)
+![Batch Sync Screenshot](docs/images/img_4.png)
+![Batch Sync Screenshot](docs/images/img_5.png)
+![Batch Sync Screenshot](docs/images/img_6.png)
+![Batch Sync Screenshot](docs/images/img_7.png)
+![Batch Sync Screenshot](docs/images/img_8.png)
 ![Batch Sync Screenshot](docs/images/img_9.png)
+![Batch Sync Screenshot](docs/images/img_10.png)
+![Batch Sync Screenshot](docs/images/log.png)
+![Batch Sync Screenshot](docs/images/metrics.png)
+![Batch Sync Screenshot](docs/images/metrics.png)
 
-### Stream Sync
-
-- Real-time data synchronization across multiple sources.
-- Supports **CDC (Change Data Capture)** to keep your destination always up-to-date.
-- Stream monitoring with live logs and alerts.
-- Easy integration with message queues, such as Kafka and RabbitMQ.
-
-![Stream Sync Screenshot](docs/images/img_10.png)
 

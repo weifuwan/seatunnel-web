@@ -9,9 +9,9 @@ const PageHeader: React.FC = () => {
           flex: 1,
         }}
       >
-        <div className={styles.headerSectionTitle}>数据源列表</div>
+        <div className={styles.headerSectionTitle}>List of Data Sources</div>
         <p className={styles.headerDescription}>
-          对数据的来源、连接、访问和安全等进行统一集中管控的体系。
+          A unified governance system for data sources, connectivity, access, and security.
         </p>
       </div>
     </div>

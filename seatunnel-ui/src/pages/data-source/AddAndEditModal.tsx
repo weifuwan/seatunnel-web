@@ -39,7 +39,7 @@ const AddAndEditDataSourceModal = forwardRef<AddOrEditModalRef, AddOrEditModalRe
               setDbType('');
               // 执行回调，刷新列表数据
               callback.current();
-              message.success(`${isAdd ? '新增' : '更新'}数据源成功`);
+              message.success(`Success`);
             } else {
               message.error(data?.message);
             }
@@ -53,7 +53,7 @@ const AddAndEditDataSourceModal = forwardRef<AddOrEditModalRef, AddOrEditModalRe
                 setDbType('');
                 // 执行回调，刷新列表数据
                 callback.current();
-                message.success(`${isAdd ? '新增' : '更新'}数据源成功`);
+                message.success(`Success`);
               } else {
                 message.error(data?.message);
               }
@@ -73,7 +73,6 @@ const AddAndEditDataSourceModal = forwardRef<AddOrEditModalRef, AddOrEditModalRe
       callback.current = cbk;
       setType(type);
 
-      // 编辑模式下直接显示表单，并设置数据库类型
       if (type === Operate.Edit && content?.dbType) {
         setDbType(content.dbType);
         form.setFieldsValue({
@@ -89,7 +88,7 @@ const AddAndEditDataSourceModal = forwardRef<AddOrEditModalRef, AddOrEditModalRe
     },
   }));
 
-  // 关闭抽屉
+
   const onClose = () => {
     setOpen(false);
     form.resetFields();
@@ -103,17 +102,17 @@ const AddAndEditDataSourceModal = forwardRef<AddOrEditModalRef, AddOrEditModalRe
     setDbType(dsSource);
   };
 
-  // 判断是否显示表单
+
   const shouldShowForm = showOk || type === Operate.Edit;
   return (
     <>
       <Modal
         title={
           <div style={{ padding: '20px 24px 12px 24px', display: 'flex', alignItems: 'center' }}>
-            {type !== Operate.Add ? '编辑' : '新增'}
+            {type !== Operate.Add ? 'Edit' : 'Add'}
             &nbsp;[
             <DatabaseIcons dbType={dbType} width="20" height="20" />
-            {dbType}]&nbsp; 数据源
+            {dbType}]&nbsp; DataSource
           </div>
         }
         width={900}
@@ -135,7 +134,7 @@ const AddAndEditDataSourceModal = forwardRef<AddOrEditModalRef, AddOrEditModalRe
                     size="small"
                     style={{ marginRight: 8 }}
                   >
-                    上一步
+                    last step
                   </Button>
                 )}
                 <Button
@@ -153,9 +152,9 @@ const AddAndEditDataSourceModal = forwardRef<AddOrEditModalRef, AddOrEditModalRe
                         .then((data) => {
                           if (data?.code === 0) {
                             if (data?.data === true) {
-                              message.success('连接成功');
+                              message.success("Success");
                             } else {
-                              message.error('连接失败');
+                              message.error('Fail');
                             }
                           } else {
                             message.error(data?.message);
@@ -164,15 +163,15 @@ const AddAndEditDataSourceModal = forwardRef<AddOrEditModalRef, AddOrEditModalRe
                     });
                   }}
                 >
-                  测试连接
+                  Test
                 </Button>
                 <Button onClick={onSubmit} style={{ marginRight: 8 }} type="primary" size="small">
-                  完成
+                  Finish
                 </Button>
               </>
             ) : (
               <Button size="small" onClick={onClose}>
-                取消
+                Cancel
               </Button>
             )}
           </div>

@@ -24,7 +24,6 @@ const DataSourceTable: React.FC<DataSourceTableProps> = ({
   selectedRowKeys,
   cbk,
 }) => {
-  // 渲染数据源信息列
   const renderDataSourceInfo = useCallback(
     (dbName: string, record: DataSource) => (
       <div>
@@ -42,7 +41,6 @@ const DataSourceTable: React.FC<DataSourceTableProps> = ({
     []
   );
 
-  // 渲染连接信息列
   const renderConnectionInfo = useCallback(
     (jdbcUrl: string, record: DataSource) => {
       let schema;
@@ -103,26 +101,26 @@ const DataSourceTable: React.FC<DataSourceTableProps> = ({
             if (data?.code === 0) {
               cbk();
             } else {
-              message.error("连接失败");
+              message.error(data?.message || "Unknown error");
             }
           });
         } else {
-          message.error("数据源id不存在");
+          message.error("Unknown error");
         }
       };
 
       return (
         <>
-          <Tooltip title="编辑数据源">
-            <a onClick={() => editDataSource(record)}>编辑</a>
+          <Tooltip title="Edit Datasource">
+            <a onClick={() => editDataSource(record)}>Edit</a>
           </Tooltip>
           <Divider type="vertical" />
-          <Tooltip title="删除数据源">
-            <a onClick={() => handleDeleteDataSource(record)}>删除</a>
+          <Tooltip title="Delete Datasource">
+            <a onClick={() => handleDeleteDataSource(record)}>Delete</a>
           </Tooltip>
           <Divider type="vertical" />
-          <Tooltip title="测试连接">
-            <a onClick={handleTestConnection}>测试连接</a>
+          <Tooltip title="Connection Test">
+            <a onClick={handleTestConnection}>Test</a>
           </Tooltip>
         </>
       );
@@ -133,58 +131,58 @@ const DataSourceTable: React.FC<DataSourceTableProps> = ({
   // 表格列定义
   const columns = [
     {
-      title: "编号",
+      title: "Index",
       key: "index",
       width: "6%",
       render: (_: any, __: any, index: number) => index + 1,
     },
     {
-      title: "数据源信息",
+      title: "DataBase Info",
       dataIndex: "dbName",
       width: "10%",
       render: renderDataSourceInfo,
     },
     {
-      title: "所属环境",
-      dataIndex: "environmentName",
-      width: "10%",
+      title: "Env",
+      dataIndex: "environment",
+      width: "7%",
       render: (_: any, record: any) => {
         if (record?.environment === "PROD") {
-          return <Tag color="#f50">{record?.environmentName}</Tag>;
+          return <Tag color="#f50">{record?.environment}</Tag>;
         } else if (record?.environment === "TEST") {
-          return <Tag color="#87d068">{record?.environmentName}</Tag>;
+          return <Tag color="#87d068">{record?.environment}</Tag>;
         } else {
-          return <Tag color="#108ee9">{record?.environmentName}</Tag>;
+          return <Tag color="#108ee9">{record?.environment}</Tag>;
         }
       },
     },
     {
-      title: "连接信息",
+      title: "Connection Info",
       dataIndex: "jdbcUrl",
       width: "35%",
       render: renderConnectionInfo,
       ellipsis: true,
     },
     {
-      title: "连接状态",
+      title: "Status",
       dataIndex: "connStatus",
-      width: "7%",
+      width: "12%",
       render: (content: any, record: any) => (
         <DataSourceStatus status={record?.connStatus} />
       ),
     },
     {
-      title: "创建时间",
+      title: "Create Time",
       dataIndex: "createTime",
       width: "10%",
     },
     {
-      title: "更新时间",
+      title: "Update Time",
       dataIndex: "updateTime",
       width: "10%",
     },
     {
-      title: "操作",
+      title: "Operate",
       key: "actions",
       width: "13%",
       render: renderActions,

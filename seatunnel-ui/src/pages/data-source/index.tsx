@@ -10,6 +10,7 @@ import DataSourceTable from './DataSourceTable';
 import PageHeader from './PageHeader';
 import SearchForm from './SearchForm';
 import { AddOrEditModalRef, DataSource, dataSourceApi, Operate } from './type';
+import { PlusCircleOutlined, PlusOutlined } from '@ant-design/icons';
 
 const { confirm } = Modal;
 
@@ -138,7 +139,7 @@ const Index = () => {
                 <Button
                   size="small"
                   style={{
-                    width: 90,
+                    width: 70,
                     marginRight: 24,
                     padding: '8px 2px',
                     lineHeight: '16px',
@@ -147,8 +148,9 @@ const Index = () => {
                   onClick={() => {
                     createDataSource();
                   }}
+                  icon={<PlusOutlined />}
                 >
-                  新建数据源
+                  Add
                 </Button>
               </div>
               <div>

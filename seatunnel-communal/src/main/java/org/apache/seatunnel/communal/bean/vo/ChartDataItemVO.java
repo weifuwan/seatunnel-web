@@ -5,5 +5,6 @@ import lombok.Data;
 @Data
 public class ChartDataItemVO {
     private String date;
-    private Long value;
+    private Double value;
+    private String unit;
 }

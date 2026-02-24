@@ -9,11 +9,14 @@ import org.apache.seatunnel.admin.thirdparty.metrics.EngineMetricsExtractorFacto
 import org.apache.seatunnel.admin.thirdparty.metrics.IEngineMetricsExtractor;
 import org.apache.seatunnel.communal.bean.entity.Engine;
 import org.apache.seatunnel.communal.bean.entity.EngineType;
+import org.apache.seatunnel.communal.bean.entity.Scale;
+import org.apache.seatunnel.communal.bean.entity.TimeWindow;
 import org.apache.seatunnel.communal.bean.po.SeatunnelJobMetricsPO;
 import org.apache.seatunnel.communal.bean.vo.ChartDataItemVO;
 import org.apache.seatunnel.communal.bean.vo.OverviewChartsVO;
 import org.apache.seatunnel.communal.bean.vo.OverviewSummaryVO;
 import org.apache.seatunnel.communal.enums.TimeRange;
+import org.apache.seatunnel.communal.enums.UnitKind;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -69,8 +72,8 @@ public class SeatunnelJobMetricsServiceImpl extends ServiceImpl<SeatunnelJobMetr
         TimeWindow w = parseTimeRange(timeRange);
 
         Map<String, Object> row = this.getBaseMapper().selectOverviewSummary(
-                w.start.format(DT),
-                w.end.format(DT),
+                w.getStart().format(DT),
+                w.getEnd().format(DT),
                 taskType
         );
 
@@ -91,36 +94,77 @@ public class SeatunnelJobMetricsServiceImpl extends ServiceImpl<SeatunnelJobMetr
         String granularity = pickGranularity(timeRange);
 
         List<Map<String, Object>> recordsTrendRows = this.getBaseMapper().selectRecordsTrend(
-                w.start.format(DT), w.end.format(DT), taskType, granularity
+                w.getStart().format(DT), w.getEnd().format(DT), taskType, granularity
         );
         List<Map<String, Object>> bytesTrendRows = this.getBaseMapper().selectBytesTrend(
-                w.start.format(DT), w.end.format(DT), taskType, granularity
+                w.getStart().format(DT), w.getEnd().format(DT), taskType, granularity
         );
         List<Map<String, Object>> recordsSpeedRows = this.getBaseMapper().selectRecordsSpeedTrend(
-                w.start.format(DT), w.end.format(DT), taskType, granularity
+                w.getStart().format(DT), w.getEnd().format(DT), taskType, granularity
         );
         List<Map<String, Object>> bytesSpeedRows = this.getBaseMapper().selectBytesSpeedTrend(
-                w.start.format(DT), w.end.format(DT), taskType, granularity
+                w.getStart().format(DT), w.getEnd().format(DT), taskType, granularity
         );
 
         OverviewChartsVO dto = new OverviewChartsVO();
-        dto.setRecordsTrend(toChartItems(recordsTrendRows));
-        dto.setBytesTrend(toChartItems(bytesTrendRows));
-        dto.setRecordsSpeedTrend(toChartItems(recordsSpeedRows));
-        dto.setBytesSpeedTrend(toChartItems(bytesSpeedRows));
+        dto.setRecordsTrend(toChartItems(recordsTrendRows, UnitKind.RECORDS));
+        dto.setBytesTrend(toChartItems(bytesTrendRows, UnitKind.BYTES));
+        dto.setRecordsSpeedTrend(toChartItems(recordsSpeedRows, UnitKind.RAW));
+        dto.setBytesSpeedTrend(toChartItems(bytesSpeedRows, UnitKind.RAW));
         return dto;
     }
 
-    private List<ChartDataItemVO> toChartItems(List<Map<String, Object>> rows) {
+
+
+
+
+    private Scale pickScale(UnitKind kind, List<Map<String, Object>> rows) {
+        long max = 0L;
+        for (Map<String, Object> r : rows) {
+            long v = toLong(r.get("value"));
+            if (v > max) max = v;
+        }
+
+        if (kind == UnitKind.RECORDS) {
+            if (max >= 100_000_000L) return new Scale(100_000_000d, "亿条");
+            if (max >= 10_000L) return new Scale(10_000d, "万条");
+            return new Scale(1d, "条");
+        }
+
+        if (kind == UnitKind.BYTES) {
+            if (max >= (1L << 40)) return new Scale((double) (1L << 40), "TB");
+            if (max >= (1L << 30)) return new Scale((double) (1L << 30), "GB");
+            if (max >= (1L << 20)) return new Scale((double) (1L << 20), "MB");
+            if (max >= (1L << 10)) return new Scale((double) (1L << 10), "KB");
+            return new Scale(1d, "B");
+        }
+
+        return new Scale(1d, "");
+    }
+
+    private List<ChartDataItemVO> toChartItems(List<Map<String, Object>> rows, UnitKind kind) {
+        Scale scale = pickScale(kind, rows);
+
         List<ChartDataItemVO> list = new ArrayList<>(rows.size());
         for (Map<String, Object> r : rows) {
             ChartDataItemVO item = new ChartDataItemVO();
             item.setDate(String.valueOf(r.get("date")));
-            item.setValue(toLong(r.get("value")));
+
+            long raw = toLong(r.get("value"));
+            double shown = raw / scale.getFactor();
+
+            item.setValue(round2(shown));
+            item.setUnit(scale.getUnit());
+
             list.add(item);
         }
         return list;
     }
+
+    private double round2(double v) {
+        return Math.round(v * 100.0) / 100.0;
+    }
+
 
     private long toLong(Object v) {
         if (v == null) return 0L;
@@ -141,13 +185,4 @@ public class SeatunnelJobMetricsServiceImpl extends ServiceImpl<SeatunnelJobMetr
     }
 
 
-    private static class TimeWindow {
-        private final LocalDateTime start;
-        private final LocalDateTime end;
-
-        private TimeWindow(LocalDateTime start, LocalDateTime end) {
-            this.start = start;
-            this.end = end;
-        }
-    }
 }

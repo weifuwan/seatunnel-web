@@ -35,7 +35,7 @@ public interface SeatunnelJobMetricsService extends IService<SeatunnelJobMetrics
      * @param metricsList list of SeatunnelJobMetricsPO to save
      * @return true if all records are saved successfully
      */
-    boolean saveMetricsBatch(@NonNull List<SeatunnelJobMetricsPO> metricsList);
+    void saveMetricsBatch(@NonNull List<SeatunnelJobMetricsPO> metricsList);
 
     OverviewSummaryVO summary(TimeRange timeRange, String taskType);
 

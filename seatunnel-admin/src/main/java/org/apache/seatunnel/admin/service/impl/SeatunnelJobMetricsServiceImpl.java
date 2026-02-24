@@ -30,13 +30,13 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Implementation of SeatunnelJobMetricsService.
- *
+ * <p>
  * Responsibilities:
  * 1. Fetch real-time metrics from engine
  * 2. Persist metrics into database
  * 3. Provide aggregated summary data
  * 4. Provide trend chart data
- *
+ * <p>
  * This service acts as the metrics aggregation layer between:
  * - Engine metrics extractor
  * - Database layer
@@ -99,19 +99,19 @@ public class SeatunnelJobMetricsServiceImpl
      * Batch insert metrics into database.
      */
     @Override
-    public boolean saveMetricsBatch(@NonNull List<SeatunnelJobMetricsPO> metricsList) {
+    public void saveMetricsBatch(@NonNull List<SeatunnelJobMetricsPO> metricsList) {
         int BATCH_SIZE = 1000;
 
         if (metricsList.isEmpty()) {
-            return true;
+            return;
         }
 
-        return this.saveBatch(metricsList, BATCH_SIZE);
+        this.saveBatch(metricsList, BATCH_SIZE);
     }
 
     /**
      * Get overview summary data within given time range.
-     *
+     * <p>
      * Includes:
      * - total records
      * - total bytes
@@ -140,7 +140,7 @@ public class SeatunnelJobMetricsServiceImpl
 
     /**
      * Get chart trend data within given time range.
-     *
+     * <p>
      * Includes:
      * - Records trend
      * - Bytes trend
@@ -195,7 +195,7 @@ public class SeatunnelJobMetricsServiceImpl
 
     /**
      * Determine proper display scale based on max value.
-     *
+     * <p>
      * Example:
      * - Records → 10K / 100M / records
      * - Bytes → KB / MB / GB / TB

@@ -39,7 +39,19 @@ public abstract class AbstractJdbcConnectionProvider<T extends BaseConnectionPar
     protected abstract String defaultDriverClass();
 
     protected String defaultBaseUrl() {
-        return System.getProperty("user.dir") + File.separator + "jdbc-drivers" + File.separator;
+        String baseDir = System.getProperty("user.dir") + File.separator + "jdbc-drivers" + File.separator;
+
+        File directory = new File(baseDir);
+        if (!directory.exists()) {
+            boolean created = directory.mkdirs();
+            if (created) {
+                log.info("Created JDBC drivers directory: {}", baseDir);
+            } else {
+                log.warn("Failed to create JDBC drivers directory: {}", baseDir);
+            }
+        }
+
+        return baseDir;
     }
 
     /**
@@ -136,7 +148,6 @@ public abstract class AbstractJdbcConnectionProvider<T extends BaseConnectionPar
             return false;
         }
     }
-
 
 
     /**

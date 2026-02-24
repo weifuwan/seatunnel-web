@@ -31,7 +31,6 @@ public class DefaultDriverStorageStrategy implements DriverStorageStrategy {
 
     private final RefCountRegistry refCountRegistry;
 
-
     public DefaultDriverStorageStrategy( Mode mode) {
         this(mode,  new InMemoryRefCountRegistry());
     }
@@ -41,10 +40,7 @@ public class DefaultDriverStorageStrategy implements DriverStorageStrategy {
             RefCountRegistry refCountRegistry) {
         this.mode = Objects.requireNonNull(mode);
         this.refCountRegistry = Objects.requireNonNull(refCountRegistry);
-
-
     }
-
 
     @Override
     public DriverClassPath prepare(DataSourceId dataSourceId, DriverDescriptor descriptor) {

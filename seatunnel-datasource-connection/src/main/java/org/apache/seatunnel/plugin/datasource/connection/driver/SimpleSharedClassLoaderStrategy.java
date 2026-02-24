@@ -122,13 +122,9 @@ public class SimpleSharedClassLoaderStrategy implements ClassLoaderStrategy {
             return key;
         }
 
-        /**
-         * 注意：这里不做 release（否则你拿到 handle 一 close 就减引用，容易误用）
-         * 正确释放方式：调用 strategy.release(...) 或 DriverProvider.release(...)
-         */
         @Override
         public void close() {
-            // no-op
+
         }
     }
 }

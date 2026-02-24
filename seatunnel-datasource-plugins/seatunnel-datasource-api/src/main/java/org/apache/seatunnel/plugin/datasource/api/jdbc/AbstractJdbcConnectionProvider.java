@@ -4,10 +4,14 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.seatunnel.communal.BaseConnectionParam;
 import org.apache.seatunnel.communal.ConnectionParam;
-import org.apache.seatunnel.plugin.datasource.connection.config.DriverConfig;
-import org.apache.seatunnel.plugin.datasource.connection.driver.IDriverManager;
+import org.apache.seatunnel.plugin.datasource.connection.DefaultConnectionManager;
+import org.apache.seatunnel.plugin.datasource.connection.api.DataSourceConfig;
+import org.apache.seatunnel.plugin.datasource.connection.api.DataSourceId;
+import org.apache.seatunnel.plugin.datasource.connection.api.DriverDescriptor;
+import org.apache.seatunnel.plugin.datasource.connection.driver.*;
 import org.springframework.util.StringUtils;
 
+import java.io.File;
 import java.sql.Connection;
 import java.util.Properties;
 
@@ -25,6 +29,8 @@ import java.util.Properties;
 @Slf4j
 public abstract class AbstractJdbcConnectionProvider<T extends BaseConnectionParam>
         implements JdbcConnectionProvider {
+
+    protected static final String CONNECTOR_PLUGIN_JAR_STORAGE_PATH = "/jdbc-jars";
 
     /**
      * Return the fully qualified name of the default JDBC driver class.
@@ -63,14 +69,45 @@ public abstract class AbstractJdbcConnectionProvider<T extends BaseConnectionPar
     public Connection getConnection(ConnectionParam connectionParam) {
         T t = cast(connectionParam);
 
-        // Build driver configuration
-        DriverConfig driverConfig = createDriverConfig(t);
-
         // Build connection properties
         Properties props = createConnectionProperties(t);
+        DriverStorageStrategy storageStrategy =
+                new DefaultDriverStorageStrategy(
+                        DefaultDriverStorageStrategy.Mode.SHARED,
+                        new File(System.getProperty("user.dir") + File.separator + CONNECTOR_PLUGIN_JAR_STORAGE_PATH),
+                        java.time.Duration.ofSeconds(60),
+                        java.time.Duration.ofMinutes(30)
+                );
 
-        // Use IDriverManager to create the connection
-        return IDriverManager.getConnection(buildJdbcUrl(t), props, driverConfig);
+        ClassLoaderStrategy classLoaderStrategy =
+                new SimpleSharedClassLoaderStrategy(Thread.currentThread().getContextClassLoader());
+
+        DriverProvider driverProvider = new DefaultDriverProvider(storageStrategy, classLoaderStrategy);
+        DefaultConnectionManager defaultConnectionManager = new DefaultConnectionManager(driverProvider);
+        DataSourceId dsId = new DataSourceId("11");
+
+        DriverDescriptor descriptor = new DriverDescriptor(
+                defaultDriverClass(),
+                java.util.Arrays.asList(resolveDriverLocation(t).split(",")),
+                resolveDriverLocation(t)
+        );
+
+        java.util.Map<String, Object> extraProps = new java.util.HashMap<>();
+        for (String name : props.stringPropertyNames()) {
+            extraProps.put(name, props.getProperty(name));
+        }
+
+        String jdbcUrl = buildJdbcUrl(t);
+
+        DataSourceConfig cfg = new DataSourceConfig(
+                dsId,
+                jdbcUrl,
+                props.getProperty("user"),
+                props.getProperty("password"),
+                extraProps,
+                descriptor
+        );
+        return defaultConnectionManager.getConnection(cfg);
     }
 
     /**
@@ -100,18 +137,7 @@ public abstract class AbstractJdbcConnectionProvider<T extends BaseConnectionPar
         }
     }
 
-    /**
-     * Create a driver configuration object for the given connection parameter.
-     *
-     * @param t connection parameter
-     * @return DriverConfig object
-     */
-    private DriverConfig createDriverConfig(T t) {
-        DriverConfig cfg = new DriverConfig();
-        cfg.setJdbcDriverClass(defaultDriverClass());
-        cfg.setJdbcDriver(resolveDriverLocation(t));
-        return cfg;
-    }
+
 
     /**
      * Create connection properties including user and password.

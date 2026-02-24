@@ -33,6 +33,5 @@ wisdom:
 ![Batch Sync Screenshot](docs/images/img_10.png)
 ![Batch Sync Screenshot](docs/images/log.png)
 ![Batch Sync Screenshot](docs/images/metrics.png)
-![Batch Sync Screenshot](docs/images/metrics.png)
 
 

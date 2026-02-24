@@ -30,7 +30,7 @@ import java.util.Properties;
 public abstract class AbstractJdbcConnectionProvider<T extends BaseConnectionParam>
         implements JdbcConnectionProvider {
 
-    protected static final String CONNECTOR_PLUGIN_JAR_STORAGE_PATH = "/jdbc-jars";
+    protected static final String CONNECTOR_PLUGIN_JAR_STORAGE_PATH = "/jdbc-drivers";
 
     /**
      * Return the fully qualified name of the default JDBC driver class.

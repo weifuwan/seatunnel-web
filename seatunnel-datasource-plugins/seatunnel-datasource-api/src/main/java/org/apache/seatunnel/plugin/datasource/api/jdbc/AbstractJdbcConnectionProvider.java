@@ -30,7 +30,6 @@ import java.util.Properties;
 public abstract class AbstractJdbcConnectionProvider<T extends BaseConnectionParam>
         implements JdbcConnectionProvider {
 
-    protected static final String CONNECTOR_PLUGIN_JAR_STORAGE_PATH = "/jdbc-drivers";
 
     /**
      * Return the fully qualified name of the default JDBC driver class.
@@ -74,7 +73,7 @@ public abstract class AbstractJdbcConnectionProvider<T extends BaseConnectionPar
         DriverStorageStrategy storageStrategy =
                 new DefaultDriverStorageStrategy(
                         DefaultDriverStorageStrategy.Mode.SHARED,
-                        new File(System.getProperty("user.dir") + File.separator + CONNECTOR_PLUGIN_JAR_STORAGE_PATH),
+                        new File(System.getProperty("user.dir")),
                         java.time.Duration.ofSeconds(60),
                         java.time.Duration.ofMinutes(30)
                 );

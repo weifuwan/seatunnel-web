@@ -73,7 +73,6 @@ public class DefaultDriverStorageStrategy implements DriverStorageStrategy {
             throw new IllegalStateException("Cannot create baseDir: " + baseDir.getAbsolutePath());
         }
 
-        // 只有 SHARED 才需要后台清理（ISOLATED 通常 release 就删）
         if (mode == Mode.SHARED) {
             this.cleaner = Executors.newSingleThreadScheduledExecutor(r -> {
                 Thread t = new Thread(r, "jdbc-driver-storage-cleaner");
@@ -103,11 +102,9 @@ public class DefaultDriverStorageStrategy implements DriverStorageStrategy {
         Objects.requireNonNull(dataSourceId, "dataSourceId");
         Objects.requireNonNull(descriptor, "descriptor");
 
-        // 1) 计算/确定存储目录
         File targetDir = new File(resolveBaseDir(dataSourceId, descriptor));
         mkdirsOrThrow(targetDir);
 
-        // 2) 拷贝 jar 到缓存目录（如果源 jar 就在同目录也不影响）
         List<URL> urls = new ArrayList<>();
         for (String jarPath : descriptor.getJarPaths()) {
             if (jarPath == null || jarPath.trim().isEmpty()) {

@@ -4,8 +4,6 @@ import org.apache.seatunnel.plugin.datasource.api.constants.DataSourceConstants;
 import org.apache.seatunnel.plugin.datasource.api.jdbc.AbstractJdbcConnectionProvider;
 import org.apache.seatunnel.plugin.datasource.mysql.param.MySQLConnectionParam;
 
-import java.io.File;
-
 public class MySQLConnectionProvider
         extends AbstractJdbcConnectionProvider<MySQLConnectionParam> {
 
@@ -16,6 +14,6 @@ public class MySQLConnectionProvider
 
     @Override
     protected String resolveDriverLocation(MySQLConnectionParam t) {
-        return CONNECTOR_PLUGIN_JAR_STORAGE_PATH + File.separator + t.getDriverLocation();
+        return t.getDriverLocation();
     }
 }

@@ -32,7 +32,7 @@ public class DefaultDriverProvider implements DriverProvider {
             try {
                 Class<?> clazz = mcl.classLoader().loadClass(descriptor.getDriverClass());
                 Driver driver = (Driver) clazz.getDeclaredConstructor().newInstance();
-                return new DriverHandle(driver, mcl, classPath.getIdentifier());
+                return new DriverHandle(driver, mcl);
             } catch (Exception e) {
                 classLoaderStrategy.release(dataSourceId, descriptor);
                 storageStrategy.release(dataSourceId, descriptor);

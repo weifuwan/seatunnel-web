@@ -10,12 +10,6 @@ import java.io.Serializable;
 
 public interface DriverStorageStrategy extends Serializable {
 
-    /**
-     * 返回 driver jar 应该存放/可访问的物理位置（比如本地缓存目录）
-     * - SHARED: {storageDir}/drivers/{fingerprint}/xxx.jar
-     * - ISOLATED: {storageDir}/drivers/{dataSourceId}/{fingerprint}/xxx.jar
-     */
-    File resolveJarLocation(DataSourceId dataSourceId, DriverDescriptor descriptor, String jarPath);
 
     /**
      * 准备 driver 所需的 jar（下载/拷贝/校验），并返回 DriverClassPath

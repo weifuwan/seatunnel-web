@@ -72,10 +72,7 @@ public abstract class AbstractJdbcConnectionProvider<T extends BaseConnectionPar
         Properties props = createConnectionProperties(t);
         DriverStorageStrategy storageStrategy =
                 new DefaultDriverStorageStrategy(
-                        DefaultDriverStorageStrategy.Mode.SHARED,
-                        new File(System.getProperty("user.dir")),
-                        java.time.Duration.ofSeconds(60),
-                        java.time.Duration.ofMinutes(30)
+                        DefaultDriverStorageStrategy.Mode.SHARED
                 );
 
         ClassLoaderStrategy classLoaderStrategy =

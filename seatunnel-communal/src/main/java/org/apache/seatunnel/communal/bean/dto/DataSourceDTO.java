@@ -14,6 +14,8 @@ import org.apache.seatunnel.communal.enums.EnvironmentEnum;
 @EqualsAndHashCode(callSuper = true)
 public class DataSourceDTO extends PaginationBaseDTO {
 
+    private Long id;
+
     /**
      * 数据源名称
      */

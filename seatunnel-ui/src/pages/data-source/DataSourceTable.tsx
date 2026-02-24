@@ -1,9 +1,9 @@
-import { Divider, message, Table, Tag, Tooltip } from 'antd';
-import { TableRowSelection } from 'antd/es/table/interface';
-import { useCallback } from 'react';
-import DataSourceStatus from './DataSourceStatus';
-import DatabaseIcons from './icon/DatabaseIcons';
-import { DataSource, dataSourceApi } from './type';
+import { Divider, message, Table, Tag, Tooltip } from "antd";
+import { TableRowSelection } from "antd/es/table/interface";
+import { useCallback } from "react";
+import DataSourceStatus from "./DataSourceStatus";
+import DatabaseIcons from "./icon/DatabaseIcons";
+import { DataSource, dataSourceApi } from "./type";
 
 interface DataSourceTableProps {
   dataSourceList: DataSource[];
@@ -24,100 +24,90 @@ const DataSourceTable: React.FC<DataSourceTableProps> = ({
   selectedRowKeys,
   cbk,
 }) => {
-  // 连接测试
-  const connectTest = useCallback(async (id: string) => {
-    try {
-      const data = await dataSourceApi.connectTest(id);
-      if (data?.code === 0) {
-        if (data?.data === true) {
-          message.success('连接成功');
-        } else {
-          message.error('连接失败');
-        }
-
-        cbk();
-      } else {
-        message.error('连接失败');
-      }
-    } catch (error) {
-      message.error('连接测试失败');
-      console.error('连接测试异常:', error);
-    }
-  }, []);
-
   // 渲染数据源信息列
   const renderDataSourceInfo = useCallback(
     (dbName: string, record: DataSource) => (
       <div>
         <div style={{ fontWeight: 600, marginBottom: 6 }}>{record.dbName}</div>
-        <div style={{ display: 'flex', alignItems: 'center' }}>
+        <div style={{ display: "flex", alignItems: "center" }}>
           {record?.dbType != null && (
             <DatabaseIcons dbType={record.dbType} width="24" height="24" />
           )}
-          <span style={{ marginLeft: 4, color: '#9ca1ba' }}>{record.dbType}</span>
+          <span style={{ marginLeft: 4, color: "#9ca1ba" }}>
+            {record.dbType}
+          </span>
         </div>
       </div>
     ),
-    [],
+    []
   );
 
   // 渲染连接信息列
-  const renderConnectionInfo = useCallback((jdbcUrl: string, record: DataSource) => {
-
-    let schema;
-    if (record?.originalJson) {
-      const ojson = JSON.parse(record?.originalJson);
-      if (ojson?.schema) {
-        schema = ojson?.schema;
+  const renderConnectionInfo = useCallback(
+    (jdbcUrl: string, record: DataSource) => {
+      let schema;
+      if (record?.originalJson) {
+        const ojson = JSON.parse(record?.originalJson);
+        if (ojson?.schema) {
+          schema = ojson?.schema;
+        }
       }
-    }
 
-    return (
-      <>
-        <div
-          style={{
-            width: '100%',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            cursor: 'pointer',
-          }}
-          title={jdbcUrl} // 添加鼠标悬停显示完整URL
-        >
-          <span className="dc-lf-clone-label" style={{ fontSize: 12 }}>
-            JdbcUrl:{' '}
-          </span>
-          <span style={{ fontWeight: 400 }}>{jdbcUrl}</span>
-        </div>
-        {schema && (
+      return (
+        <>
           <div
             style={{
-              width: '100%',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              cursor: 'pointer',
+              width: "100%",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              cursor: "pointer",
             }}
             title={jdbcUrl} // 添加鼠标悬停显示完整URL
           >
             <span className="dc-lf-clone-label" style={{ fontSize: 12 }}>
-              Schema:{' '}
+              JdbcUrl:{" "}
             </span>
-            <span style={{ fontWeight: 400 }}>{schema}</span>
+            <span style={{ fontWeight: 400 }}>{jdbcUrl}</span>
           </div>
-        )}
-      </>
-    );
-  }, []);
+          {schema && (
+            <div
+              style={{
+                width: "100%",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                cursor: "pointer",
+              }}
+              title={jdbcUrl} // 添加鼠标悬停显示完整URL
+            >
+              <span className="dc-lf-clone-label" style={{ fontSize: 12 }}>
+                Schema:{" "}
+              </span>
+              <span style={{ fontWeight: 400 }}>{schema}</span>
+            </div>
+          )}
+        </>
+      );
+    },
+    []
+  );
 
   // 渲染操作列
   const renderActions = useCallback(
     (record: DataSource) => {
       const handleTestConnection = () => {
+        console.log(record);
         if (record?.id) {
-          connectTest(record.id);
+          dataSourceApi.connectTest(record?.id).then((data) => {
+            if (data?.code === 0) {
+              cbk();
+            } else {
+              message.error("连接失败");
+            }
+          });
         } else {
-          message.error('数据源id不存在');
+          message.error("数据源id不存在");
         }
       };
 
@@ -137,31 +127,31 @@ const DataSourceTable: React.FC<DataSourceTableProps> = ({
         </>
       );
     },
-    [connectTest, editDataSource, handleDeleteDataSource],
+    [editDataSource, handleDeleteDataSource]
   );
 
   // 表格列定义
   const columns = [
     {
-      title: '编号',
-      key: 'index',
-      width: '6%',
+      title: "编号",
+      key: "index",
+      width: "6%",
       render: (_: any, __: any, index: number) => index + 1,
     },
     {
-      title: '数据源信息',
-      dataIndex: 'dbName',
-      width: '10%',
+      title: "数据源信息",
+      dataIndex: "dbName",
+      width: "10%",
       render: renderDataSourceInfo,
     },
     {
-      title: '所属环境',
-      dataIndex: 'environmentName',
-      width: '10%',
+      title: "所属环境",
+      dataIndex: "environmentName",
+      width: "10%",
       render: (_: any, record: any) => {
-        if (record?.environment === 'PROD') {
+        if (record?.environment === "PROD") {
           return <Tag color="#f50">{record?.environmentName}</Tag>;
-        } else if (record?.environment === 'TEST') {
+        } else if (record?.environment === "TEST") {
           return <Tag color="#87d068">{record?.environmentName}</Tag>;
         } else {
           return <Tag color="#108ee9">{record?.environmentName}</Tag>;
@@ -169,32 +159,34 @@ const DataSourceTable: React.FC<DataSourceTableProps> = ({
       },
     },
     {
-      title: '连接信息',
-      dataIndex: 'jdbcUrl',
-      width: '35%',
+      title: "连接信息",
+      dataIndex: "jdbcUrl",
+      width: "35%",
       render: renderConnectionInfo,
       ellipsis: true,
     },
     {
-      title: '连接状态',
-      dataIndex: 'connStatus',
-      width: '7%',
-      render: (content: any, record: any) => <DataSourceStatus status={record?.connStatus} />,
+      title: "连接状态",
+      dataIndex: "connStatus",
+      width: "7%",
+      render: (content: any, record: any) => (
+        <DataSourceStatus status={record?.connStatus} />
+      ),
     },
     {
-      title: '创建时间',
-      dataIndex: 'createTime',
-      width: '10%',
+      title: "创建时间",
+      dataIndex: "createTime",
+      width: "10%",
     },
     {
-      title: '更新时间',
-      dataIndex: 'updateTime',
-      width: '10%',
+      title: "更新时间",
+      dataIndex: "updateTime",
+      width: "10%",
     },
     {
-      title: '操作',
-      key: 'actions',
-      width: '13%',
+      title: "操作",
+      key: "actions",
+      width: "13%",
       render: renderActions,
     },
   ];
@@ -217,7 +209,7 @@ const DataSourceTable: React.FC<DataSourceTableProps> = ({
       rowSelection={rowSelection}
       pagination={false}
       bordered
-      scroll={{ x: 1200, y: 'calc(100vh - 350px)' }}
+      scroll={{ x: 1200, y: "calc(100vh - 350px)" }}
     />
   );
 };

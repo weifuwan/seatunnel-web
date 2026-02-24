@@ -15,7 +15,7 @@ public class DataSourceVO {
     /**
      * 主键
      */
-    private String id;
+    private Long id;
 
     /**
      * 数据源名称

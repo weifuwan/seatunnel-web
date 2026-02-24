@@ -25,7 +25,7 @@ const App: React.FC = () => {
   });
   
   const [taskType, setTaskType] = useState<TaskType>('BATCH');
-  const [timeRange, setTimeRange] = useState<TimeRange>('24h');
+  const [timeRange, setTimeRange] = useState<TimeRange>('H24');
   const ref = useRef(null);
 
   useEffect(() => {

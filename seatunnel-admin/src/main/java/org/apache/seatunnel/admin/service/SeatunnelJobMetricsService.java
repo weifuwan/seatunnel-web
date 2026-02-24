@@ -2,7 +2,11 @@ package org.apache.seatunnel.admin.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import lombok.NonNull;
+import org.apache.seatunnel.communal.bean.entity.Result;
 import org.apache.seatunnel.communal.bean.po.SeatunnelJobMetricsPO;
+import org.apache.seatunnel.communal.bean.vo.OverviewChartsVO;
+import org.apache.seatunnel.communal.bean.vo.OverviewSummaryVO;
+import org.apache.seatunnel.communal.enums.TimeRange;
 
 import java.util.List;
 import java.util.Map;
@@ -32,4 +36,8 @@ public interface SeatunnelJobMetricsService extends IService<SeatunnelJobMetrics
      * @return true if all records are saved successfully
      */
     boolean saveMetricsBatch(@NonNull List<SeatunnelJobMetricsPO> metricsList);
+
+    OverviewSummaryVO summary(TimeRange timeRange, String taskType);
+
+    OverviewChartsVO charts(TimeRange timeRange, String taskType);
 }

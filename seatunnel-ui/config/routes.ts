@@ -46,9 +46,9 @@ export default [
   },
    {
     icon: 'monitor',
-    name: 'Monitor',
-    path: '/monitor',
-    component: './monitor',
+    name: 'Metrics',
+    path: '/metrics',
+    component: './metrics',
   },
   {
     path: '/',

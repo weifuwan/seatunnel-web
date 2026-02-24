@@ -22,5 +22,5 @@ export interface SummaryData {
   successTasks: number;
 }
 
-export type TimeRange = '24h' | '48h' | 'week';
+export type TimeRange = 'H24' | 'D30' | 'D7' | 'H1' | 'H6' | 'H12';
 export type TaskType = 'STREAMING' | 'BATCH';

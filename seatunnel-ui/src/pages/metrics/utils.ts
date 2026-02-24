@@ -9,9 +9,9 @@ export const transformChartData = (trendData: ChartDataItem[], timeRange: TimeRa
 };
 
 export const timeRangeMap = {
-  '最近一周': 'week' as TimeRange,
-  '最近48小时': '48h' as TimeRange,
-  '最近24小时': '24h' as TimeRange,
+  '最近12小时': 'H12' as TimeRange,
+  '最近一周': 'D7' as TimeRange,
+  '最近24小时': 'H24' as TimeRange,
 };
 
 export const taskTypeOptions = [

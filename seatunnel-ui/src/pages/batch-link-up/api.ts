@@ -69,7 +69,7 @@ export const seatunnelJobExecuteApi = {
     },
 };
 
-export const instanceApiPrefix = "/api/v1/job/batch-instance"
+const instanceApiPrefix = "/api/v1/job/batch-instance"
 
 export const seatunnelJobInstanceApi = {
 
@@ -86,7 +86,7 @@ export const seatunnelJobInstanceApi = {
     },
 };
 
-export const seatunnelJobScheduleApiPrefix = "/api/v1/job/schedule"
+const seatunnelJobScheduleApiPrefix = "/api/v1/job/schedule"
 
 export const seatunnelJobScheduleApi = {
     getLast5ExecutionTimes: (cron: string) => {
@@ -99,6 +99,6 @@ export const seatunnelJobScheduleApi = {
 
     startSchedule: (jobScheduleId: string) => {
         return HttpUtils.get<any[]>(`${seatunnelJobScheduleApiPrefix}/start-schedule?scheduleId=` + jobScheduleId);
-    
+
     }
 }

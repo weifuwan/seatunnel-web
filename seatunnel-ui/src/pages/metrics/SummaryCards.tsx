@@ -6,13 +6,18 @@ interface SummaryCardsProps {
 }
 
 const SummaryCards: React.FC<SummaryCardsProps> = ({ summaryData }) => {
+  console.log(summaryData);
   const cards = [
     {
       title: "Total Syncs",
       value: summaryData.totalRecords,
-      unit: "10K records",
+      unit: summaryData.totalRecordsUnit || "-",
     },
-    { title: "Total Sync Volume", value: summaryData.totalBytes, unit: "MB" },
+    {
+      title: "Total Sync Volume",
+      value: summaryData.totalBytes,
+      unit: summaryData.totalBytesUnit || "-",
+    },
     { title: "Total Executions", value: summaryData.totalTasks, unit: "times" },
     {
       title: "Successful Executions",

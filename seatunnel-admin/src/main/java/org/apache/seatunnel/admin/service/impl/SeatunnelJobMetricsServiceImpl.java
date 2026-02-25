@@ -152,10 +152,10 @@ public class SeatunnelJobMetricsServiceImpl
     private Scale pickScaleForSummary(long value, UnitKind kind) {
         if (kind == UnitKind.RECORDS) {
             if (value >= 100_000_000L)
-                return new Scale(100_000_000d, "亿");
+                return new Scale(100_000_000d, "100M");
 
             if (value >= 10_000L)
-                return new Scale(10_000d, "万");
+                return new Scale(10_000d, "10K");
 
             return new Scale(1d, "");
         }

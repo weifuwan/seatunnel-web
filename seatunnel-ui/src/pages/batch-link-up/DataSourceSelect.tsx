@@ -61,28 +61,6 @@ export const generateCDCDataSourceOptions = (): DataSourceType[] => [
       </div>
     ),
   },
-  {
-    value: "ORACLE",
-    connectorType: "Jdbc",
-    pluginName: "Oracle-CDC",
-    label: (
-      <div style={{ display: "flex", alignItems: "center" }}>
-        <OracleIcon />
-        <span style={{ marginLeft: 8 }}>ORACLE-CDC</span>
-      </div>
-    ),
-  },
-  {
-    value: "POSTGRE",
-    connectorType: "Jdbc",
-    pluginName: "Postgres-CDC",
-    label: (
-      <div style={{ display: "flex", alignItems: "center" }}>
-        <PostgreSQL />
-        <span style={{ marginLeft: 8 }}>POSTGRE-CDC</span>
-      </div>
-    ),
-  },
 ];
 
 // 数据源选择器组件

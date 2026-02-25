@@ -744,6 +744,7 @@ function FlowComponent({ form, params, goBack }) {
           baseForm={form}
           goBack={goBack}
           setRunVisible={setRunVisible}
+          runVisible={runVisible}
         />
       </ReactFlow>
 

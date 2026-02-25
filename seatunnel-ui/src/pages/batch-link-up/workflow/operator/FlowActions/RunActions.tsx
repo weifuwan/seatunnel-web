@@ -1,10 +1,9 @@
 import { RollbackOutlined } from "@ant-design/icons";
 
-import styles from "./index.less";
 import Run from "../../icon/Run";
+import styles from "./index.less";
 
-
-export const RunActions = ({ onBack, onRun }: any) => (
+export const RunActions = ({ onBack, onRun, runVisible }: any) => (
   <>
     <div className={styles["run-container"]}>
       <div
@@ -18,7 +17,11 @@ export const RunActions = ({ onBack, onRun }: any) => (
     <div className={styles["run-container"]}>
       <div
         className={styles["run-button"]}
-        style={{ width: 66 }}
+        style={{
+          width: 66,
+          cursor: runVisible ? 'not-allowed' : 'pointer',
+          opacity: runVisible ? 0.6 : 1,
+        }}
         onClick={onRun}
       >
         <Run />

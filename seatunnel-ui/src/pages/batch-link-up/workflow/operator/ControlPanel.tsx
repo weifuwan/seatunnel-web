@@ -15,6 +15,7 @@ interface ControlPanelProps {
   baseForm: any;
   goBack: (value: any) => void;
   setRunVisible: (value: any) => void;
+  runVisible: any;
 }
 export const ControlPanel: React.FC<ControlPanelProps> = ({
   controlMode = ControlMode.Hand,
@@ -25,6 +26,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
   baseForm,
   goBack,
   setRunVisible,
+  runVisible
 }) => {
   const [searchText, setSearchText] = useState("");
 
@@ -63,6 +65,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
           baseForm={baseForm}
           goBack={goBack}
           setRunVisible={setRunVisible}
+          runVisible={runVisible}
         />
       </Panel>
     </>

@@ -44,7 +44,7 @@ export const ControlButtons: React.FC<ControlButtonsProps> = ({
       className="shadow-lg"
     >
       <div>
-        <Tooltip title="添加节点">
+        <Tooltip title="Add Node">
           <Popover
             placement="right"
             content={
@@ -76,7 +76,7 @@ export const ControlButtons: React.FC<ControlButtonsProps> = ({
 
         <Divider />
 
-        <Tooltip title="指针模式">
+        <Tooltip title="Pointer Mode">
           <div data-state="closed">
             <div
               className={`base-hover flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg hover:bg-state-base-hover hover:text-text-secondary ${
@@ -101,7 +101,7 @@ export const ControlButtons: React.FC<ControlButtonsProps> = ({
         
         <Divider />
 
-        <Tooltip title="手模式">
+        <Tooltip title="Hand Mode">
           <div data-state="closed">
             <div
               className={`base-hover flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg hover:bg-state-base-hover hover:text-text-secondary ${

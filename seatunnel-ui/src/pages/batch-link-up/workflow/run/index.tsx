@@ -30,12 +30,11 @@ const RunLog: FC<RunLogProps> = ({
   const [logEntries, setLogEntries] = useState<LogEntry[]>([]);
   const [panelHeight, setPanelHeight] = useState(500);
   const [isDragging, setIsDragging] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState("未连接");
+  const [connectionStatus, setConnectionStatus] = useState("C");
   const { getViewport } = useReactFlow();
   const stompClientRef = useRef<Client | null>(null);
   const logsContainerRef = useRef<HTMLDivElement>(null);
 
-  // 用于去重的缓存
   const metricsCacheRef = useRef<
     Map<number, { data: MetricsData; timestamp: number }>
   >(new Map());
@@ -49,14 +48,12 @@ const RunLog: FC<RunLogProps> = ({
     };
   };
 
-  // 检查是否重复的指标数据
   const isDuplicateMetric = (data: MetricsData): boolean => {
     if (!data.instanceId) return false;
 
     const cached = metricsCacheRef.current.get(data.instanceId);
     if (!cached) return false;
 
-    // 检查数据是否相同
     const vertexId = Object.keys(data.vertices)[0];
     if (!vertexId) return false;
 
@@ -72,7 +69,6 @@ const RunLog: FC<RunLogProps> = ({
     );
   };
 
-  // 添加日志条目
   const addLogEntry = (
     content: string,
     type: LogEntry["type"] = "log",
@@ -80,42 +76,34 @@ const RunLog: FC<RunLogProps> = ({
   ) => {
     const now = Date.now();
     const newEntry: LogEntry = {
-      id: now, // 使用时间戳作为ID，确保唯一性
+      id: now,
       content,
       timestamp: new Date().toLocaleTimeString(),
       type,
       data,
-      sortKey: now, // 使用精确的时间戳排序
+      sortKey: now,
     };
 
     setLogEntries((prev) => {
-      // 去重逻辑：如果是metric类型，检查是否重复
       if (type === "metric" && data?.instanceId) {
-        // 更新缓存
         metricsCacheRef.current.set(data.instanceId, { data, timestamp: now });
       }
 
-      // 添加新条目并保持排序（最新的在前面）
       const updated = [newEntry, ...prev];
 
-      // 限制总条目数，避免内存占用过多
       return updated.slice(0, 200);
     });
   };
 
-  // 处理指标数据
   const handleMetricsData = (data: MetricsData) => {
     const now = Date.now();
 
-    // 添加时间戳到数据中
     const metricsDataWithTime = {
       ...data,
       timestamp: now,
     };
 
-    // 检查是否是重复数据
     if (isDuplicateMetric(data)) {
-      // 如果是重复数据，只更新缓存但不添加日志
       metricsCacheRef.current.set(data.instanceId, {
         data: metricsDataWithTime,
         timestamp: now,
@@ -123,18 +111,14 @@ const RunLog: FC<RunLogProps> = ({
       return;
     }
 
-    // 提取指标信息
     const vertexId = Object.keys(data.vertices)[0];
     if (vertexId) {
       const vertex = data.vertices[vertexId];
-      const metricText = `实例 ${data.instanceId} - ${vertexId}: 读取 ${vertex.readRowCount} 行 (${vertex.readQps} QPS), 写入 ${vertex.writeRowCount} 行 (${vertex.writeQps} QPS), 状态: ${vertex.status}`;
-
-      // 只添加一条格式化的指标日志
+      const metricText = `Instance ${data.instanceId} - ${vertexId}: Read ${vertex.readRowCount} rows (${vertex.readQps} QPS), Write ${vertex.writeRowCount} rows (${vertex.writeQps} QPS), Status: ${vertex.status};`;
       addLogEntry(metricText, "metric", metricsDataWithTime);
     }
   };
 
-  // 滚动到底部
   const scrollToBottom = () => {
     if (logsContainerRef.current) {
       logsContainerRef.current.scrollTop =
@@ -142,13 +126,12 @@ const RunLog: FC<RunLogProps> = ({
     }
   };
 
-  // 连接 WebSocket
   const CONNECT_TIMEOUT = 5000; // 10 秒
   let connectTimer: any = null;
 
   const connect = () => {
-    setConnectionStatus("连接中...");
-    addLogEntry("正在连接 WebSocket 服务器...", "log");
+    setConnectionStatus("Connecting...");
+    addLogEntry("Connecting WebSocket Server...", "log");
 
     const socket = new SockJS("http://192.168.1.115:9527/ws");
 
@@ -156,17 +139,14 @@ const RunLog: FC<RunLogProps> = ({
       webSocketFactory: () => socket,
 
       onConnect: () => {
-        // ✅ 成功连接，清除超时定时器
         if (connectTimer) {
           clearTimeout(connectTimer);
           connectTimer = null;
         }
 
-        setConnectionStatus("已连接");
-        addLogEntry("WebSocket 连接成功", "log");
-        // message.success("WebSocket 连接成功");
+        setConnectionStatus("Connected");
+        addLogEntry("WebSocket Connected", "log");
 
-        // 下面是你原来的逻辑
         const flowData = prepareDataForBackend();
         const leftSideParam = baseForm?.getFieldsValue();
 
@@ -175,11 +155,11 @@ const RunLog: FC<RunLogProps> = ({
           ...leftSideParam,
         };
 
-        seatunnelJobExecuteApi.executeadHoc(params).then(data => {
-          if(data.code !== 0) {
-            addLogEntry(`后端报错了: ${data.message}`, "log");
+        seatunnelJobExecuteApi.executeadHoc(params).then((data) => {
+          if (data.code !== 0) {
+            addLogEntry(`Backend error?: ${data.message}`, "log");
           }
-        })
+        });
 
         stompClient.subscribe("/topic/log/test", (message) => {
           try {
@@ -188,29 +168,28 @@ const RunLog: FC<RunLogProps> = ({
               ? handleMetricsData(data)
               : addLogEntry(JSON.stringify(data, null, 2), "log");
           } catch {
-            addLogEntry(`解析消息失败: ${message.body}`, "log");
+            addLogEntry(`Failed to parse message: ${message.body}`, "log");
           }
         });
       },
 
       onStompError: (error) => {
         clearTimeout(connectTimer);
-        setConnectionStatus("连接错误");
-        addLogEntry(`STOMP 错误: ${error.headers.message}`, "log");
+        setConnectionStatus("Connection error");
+        addLogEntry(`STOMP Error: ${error.headers.message}`, "log");
       },
 
       onWebSocketClose: () => {
         clearTimeout(connectTimer);
-        setConnectionStatus("已断开");
-        addLogEntry("WebSocket 已关闭", "log");
+        setConnectionStatus("Disconnected");
+        addLogEntry("WebSocket Closed", "log");
       },
     });
 
-    // ⏱ 启动连接超时兜底
     connectTimer = setTimeout(() => {
-      addLogEntry("WebSocket 连接超时", "log");
-      message.error("WebSocket 连接超时");
-      setConnectionStatus("连接超时");
+      addLogEntry("WebSocket Connection timeout", "log");
+      message.error("WebSocket Connection timeout");
+      setConnectionStatus("Connection timeout");
       stompClient.deactivate();
     }, CONNECT_TIMEOUT);
 
@@ -218,15 +197,14 @@ const RunLog: FC<RunLogProps> = ({
     stompClientRef.current = stompClient;
   };
 
-  // 断开连接
   const disconnect = () => {
     if (stompClientRef.current) {
-      addLogEntry("正在断开WebSocket连接...", "log");
+      addLogEntry("Disconnecting WebSocket connection...", "log");
       stompClientRef.current.deactivate();
       stompClientRef.current = null;
-      setConnectionStatus("已断开");
-      addLogEntry("WebSocket 连接已断开", "log");
-      // 清空缓存
+      setConnectionStatus("Disconnected");
+      addLogEntry("WebSocket Disconnected", "log");
+
       metricsCacheRef.current.clear();
     }
   };
@@ -236,7 +214,6 @@ const RunLog: FC<RunLogProps> = ({
       connect();
     }
 
-    // 清理函数
     return () => {
       if (stompClientRef.current) {
         disconnect();
@@ -245,7 +222,6 @@ const RunLog: FC<RunLogProps> = ({
   }, [runVisible]);
 
   useEffect(() => {
-    // 当有新日志时自动滚动到底部
     scrollToBottom();
   }, [logEntries]);
 
@@ -270,7 +246,6 @@ const RunLog: FC<RunLogProps> = ({
     document.addEventListener("mouseup", handleMouseUp);
   };
 
-  // 获取最新的指标数据（按时间倒序）
   const getLatestMetrics = (): MetricsData | null => {
     const metricEntries = logEntries.filter(
       (entry) => entry.type === "metric" && entry.data
@@ -278,14 +253,12 @@ const RunLog: FC<RunLogProps> = ({
 
     if (metricEntries.length === 0) return null;
 
-    // 按sortKey倒序排序，取最新的
     const sortedEntries = [...metricEntries].sort(
       (a, b) => b.sortKey - a.sortKey
     );
     return sortedEntries[0]?.data || null;
   };
 
-  // 按时间倒序排列日志（最新的在前面）
   const sortedLogEntries = [...logEntries].sort(
     (a, b) => b.sortKey - a.sortKey
   );
@@ -340,13 +313,11 @@ const RunLog: FC<RunLogProps> = ({
               latestMetrics={latestMetrics}
               onClose={() => setRunVisible(false)}
             />
-            {/* 指标摘要面板 */}
+
             {latestMetrics && <MetricsSummary data={latestMetrics} />}
 
-            {/* 日志显示区域 */}
             <LogList logs={sortedLogEntries} containerRef={logsContainerRef} />
 
-            {/* 日志统计 */}
             <Footer
               total={sortedLogEntries.length}
               metricCount={metricsCacheRef.current.size}

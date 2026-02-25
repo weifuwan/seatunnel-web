@@ -12,6 +12,7 @@ export const FlowActions = ({
   baseForm,
   goBack,
   setRunVisible,
+  runVisible,
 }: any) => {
   const { publish, generateHocon } = useFlowPublish(nodes, edges, baseForm);
   const { checkStat, checkGroups } = useFlowChecks(nodes);
@@ -23,16 +24,21 @@ export const FlowActions = ({
           <div className={styles["flow-wrapper"]}>
             <div className={styles["header"]}>
               <div className={styles["actions"]}>
-                <RunActions
-                  onBack={() => goBack()}
-                  onRun={() => {
-                    if (checkStat.total > 0) {
-                      message.warning("Resolve all issues first 😊");
-                      return;
-                    }
-                    setRunVisible(true);
-                  }}
-                />
+             
+                
+                  <RunActions
+                    onBack={() => goBack()}
+                    onRun={() => {
+                      if (checkStat.total > 0) {
+                        message.warning("Resolve all issues first 😊");
+                        return;
+                      }
+                      setRunVisible(true);
+                    }}
+                    runVisible={runVisible}
+                  />
+                
+
                 <HoconPreview
                   onGenerate={generateHocon}
                   checkStat={checkStat}

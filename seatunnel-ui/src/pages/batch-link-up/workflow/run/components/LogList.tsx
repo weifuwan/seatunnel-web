@@ -31,7 +31,7 @@ export const LogList = ({ logs, containerRef }: Props) => {
             color: "#888",
           }}
         >
-          暂无日志，等待连接...
+          No logs yet, waiting for connection...
         </div>
       ) : (
         logs.map((entry) => <LogItem key={entry.id} entry={entry} />)

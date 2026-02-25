@@ -8,8 +8,7 @@ structured AI prompting**, where information is provided to AI not as vague “c
 conditions and structured relationships**, enabling precise reasoning and system-level decisions.
 
 Leveraging **18 prompt-engineering methodologies** and a curated knowledge base spanning **Apache SeaTunnel, Apache
-DolphinScheduler, Dify, Ant Design, and Spring Boot**, the entire system was built by a **single developer in just two
-months** of after-work development.
+DolphinScheduler, Dify, Ant Design, and Spring Boot**
 
 This project demonstrates how AI can **amplify software creation**, enabling small teams — or even one engineer — to
 build **complex, production-ready systems** with AI as a **true engineering collaborator**. In the words of Daoist

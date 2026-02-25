@@ -30,7 +30,7 @@ const App = () => {
             marginBottom: 16,
           }}
         >
-         Batch Job Creation Process
+          Batch Job Creation Process
         </h3>
 
         <div style={{ width: "100%", display: "flex" }}>
@@ -71,7 +71,14 @@ const App = () => {
                 ></path>
               </svg>
             </p>
-            <p style={{ color: "#1e202d", fontSize: 12, textAlign: "center" }}>
+            <p
+              style={{
+                color: "#1e202d",
+                fontSize: 12,
+                fontWeight: 500,
+                textAlign: "center",
+              }}
+            >
               Step1
             </p>
             <p
@@ -134,7 +141,14 @@ const App = () => {
                 ></path>
               </svg>
             </p>
-            <p style={{ color: "#1e202d", fontSize: 12, textAlign: "center" }}>
+            <p
+              style={{
+                color: "#1e202d",
+                fontSize: 12,
+                fontWeight: 500,
+                textAlign: "center",
+              }}
+            >
               Step2
             </p>
             <p
@@ -200,7 +214,14 @@ const App = () => {
                 ></path>
               </svg>
             </p>
-            <p style={{ color: "#1e202d", fontSize: 12, textAlign: "center" }}>
+            <p
+              style={{
+                color: "#1e202d",
+                fontSize: 12,
+                fontWeight: 500,
+                textAlign: "center",
+              }}
+            >
               Step3
             </p>
             <p
@@ -261,7 +282,14 @@ const App = () => {
                 ></path>
               </svg>
             </p>
-            <p style={{ color: "#1e202d", fontSize: 12, textAlign: "center" }}>
+            <p
+              style={{
+                color: "#1e202d",
+                fontSize: 12,
+                fontWeight: 500,
+                textAlign: "center",
+              }}
+            >
               Step4
             </p>
             <p

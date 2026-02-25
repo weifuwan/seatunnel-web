@@ -1,10 +1,14 @@
 import { DownOutlined } from "@ant-design/icons";
 import { Dropdown, Modal, Popconfirm, Space, message } from "antd";
 // import CreateModal from '../modal/CreateModal';
-import { useRef } from "react";
-import { seatunnelJobDefinitionApi, seatunnelJobExecuteApi, seatunnelJobScheduleApi } from "./api";
+import { useRef, useState } from "react";
+import {
+  seatunnelJobDefinitionApi,
+  seatunnelJobExecuteApi,
+  seatunnelJobScheduleApi,
+} from "./api";
 import TaskViewModal from "./TaskViewModal";
-import { taskExecutionApi, taskScheduleApi } from "./type";
+import { taskExecutionApi } from "./type";
 
 interface ActionColumnProps {
   record: any;
@@ -22,26 +26,14 @@ const ActionColumn: React.FC<ActionColumnProps> = ({
   goDetail,
 }) => {
   const ref = useRef<any>(null);
-
-  console.log(record);
-
-  const handleExecute = () => {
-    seatunnelJobExecuteApi.execute(record?.id).then((data) => {
-      if (data?.code === 0) {
-        message.success("提交成功");
-        cbk();
-      } else {
-        message.error(data?.message);
-      }
-    });
-  };
+  const [runOpen, setRunOpen] = useState(false);
+  const [runLoading, setRunLoading] = useState(false);
 
   const handleStop = () => {
     const executionId = record?.executionId;
     if (executionId !== undefined) {
       taskExecutionApi.cancel(executionId).then((data) => {
         if (data?.code === 0) {
-          // message.success('提交成功');
           message.success(data?.data);
           cbk();
         } else {
@@ -126,14 +118,37 @@ const ActionColumn: React.FC<ActionColumnProps> = ({
         ) : (
           <Popconfirm
             title="Run Task"
+            open={runOpen}
+            onOpenChange={(open) => {
+              if (!runLoading) {
+                setRunOpen(open);
+              }
+            }}
+            okButtonProps={{ loading: runLoading }}
             description={
               <div style={{ marginRight: 12 }}>
-                Are you sure to run this task?
+                Are you sure to run this job?
               </div>
             }
             okText="Yes"
             cancelText="No"
-            onConfirm={handleExecute}
+            onConfirm={async () => {
+              try {
+                setRunLoading(true);
+
+                const data = await seatunnelJobExecuteApi.execute(record?.id);
+
+                if (data?.code === 0) {
+                  message.success("提交成功");
+                  cbk();
+                  setRunOpen(false); // ✅ 执行成功后关闭
+                } else {
+                  message.error(data?.message);
+                }
+              } finally {
+                setRunLoading(false);
+              }
+            }}
           >
             <a style={{ fontWeight: 500 }}>Run</a>
           </Popconfirm>
@@ -182,7 +197,7 @@ const ActionColumn: React.FC<ActionColumnProps> = ({
                 const response = await seatunnelJobScheduleApi.startSchedule(
                   record?.scheduleId
                 );
-                console.log(response)
+                console.log(response);
                 if (response?.code === 0) {
                   cbk();
                   message.success("Online Success");

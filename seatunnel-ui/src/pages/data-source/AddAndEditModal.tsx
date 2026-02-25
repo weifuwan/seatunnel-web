@@ -163,7 +163,7 @@ const AddAndEditDataSourceModal = forwardRef<AddOrEditModalRef, AddOrEditModalRe
                     });
                   }}
                 >
-                  Test
+                 Connection Test
                 </Button>
                 <Button onClick={onSubmit} style={{ marginRight: 8 }} type="primary" size="small">
                   Finish

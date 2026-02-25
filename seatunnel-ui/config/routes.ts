@@ -13,7 +13,7 @@
 export default [
   {
     icon: 'database',
-    name: 'DataBase',
+    name: 'DataSource',
     path: '/data-source',
     component: './data-source',
   },

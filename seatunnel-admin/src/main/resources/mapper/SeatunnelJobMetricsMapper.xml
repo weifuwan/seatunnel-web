@@ -17,8 +17,8 @@
                COALESCE(COUNT(1), 0)           AS totalTasks
         FROM (
                  SELECT job_instance_id,
-                        (MAX(write_row_count) - MIN(write_row_count)) AS inc_records,
-                        (MAX(write_bytes) - MIN(write_bytes))         AS inc_bytes
+                        write_row_count AS inc_records,
+                        write_bytes AS inc_bytes
                  FROM t_seatunnel_job_metrics
                  WHERE update_time &gt;= #{startTime}
                    AND update_time &lt;= #{endTime}

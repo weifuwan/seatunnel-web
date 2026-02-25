@@ -101,12 +101,12 @@ const ActionColumn: React.FC<ActionColumnProps> = ({
   return (
     <>
       <Space size="middle">
-        {record?.status === "RUNNING" ? (
+        {record?.lastJobStatus === "RUNNING" ? (
           <Popconfirm
             title="Stop Task"
             description={
               <div style={{ marginRight: 12 }}>
-                Are you sure stop this task?
+                Are you sure stop this job?
               </div>
             }
             okText="Yes"
@@ -139,9 +139,9 @@ const ActionColumn: React.FC<ActionColumnProps> = ({
                 const data = await seatunnelJobExecuteApi.execute(record?.id);
 
                 if (data?.code === 0) {
-                  message.success("提交成功");
+                  message.success("Success");
                   cbk();
-                  setRunOpen(false); // ✅ 执行成功后关闭
+                  setRunOpen(false); 
                 } else {
                   message.error(data?.message);
                 }
@@ -205,7 +205,7 @@ const ActionColumn: React.FC<ActionColumnProps> = ({
                   message.error(response?.message);
                 }
               } else {
-                message.error("任务调度ID不存在");
+                message.error("UnKnown Error");
               }
             }}
           >

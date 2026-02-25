@@ -29,10 +29,10 @@ public class SeatunnelJobInstanceVO {
     private String logPath;
     private String jobConfig;
 
-    @JsonFormat(pattern = "yyyy年MM月dd HH:mm:ss", timezone = "GMT+8")
+    @JsonFormat(pattern = "yyyy/MM/dd HH:mm:ss", timezone = "GMT+8")
     private Date startTime;
 
-    @JsonFormat(pattern = "yyyy年MM月dd HH:mm:ss", timezone = "GMT+8")
+    @JsonFormat(pattern = "yyyy/MM/dd HH:mm:ss", timezone = "GMT+8")
     private Date endTime;
 
     private RunMode runMode;

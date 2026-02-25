@@ -93,7 +93,7 @@ const App: React.FC<Props> = ({ goDetail }) => {
     {
       title: "Sync Plan",
       dataIndex: "",
-      width: "17%",
+      width: "20%",
       render: (content: any, record: any) => (
         <DataSourceSyncPlan record={record} />
       ),
@@ -131,7 +131,7 @@ const App: React.FC<Props> = ({ goDetail }) => {
     {
       title: "Operate",
       dataIndex: "",
-      width: "17%",
+      width: "16%",
       fixed: "right",
       render: (record: any) => (
         <ActionColumn

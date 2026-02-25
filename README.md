@@ -35,4 +35,9 @@ wisdom:
 ![Batch Sync Screenshot](docs/images/log.png)
 ![Batch Sync Screenshot](docs/images/metrics.png)
 
+## Contract Me
+
+- WeChat Public Account: SeaTunnel-web
+  ![wechat-public-account](docs/images/wechat-public-account.jpg)
+  
 

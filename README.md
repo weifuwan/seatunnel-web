@@ -20,7 +20,7 @@ wisdom:
 
 ## Partial screenshot
 
-![Batch Sync Screenshot](docs/images/img11.png)
+![Batch Sync Screenshot](docs/images/img_11.png)
 ![Batch Sync Screenshot](docs/images/img.png)
 ![Batch Sync Screenshot](docs/images/img_1.png)
 ![Batch Sync Screenshot](docs/images/img_2.png)

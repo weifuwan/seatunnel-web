@@ -128,14 +128,55 @@ public class SeatunnelJobMetricsServiceImpl
         );
 
         OverviewSummaryVO dto = new OverviewSummaryVO();
-        dto.setTotalRecords(toLong(row.get("totalRecords")));
-        dto.setTotalBytes(toLong(row.get("totalBytes")));
-        dto.setTotalTasks(toLong(row.get("totalTasks")));
 
-        // Currently assume all tasks are successful
+        long totalRecords = toLong(row.get("totalRecords"));
+        long totalBytes = toLong(row.get("totalBytes"));
+
+        Scale recordsScale = pickScaleForSummary(totalRecords, UnitKind.RECORDS);
+        dto.setTotalRecords((long) round2(totalRecords / recordsScale.getFactor()));
+        dto.setTotalRecordsUnit(recordsScale.getUnit());
+
+        Scale bytesScale = pickScaleForSummary(totalBytes, UnitKind.BYTES);
+        dto.setTotalBytes((long) round2(totalBytes / bytesScale.getFactor()));
+        dto.setTotalBytesUnit(bytesScale.getUnit());
+
+        dto.setTotalTasks(toLong(row.get("totalTasks")));
         dto.setSuccessTasks(dto.getTotalTasks());
 
         return dto;
+    }
+
+    /**
+     * Determine proper display scale based on value for summary.
+     */
+    private Scale pickScaleForSummary(long value, UnitKind kind) {
+        if (kind == UnitKind.RECORDS) {
+            if (value >= 100_000_000L)
+                return new Scale(100_000_000d, "亿");
+
+            if (value >= 10_000L)
+                return new Scale(10_000d, "万");
+
+            return new Scale(1d, "");
+        }
+
+        if (kind == UnitKind.BYTES) {
+            if (value >= (1L << 40))
+                return new Scale((double) (1L << 40), "TB");
+
+            if (value >= (1L << 30))
+                return new Scale((double) (1L << 30), "GB");
+
+            if (value >= (1L << 20))
+                return new Scale((double) (1L << 20), "MB");
+
+            if (value >= (1L << 10))
+                return new Scale((double) (1L << 10), "KB");
+
+            return new Scale(1d, "B");
+        }
+
+        return new Scale(1d, "");
     }
 
     /**

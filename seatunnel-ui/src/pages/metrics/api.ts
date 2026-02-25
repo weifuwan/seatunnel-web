@@ -10,7 +10,7 @@ export const fetchSummaryData = async (timeRange: TimeRange, taskType: TaskType)
   if (response?.code === 0) {
     return response.data;
   } else {
-    throw new Error(response?.message || '获取汇总数据失败');
+    throw new Error(response?.message || 'Eroor');
   }
 };
 
@@ -20,6 +20,6 @@ export const fetchChartData = async (timeRange: TimeRange) => {
   if (response?.code === 0) {
     return response.data;
   } else {
-    throw new Error(response?.message || '获取图表数据失败');
+    throw new Error(response?.message || 'Eroor');
   }
 };

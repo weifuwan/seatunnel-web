@@ -8,4 +8,7 @@ public class OverviewSummaryVO {
     private long totalBytes;
     private long totalTasks;
     private long successTasks;
+    private String totalRecordsUnit;
+    private String totalBytesUnit;
+
 }

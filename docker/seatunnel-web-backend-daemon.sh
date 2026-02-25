@@ -1,7 +1,5 @@
 #!/bin/sh
 
-set -
-# usage: seatunnel-web-backend-daemon.sh <start|stop|status>
 
 WORKDIR=$(cd "$(dirname "$0")" || exit; pwd)
 

@@ -15,4 +15,4 @@ RUN chmod +x $SEATUNNEL_WEB_HOME/bin/seatunnel-web-backend-daemon.sh
 
 EXPOSE 8080
 
-CMD [ "/bin/sh", "/opt/app/seatunnel-web/bin/seatunnel-web-backend-daemon.sh", "start" ]
+CMD ["java", "-XX:+UseG1GC", "-Xms512m", "-Xmx2g", "-jar", "seatunnel-admin.jar", "--server.port=8080"]

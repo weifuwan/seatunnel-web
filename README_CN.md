@@ -5,9 +5,6 @@
 
 通过 **18 种提示工程方法**，**800+** 套提示词模板，以及覆盖 **Apache SeaTunnel、Apache DolphinScheduler、Dify、Ant Design 和 Spring Boot** 的知识库
 
-这个项目展示了 AI 如何 **放大软件创造力**，让小团队——甚至一个人——也能构建 **复杂、可生产的系统**，AI 成为真正的工程协作者。正如天道所说：  
-**“按照规律办事的人就是神。” — Those who act according to the rules of the universe are gods.**
-
 > **说明：** Seatunnel Web 的 **所有代码**均使用 **DeepSeek** 生成，这是一个免费的大型模型平台。
 
 ## 部分截图

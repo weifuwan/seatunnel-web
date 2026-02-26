@@ -8,7 +8,7 @@ import lombok.Data;
 import java.util.Date;
 
 @Data
-@TableName("cdc_server_ids")
+@TableName("t_seatunnel_cdc_server_ids")
 public class CdcServerIdPO {
 
     @TableId(type = IdType.INPUT)

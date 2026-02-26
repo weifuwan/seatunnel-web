@@ -10,11 +10,6 @@ conditions and structured relationships**, enabling precise reasoning and system
 Leveraging **18 prompt-engineering methodologies** and a curated knowledge base spanning **Apache SeaTunnel, Apache
 DolphinScheduler, Dify, Ant Design, and Spring Boot**
 
-This project demonstrates how AI can **amplify software creation**, enabling small teams — or even one engineer — to
-build **complex, production-ready systems** with AI as a **true engineering collaborator**. In the words of Daoist
-wisdom:  
-*"Those who act according to the rules of the universe are gods."*
-
 > **Note:** All the code in Seatunnel Web was generated using **DeepSeek**, a free large-model platform.
 
 ## Partial screenshot

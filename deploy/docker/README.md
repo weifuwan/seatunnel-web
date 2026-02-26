@@ -1,6 +1,6 @@
 ## build Docker image
 ```shell
-docker  build  -t seatunnel-web:1.0.0 -f backend.dockerfile .
+docker  build  -t seatunnel-web:1.0.0-beta.1 -f backend.dockerfile .
 
 docker-compose up -d
 
@@ -11,7 +11,6 @@ docker run --name seatunnel-web \
         seatunnel-web:1.0.0
 ```
 
-
 ```shell
-docker  build  -t seatunnel-web-ui:1.0.0 -f fronted.dockerfile .
+docker  build  -t seatunnel-web-ui:1.0.0-beta.1 -f fronted.dockerfile .
 ```

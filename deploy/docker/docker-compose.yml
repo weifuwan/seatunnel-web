@@ -1,29 +1,102 @@
-version: '3.8'
+version: "3.8"
 
 services:
+
+  mysql:
+    image: mysql:8.0
+    container_name: seatunnel_mysql
+    restart: always
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: seatunnel_web
+      MYSQL_USER: seatunnel
+      MYSQL_PASSWORD: seatunnel123
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - seatunnel_network
+
+  master:
+    image: apache/seatunnel:2.3.12
+    container_name: seatunnel_master
+    environment:
+      - ST_DOCKER_MEMBER_LIST=seatunnel_master,seatunnel_worker_1,seatunnel_worker_2
+    entrypoint: >
+      /bin/sh -c "
+      /opt/seatunnel/bin/seatunnel-cluster.sh -r master
+      "
+    ports:
+      - "5801:5801"
+      - "18080:8080"
+    depends_on:
+      - mysql
+    networks:
+      - seatunnel_network
+
+  worker1:
+    image: apache/seatunnel:2.3.12
+    container_name: seatunnel_worker_1
+    environment:
+      - ST_DOCKER_MEMBER_LIST=seatunnel_master,seatunnel_worker_1,seatunnel_worker_2
+    entrypoint: >
+      /bin/sh -c "
+      /opt/seatunnel/bin/seatunnel-cluster.sh -r worker
+      "
+    depends_on:
+      - master
+    networks:
+      - seatunnel_network
+
+  worker2:
+    image: apache/seatunnel:2.3.12
+    container_name: seatunnel_worker_2
+    environment:
+      - ST_DOCKER_MEMBER_LIST=seatunnel_master,seatunnel_worker_1,seatunnel_worker_2
+    entrypoint: >
+      /bin/sh -c "
+      /opt/seatunnel/bin/seatunnel-cluster.sh -r worker
+      "
+    depends_on:
+      - master
+    networks:
+      - seatunnel_network
+
   seatunnel-web:
-    image: seatunnel-web:1.0.0
-    container_name: seatunnel-web
+    image: seatunnel-web:1.0.0-beta.1
+    container_name: seatunnel_web
+    restart: always
     ports:
       - "9527:8080"
     environment:
-      DB_URL: jdbc:mariadb://192.168.1.113:3306/link_up?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8
-      DB_USERNAME: root
-      DB_PASSWORD: 123456
+      DB_URL: jdbc:mariadb://mysql:3306/seatunnel-web?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8
+      DB_USERNAME: seatunnel
+      DB_PASSWORD: seatunnel123
+      SEATUNNEL_ADDRESS: seatunnel_master:5801
+    depends_on:
+      - mysql
+      - master
     networks:
-      - seatunnel-net
+      - seatunnel_network
 
   seatunnel-web-ui:
-    image: seatunnel-web-ui:1.0.0
-    container_name: seatunnel-web-ui
+    image: seatunnel-web-ui:1.0.0-beta.1
+    container_name: seatunnel_web_ui
     restart: always
     ports:
       - "9001:80"
     depends_on:
       - seatunnel-web
     networks:
-      - seatunnel-net
+      - seatunnel_network
+
+
+volumes:
+  mysql_data:
+
 
 networks:
-  seatunnel-net:
+  seatunnel_network:
     driver: bridge

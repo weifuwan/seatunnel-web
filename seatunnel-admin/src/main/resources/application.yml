@@ -16,9 +16,9 @@ spring:
 
   datasource:
     cockpit:
-      jdbc-url: jdbc:mariadb://192.168.1.113:3306/link_up?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8
-      username: root
-      password: 123456
+      jdbc-url: ${DB_URL}
+      username: ${DB_USERNAME}
+      password: ${DB_PASSWORD}
       driver-class-name: org.mariadb.jdbc.Driver
       maximum-pool-size: 20
       idle-timeout: 30000

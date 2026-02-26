@@ -1,8 +1,148 @@
-CREATE TABLE `cdc_server_ids` (
-                                  `server_id` int NOT NULL,
-                                  `job_id` varchar(64) DEFAULT NULL,
-                                  `allocated_at` timestamp NULL DEFAULT NULL,
-                                  PRIMARY KEY (`server_id`),
-                                  UNIQUE KEY `uq_job_jobid_server` (`job_id`,`server_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+create
+database if not exists seatunnel-web;
 
+CREATE TABLE `t_seatunnel_datasource`
+(
+    `id`                bigint NOT NULL COMMENT '主键',
+    `db_name`           varchar(64)   DEFAULT NULL COMMENT '数据源名称',
+    `db_type`           varchar(64)   DEFAULT NULL COMMENT '数据源类型',
+    `original_json`     text COMMENT '原始JSON',
+    `connection_params` text COMMENT '数据库连接参数',
+    `environment`       varchar(200)  DEFAULT NULL COMMENT '环境',
+    `remark`            varchar(2048) DEFAULT NULL COMMENT '描述',
+    `conn_status`       varchar(24)   DEFAULT NULL COMMENT '连接状态',
+    `create_time`       datetime      DEFAULT NULL COMMENT '创建时间',
+    `update_time`       datetime      DEFAULT NULL COMMENT '最后更新时间',
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='数据集成-数据源';
+
+
+CREATE TABLE `t_seatunnel_datasource_plugin_config`
+(
+    `id`            varchar(32) NOT NULL COMMENT '主键',
+    `plugin_type`   varchar(50) NOT NULL COMMENT '插件类型: mysql, postgresql, oracle, etc',
+    `config_schema` text        NOT NULL COMMENT '配置字段的JSON schema',
+    `create_time`   datetime DEFAULT NULL COMMENT '创建时间',
+    `update_time`   datetime DEFAULT NULL COMMENT '最后更新时间',
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='数据同步-数据源插件动态配置表';
+
+
+
+CREATE TABLE `t_seatunnel_job_definition`
+(
+    `id`                  bigint                                  NOT NULL COMMENT '主键ID',
+    `job_name`            varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '作业名称',
+    `job_desc`            varchar(500) COLLATE utf8mb4_unicode_ci                        DEFAULT NULL COMMENT '作业描述',
+    `job_definition_info` longtext COLLATE utf8mb4_unicode_ci     NOT NULL COMMENT '作业定义信息(JSON格式)',
+    `job_version`         int                                     NOT NULL               DEFAULT '1' COMMENT '作业版本号',
+    `client_id`           bigint                                                         DEFAULT NULL COMMENT '客户端ID',
+    `create_time`         datetime                                NOT NULL               DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time`         datetime                                NOT NULL               DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `whole_sync`          tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Whether to perform a full data synchronization (1: full, 0: incremental)',
+    `source_type`         varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci  DEFAULT NULL COMMENT '作业的源类型（逗号分隔）',
+    `sink_type`           varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci  DEFAULT NULL COMMENT '作业的目标类型（逗号分隔）',
+    `parallelism`         int                                                            DEFAULT '1' COMMENT 'Parallelism level of the job execution',
+    `source_table`        varchar(1024) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '作业的源表（逗号分隔）',
+    `sink_table`          varchar(1024) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '作业的目标表（逗号分隔）',
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='SeaTunnel作业定义表';
+
+
+
+CREATE TABLE `t_seatunnel_job_instance`
+(
+    `id`                bigint   NOT NULL AUTO_INCREMENT COMMENT 'Primary key ID',
+    `job_definition_id` bigint   NOT NULL COMMENT 'Job definition ID, foreign key to t_seatunnel_job_definition.id',
+    `job_config`        longtext COMMENT 'job configuration',
+    `start_time`        datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Creation timestamp',
+    `end_time`          datetime          DEFAULT NULL COMMENT 'End timestamp',
+    `job_type`          varchar(10)       DEFAULT NULL COMMENT 'job type: BATCH,STREAMING',
+    `job_status`        varchar(255)      DEFAULT NULL COMMENT 'job_status',
+    `job_engine_id`     varchar(255)      DEFAULT NULL COMMENT 'job_engine_id',
+    `log_path`          varchar(512)      DEFAULT NULL COMMENT '日志文件路径',
+    `error_message`     longtext,
+    `run_mode`          varchar(100)      DEFAULT NULL,
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=20810177123553 DEFAULT CHARSET=utf8;
+
+
+
+CREATE TABLE `t_seatunnel_job_metrics`
+(
+    `id`                      bigint NOT NULL COMMENT '主键ID',
+    `job_instance_id`         bigint NOT NULL COMMENT '任务实例ID',
+    `pipeline_id`             int      DEFAULT NULL COMMENT 'pipeline ID',
+    `read_row_count`          bigint   DEFAULT '0' COMMENT '读取行数',
+    `write_row_count`         bigint   DEFAULT '0' COMMENT '写入行数',
+    `read_qps`                bigint   DEFAULT '0' COMMENT '读取QPS',
+    `write_qps`               bigint   DEFAULT '0' COMMENT '写入QPS',
+    `read_bytes`              bigint   DEFAULT '0' COMMENT '读取字节数',
+    `write_bytes`             bigint   DEFAULT '0' COMMENT '写入字节数',
+    `read_bps`                bigint   DEFAULT '0' COMMENT '读取BPS(字节/秒)',
+    `write_bps`               bigint   DEFAULT '0' COMMENT '写入BPS(字节/秒)',
+    `intermediate_queue_size` bigint   DEFAULT '0' COMMENT '中间队列大小',
+    `lag_count`               bigint   DEFAULT '0' COMMENT '滞后计数',
+    `loss_rate`               double   DEFAULT '0' COMMENT '丢失率',
+    `avg_row_size`            bigint   DEFAULT '0' COMMENT '平均行大小(字节)',
+    `record_delay`            bigint   DEFAULT '0' COMMENT '数据延迟(ms)',
+    `create_time`             datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time`             datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `job_definition_id`       bigint   DEFAULT NULL,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_instance_pipeline` (`job_instance_id`,`pipeline_id`),
+    KEY                       `idx_job_instance_id` (`job_instance_id`),
+    KEY                       `idx_create_time` (`create_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Seatunnel任务运行指标表';
+
+
+
+CREATE TABLE `t_seatunnel_job_schedule`
+(
+    `id`                 varchar(32)                                                  NOT NULL COMMENT '主键',
+    `job_definition_id`  varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '任务定义ID',
+    `cron_expression`    varchar(50)                                                  NOT NULL COMMENT 'Cron表达式',
+    `schedule_status`    varchar(20) DEFAULT 'STOPPED' COMMENT '调度状态: STOPPED, RUNNING, PAUSED',
+    `last_schedule_time` datetime    DEFAULT NULL COMMENT '最后调度时间',
+    `next_schedule_time` datetime    DEFAULT NULL COMMENT '下次调度时间',
+    `schedule_config`    text COMMENT '调度配置信息',
+    `create_time`        datetime    DEFAULT NULL COMMENT '创建时间',
+    `update_time`        datetime    DEFAULT NULL COMMENT '最后更新时间',
+    KEY                  `idx_task_definition_id` (`job_definition_id`),
+    KEY                  `idx_schedule_status` (`schedule_status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='任务调度关联表';
+
+
+
+CREATE TABLE `t_seatunnel_stream_job_definition`
+(
+    `id`                  bigint       NOT NULL COMMENT 'Primary key ID',
+    `job_name`            varchar(255) NOT NULL COMMENT 'Job name',
+    `job_desc`            varchar(512)                                                  DEFAULT NULL COMMENT 'Job description',
+    `job_definition_info` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci COMMENT 'Stream job definition JSON/HOCON',
+    `job_type`            varchar(50)  NOT NULL COMMENT 'Job type (STREAM/BATCH)',
+    `job_version`         int          NOT NULL                                         DEFAULT '1' COMMENT 'Job version',
+    `client_id`           bigint       NOT NULL COMMENT 'Client ID',
+    `parallelism`         int          NOT NULL                                         DEFAULT '1' COMMENT 'Parallelism level',
+    `schedule_status`     varchar(50)                                                   DEFAULT 'OFFLINE' COMMENT 'Schedule status (ONLINE/OFFLINE/RUNNING/STOPPED)',
+    `source_type`         varchar(100)                                                  DEFAULT NULL COMMENT 'Source type (mysql/kafka/etc)',
+    `source_table`        varchar(255)                                                  DEFAULT NULL COMMENT 'Source table',
+    `sink_type`           varchar(100)                                                  DEFAULT NULL COMMENT 'Sink type (mysql/hive/etc)',
+    `sink_table`          varchar(255)                                                  DEFAULT NULL COMMENT 'Sink table',
+    `create_time`         datetime     NOT NULL                                         DEFAULT CURRENT_TIMESTAMP COMMENT 'Creation time',
+    `update_time`         datetime     NOT NULL                                         DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Update time',
+    `plugin_name`         varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+    PRIMARY KEY (`id`),
+    KEY                   `idx_client_id` (`client_id`),
+    KEY                   `idx_job_name` (`job_name`),
+    KEY                   `idx_schedule_status` (`schedule_status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Seatunnel stream job definition table';
+
+CREATE TABLE `t_seatunnel_cdc_server_ids`
+(
+    `server_id`    int NOT NULL,
+    `job_id`       varchar(64) DEFAULT NULL,
+    `allocated_at` timestamp NULL DEFAULT NULL,
+    PRIMARY KEY (`server_id`),
+    UNIQUE KEY `uq_job_jobid_server` (`job_id`,`server_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

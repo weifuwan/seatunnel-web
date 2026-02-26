@@ -10,6 +10,8 @@ services:
       DB_URL: jdbc:mariadb://192.168.1.113:3306/link_up?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8
       DB_USERNAME: root
       DB_PASSWORD: 123456
+    networks:
+      - seatunnel-net
 
   seatunnel-web-ui:
     image: seatunnel-web-ui:1.0.0

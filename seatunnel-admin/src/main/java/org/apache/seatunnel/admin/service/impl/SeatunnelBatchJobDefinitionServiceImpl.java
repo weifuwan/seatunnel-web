@@ -20,7 +20,6 @@ import org.apache.seatunnel.communal.enums.ScheduleStatusEnum;
 import org.apache.seatunnel.communal.utils.ConvertUtil;
 import org.quartz.SchedulerException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.util.Date;
@@ -94,32 +93,6 @@ public class SeatunnelBatchJobDefinitionServiceImpl
         return id;
     }
 
-
-    private void handleSchedule(Long id, SeatunnelBatchJobDefinitionDTO dto) {
-
-        if (dto.getScheduleStatus() == null
-                || StringUtils.isBlank(dto.getCronExpression())) {
-            return;
-        }
-
-        SeatunnelJobScheduleDTO scheduleDTO = new SeatunnelJobScheduleDTO();
-        scheduleDTO.setJobDefinitionId(id);
-        scheduleDTO.setCronExpression(dto.getCronExpression());
-        scheduleDTO.setScheduleStatus(dto.getScheduleStatus());
-        scheduleDTO.setScheduleConfig(dto.getScheduleConfig());
-
-        try {
-            Long scheduleId =
-                    seatunnelJobScheduleService.createTaskSchedule(scheduleDTO);
-
-            if (ScheduleStatusEnum.ACTIVE.equals(dto.getScheduleStatus())) {
-                seatunnelJobScheduleService.startSchedule(scheduleId);
-            }
-
-        } catch (SchedulerException e) {
-            throw new RuntimeException("Failed to create schedule", e);
-        }
-    }
 
     @Override
     public SeatunnelBatchJobDefinitionVO selectById(Long id) {
@@ -197,28 +170,6 @@ public class SeatunnelBatchJobDefinitionServiceImpl
         return removeById(id);
     }
 
-    private void validateDelete(Long id) {
-
-        // 运行中实例不允许删除
-        if (seatunnelJobInstanceService.existsRunningInstance(id)) {
-            throw new IllegalStateException(
-                    "Cannot delete job definition: running instance exists.");
-        }
-
-        // 调度必须先下线
-        SeatunnelJobSchedulePO schedule =
-                seatunnelJobScheduleService.getByTaskDefinitionId(id);
-
-        if (schedule != null
-                && ScheduleStatusEnum.ACTIVE.equals(schedule.getScheduleStatus())) {
-
-            throw new IllegalStateException(
-                    "Please offline the schedule before deleting.");
-        }
-    }
-
-
-
 
     @Override
     public String buildHoconConfig(SeatunnelBatchJobDefinitionDTO dto) {
@@ -236,6 +187,45 @@ public class SeatunnelBatchJobDefinitionServiceImpl
         }
     }
 
+    /**
+     * Validate whether the job definition can be deleted.
+     * <p>
+     * Rules:
+     * 1. The job cannot be deleted if there is any running instance.
+     * 2. The job cannot be deleted if the schedule is still ACTIVE.
+     *
+     * @param id Job definition ID
+     */
+    private void validateDelete(Long id) {
+
+        if (seatunnelJobInstanceService.existsRunningInstance(id)) {
+            throw new IllegalStateException(
+                    "Cannot delete job definition: running instance exists.");
+        }
+
+        SeatunnelJobSchedulePO schedule =
+                seatunnelJobScheduleService.getByTaskDefinitionId(id);
+
+        if (schedule != null
+                && ScheduleStatusEnum.ACTIVE.equals(schedule.getScheduleStatus())) {
+
+            throw new IllegalStateException(
+                    "Please offline the schedule before deleting.");
+        }
+    }
+
+    /**
+     * Parse job definition and extract node metadata information.
+     * <p>
+     * This method:
+     * 1. Parses DAG structure for normal jobs
+     * 2. Resolves source/sink plugin types
+     * 3. Extracts source and sink table mappings
+     * 4. Serializes table mappings into JSON for persistence
+     *
+     * @param po  Persistent object to be filled
+     * @param dto Job definition DTO
+     */
     private void fillNodeInfo(SeatunnelBatchJobDefinitionPO po,
                               SeatunnelBatchJobDefinitionDTO dto) {
 
@@ -244,12 +234,12 @@ public class SeatunnelBatchJobDefinitionServiceImpl
         NodeTypes nodeTypes;
 
         if (!Boolean.TRUE.equals(dto.getWholeSync())) {
-
+            // Validate DAG structure before resolving
             DagUtil.parseAndCheck(jobInfo);
             nodeTypes = jobDefinitionResolver.resolveDag(jobInfo);
 
         } else {
-
+            // Whole sync job resolution
             nodeTypes = jobDefinitionResolver.resolveWholeSync(jobInfo);
         }
 
@@ -260,11 +250,72 @@ public class SeatunnelBatchJobDefinitionServiceImpl
         po.setSinkTable(toJson(nodeTypes.getSinkTableMap()));
     }
 
+    /**
+     * Serialize an object to JSON string.
+     * <p>
+     * If the object is null, return empty JSON object "{}".
+     *
+     * @param obj Object to serialize
+     * @return JSON string
+     */
     private String toJson(Object obj) {
         try {
             return obj == null ? "{}" : OBJECT_MAPPER.writeValueAsString(obj);
         } catch (Exception e) {
             throw new RuntimeException("Failed to serialize object to JSON", e);
+        }
+    }
+
+    /**
+     * Create or update schedule configuration for the job definition.
+     * <p>
+     * Logic:
+     * 1. Skip if schedule status or cron expression is missing
+     * 2. Create new schedule if not exists
+     * 3. Update existing schedule if exists
+     * 4. Restart scheduler if status is ACTIVE
+     *
+     * @param id  Job definition ID
+     * @param dto Job definition DTO
+     */
+    private void handleSchedule(Long id, SeatunnelBatchJobDefinitionDTO dto) {
+
+        if (dto.getScheduleStatus() == null
+                || StringUtils.isBlank(dto.getCronExpression())) {
+            return;
+        }
+
+        SeatunnelJobSchedulePO existing =
+                seatunnelJobScheduleService.getByTaskDefinitionId(id);
+
+        SeatunnelJobScheduleDTO scheduleDTO = new SeatunnelJobScheduleDTO();
+        scheduleDTO.setJobDefinitionId(id);
+        scheduleDTO.setCronExpression(dto.getCronExpression());
+        scheduleDTO.setScheduleStatus(dto.getScheduleStatus());
+        scheduleDTO.setScheduleConfig(dto.getScheduleConfig());
+
+        try {
+
+            Long scheduleId;
+
+            if (existing == null) {
+                scheduleId = seatunnelJobScheduleService
+                        .createTaskSchedule(scheduleDTO);
+            } else {
+                scheduleDTO.setId(existing.getId());
+                seatunnelJobScheduleService
+                        .updateTaskSchedule(scheduleDTO);
+                scheduleId = existing.getId();
+            }
+
+            if (ScheduleStatusEnum.ACTIVE.equals(dto.getScheduleStatus())) {
+
+                seatunnelJobScheduleService.stopSchedule(scheduleId);
+                seatunnelJobScheduleService.startSchedule(scheduleId);
+            }
+
+        } catch (SchedulerException e) {
+            throw new RuntimeException("Failed to handle schedule", e);
         }
     }
 }

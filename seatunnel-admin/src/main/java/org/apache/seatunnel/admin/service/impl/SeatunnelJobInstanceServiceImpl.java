@@ -28,7 +28,6 @@ import org.apache.seatunnel.communal.utils.ConvertUtil;
 import org.apache.seatunnel.engine.common.job.JobStatus;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.io.File;
@@ -106,29 +105,14 @@ public class SeatunnelJobInstanceServiceImpl
     }
 
 
-    private SeatunnelJobInstancePO buildJobInstance(
-            SeatunnelBatchJobDefinitionVO definitionVO,
-            RunMode runMode) {
-
-        Long id = generateInstanceId();
-
-        String jobConfig = buildHoconConfig(
-                ConvertUtil.sourceToTarget(
-                        definitionVO,
-                        SeatunnelBatchJobDefinitionDTO.class
-                ));
-
-        return SeatunnelJobInstancePO.builder()
-                .id(id)
-                .jobDefinitionId(definitionVO.getId())
-                .startTime(new Date())
-                .jobConfig(jobConfig)
-                .logPath(buildLogPath(id))
-                .jobStatus(JobStatus.RUNNING.toString())
-                .runMode(runMode)
-                .build();
-    }
-
+    /**
+     * Generate a unique job instance ID.
+     * <p>
+     * Delegates ID generation to CodeGenerateUtils.
+     * Wraps checked exception into RuntimeException.
+     *
+     * @return Unique instance ID
+     */
     private Long generateInstanceId() {
         try {
             return CodeGenerateUtils.getInstance().genCode();
@@ -138,6 +122,15 @@ public class SeatunnelJobInstanceServiceImpl
         }
     }
 
+    /**
+     * Build the absolute log file path for a job instance.
+     * <p>
+     * Log format:
+     * {user.dir}/{baseLogDir}/job-{instanceId}.log
+     *
+     * @param id Job instance ID
+     * @return Log file absolute path
+     */
     private String buildLogPath(Long id) {
         return System.getProperty("user.dir") + File.separator + Paths.get(baseLogDir,
                 "job-" + id + ".log").toString();
@@ -273,7 +266,52 @@ public class SeatunnelJobInstanceServiceImpl
                 .remove();
     }
 
+    /**
+     * Build a new job instance entity based on job definition and run mode.
+     * <p>
+     * This method:
+     * 1. Generates a unique instance ID
+     * 2. Builds HOCON job configuration from definition
+     * 3. Initializes instance metadata (status, log path, start time, etc.)
+     *
+     * @param definitionVO Job definition view object
+     * @param runMode      Execution mode (BATCH / STREAM, etc.)
+     * @return Initialized SeatunnelJobInstancePO
+     */
+    private SeatunnelJobInstancePO buildJobInstance(
+            SeatunnelBatchJobDefinitionVO definitionVO,
+            RunMode runMode) {
 
+        Long id = generateInstanceId();
+
+        String jobConfig = buildHoconConfig(
+                ConvertUtil.sourceToTarget(
+                        definitionVO,
+                        SeatunnelBatchJobDefinitionDTO.class
+                ));
+
+        return SeatunnelJobInstancePO.builder()
+                .id(id)
+                .jobDefinitionId(definitionVO.getId())
+                .startTime(new Date())
+                .jobConfig(jobConfig)
+                .logPath(buildLogPath(id))
+                .jobStatus(JobStatus.RUNNING.toString())
+                .runMode(runMode)
+                .build();
+    }
+
+    /**
+     * Build HOCON configuration string from DAG JSON and job definition DTO.
+     * <p>
+     * This method:
+     * 1. Parses and validates DAG structure
+     * 2. Delegates final configuration building to HoconConfigBuilder
+     *
+     * @param dagJson DAG JSON definition
+     * @param dto     Job definition DTO
+     * @return Generated HOCON configuration string
+     */
     private String buildConfig(String dagJson,
                                BaseSeatunnelJobDefinitionDTO dto) {
 

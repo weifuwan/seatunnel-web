@@ -65,11 +65,11 @@ public class SeatunnelJobScheduleServiceImpl extends ServiceImpl<TaskScheduleMap
             throw new RuntimeException("Task schedule configuration does not exist");
         }
 
-        // Convert DTO to PO
+
         SeatunnelJobSchedulePO seatunnelJobSchedulePO = new SeatunnelJobSchedulePO();
         BeanUtils.copyProperties(seatunnelJobScheduleDTO, seatunnelJobSchedulePO);
 
-        // Update database
+
         boolean updateResult = updateById(seatunnelJobSchedulePO);
         if (!updateResult) {
             throw new RuntimeException("Failed to update task schedule configuration");

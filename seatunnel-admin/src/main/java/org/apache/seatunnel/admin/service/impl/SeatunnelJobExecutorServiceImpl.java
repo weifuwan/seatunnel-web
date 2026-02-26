@@ -57,6 +57,18 @@ public class SeatunnelJobExecutorServiceImpl implements SeatunnelJobExecutorServ
         throw new UnsupportedOperationException("Stop not implemented");
     }
 
+    /**
+     * Retrieve the current job status from the underlying execution engine.
+     *
+     * This method:
+     * 1. Builds an Engine descriptor
+     * 2. Creates the corresponding metrics extractor
+     * 3. Queries the engine for the job status by engine job ID
+     *
+     * @param jobInstance  Job instance metadata (must not be null)
+     * @param jobEngineId  Engine-side job ID
+     * @return Current job status from engine
+     */
     private JobStatus getJobStatusFromEngine(@NonNull SeatunnelJobInstanceVO jobInstance, String jobEngineId) {
 
         Engine engine = new Engine(EngineType.SeaTunnel, "2.3.12");
@@ -67,6 +79,13 @@ public class SeatunnelJobExecutorServiceImpl implements SeatunnelJobExecutorServ
         return engineMetricsExtractor.getJobStatus(jobEngineId);
     }
 
+    /**
+     * Pause a running job in the underlying execution engine.
+     *
+     * This method delegates the pause operation to the SeaTunnel engine proxy.
+     *
+     * @param jobEngineId Engine-side job ID (must not be null)
+     */
     private void pauseJobInEngine(@NonNull String jobEngineId) {
         SeaTunnelEngineProxy.getInstance().pauseJob(jobEngineId);
     }

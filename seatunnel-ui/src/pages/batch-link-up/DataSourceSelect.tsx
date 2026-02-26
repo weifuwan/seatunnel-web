@@ -37,13 +37,13 @@ export const generateDataSourceOptions = (): DataSourceType[] => [
     ),
   },
   {
-    value: "POSTGRE",
+    value: "PGSQL",
     connectorType: "Jdbc",
-    pluginName: "JDBC-POSTGRE",
+    pluginName: "JDBC-PGSQL",
     label: (
       <div style={{ display: "flex", alignItems: "center" }}>
         <PostgreSQL />
-        <span style={{ marginLeft: 8 }}>POSTGRE</span>
+        <span style={{ marginLeft: 8 }}>PGSQL</span>
       </div>
     ),
   },

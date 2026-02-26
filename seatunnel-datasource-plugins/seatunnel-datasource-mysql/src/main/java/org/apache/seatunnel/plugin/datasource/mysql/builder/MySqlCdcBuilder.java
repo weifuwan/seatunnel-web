@@ -54,6 +54,19 @@ public class MySqlCdcBuilder implements DataSourceHoconBuilder {
         return "MySQL-CDC";
     }
 
+    /**
+     * Allocate and fill MySQL server-id configuration.
+     *
+     * If jobId is not provided in config, a default server-id will be used.
+     * Otherwise:
+     * 1. Allocate a server-id range based on jobId and parallelism
+     * 2. Store the allocated range in "server-id"
+     *
+     * @param map       Target configuration map
+     * @param config    Job-level configuration
+     * @param provider  JDBC connection provider
+     * @param param     MySQL connection parameters
+     */
     private void fillServerId(Map<String, Object> map,
                               Config config,
                               JdbcConnectionProvider provider,
@@ -81,6 +94,17 @@ public class MySqlCdcBuilder implements DataSourceHoconBuilder {
         }
     }
 
+    /**
+     * Fill basic MySQL connection information into config map.
+     *
+     * Includes:
+     * - base-url
+     * - username
+     * - password
+     *
+     * @param map   Target configuration map
+     * @param param MySQL connection parameters
+     */
     private void fillBasicInfo(Map<String, Object> map,
                                MySQLConnectionParam param) {
 
@@ -89,6 +113,20 @@ public class MySqlCdcBuilder implements DataSourceHoconBuilder {
         map.put("password", param.getPassword());
     }
 
+    /**
+     * Fill synchronization mode related configuration.
+     *
+     * Supported modes:
+     * - TABLE_LIST
+     * - TABLE_PATTERN
+     * - FULL_DATABASE
+     *
+     * Delegates to corresponding handler based on SyncMode.
+     *
+     * @param map    Target configuration map
+     * @param config Job configuration
+     * @param param  MySQL connection parameters
+     */
     private void fillSyncMode(Map<String, Object> map,
                               Config config,
                               MySQLConnectionParam param) {
@@ -111,24 +149,57 @@ public class MySqlCdcBuilder implements DataSourceHoconBuilder {
         }
     }
 
+    /**
+     * Fill startup mode configuration for CDC.
+     *
+     * Example:
+     * - initial
+     * - latest-offset
+     *
+     * @param map    Target configuration map
+     * @param config Job configuration
+     */
     private void fillStartupMode(Map<String, Object> map, Config config) {
         if (config.hasPath("startupMode")) {
             map.put("startup.mode", config.getString("startupMode"));
         }
     }
 
+    /**
+     * Enable or disable schema change capture.
+     *
+     * @param map    Target configuration map
+     * @param config Job configuration
+     */
     private void fillSchemaChange(Map<String, Object> map, Config config) {
         if (config.hasPath("schemaChange")) {
             map.put("schema-changes.enabled", config.getBoolean("schemaChange"));
         }
     }
 
+    /**
+     * Fill stop mode configuration for CDC job.
+     *
+     * Defines how the job should behave when stopping.
+     *
+     * @param map    Target configuration map
+     * @param config Job configuration
+     */
     private void fillStopMode(Map<String, Object> map, Config config) {
         if (config.hasPath("stopMode")) {
             map.put("stop.mode", config.getString("stopMode"));
         }
     }
 
+    /**
+     * Append extra custom parameters into the configuration map.
+     *
+     * All key-value pairs under "extraParams" will be flattened
+     * and directly added into the final config.
+     *
+     * @param map    Target configuration map
+     * @param config Job configuration
+     */
     private void fillExtraParams(Map<String, Object> map, Config config) {
 
         if (!config.hasPath("extraParams")) {
@@ -142,6 +213,20 @@ public class MySqlCdcBuilder implements DataSourceHoconBuilder {
         }
     }
 
+    /**
+     * Handle TABLE_LIST synchronization mode.
+     *
+     * Requirements:
+     * - "table_list" must be provided
+     *
+     * This method:
+     * 1. Prefixes table names with database name
+     * 2. Fills "table-names" and "database-names"
+     *
+     * @param map    Target configuration map
+     * @param config Job configuration
+     * @param param  MySQL connection parameters
+     */
     private void handleTableList(Map<String, Object> map,
                                  Config config,
                                  MySQLConnectionParam param) {
@@ -161,6 +246,20 @@ public class MySqlCdcBuilder implements DataSourceHoconBuilder {
         map.put("database-names", Collections.singletonList(database));
     }
 
+    /**
+     * Handle TABLE_PATTERN synchronization mode.
+     *
+     * Requirements:
+     * - "keyword" must be provided
+     *
+     * This method builds:
+     * - database-pattern
+     * - table-pattern (regex format)
+     *
+     * @param map    Target configuration map
+     * @param config Job configuration
+     * @param param  MySQL connection parameters
+     */
     private void handlePattern(Map<String, Object> map,
                                Config config,
                                MySQLConnectionParam param) {
@@ -178,6 +277,16 @@ public class MySqlCdcBuilder implements DataSourceHoconBuilder {
         map.put("table-pattern", tablePattern);
     }
 
+    /**
+     * Handle FULL_DATABASE synchronization mode.
+     *
+     * This mode captures all tables in the specified database.
+     * Internally uses regex pattern:
+     *   {database}\\..*
+     *
+     * @param map   Target configuration map
+     * @param param MySQL connection parameters
+     */
     private void handleFullDatabase(Map<String, Object> map,
                                     MySQLConnectionParam param) {
 

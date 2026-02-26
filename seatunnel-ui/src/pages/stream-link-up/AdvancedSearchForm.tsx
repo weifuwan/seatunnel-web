@@ -42,7 +42,7 @@ const AdvancedSearchForm: React.FC<AdvancedSearchFormProps> = ({ onSearch, onRes
   const dataSourceOption = [
     createDataSourceOption('MySql', 'MYSQL'),
     createDataSourceOption('Oracle', 'ORACLE'),
-    createDataSourceOption('PostgreSql', 'POSTGRESQL'),
+    createDataSourceOption('PgSQL', 'PGSQL'),
   ];
 
   const defaultTimeRange = [moment().subtract(4, 'days'), moment().add(1, 'days')];

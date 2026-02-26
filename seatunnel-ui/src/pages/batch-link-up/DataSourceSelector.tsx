@@ -21,20 +21,7 @@ const { Option } = Select;
 type DataSourceType =
   | 'MYSQL'
   | 'ORACLE'
-  | 'POSTGRESQL'
-  | 'SQLSERVER'
-  | 'MONGODB'
-  | 'DB2'
-  | 'CACHE'
-  | 'ELASTICSEARCH'
-  | 'OPENGAUSS'
-  | 'DORIS'
-  | 'HIVE3'
-  | 'DAMENG'
-  | 'STARROCKS'
-  | 'CLICKHOUSE'
-  | 'KINGBASE'
-  | 'TIDB';
+  | 'PGSQL'
 
 type DataSourceSelectorProps = {
   type: 'source' | 'target';
@@ -51,42 +38,14 @@ const DATA_SOURCE_CONFIG: Record<
 > = {
   MYSQL: { icon: MysqlIcon, displayName: 'MySQL' },
   ORACLE: { icon: OracleIcon, displayName: 'ORACLE' },
-  POSTGRESQL: { icon: PostgreSQL, displayName: 'POSTGRESQL' },
-  SQLSERVER: { icon: SQLServer, displayName: 'SQLSERVER' },
-  // SQLITE: { icon: SQLite, displayName: 'SQLITE' },
-  MONGODB: { icon: MongoDBIcon, displayName: 'MONGODB' },
-  DB2: { icon: DB2Icon, displayName: 'DB2' },
-  CACHE: { icon: CacheIcon, displayName: 'CACHE' },
-  DAMENG: { icon: DaMengIcon, displayName: 'DAMENG' },
-  // ELASTICSEARCH: { icon: ElasticSearchIcon, displayName: 'ELASTICSEARCH' },
-  OPENGAUSS: { icon: OpenGaussIcon, displayName: 'OPENGAUSS' },
-  DORIS: { icon: DorisIcon, displayName: 'DORIS' },
-  HIVE3: { icon: HiveIcon, displayName: 'HIVE3' },
-  STARROCKS: { icon: StarRocksIcon, displayName: 'STARROCKS' },
-  CLICKHOUSE: { icon: ClickhouseIcon, displayName: 'CLICKHOUSE' },
-  KINGBASE: { icon: KingBaseIcon, displayName: 'KINGBASE' },
-  TIDB: { icon: TiDBIcon, displayName: 'TIDB' },
-
+  PGSQL: { icon: PostgreSQL, displayName: 'PGSQL' }
 };
 
 // 默认支持的数据源
 const DEFAULT_DATA_SOURCES: DataSourceType[] = [
   'MYSQL',
   'ORACLE',
-  'POSTGRESQL',
-  'SQLSERVER',
-  // 'SQLITE',
-  'MONGODB',
-  'DB2',
-  'CACHE',
-  'ELASTICSEARCH',
-  'OPENGAUSS',
-  'DORIS',
-  'HIVE3',
-  'STARROCKS',
-  'CLICKHOUSE',
-  'KINGBASE',
-  'TIDB',
+  'PGSQL'
 ];
 
 const DataSourceSelector = ({

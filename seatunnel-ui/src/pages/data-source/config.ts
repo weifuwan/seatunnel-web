@@ -37,8 +37,8 @@ export const sourceList = [
       },
       {
         onlyDiScript: false,
-        dbType: "POSTGRESQL",
-        type: "POSTGRESQL",
+        dbType: "PGSQL",
+        type: "PGSQL",
         connectorType: "Jdbc"
       },
 

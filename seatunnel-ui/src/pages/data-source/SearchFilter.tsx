@@ -43,8 +43,8 @@ const SearchFilter: React.FC<SearchFilterProps> = ({ data, selectSource }) => {
       value: 'ORACLE',
     },
     {
-      label: 'POSTGRESQL',
-      value: 'POSTGRESQL',
+      label: 'PGSQL',
+      value: 'PGSQL',
     },
   ]);
 

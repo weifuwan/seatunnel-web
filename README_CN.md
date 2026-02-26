@@ -36,3 +36,6 @@
 <p align="left">
   <img src="docs/images/wechat-group-qr.jpg" alt="SeaTunnel Web 交流群" width="200">
 </p>
+
+## Github地址
+- https://github.com/weifuwan/seatunnel-web

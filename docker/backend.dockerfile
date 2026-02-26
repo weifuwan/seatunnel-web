@@ -9,9 +9,6 @@ WORKDIR $SEATUNNEL_WEB_HOME
 RUN mkdir -p $SEATUNNEL_WEB_HOME/bin
 
 ADD ./seatunnel-admin.jar $SEATUNNEL_WEB_HOME/
-ADD ./seatunnel-web-backend-daemon.sh $SEATUNNEL_WEB_HOME/bin
-
-RUN chmod +x $SEATUNNEL_WEB_HOME/bin/seatunnel-web-backend-daemon.sh
 
 EXPOSE 8080
 

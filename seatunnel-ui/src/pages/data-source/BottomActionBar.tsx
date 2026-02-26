@@ -37,27 +37,27 @@ const BottomActionBar: React.FC<BottomActionBarProps> = ({
           <Button
             onClick={batchConnectTest}
             size="small"
-            style={{ width: 90, borderRadius: 4 }}
+            style={{ width: 110, borderRadius: 4 }}
             disabled={disabled}
             type="primary"
             icon={<ApiOutlined />}
           >
-            批量测试
+            Batch Test
           </Button>
           <Divider type="vertical" />
           <Button
             onClick={batchDeleteTest}
-            style={{ width: 90, borderRadius: 4 }}
+            style={{ width: 110, borderRadius: 4 }}
             size="small"
             disabled={disabled}
             danger
             type="primary"
             icon={<DeleteOutlined />}
           >
-            批量删除
+            Batch Delete
           </Button>
         </div>
-        <div>
+        <div style={{marginRight: 30}}>
           <CustomPagination
             total={pagination?.total}
             pageSize={pagination?.pageSize}

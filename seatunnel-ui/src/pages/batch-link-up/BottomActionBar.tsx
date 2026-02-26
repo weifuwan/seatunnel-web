@@ -33,15 +33,15 @@ const BottomActionBar: React.FC<BottomActionBarProps> = ({
     >
       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
         <div>
-          <Button size="small" style={{ width: 90 }} type='primary' onClick={onStart} disabled={disabled} icon={<PlayCircleOutlined />}>
+          <Button size="small" style={{ width: 70 }} type='primary' onClick={onStart} disabled={disabled} icon={<PlayCircleOutlined />}>
             Run
           </Button>
           <Divider type="vertical" />
-          <Button style={{ width: 90 }} size="small" onClick={onStop} danger type='primary' disabled={disabled} icon={<StopOutlined />}>
+          <Button style={{ width: 70 }} size="small" onClick={onStop} danger type='primary' disabled={disabled} icon={<StopOutlined />}>
             Stop
           </Button>
         </div>
-        <div>
+        <div style={{marginRight: 30}}>
           <CustomPagination {...pagination} />
         </div>
       </div>

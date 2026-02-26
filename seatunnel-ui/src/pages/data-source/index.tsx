@@ -61,7 +61,7 @@ const Index = () => {
   const batchConnectTest = () => {
     dataSourceApi.batchConnectTest(selectedRowKeys).then((data) => {
       if (data?.code === 0) {
-        message.success('全部连接成功');
+        message.success('Connected Success');
         cbk();
       } else {
         message.error(data?.message);
@@ -72,7 +72,7 @@ const Index = () => {
   const batchDeleteTest = () => {
     dataSourceApi.batchDelete(selectedRowKeys).then((data) => {
       if (data?.code === 0) {
-        message.success('败删除成功');
+        message.success('Unknow Error');
         cbk();
       } else {
         message.error(data?.message);
@@ -82,16 +82,16 @@ const Index = () => {
 
   const handleDeleteDataSource = async (record: DataSource) => {
     confirm({
-      title: '确认要删除么？',
+      title: 'Are you sure you want to delete it ?',
       centered: true,
       content: (
         <span>
-          您确定要删除数据源 [{<span style={{ color: 'orange' }}> {record.dbName} </span>}
-          ] 吗？ <br />
-          数据源一旦删除将无法恢复，请谨慎操作。
+          Are you sure you delete datasource [{<span style={{ color: 'orange' }}> {record.dbName} </span>}
+          ] ？ <br />
+          Once a data source is deleted, it cannot be recovered. Please proceed with caution.
         </span>
       ),
-      okText: '删除',
+      okText: 'Delete',
       okType: 'primary',
       okButtonProps: {
         size: 'small',

@@ -37,6 +37,12 @@
             <version>2.6</version>
         </dependency>
 
+        <dependency>
+            <groupId>com.github.jsqlparser</groupId>
+            <artifactId>jsqlparser</artifactId>
+            <version>4.5</version>
+        </dependency>
+
         <!-- quartz -->
         <dependency>
             <groupId>org.quartz-scheduler</groupId>

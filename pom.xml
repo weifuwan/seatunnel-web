@@ -30,7 +30,6 @@
         <module>seatunnel-communal</module>
         <module>seatunnel-datasource-connection</module>
         <module>seatunnel-datasource-plugins</module>
-        <module>seatunnel-client-plugins</module>
         <module>seatunnel-ui</module>
     </modules>
 

@@ -1,7 +1,6 @@
 package org.apache.seatunnel.admin;
 
 import org.apache.seatunnel.admin.components.MysqlServerIdInitializer;
-import org.apache.seatunnel.plugin.client.api.factory.SeatunnelClientProvider;
 import org.apache.seatunnel.plugin.datasource.api.plugin.DataSourceProcessorProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,7 +30,6 @@ public class SeatunnelWebApplication {
             SpringApplication sa = new SpringApplication(SeatunnelWebApplication.class);
             sa.run(args);
             DataSourceProcessorProvider.initialize();
-            SeatunnelClientProvider.initialize();
         } catch (Exception e) {
             e.printStackTrace();
         }

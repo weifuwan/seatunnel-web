@@ -133,7 +133,7 @@ const RunLog: FC<RunLogProps> = ({
     setConnectionStatus("Connecting...");
     addLogEntry("Connecting WebSocket Server...", "log");
 
-    const socket = new SockJS("http://192.168.1.115:9527/ws");
+    const socket = new SockJS("http://localhost:9527/ws");
 
     const stompClient = new Client({
       webSocketFactory: () => socket,

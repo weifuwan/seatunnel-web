@@ -14,7 +14,7 @@
     <version>1.0.0</version>
 
     <properties>
-        <seatunnel-framework.version>2.3.13</seatunnel-framework.version>
+        <seatunnel-framework.version>2.3.12</seatunnel-framework.version>
     </properties>
 
 

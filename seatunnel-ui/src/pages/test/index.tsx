@@ -15,24 +15,24 @@ const SimpleWebSocketTest: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [status, setStatus] = useState('未连接');
-  
+
   const stompClientRef = useRef<Client | null>(null);
 
   // 连接 WebSocket
   const connect = () => {
     setStatus('连接中...');
-    
-    const socket = new SockJS('http://192.168.1.115:9527/ws');
+
+    const socket = new SockJS('http://localhost:9527/ws');
     const stompClient = new Client({
       webSocketFactory: () => socket,
       onConnect: () => {
         setIsConnected(true);
         setStatus('已连接');
         message.info('WebSocket 连接成功');
-        
+
         // 订阅测试频道
         stompClient.subscribe('/topic/log/test', (message) => {
- 
+
           const data = JSON.parse(message.body);
           const newMsg: Message = {
             id: Date.now(),
@@ -79,7 +79,7 @@ const SimpleWebSocketTest: React.FC = () => {
           type: 'test'
         })
       });
-      
+
       if (response.ok) {
         setInputMessage('');
       }
@@ -112,21 +112,21 @@ const SimpleWebSocketTest: React.FC = () => {
   return (
     <div style={{ padding: 20, fontFamily: 'Arial, sans-serif' }}>
       <h2>WebSocket 连接测试</h2>
-      
+
       <div style={{ marginBottom: 20 }}>
         <div style={{ marginBottom: 10 }}>
-          状态: <span style={{ 
+          状态: <span style={{
             color: isConnected ? 'green' : status.includes('错误') ? 'red' : 'black',
             fontWeight: 'bold'
           }}>{status}</span>
         </div>
-        
+
         <div style={{ marginBottom: 10 }}>
-          <button 
-            onClick={connect} 
+          <button
+            onClick={connect}
             disabled={isConnected}
-            style={{ 
-              marginRight: 10, 
+            style={{
+              marginRight: 10,
               padding: '8px 16px',
               backgroundColor: isConnected ? '#ccc' : '#007bff',
               color: 'white',
@@ -137,12 +137,12 @@ const SimpleWebSocketTest: React.FC = () => {
           >
             连接
           </button>
-          
-          <button 
-            onClick={disconnect} 
+
+          <button
+            onClick={disconnect}
             disabled={!isConnected}
-            style={{ 
-              marginRight: 10, 
+            style={{
+              marginRight: 10,
               padding: '8px 16px',
               backgroundColor: !isConnected ? '#ccc' : '#dc3545',
               color: 'white',
@@ -153,10 +153,10 @@ const SimpleWebSocketTest: React.FC = () => {
           >
             断开
           </button>
-          
-          <button 
+
+          <button
             onClick={clearMessages}
-            style={{ 
+            style={{
               padding: '8px 16px',
               backgroundColor: '#6c757d',
               color: 'white',
@@ -177,7 +177,7 @@ const SimpleWebSocketTest: React.FC = () => {
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
             placeholder="输入要发送的消息..."
-            style={{ 
+            style={{
               padding: '8px',
               width: '300px',
               marginRight: '10px',
@@ -186,12 +186,12 @@ const SimpleWebSocketTest: React.FC = () => {
             }}
             onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
           />
-          
-          <button 
-            onClick={sendMessage} 
+
+          <button
+            onClick={sendMessage}
             disabled={!isConnected}
-            style={{ 
-              marginRight: 10, 
+            style={{
+              marginRight: 10,
               padding: '8px 16px',
               backgroundColor: !isConnected ? '#ccc' : '#28a745',
               color: 'white',
@@ -202,11 +202,11 @@ const SimpleWebSocketTest: React.FC = () => {
           >
             发送消息
           </button>
-          
-          <button 
-            onClick={sendTestLog} 
+
+          <button
+            onClick={sendTestLog}
             disabled={!isConnected}
-            style={{ 
+            style={{
               padding: '8px 16px',
               backgroundColor: !isConnected ? '#ccc' : '#17a2b8',
               color: 'white',
@@ -222,8 +222,8 @@ const SimpleWebSocketTest: React.FC = () => {
 
       <div>
         <h3>接收到的消息 ({messages.length} 条):</h3>
-        <div style={{ 
-          border: '1px solid #ddd', 
+        <div style={{
+          border: '1px solid #ddd',
           borderRadius: 4,
           height: '300px',
           overflowY: 'auto',
@@ -236,9 +236,9 @@ const SimpleWebSocketTest: React.FC = () => {
             </div>
           ) : (
             messages.map((msg) => (
-              <div 
-                key={msg.id} 
-                style={{ 
+              <div
+                key={msg.id}
+                style={{
                   padding: '8px',
                   marginBottom: '8px',
                   borderBottom: '1px solid #eee',

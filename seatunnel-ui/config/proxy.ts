@@ -14,7 +14,6 @@ export default {
   dev: {
     '/api/': {
       target: 'http://localhost:9527',
-      // target: "http://192.168.1.115:9527",
       changeOrigin: true,
       pathRewrite: { '^/api': '/api' },
     },

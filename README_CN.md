@@ -27,10 +27,12 @@
 ![Batch Sync Screenshot](docs/images/log.png)
 ![Batch Sync Screenshot](docs/images/metrics.png)
 
+
+
 ## 🔥 加入社区群
 
-If you would like to be among the first to experience the adapted version of SeaTunnel Web, 
-or join us in building the ecosystem from 0 to 1, you are warmly welcome to join the SeaTunnel Web Early Co-Creation Group.
+如果你想第一时间体验 SeaTunnel Web 适配版，或者想与我们一起从 0 到 1 建设生态， 欢迎加入 SeaTunnel Web 早期共建群。
+
 <p align="left">
-  <img src="docs/images/wechat-group-qr.jpg" alt="SeaTunnel Web Co-Creation Group" width="200">
+  <img src="./wechat-group-qr.jpg" alt="SeaTunnel Web 交流群" width="200">
 </p>

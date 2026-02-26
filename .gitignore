@@ -53,3 +53,4 @@ spark-warehouse
 /seatunnel-ui/node_modules
 /seatunnel-ui/node_modules/*
 /seatunnel-web-it/profile/*
+/docker/dist/

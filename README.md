@@ -39,7 +39,7 @@ wisdom:
 如果你想第一时间体验 SeaTunnel Web 适配版，或者想与我们一起从 0 到 1 建设生态， 欢迎加入 SeaTunnel Web 早期共建群。
 
 <p align="left">
-  <img src="./wechat-group-qr.jpg" alt="SeaTunnel Web 交流群" width="200">
+  <img src="docs/images/wechat-group-qr.jpg" alt="SeaTunnel Web 交流群" width="200">
 </p>
 
   

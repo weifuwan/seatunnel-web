@@ -71,7 +71,7 @@ services:
     ports:
       - "9527:8080"
     environment:
-      DB_URL: jdbc:mariadb://mysql:3306/seatunnel-web?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8
+      DB_URL: jdbc:mariadb://mysql:3306/seatunnel_web?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8
       DB_USERNAME: seatunnel
       DB_PASSWORD: seatunnel123
       SEATUNNEL_ADDRESS: seatunnel_master:5801

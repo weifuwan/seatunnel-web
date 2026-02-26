@@ -1,7 +1,8 @@
-create
-database if not exists seatunnel-web;
+CREATE DATABASE IF NOT EXISTS seatunnel_web;
 
-CREATE TABLE `t_seatunnel_datasource`
+use seatunnel_web;
+
+CREATE TABLE IF NOT EXISTS `t_seatunnel_datasource`
 (
     `id`                bigint NOT NULL COMMENT '主键',
     `db_name`           varchar(64)   DEFAULT NULL COMMENT '数据源名称',
@@ -17,7 +18,7 @@ CREATE TABLE `t_seatunnel_datasource`
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='数据集成-数据源';
 
 
-CREATE TABLE `t_seatunnel_datasource_plugin_config`
+CREATE TABLE IF NOT EXISTS `t_seatunnel_datasource_plugin_config`
 (
     `id`            varchar(32) NOT NULL COMMENT '主键',
     `plugin_type`   varchar(50) NOT NULL COMMENT '插件类型: mysql, postgresql, oracle, etc',
@@ -29,7 +30,7 @@ CREATE TABLE `t_seatunnel_datasource_plugin_config`
 
 
 
-CREATE TABLE `t_seatunnel_job_definition`
+CREATE TABLE IF NOT EXISTS `t_seatunnel_job_definition`
 (
     `id`                  bigint                                  NOT NULL COMMENT '主键ID',
     `job_name`            varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '作业名称',
@@ -50,7 +51,7 @@ CREATE TABLE `t_seatunnel_job_definition`
 
 
 
-CREATE TABLE `t_seatunnel_job_instance`
+CREATE TABLE IF NOT EXISTS `t_seatunnel_job_instance`
 (
     `id`                bigint   NOT NULL AUTO_INCREMENT COMMENT 'Primary key ID',
     `job_definition_id` bigint   NOT NULL COMMENT 'Job definition ID, foreign key to t_seatunnel_job_definition.id',
@@ -68,7 +69,7 @@ CREATE TABLE `t_seatunnel_job_instance`
 
 
 
-CREATE TABLE `t_seatunnel_job_metrics`
+CREATE TABLE IF NOT EXISTS `t_seatunnel_job_metrics`
 (
     `id`                      bigint NOT NULL COMMENT '主键ID',
     `job_instance_id`         bigint NOT NULL COMMENT '任务实例ID',
@@ -97,7 +98,7 @@ CREATE TABLE `t_seatunnel_job_metrics`
 
 
 
-CREATE TABLE `t_seatunnel_job_schedule`
+CREATE TABLE IF NOT EXISTS `t_seatunnel_job_schedule`
 (
     `id`                 varchar(32)                                                  NOT NULL COMMENT '主键',
     `job_definition_id`  varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '任务定义ID',
@@ -114,7 +115,7 @@ CREATE TABLE `t_seatunnel_job_schedule`
 
 
 
-CREATE TABLE `t_seatunnel_stream_job_definition`
+CREATE TABLE IF NOT EXISTS `t_seatunnel_stream_job_definition`
 (
     `id`                  bigint       NOT NULL COMMENT 'Primary key ID',
     `job_name`            varchar(255) NOT NULL COMMENT 'Job name',
@@ -138,7 +139,7 @@ CREATE TABLE `t_seatunnel_stream_job_definition`
     KEY                   `idx_schedule_status` (`schedule_status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Seatunnel stream job definition table';
 
-CREATE TABLE `t_seatunnel_cdc_server_ids`
+CREATE TABLE IF NOT EXISTS `t_seatunnel_cdc_server_ids`
 (
     `server_id`    int NOT NULL,
     `job_id`       varchar(64) DEFAULT NULL,

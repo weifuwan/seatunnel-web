@@ -1,14 +1,18 @@
 package org.apache.seatunnel.admin;
 
 import org.apache.seatunnel.admin.components.MysqlServerIdInitializer;
+import org.apache.seatunnel.admin.init.SeaTunnelWebManager;
 import org.apache.seatunnel.plugin.datasource.api.plugin.DataSourceProcessorProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
@@ -51,6 +55,24 @@ public class SeatunnelWebApplication {
 
         } catch (Exception e) {
             logger.error("Failed to initialize CDC server-id range", e);
+        }
+    }
+
+    @Component
+    @Profile("init")
+    static class InitRunner implements CommandLineRunner {
+        private static final Logger logger = LoggerFactory.getLogger(InitRunner.class);
+
+        private final SeaTunnelWebManager seaTunnelWebManager;
+
+        InitRunner(SeaTunnelWebManager seaTunnelWebManager) {
+            this.seaTunnelWebManager = seaTunnelWebManager;
+        }
+
+        @Override
+        public void run(String... args) {
+            seaTunnelWebManager.initSeaTunnelWeb();
+            logger.info("init SeaTunnel Web finished");
         }
     }
 }

@@ -19,13 +19,13 @@ const BasicConfig = () =>  {
         <TextArea rows={4} size="small" />
       </Form.Item>
 
-      <Form.Item
+      {/* <Form.Item
         label="Client"
         name="clientId"
         rules={[{ required: true, message: "客户端不能为空" }]}
       >
         <Input size="small" />
-      </Form.Item>
+      </Form.Item> */}
 
       <Form.Item
         label="Multi Sync"

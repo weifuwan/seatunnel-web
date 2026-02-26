@@ -43,7 +43,7 @@ export const NodeListPopover: React.FC<NodeListPopoverProps> = ({
     <div style={{ marginTop: 8 }}>
       <Input
         prefix={<SearchOutlined style={{ fontSize: "120%" }} />}
-        placeholder={`搜索${type === "source" ? "输入" : "输出"}节点`}
+        placeholder={`Search ${type === "source" ? " Source" : " Sink"} Node`}
         onChange={onSearchChange}
         allowClear
         value={searchText}
@@ -164,7 +164,7 @@ export const NodeListPopover: React.FC<NodeListPopoverProps> = ({
       label: "transform",
       children: (
         <div style={{ marginTop: 8 }}>
-          <Input prefix={<SearchOutlined />} placeholder="搜索转换节点" />
+          <Input prefix={<SearchOutlined />} placeholder="Search Transform" />
           <Divider style={{ padding: 0, margin: "8px 0" }} />
 
           {[{ transformType: "FieldMapper", transformTitle: "FieldMapper" }].map(

@@ -27,7 +27,7 @@ import {
 } from "antd";
 import { debounce } from "lodash";
 import { useCallback, useEffect, useState } from "react";
-import DataSourceSelect from "../../DataSourceSelect";
+import DataSourceSelect, { generateDataSourceOptions } from "../../DataSourceSelect";
 import IconRightArrow from "../../IconRightArrow";
 import { seatunnelJobDefinitionApi } from "../../api";
 import CloseIcon from "../icon/CloseIcon";
@@ -363,11 +363,11 @@ const WholeSync = ({ goBack, baseForm }) => {
                       goBack();
                     }}
                   >
-                    任务列表
+                    List of job
                   </a>
                 ),
               },
-              { title: <span style={{ fontSize: 12 }}>整库同步</span> },
+              { title: <span style={{ fontSize: 12 }}>Multi Sync</span> },
             ]}
           />
         </div>
@@ -380,9 +380,10 @@ const WholeSync = ({ goBack, baseForm }) => {
             <DataSourceSelect
               value={sourceType}
               onChange={handleSourceChange}
-              placeholder="来源"
-              prefix="来源："
+              placeholder="SOURCE"
+              prefix="SOURCE: "
               width="48%"
+              dataSourceOptions={generateDataSourceOptions()}
             />
             <div
               style={{ display: "flex", alignItems: "center", margin: "0 8px" }}
@@ -392,9 +393,10 @@ const WholeSync = ({ goBack, baseForm }) => {
             <DataSourceSelect
               value={targetType}
               onChange={handleTargetChange}
-              placeholder="去向"
-              prefix="去向："
+              placeholder="SINK"
+              prefix="SINK: "
               width="48%"
+              dataSourceOptions={generateDataSourceOptions()}
             />
           </div>
         </div>
@@ -402,7 +404,7 @@ const WholeSync = ({ goBack, baseForm }) => {
 
       <div style={{ margin: 16, overflow: "hidden" }}>
         <div style={{ backgroundColor: "white", padding: "16px 24px" }}>
-          <Header title={"Sync Setting"} />
+          <Header title={"Sync Table"} />
           <SyncTitle />
           <Form form={form} initialValues={{ matchMode: "1" }}>
             <Row gutter={24} style={{ marginBottom: 4 }}>

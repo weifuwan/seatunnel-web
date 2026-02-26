@@ -32,7 +32,7 @@ const DatabaseIcons = ({ dbType, width, height }: DatabaseIconsProps) => {
       return <DorisIcon width={width} height={height} />;
     case 'elasticsearch':
       return <ElasticSearchIcon width={width} height={height} />;
-    case 'postgresql':
+    case 'pgsql':
       return <PsSqlIcon width={width} height={height} />;
     case 'opengauss':
       return <OpenGaussIcon width={width} height={height} />;

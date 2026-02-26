@@ -26,3 +26,11 @@
 ![Batch Sync Screenshot](docs/images/img_10.png)
 ![Batch Sync Screenshot](docs/images/log.png)
 ![Batch Sync Screenshot](docs/images/metrics.png)
+
+## 🔥 加入社区群
+
+If you would like to be among the first to experience the adapted version of SeaTunnel Web, 
+or join us in building the ecosystem from 0 to 1, you are warmly welcome to join the SeaTunnel Web Early Co-Creation Group.
+<p align="left">
+  <img src="docs/images/wechat-group-qr.jpg" alt="SeaTunnel Web Co-Creation Group" width="200">
+</p>

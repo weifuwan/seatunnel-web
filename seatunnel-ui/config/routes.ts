@@ -18,12 +18,6 @@ export default [
     component: './data-source',
   },
   {
-    icon: 'cluster',
-    name: 'Client',
-    path: '/client',
-    component: './client',
-  },
-  {
     icon: 'product',
     name: 'Data Sync',
     path: '/sync',

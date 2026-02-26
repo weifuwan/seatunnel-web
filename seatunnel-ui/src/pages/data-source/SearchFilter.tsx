@@ -122,7 +122,7 @@ const SearchFilter: React.FC<SearchFilterProps> = ({ data, selectSource }) => {
       </div>
       <Input
         // type="text"
-        placeholder="请搜索数据名称"
+        placeholder="Input..."
         value={query}
         style={{ borderRadius: 4 }}
         // enterButton="搜索"

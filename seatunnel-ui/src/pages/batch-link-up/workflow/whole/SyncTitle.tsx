@@ -4,7 +4,7 @@ const App: React.FC = () => {
     <>
       <div className="di-network-config-panel-header">
         <div className="di-network-status">
-          <span style={{fontSize: 13}}>数据来源&nbsp;&nbsp;</span>
+          <span style={{fontSize: 13, fontWeight: 500}}>Source&nbsp;&nbsp;</span>
           <div className="di-arrow-right" style={{ display: 'flex', alignItems: 'center' }}>
             <div className="di-arrow-right-circle"></div>
             <div className="di-arrow-right-line"></div>
@@ -12,7 +12,7 @@ const App: React.FC = () => {
             <div className="di-arrow-right-content"></div>
           </div>
 
-          <span style={{fontSize: 13}}>&nbsp;&nbsp;数据去向</span>
+          <span style={{fontSize: 13, fontWeight: 500}}>&nbsp;&nbsp;Sink</span>
         </div>
         <div className="di-network-message"></div>
       </div>

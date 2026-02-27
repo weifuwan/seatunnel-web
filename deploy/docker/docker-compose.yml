@@ -10,8 +10,8 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: root123
       MYSQL_DATABASE: seatunnel_web
-      MYSQL_USER: seatunnel
-      MYSQL_PASSWORD: seatunnel123
+      MYSQL_USER: root
+      MYSQL_PASSWORD: root123
     ports:
       - "3306:3306"
     volumes:
@@ -72,9 +72,11 @@ services:
       - "9527:8080"
     environment:
       DB_URL: jdbc:mariadb://mysql:3306/seatunnel_web?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8
-      DB_USERNAME: seatunnel
-      DB_PASSWORD: seatunnel123
+      DB_USERNAME: root
+      DB_PASSWORD: root123
       SEATUNNEL_ADDRESS: seatunnel_master:5801
+    volumes:
+      - ./jdbc-drivers:/opt/app/seatunnel-web/jdbc-drivers
     depends_on:
       - mysql
       - master

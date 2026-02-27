@@ -1,8 +1,8 @@
 CREATE DATABASE IF NOT EXISTS seatunnel_web;
 
 use seatunnel_web;
-
-CREATE TABLE IF NOT EXISTS `t_seatunnel_datasource`
+DROP TABLE IF EXISTS `t_seatunnel_datasource`;
+CREATE TABLE `t_seatunnel_datasource`
 (
     `id`                bigint NOT NULL COMMENT '主键',
     `db_name`           varchar(64)   DEFAULT NULL COMMENT '数据源名称',
@@ -27,8 +27,6 @@ CREATE TABLE IF NOT EXISTS `t_seatunnel_datasource_plugin_config`
     `update_time`   datetime DEFAULT NULL COMMENT '最后更新时间',
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='数据同步-数据源插件动态配置表';
-
-
 
 CREATE TABLE IF NOT EXISTS `t_seatunnel_job_definition`
 (

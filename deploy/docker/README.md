@@ -4,6 +4,8 @@ docker  build  -t seatunnel-web:1.0.0-beta.1 -f backend.dockerfile .
 
 docker-compose up -d
 
+docker-compose down
+
 docker run --name seatunnel-web \
         -d -p 9527:8080 \
         --privileged=true \

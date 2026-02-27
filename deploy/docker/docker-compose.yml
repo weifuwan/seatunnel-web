@@ -88,7 +88,7 @@ services:
     container_name: seatunnel_web_ui
     restart: always
     ports:
-      - "9001:80"
+      - "9528:8000"
     depends_on:
       - seatunnel-web
     networks:

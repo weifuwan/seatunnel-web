@@ -1,11 +1,9 @@
-FROM nginx:latest
+FROM node:20-alpine
 
-RUN rm -rf /etc/nginx/conf.d/*
+WORKDIR /app
 
-COPY ./nginx.conf /etc/nginx/nginx.conf
+COPY ../../seatunnel-ui/* ./seatunnel-ui/
 
-COPY ./dist/ /usr/share/nginx/html/
+RUN yarn start
 
-EXPOSE 80
-
-CMD ["nginx", "-g", "daemon off;"]
+EXPOSE 8000

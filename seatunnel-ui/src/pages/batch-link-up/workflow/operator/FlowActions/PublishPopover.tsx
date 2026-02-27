@@ -12,6 +12,7 @@ export const PublishPopover = ({ onPublish }: any) => (
           <Button
             className={styles["update-button"]}
             type="primary"
+            style={{ borderRadius: "0.5rem" }}
             onClick={() => {
               onPublish();
             }}
@@ -27,7 +28,7 @@ export const PublishPopover = ({ onPublish }: any) => (
     }
     trigger="click"
   >
-    <Button type="primary">
+    <Button type="primary" style={{borderRadius: "0.5rem"}}>
       Publish <DownIcon />
     </Button>
   </Popover>

@@ -1,38 +1,59 @@
 package org.apache.seatunnel.communal.bean.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-
 @Data
-@ApiModel
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Schema(description = "Column metadata information for database tables")
 public class ColumnOptionVO {
 
-    @ApiModelProperty("key")
+    @Schema(
+            description = "Column order/key index",
+            example = "1"
+    )
     private Integer key;
 
-    @ApiModelProperty("fieldName")
+    @Schema(
+            description = "Column name",
+            example = "user_id"
+    )
     private Object fieldName;
 
-    @ApiModelProperty("fieldType")
+    @Schema(
+            description = "Column data type",
+            example = "VARCHAR(255)"
+    )
     private Object fieldType;
 
-    @ApiModelProperty("ordinalPosition")
+    @Schema(
+            description = "Column position in the table (starting from 1)",
+            example = "1"
+    )
     private Integer ordinalPosition;
 
-    @ApiModelProperty("isNullable")
+    @Schema(
+            description = "Whether the column allows NULL values",
+            example = "NO",
+            allowableValues = {"YES", "NO"}
+    )
     private String isNullable;
 
-    @ApiModelProperty("fieldComment")
+    @Schema(
+            description = "Column comment/description",
+            example = "User ID (primary key)"
+    )
     private String fieldComment;
 
-    @ApiModelProperty("fieldKey")
+    @Schema(
+            description = "Column key type (PRI, UNI, MUL, etc.)",
+            example = "PRI",
+            allowableValues = {"PRI", "UNI", "MUL", ""}
+    )
     private String fieldKey;
 }

@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.seatunnel.admin.builder.HoconConfigBuilder;
 import org.apache.seatunnel.admin.dag.DagGraph;
@@ -27,9 +28,10 @@ import org.apache.seatunnel.communal.utils.CodeGenerateUtils;
 import org.apache.seatunnel.communal.utils.ConvertUtil;
 import org.apache.seatunnel.engine.common.job.JobStatus;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -40,10 +42,12 @@ import java.util.Date;
 
 @Service
 @Slf4j
+@Scope("prototype")
 public class SeatunnelJobInstanceServiceImpl
         extends ServiceImpl<SeatunnelJobInstanceMapper, SeatunnelJobInstancePO>
         implements SeatunnelJobInstanceService {
 
+    @Lazy
     @Resource
     private SeatunnelBatchJobDefinitionService definitionService;
 

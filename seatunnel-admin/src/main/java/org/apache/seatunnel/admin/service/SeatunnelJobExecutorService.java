@@ -1,6 +1,5 @@
 package org.apache.seatunnel.admin.service;
 
-import org.apache.seatunnel.communal.bean.dto.SeatunnelBatchJobDefinitionDTO;
 import org.apache.seatunnel.communal.enums.RunMode;
 
 /**

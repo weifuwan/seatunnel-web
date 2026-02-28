@@ -1,5 +1,7 @@
 package org.apache.seatunnel.admin;
 
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.Resource;
 import org.apache.seatunnel.admin.components.MysqlServerIdInitializer;
 import org.apache.seatunnel.admin.init.SeaTunnelWebManager;
 import org.apache.seatunnel.plugin.datasource.api.plugin.DataSourceProcessorProvider;
@@ -11,8 +13,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
 
 @SpringBootApplication(scanBasePackages = {"org.apache.seatunnel.*"})
 @EnableConfigurationProperties

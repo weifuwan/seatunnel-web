@@ -1,11 +1,11 @@
 import { message } from "antd";
-import AIAction from "./AIAction";
 import { HoconPreview } from "./HoconPreview";
 import styles from "./index.less";
 import { PublishPopover } from "./PublishPopover";
 import { RunActions } from "./RunActions";
 import { useFlowChecks } from "./useFlowChecks";
 import { useFlowPublish } from "./useFlowPublish";
+import { AIActions } from "./AIActions";
 
 export const FlowActions = ({
   nodes,
@@ -25,7 +25,7 @@ export const FlowActions = ({
           <div className={styles["flow-wrapper"]}>
             <div className={styles["header"]}>
               <div className={styles["actions"]}>
-                <AIAction />
+                <AIActions />
 
                 <RunActions
                   onBack={() => goBack()}

@@ -1,6 +1,7 @@
 package org.apache.seatunnel.admin.builder.source;
 
 import com.typesafe.config.Config;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.seatunnel.admin.service.DataSourceService;
 import org.apache.seatunnel.communal.DbType;
@@ -11,7 +12,6 @@ import org.apache.seatunnel.plugin.datasource.api.jdbc.DataSourceProcessor;
 import org.apache.seatunnel.plugin.datasource.api.utils.DataSourceUtils;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
 
 /**
  * JDBC Source node builder.

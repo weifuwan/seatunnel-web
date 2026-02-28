@@ -4,10 +4,6 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigRenderOptions;
 
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Map;
-
 public class HoconNestedObject {
 
     public static void main(String[] args) throws Exception {

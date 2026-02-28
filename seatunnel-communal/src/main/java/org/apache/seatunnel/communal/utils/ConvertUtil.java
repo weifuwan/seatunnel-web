@@ -2,7 +2,6 @@ package org.apache.seatunnel.communal.utils;
 
 import com.alibaba.fastjson.JSON;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.BeanUtils;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -19,7 +18,7 @@ public class ConvertUtil {
         T targetObject;
         try {
             targetObject = target.newInstance();
-            BeanUtils.copyProperties(source, targetObject);
+//            BeanUtils.copyProperties(source, targetObject);
         } catch (Exception e) {
             log.error("convert error ", e);
             throw new RuntimeException("对象转换失败");
@@ -37,7 +36,7 @@ public class ConvertUtil {
         try {
             for (Object source : sourceList) {
                 T targetObject = target.newInstance();
-                BeanUtils.copyProperties(source, targetObject);
+//                BeanUtils.copyProperties(source, targetObject);
                 targetList.add(targetObject);
             }
         } catch (Exception e) {

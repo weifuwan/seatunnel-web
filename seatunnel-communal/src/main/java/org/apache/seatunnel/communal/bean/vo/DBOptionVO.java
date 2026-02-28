@@ -1,26 +1,34 @@
 package org.apache.seatunnel.communal.bean.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-
 @Data
-@ApiModel
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Schema(description = "Database option for dropdown/select components")
 public class DBOptionVO {
 
-    @ApiModelProperty("value")
+    @Schema(
+            description = "Option value (typically the database ID or connection ID)",
+            example = "1001"
+    )
     private Object value;
 
-    @ApiModelProperty("label")
+    @Schema(
+            description = "Option label to display (typically the database name or description)",
+            example = "MySQL - Product Database"
+    )
     private Object label;
 
-    @ApiModelProperty("dbType")
+    @Schema(
+            description = "Database type",
+            example = "MYSQL",
+            allowableValues = {"MYSQL", "POSTGRESQL", "ORACLE", "SQLSERVER", "CLICKHOUSE", "KAFKA", "ELASTICSEARCH"}
+    )
     private Object dbType;
 }

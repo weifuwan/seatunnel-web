@@ -1,9 +1,9 @@
 package org.apache.seatunnel.admin.websocket;
 
+import jakarta.annotation.Resource;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
 import java.util.Map;
 
 /**

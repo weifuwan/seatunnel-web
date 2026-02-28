@@ -1,5 +1,6 @@
 package org.apache.seatunnel.admin.service.impl;
 
+import jakarta.annotation.Resource;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.seatunnel.admin.service.SeatunnelJobExecutorService;
@@ -15,7 +16,6 @@ import org.apache.seatunnel.communal.enums.RunMode;
 import org.apache.seatunnel.engine.common.job.JobStatus;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
 
 @Service
 @Slf4j

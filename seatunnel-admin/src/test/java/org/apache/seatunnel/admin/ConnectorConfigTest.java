@@ -1,11 +1,15 @@
 package org.apache.seatunnel.admin;
 
-import com.typesafe.config.*;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
+import com.typesafe.config.ConfigRenderOptions;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
+
 import java.util.*;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ConnectorConfigTest {
 

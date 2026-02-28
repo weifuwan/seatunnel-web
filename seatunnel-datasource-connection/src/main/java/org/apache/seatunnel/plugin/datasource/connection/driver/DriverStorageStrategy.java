@@ -5,7 +5,6 @@ import org.apache.seatunnel.plugin.datasource.connection.api.DataSourceId;
 import org.apache.seatunnel.plugin.datasource.connection.api.DriverClassPath;
 import org.apache.seatunnel.plugin.datasource.connection.api.DriverDescriptor;
 
-import java.io.File;
 import java.io.Serializable;
 
 public interface DriverStorageStrategy extends Serializable {

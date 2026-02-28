@@ -1,5 +1,6 @@
 package org.apache.seatunnel.admin.thirdparty.metrics;
 
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.seatunnel.admin.service.SeatunnelJobInstanceService;
 import org.apache.seatunnel.admin.service.SeatunnelJobMetricsService;
@@ -9,7 +10,6 @@ import org.apache.seatunnel.communal.utils.CodeGenerateUtils;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;

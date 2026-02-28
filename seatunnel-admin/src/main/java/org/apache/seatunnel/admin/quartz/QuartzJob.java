@@ -5,9 +5,9 @@ import org.apache.seatunnel.admin.service.SeatunnelJobScheduleService;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
 import java.util.Date;
 
 /**
@@ -19,7 +19,7 @@ import java.util.Date;
 public class QuartzJob implements Job {
 
 
-    @Resource
+    @Autowired
     private SeatunnelJobScheduleService seatunnelJobScheduleService;
 
     @Override

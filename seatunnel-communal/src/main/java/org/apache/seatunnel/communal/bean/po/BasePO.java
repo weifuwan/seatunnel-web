@@ -4,7 +4,6 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import lombok.Data;
 import org.apache.seatunnel.communal.utils.CodeGenerateUtils;
-import org.apache.seatunnel.communal.utils.IdWorkerUtil;
 
 import java.io.Serializable;
 import java.util.Date;

@@ -1,7 +1,6 @@
 package org.apache.seatunnel.admin.controller;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.seatunnel.admin.service.DatasourcePluginService;
 import org.apache.seatunnel.communal.bean.entity.Result;
@@ -11,12 +10,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.annotation.Resource;
 
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/data-source/plugin/config")
-@Api(tags = "Data Integration - Data Source Plugin Configuration")
 public class DataSourcePluginConfigController {
 
     @Resource
@@ -28,7 +25,6 @@ public class DataSourcePluginConfigController {
      * @param pluginType Type of the plugin
      * @return Plugin configuration form
      */
-    @ApiOperation(value = "Get data source plugin configuration")
     @GetMapping
     public Result<PluginConfigResponse> getPluginConfig(@RequestParam("pluginType") String pluginType) {
         if (pluginType == null || pluginType.trim().isEmpty()) {

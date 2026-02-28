@@ -28,7 +28,7 @@ public abstract class UpgradeDao {
     public abstract DbType getDbType();
 
     public void initSchema() {
-        // Execute the dolphinscheduler full sql
+        // Execute the seatunnul full sql
         runInitSql(getDbType());
     }
 
@@ -41,7 +41,7 @@ public abstract class UpgradeDao {
         String sqlFile = String.format("seatunnul_%s.sql", dbType.getDescp().toLowerCase(Locale.ROOT));
         Resource mysqlSQLFilePath = new ClassPathResource("sql/" + sqlFile);
         try (Connection conn = dataSource.getConnection()) {
-            // Execute the dolphinscheduler_ddl.sql script to create the table structure of dolphinscheduler
+            // Execute the seatunnul_ddl.sql script to create the table structure of seatunnul
             ScriptRunner initScriptRunner = new ScriptRunner(conn, true, true);
             try (Reader initSqlReader = new InputStreamReader(mysqlSQLFilePath.getInputStream())) {
                 initScriptRunner.runScript(initSqlReader);

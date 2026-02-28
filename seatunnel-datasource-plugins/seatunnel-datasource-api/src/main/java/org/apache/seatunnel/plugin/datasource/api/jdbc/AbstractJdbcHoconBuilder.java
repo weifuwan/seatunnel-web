@@ -1,10 +1,8 @@
 package org.apache.seatunnel.plugin.datasource.api.jdbc;
 
 import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 

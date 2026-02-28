@@ -1,14 +1,14 @@
 package org.apache.seatunnel.communal.bean.entity;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import org.apache.seatunnel.communal.bean.dto.pagination.PaginationBaseDTO;
 import org.apache.seatunnel.communal.constant.PaginationConstant;
 
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -17,14 +17,15 @@ import java.util.List;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @ToString
-@ApiModel(description = "分页结果")
 public class PaginationResult<T> extends BaseResult {
+
+    @Serial
     private static final long serialVersionUID = -7850208355453831640L;
 
-    @ApiModelProperty(value = "数据")
+    @Schema(description = "Response data")
     private PaginationData<T> data;
 
-    // 不要修改为public，否则外部方法直接调用的时候，可能丢失页面信息
+
     private PaginationResult(PaginationBaseDTO dto) {
         this.data = new PaginationData<>();
 

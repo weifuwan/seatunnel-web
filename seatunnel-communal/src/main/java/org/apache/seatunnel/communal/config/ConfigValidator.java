@@ -8,8 +8,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-import static org.apache.seatunnel.communal.config.OptionUtil.getOptionKeys;
-
 
 public class ConfigValidator {
     private final ReadonlyConfig config;

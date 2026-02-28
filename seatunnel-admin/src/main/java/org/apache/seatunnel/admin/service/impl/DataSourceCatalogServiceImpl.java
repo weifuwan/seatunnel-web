@@ -1,5 +1,6 @@
 package org.apache.seatunnel.admin.service.impl;
 
+import jakarta.annotation.Resource;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.MapUtils;
@@ -15,7 +16,6 @@ import org.apache.seatunnel.plugin.datasource.api.utils.DataSourceUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import javax.annotation.Resource;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;

@@ -2,6 +2,7 @@ package org.apache.seatunnel.admin.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.seatunnel.admin.components.parser.JobDefinitionResolver;
 import org.apache.seatunnel.admin.dao.SeatunnelJobDefinitionMapper;
@@ -19,9 +20,9 @@ import org.apache.seatunnel.communal.bean.vo.SeatunnelBatchJobDefinitionVO;
 import org.apache.seatunnel.communal.enums.ScheduleStatusEnum;
 import org.apache.seatunnel.communal.utils.ConvertUtil;
 import org.quartz.SchedulerException;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
 import java.util.Date;
 import java.util.List;
 
@@ -33,6 +34,7 @@ public class SeatunnelBatchJobDefinitionServiceImpl
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
 
+    @Lazy
     @Resource
     private SeatunnelJobInstanceService seatunnelJobInstanceService;
 

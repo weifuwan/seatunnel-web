@@ -1,90 +1,160 @@
 package org.apache.seatunnel.communal.bean.dto;
 
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import org.apache.seatunnel.communal.bean.dto.pagination.PaginationBaseDTO;
-import org.apache.seatunnel.communal.enums.JobMode;
 import org.apache.seatunnel.communal.enums.ScheduleStatusEnum;
 
 import java.util.Date;
 
-/**
- * 基础 Seatunnel 任务定义 DTO
- * 包含流式和批式任务的公共字段
- */
+
 @Data
 @ToString
 @EqualsAndHashCode(callSuper = true)
+@Schema(description = "Base job definition DTO containing common fields for all job types")
 public abstract class BaseSeatunnelJobDefinitionDTO extends PaginationBaseDTO {
 
-    /**
-     * 任务唯一标识
-     */
+    @TableId(type = IdType.INPUT)
+    @Schema(
+            description = "Job definition ID (auto-generated)",
+            example = "1001",
+            accessMode = Schema.AccessMode.READ_ONLY
+    )
     private Long id;
 
     /**
-     * 任务名称
+     * Job name
      */
+    @Schema(
+            description = "Job name",
+            requiredMode = Schema.RequiredMode.REQUIRED,
+            example = "MySQL to Hive daily sync"
+    )
     private String jobName;
 
     /**
-     * 任务描述
+     * Job description
      */
+    @Schema(
+            description = "Job description",
+            example = "Synchronizes user data from MySQL to Hive every day at 2 AM",
+            nullable = true
+    )
     private String jobDesc;
 
+    @Schema(
+            description = "Job type (BATCH or STREAMING)",
+            example = "BATCH",
+            allowableValues = {"BATCH", "STREAMING"},
+            accessMode = Schema.AccessMode.READ_ONLY
+    )
     private String jobType;
 
     /**
-     * 任务并行度
+     * Job parallelism
      */
+    @Schema(
+            description = "Job parallelism (number of parallel tasks)",
+            example = "1",
+            defaultValue = "1",
+            minimum = "1",
+            maximum = "1000"
+    )
     private int parallelism;
 
     /**
-     * 调度状态
+     * Schedule status
      */
+    @Schema(
+            description = "Schedule status",
+            example = "NORMAL",
+            allowableValues = {"NORMAL", "PAUSED", "COMPLETE", "ERROR", "BLOCKED", "NONE"}
+    )
     private ScheduleStatusEnum scheduleStatus;
 
     /**
-     * 任务版本号
+     * Job version number
      */
+    @Schema(
+            description = "Job version number (incremented on each update)",
+            example = "1",
+            defaultValue = "1"
+    )
     private Integer jobVersion;
 
     /**
-     * 客户端 ID
+     * Client ID
      */
+    @Schema(
+            description = "Client ID (owner of the job)",
+            example = "10001"
+    )
     private Long clientId;
 
     /**
-     * 数据源类型
+     * Source type
      */
+    @Schema(
+            description = "Source data type",
+            example = "MYSQL",
+            allowableValues = {"MYSQL", "POSTGRESQL", "ORACLE", "KAFKA", "FILE", "HIVE", "ELASTICSEARCH"}
+    )
     private String sourceType;
 
     /**
-     * 数据目标类型
+     * Sink type
      */
+    @Schema(
+            description = "Sink data type",
+            example = "HIVE",
+            allowableValues = {"HIVE", "MYSQL", "POSTGRESQL", "ORACLE", "KAFKA", "FILE", "ELASTICSEARCH"}
+    )
     private String sinkType;
 
     /**
-     * 创建时间
+     * Creation time
      */
+    @Schema(
+            description = "Creation time",
+            example = "2024-01-01 10:00:00",
+            accessMode = Schema.AccessMode.READ_ONLY
+    )
     private Date createTime;
 
     /**
-     * 更新时间
+     * Update time
      */
+    @Schema(
+            description = "Last update time",
+            example = "2024-01-02 15:30:00",
+            accessMode = Schema.AccessMode.READ_ONLY
+    )
     private Date updateTime;
 
     /**
-     * 获取任务定义的具体信息
-     * 由子类实现，返回各自特有的任务定义信息
+     * Get job definition details
+     * Implemented by subclasses to return job-specific configuration
+     *
+     * @return Job definition configuration string
      */
+    @Schema(
+            description = "Job definition configuration (implemented by subclasses)",
+            hidden = true
+    )
     public abstract String getJobDefinitionInfo();
 
     /**
-     * 获取任务类型
+     * Get job type
      *
-     * @return "stream" 或 "batch"
+     * @return "STREAMING" or "BATCH"
      */
+    @Schema(
+            description = "Job type",
+            allowableValues = {"BATCH", "STREAMING"}
+    )
     public abstract String getJobType();
 }

@@ -1,10 +1,9 @@
 package org.apache.seatunnel.admin.thirdparty.metrics;
 
-import lombok.NonNull;
+import jakarta.validation.constraints.NotNull;
 import org.apache.seatunnel.communal.bean.po.SeatunnelJobMetricsPO;
 import org.apache.seatunnel.engine.common.job.JobStatus;
 
-import javax.validation.constraints.NotNull;
 import java.util.HashMap;
 import java.util.Map;
 

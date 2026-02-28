@@ -1,7 +1,7 @@
 package org.apache.seatunnel.admin.builder.sink;
 
 import com.typesafe.config.Config;
-import org.apache.commons.lang3.StringUtils;
+import jakarta.annotation.Resource;
 import org.apache.seatunnel.admin.service.DataSourceService;
 import org.apache.seatunnel.communal.DbType;
 import org.apache.seatunnel.communal.bean.vo.DataSourceVO;
@@ -11,7 +11,6 @@ import org.apache.seatunnel.plugin.datasource.api.jdbc.DataSourceProcessor;
 import org.apache.seatunnel.plugin.datasource.api.utils.DataSourceUtils;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
 
 /**
  * JDBC Sink node builder.

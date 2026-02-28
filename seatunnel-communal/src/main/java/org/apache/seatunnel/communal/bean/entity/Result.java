@@ -1,7 +1,6 @@
 package org.apache.seatunnel.communal.bean.entity;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -9,15 +8,11 @@ import lombok.EqualsAndHashCode;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@ApiModel(description = "调用结果")
+@Schema(description = "Unified response result")
 public class Result<T> extends BaseResult {
-    @ApiModelProperty(value = "数据")
     protected T data;
 
-    private Result() {
-        this.code = ResultStatus.SUCCESS.getCode();
-        this.message = ResultStatus.SUCCESS.getMessage();
-    }
+
 
     public static <T> Result<T> build(boolean succ) {
         if (succ) {
@@ -166,8 +161,8 @@ public class Result<T> extends BaseResult {
     @Override
     public String toString() {
         return "Result{" +
-                "message='" + message + '\'' +
-                ", code=" + code +
+                "message='" + getMessage() + '\'' +
+                ", code=" + getCode() +
                 ", data=" + data +
                 '}';
     }

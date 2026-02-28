@@ -1,6 +1,7 @@
 package org.apache.seatunnel.admin.builder;
 
 import com.typesafe.config.Config;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.seatunnel.admin.builder.sink.SinkNodeConfigBuilder;
 import org.apache.seatunnel.admin.builder.source.SourceNodeConfigBuilder;
@@ -10,7 +11,6 @@ import org.apache.seatunnel.admin.utils.SeaTunnelConfigUtil;
 import org.apache.seatunnel.communal.bean.dto.BaseSeatunnelJobDefinitionDTO;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
 import java.util.List;
 import java.util.stream.Collectors;
 

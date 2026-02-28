@@ -1,22 +1,26 @@
 package org.apache.seatunnel.communal.bean.entity;
 
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.ToString;
 import org.apache.seatunnel.communal.constant.Constant;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 @Data
 @ToString
 public class BaseResult implements Serializable {
+
+    @Serial
     private static final long serialVersionUID = -5771016784021901099L;
 
-    @ApiModelProperty(value = "信息", example = "成功")
-    protected String message;
+    @Schema(description = "Status code", example = "200", requiredMode = Schema.RequiredMode.REQUIRED)
+    private Integer code;
 
-    @ApiModelProperty(value = "状态", example = "0")
-    protected Integer code;
+    @Schema(description = "Response message", example = "Success")
+    private String message;
+
 
     public boolean successful() {
         return !this.failed();

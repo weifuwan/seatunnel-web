@@ -1,8 +1,6 @@
 package org.apache.seatunnel.admin.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import org.apache.seatunnel.communal.ConnectionParam;
-import org.apache.seatunnel.communal.DbType;
 import org.apache.seatunnel.communal.bean.dto.DataSourceDTO;
 import org.apache.seatunnel.communal.bean.entity.PaginationResult;
 import org.apache.seatunnel.communal.bean.po.DataSourcePO;

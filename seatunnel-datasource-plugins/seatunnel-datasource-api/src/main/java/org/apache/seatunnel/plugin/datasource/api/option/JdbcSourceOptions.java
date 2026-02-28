@@ -2,7 +2,6 @@ package org.apache.seatunnel.plugin.datasource.api.option;
 
 
 import org.apache.seatunnel.communal.config.Option;
-import org.apache.seatunnel.communal.config.OptionRule;
 import org.apache.seatunnel.communal.config.Options;
 
 @SuppressWarnings("checkstyle:MagicNumber")

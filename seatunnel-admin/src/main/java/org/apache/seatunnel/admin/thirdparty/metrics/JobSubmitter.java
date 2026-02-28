@@ -1,12 +1,12 @@
 package org.apache.seatunnel.admin.thirdparty.metrics;
 
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.seatunnel.admin.service.SeatunnelJobInstanceService;
 import org.apache.seatunnel.communal.bean.po.SeatunnelJobInstancePO;
 import org.apache.seatunnel.engine.client.job.ClientJobProxy;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
 
 @Component
 @Slf4j

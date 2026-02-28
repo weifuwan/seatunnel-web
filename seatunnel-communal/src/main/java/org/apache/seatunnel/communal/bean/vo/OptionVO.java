@@ -1,23 +1,18 @@
 package org.apache.seatunnel.communal.bean.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
-import lombok.NoArgsConstructor;
-
 
 @Data
-@ApiModel
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Schema(description = "Option information")
 public class OptionVO {
 
-    @ApiModelProperty("value")
-    private Object value;
+    @Schema(description = "Option value", example = "users", requiredMode = Schema.RequiredMode.REQUIRED)
+    private String value;
 
-    @ApiModelProperty("label")
-    private Object label;
+    @Schema(description = "Option label", example = "Users Table")
+    private String label;
+
+    @Schema(description = "Option description", example = "Table storing user information")
+    private String description;
 }

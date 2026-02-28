@@ -15,7 +15,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import static org.apache.seatunnel.communal.config.ConfigUtil.convertToJsonString;
 import static org.apache.seatunnel.communal.config.ConfigUtil.convertValue;
 
 

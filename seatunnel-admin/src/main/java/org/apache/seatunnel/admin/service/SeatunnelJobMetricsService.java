@@ -2,7 +2,6 @@ package org.apache.seatunnel.admin.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import lombok.NonNull;
-import org.apache.seatunnel.communal.bean.entity.Result;
 import org.apache.seatunnel.communal.bean.po.SeatunnelJobMetricsPO;
 import org.apache.seatunnel.communal.bean.vo.OverviewChartsVO;
 import org.apache.seatunnel.communal.bean.vo.OverviewSummaryVO;

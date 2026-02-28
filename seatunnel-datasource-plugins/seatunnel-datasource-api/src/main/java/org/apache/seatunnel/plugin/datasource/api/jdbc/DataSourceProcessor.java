@@ -3,7 +3,6 @@ package org.apache.seatunnel.plugin.datasource.api.jdbc;
 import org.apache.seatunnel.communal.BaseConnectionParam;
 import org.apache.seatunnel.communal.DbType;
 import org.apache.seatunnel.communal.config.OptionRule;
-import org.apache.seatunnel.communal.enums.JobMode;
 import org.apache.seatunnel.plugin.datasource.api.hocon.DataSourceHoconBuilder;
 
 /**

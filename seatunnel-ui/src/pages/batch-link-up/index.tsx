@@ -1,6 +1,6 @@
 import { message } from "antd";
-import { useState } from "react";
-import { history, useLocation } from "umi"; // Umi 提供的 history 和 location
+import { useEffect, useState } from "react";
+import { history, useLocation } from "umi";
 import { seatunnelJobDefinitionApi } from "./api";
 import DataSync from "./DataSync";
 import SyncTaskList from "./SyncTaskList";
@@ -11,29 +11,32 @@ const App = () => {
   const query = new URLSearchParams(location.search);
   const idFromUrl = query.get("id");
 
-  // detail 状态可以根据 URL 自动初始化
   const [detail, setDetail] = useState(!!idFromUrl);
   const [params, setParams] = useState<any>({});
 
-  // // 当 URL 的 id 改变时，同步 params 和 detail
   // useEffect(() => {
   //   if (idFromUrl) {
-  //     setParams({ id: idFromUrl });
-  //     setDetail(true);
-  //   } else {
-  //     setDetail(false);
+  //     console.log(idFromUrl);
+  //     seatunnelJobDefinitionApi.selectById(idFromUrl).then((data) => {
+  //       if (data?.code === 0) {
+  //         console.log(data);
+  //       } else {
+  //         setDetail(false);
+  //         history.push("/sync/batch-link-up");
+  //       }
+  //     });
   //   }
   // }, [idFromUrl]);
 
   const [sourceType, setSourceType] = useState<any>({
     dbType: "MYSQL",
     connectorType: "Jdbc",
-    pluginName: "JDBC-MYSQL"
+    pluginName: "JDBC-MYSQL",
   });
   const [targetType, setTargetType] = useState<any>({
     dbType: "MYSQL",
     connectorType: "Jdbc",
-    pluginName: "JDBC-MYSQL"
+    pluginName: "JDBC-MYSQL",
   });
 
   const generateDefault = () => {

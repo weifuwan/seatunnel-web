@@ -31,7 +31,7 @@ export const seatunnelJobDefinitionApi = {
     },
 
 
-    selectById: (id: string): Promise<{ code: number; data: SeatunnelJobDefinition; message?: string }> => {
+    selectById: (id: any): Promise<{ code: number; data: SeatunnelJobDefinition; message?: string }> => {
         return HttpUtils.get(`${apiPrefix}/${id}`);
     },
 

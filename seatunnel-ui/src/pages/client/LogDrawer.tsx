@@ -2,7 +2,7 @@ import { forwardRef, useImperativeHandle, useState } from 'react';
 
 import { Drawer } from 'antd';
 
-import MonacoEditor from 'react-monaco-editor';
+
 import './index.less';
 
 const LogDrawer = forwardRef((_, ref) => {
@@ -29,13 +29,7 @@ const LogDrawer = forwardRef((_, ref) => {
       placement="bottom"
     >
       <div>
-        <MonacoEditor
-          height="60vh"
-          width={'100%'}
-          language="sql"
-          // theme={'vs-dark'}
-          value={content || ""}
-        />
+        
       </div>
     </Drawer>
   );

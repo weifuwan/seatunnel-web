@@ -858,7 +858,12 @@ export default function WorkflowBasic({
   useEffect(() => {
     if (wholeSync === false) {
       const jobInfo = params?.jobDefinitionInfo;
-      const jobObj = JSON.parse(jobInfo);
+      console.log(jobInfo);
+      if(jobInfo === undefined || jobInfo === null) {
+        goBack();
+        return;
+      }
+      const jobObj = JSON.parse(jobInfo || "{}");
       if ("source" in jobObj) {
         setParams((prev: any) => ({
           ...prev,

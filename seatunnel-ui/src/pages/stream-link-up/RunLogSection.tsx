@@ -2,7 +2,7 @@ import Header from '@/components/Header';
 import { SyncOutlined } from '@ant-design/icons';
 import { Alert, message, Tooltip } from 'antd';
 import React, { useEffect, useState } from 'react';
-import MonacoEditor from 'react-monaco-editor';
+
 import { taskExecutionApi } from './type';
 
 interface TaskDetailPanelProps {
@@ -106,7 +106,7 @@ const RunLogSection: React.FC<TaskDetailPanelProps> = ({ item }) => {
       {renderAlert()}
 
       <div>
-        <MonacoEditor height="460px" width={'150vh'} language="sql" value={logContent} />
+        good
       </div>
     </div>
   );

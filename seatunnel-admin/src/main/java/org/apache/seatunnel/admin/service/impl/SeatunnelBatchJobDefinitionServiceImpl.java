@@ -106,7 +106,7 @@ public class SeatunnelBatchJobDefinitionServiceImpl
         SeatunnelBatchJobDefinitionPO po = getById(id);
 
         if (po == null) {
-            return null;
+            throw new RuntimeException("Job definition is not exist");
         }
 
         SeatunnelBatchJobDefinitionVO seatunnelBatchJobDefinitionVO = ConvertUtil.sourceToTarget(

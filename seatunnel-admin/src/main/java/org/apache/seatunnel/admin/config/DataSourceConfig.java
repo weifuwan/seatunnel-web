@@ -5,7 +5,8 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.core.MybatisConfiguration;
 import com.baomidou.mybatisplus.core.config.GlobalConfig;
 import com.baomidou.mybatisplus.core.handlers.MybatisEnumTypeHandler;
-import com.baomidou.mybatisplus.extension.plugins.PaginationInterceptor;
+import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
+import com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor;
 import com.baomidou.mybatisplus.extension.spring.MybatisSqlSessionFactoryBean;
 import org.apache.ibatis.logging.stdout.StdOutImpl;
 import org.apache.ibatis.session.SqlSessionFactory;
@@ -35,7 +36,7 @@ import javax.sql.DataSource;
  *     <li>SqlSessionFactory with mapper XML scanning and MyBatis configuration</li>
  *     <li>Transaction management</li>
  *     <li>SqlSessionTemplate for MyBatis usage</li>
- *     <li>Pagination interceptor for MySQL</li>
+ *     <li>Pagination interceptor for MySQL using MybatisPlusInterceptor</li>
  * </ul>
  */
 @Configuration
@@ -79,7 +80,7 @@ public class DataSourceConfig {
      *     <li>DataSource</li>
      *     <li>Mapper XML locations</li>
      *     <li>MyBatis configuration options (camel-case mapping, logging, enum handler, etc.)</li>
-     *     <li>Pagination interceptor plugin</li>
+     *     <li>MybatisPlusInterceptor with pagination plugin</li>
      * </ul>
      *
      * @param dataSource injected DataSource
@@ -103,8 +104,8 @@ public class DataSourceConfig {
         configuration.setDefaultEnumTypeHandler(MybatisEnumTypeHandler.class); // Enum handler
         bean.setConfiguration(configuration);
 
-        // Add pagination interceptor
-        bean.setPlugins(paginationInterceptor());
+        // Add MybatisPlusInterceptor with pagination plugin
+        bean.setPlugins(mybatisPlusInterceptor());
         return bean.getObject();
     }
 
@@ -133,14 +134,16 @@ public class DataSourceConfig {
     }
 
     /**
-     * Pagination interceptor for MySQL, required for MyBatis-Plus pagination support.
+     * MybatisPlusInterceptor with pagination support for MySQL.
+     * This replaces the deprecated PaginationInterceptor in MyBatis-Plus 3.5+.
      *
-     * @return PaginationInterceptor instance
+     * @return MybatisPlusInterceptor instance
      */
     @Bean
-    public PaginationInterceptor paginationInterceptor() {
-        PaginationInterceptor page = new PaginationInterceptor();
-        page.setDbType(DbType.MYSQL);
-        return page;
+    public MybatisPlusInterceptor mybatisPlusInterceptor() {
+        MybatisPlusInterceptor interceptor = new MybatisPlusInterceptor();
+        // Add pagination interceptor for MySQL
+        interceptor.addInnerInterceptor(new PaginationInnerInterceptor(DbType.MYSQL));
+        return interceptor;
     }
 }

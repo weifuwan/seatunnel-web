@@ -18,7 +18,6 @@
 
     <properties>
         <springdoc.version>2.6.0</springdoc.version>
-        <mybatis-plus.version>3.5.11</mybatis-plus.version>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <maven.test.skip>true</maven.test.skip>

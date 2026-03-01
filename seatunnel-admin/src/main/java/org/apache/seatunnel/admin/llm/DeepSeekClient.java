@@ -14,7 +14,7 @@ public class DeepSeekClient implements LlmClient {
     private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper mapper = new ObjectMapper();
 
-    private static final String API_URL = "http://your-deepseek-api/v1/chat/completions";
+    private static final String API_URL = "http://deepseek-api/v1/chat/completions";
 
     @Override
     public String call(String prompt) {
@@ -31,7 +31,7 @@ public class DeepSeekClient implements LlmClient {
     }
 
     private String extractContent(Map response) {
-        // 根据实际返回结构解析
+        // Todo
         return response.toString();
     }
 }

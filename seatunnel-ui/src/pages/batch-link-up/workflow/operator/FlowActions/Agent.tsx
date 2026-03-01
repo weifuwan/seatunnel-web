@@ -1,12 +1,8 @@
-import {
-  AntDesignOutlined,
-  FileImageOutlined,
-  SearchOutlined,
-} from "@ant-design/icons";
+import { SyncOutlined } from "@ant-design/icons";
 import { Sender, SenderProps } from "@ant-design/x";
-import { MenuInfo } from "@rc-component/menu/lib/interface";
 import { Dropdown, Flex, GetRef, MenuProps, message } from "antd";
 import React, { useEffect, useRef, useState } from "react";
+import DeepSeekIcon from "../../icon/DeepSeekIcon";
 
 const Switch = Sender.Switch;
 
@@ -21,69 +17,111 @@ const AgentInfo: {
     zh_slotConfig: SenderProps["slotConfig"];
   };
 } = {
-  deep_search: {
-    icon: <SearchOutlined />,
-    label: "Advance",
-    zh_label: "深度搜索",
+  sync_copilot: {
+    icon: <SyncOutlined />,
+    label: "Full Copilot",
+    zh_label: "同步助手",
+
     skill: {
-      value: "deepSearch",
-      title: "Advance",
+      value: "syncCopilot",
+      title: "Full Copilot",
       closable: true,
     },
+
     zh_skill: {
-      value: "deepSearch",
-      title: "深度搜索",
+      value: "syncCopilot",
+      title: "同步助手",
       closable: true,
     },
+
     slotConfig: [
-      { type: "text", value: "Please help me search for news about " },
+      {
+        type: "text",
+        value: "Perform a full data synchronization from [",
+      },
       {
         type: "select",
-        key: "search_type",
+        key: "source_db",
         props: {
-          options: ["AI", "Technology", "Entertainment"],
-          placeholder: "Please select a category",
+          options: [`MySQL`, "PostgreSQL", "Oracle"],
+          placeholder: "select source",
         },
       },
-      { type: "text", key: "", value: "Please help me search for news about " },
+      { type: "text", value: "." },
+      {
+        type: "select",
+        key: "source_table",
+        props: {
+          options: ["users", "orders", "products"],
+          placeholder: "select source table",
+        },
+      },
+      { type: "text", value: "] to [" },
+      {
+        type: "select",
+        key: "sink_db",
+        props: {
+          options: ["Oracle", "MySQL"],
+          placeholder: "select sink ",
+        },
+      },
+      { type: "text", value: "." },
+      {
+        type: "input",
+        key: "sink_table",
+        props: {
+          placeholder: "enter sink table",
+        },
+      },
+      { type: "text", value: "]." },
     ],
+
     zh_slotConfig: [
-      { type: "text", value: "请帮我搜索关于" },
+      { type: "text", value: "请将 [" },
       {
         type: "select",
-        key: "search_type",
+        key: "source_db",
         props: {
-          options: ["AI", "技术", "娱乐"],
-          placeholder: "请选择一个类别",
+          options: ["MySQL", "PostgreSQL", "Oracle"],
+          placeholder: "选择源数据库",
         },
       },
-      { type: "text", key: "", value: "的新闻。" },
+      { type: "text", value: "] 中的 [" },
+      {
+        type: "select",
+        key: "source_table",
+        props: {
+          options: ["users", "orders", "products"],
+          placeholder: "选择源表",
+        },
+      },
+      { type: "text", value: "] 表，全量同步至 " },
+      {
+        type: "select",
+        key: "sink_db",
+        props: {
+          options: ["Oracle", "MySQL"],
+          placeholder: "选择目标数据库",
+        },
+      },
+      { type: "text", value: " 的 " },
+      {
+        type: "input",
+        key: "sink_table",
+        props: {
+          placeholder: "输入目标表名",
+        },
+      },
+      { type: "text", value: " 表。" },
     ],
-  },
-};
-
-
-
-const FileInfo: {
-  [key: string]: {
-    icon: React.ReactNode;
-    label: string;
-    zh_label: string;
-  };
-} = {
-  file_image: {
-    icon: <FileImageOutlined />,
-    label: "x-image",
-    zh_label: "x-图片",
   },
 };
 
 const App: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
-  const [activeAgentKey, setActiveAgentKey] = useState("deep_search");
+  const [activeAgentKey, setActiveAgentKey] = useState("sync_copilot");
   const [slotConfig, setSlotConfig] = useState(AgentInfo[activeAgentKey]);
 
-  // ======================== sender en ========================
   const senderRef = useRef<GetRef<typeof Sender>>(null);
   const agentItems: MenuProps["items"] = Object.keys(AgentInfo).map((agent) => {
     const { icon, label } = AgentInfo[agent];
@@ -94,7 +132,6 @@ const App: React.FC = () => {
     };
   });
 
-
   const agentItemClick: MenuProps["onClick"] = (item) => {
     setActiveAgentKey(item.key);
     try {
@@ -104,12 +141,6 @@ const App: React.FC = () => {
       console.error(error);
     }
   };
-
-  // ======================== sender zh ========================
-
-  const senderZhRef = useRef<GetRef<typeof Sender>>(null);
-
-  
 
   // Mock send message
   useEffect(() => {
@@ -142,11 +173,16 @@ const App: React.FC = () => {
                     items: agentItems,
                   }}
                 >
-                  <Switch value={false} icon={<AntDesignOutlined />}>
-                    Agent
+                  <Switch
+                    value={false}
+                    icon={<DeepSeekIcon style={{ paddingTop: 4 }} />}
+                    style={{ borderRadius: 12 }}
+                  >
+                    Copilot
                   </Switch>
                 </Dropdown>
               </Flex>
+              <Flex align="center">{actionNode}</Flex>
             </Flex>
           );
         }}

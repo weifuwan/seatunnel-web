@@ -25,8 +25,6 @@
 ![Batch Sync Screenshot](docs/images/log.png)
 ![Batch Sync Screenshot](docs/images/metrics.png)
 
-
-
 ## 🔥 加入社区群
 
 如果你想第一时间体验 SeaTunnel Web 适配版，或者想与我们一起从 0 到 1 建设生态， 欢迎加入 SeaTunnel Web 早期共建群。
@@ -36,4 +34,9 @@
 </p>
 
 ## Github地址
+
 - https://github.com/weifuwan/seatunnel-web
+
+## 参与建设
+
+欢迎任何形式的代码贡献。

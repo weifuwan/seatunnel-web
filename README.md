@@ -42,3 +42,6 @@ or join us in building the ecosystem from 0 to 1, you are warmly welcome to join
 ## Github Address
 - https://github.com/weifuwan/seatunnel-web
 
+## How to Contribute
+
+We welcome contributions in any form.

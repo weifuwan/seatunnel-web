@@ -42,9 +42,7 @@ apidoc
 # Python
 *.py[cod]
 
-Test.java
-Test.scala
-test.conf
+
 spark-warehouse
 *.flattened-pom.xml
 /seatunnel-ui/package-lock.json

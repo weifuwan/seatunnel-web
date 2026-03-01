@@ -29,9 +29,9 @@ export const AIActions = ({ onBack, onRun, runVisible }: any) => {
             >
               <div
                 className={styles["latest-publish"]}
-                style={{ fontWeight: 500 }}
+                style={{ fontWeight: 500, fontSize: 16, marginBottom: 4 }}
               >
-                AI Agent
+                SeaTunnel Copilot
               </div>
               <div
                 onClick={() => {

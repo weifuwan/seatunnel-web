@@ -1,33 +1,40 @@
 package org.apache.seatunnel.admin.llm;
 
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
+import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
+import org.springframework.ai.chat.memory.MessageWindowChatMemory;
+import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.chat.prompt.Prompt;
+import org.springframework.ai.deepseek.DeepSeekChatModel;
+import org.springframework.ai.deepseek.DeepSeekChatOptions;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
 
-import java.util.HashMap;
 import java.util.Map;
 
 @Component
 public class DeepSeekClient implements LlmClient {
 
-    private final RestTemplate restTemplate = new RestTemplate();
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final ChatClient DeepSeekChatClient;
 
-    private static final String API_URL = "http://deepseek-api/v1/chat/completions";
+    public DeepSeekClient(DeepSeekChatModel chatModel) {
+
+        this.DeepSeekChatClient = ChatClient.builder(chatModel).defaultAdvisors(MessageChatMemoryAdvisor.builder(MessageWindowChatMemory.builder().build()).build())
+                .defaultAdvisors(new SimpleLoggerAdvisor())
+                .defaultOptions(DeepSeekChatOptions.builder().temperature(0.7d).topP(0.8d).build()).build();
+    }
 
     @Override
-    public String call(String prompt) {
+    public ChatResponse call(String prompt) {
 
-        Map<String, Object> body = new HashMap<>();
-        body.put("model", "deepseek-chat");
-        body.put("messages", new Object[]{
-                Map.of("role", "user", "content", prompt)
-        });
+        ChatResponse response = this.DeepSeekChatClient.prompt(new Prompt(
+                prompt,
+                DeepSeekChatOptions.builder().temperature(0.75).build())
+        ).call()
+                .chatResponse();
 
-        Map response = restTemplate.postForObject(API_URL, body, Map.class);
-
-        return extractContent(response);
+        return response;
     }
 
     private String extractContent(Map response) {

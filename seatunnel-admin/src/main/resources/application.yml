@@ -14,6 +14,17 @@ spring:
   jackson:
     time-zone: GMT+8
 
+  ai:
+    deepseek:
+      api-key: sk-d615692a05d44e8997e993ad4f290a48
+      base-url: "https://api.deepseek.com"
+      chat:
+        options:
+          model: deepseek-chat
+      embedding:
+        enabled: false
+
+
   datasource:
     cockpit:
       jdbc-url: jdbc:mariadb://192.168.1.113:3306/seatunnel_web?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8

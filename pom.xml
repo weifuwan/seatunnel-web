@@ -6,7 +6,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.11</version>
+        <version>3.3.13</version>
     </parent>
 
     <groupId>org.apache.seatunnel</groupId>
@@ -17,12 +17,21 @@
     <name>SeaTunnel</name>
 
     <properties>
+        <springdoc.version>2.6.0</springdoc.version>
+        <mybatis-plus.version>3.5.11</mybatis-plus.version>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <maven.test.skip>true</maven.test.skip>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <file_encoding>UTF-8</file_encoding>
+
+        <!-- Spring AI -->
+        <spring-ai.version>1.1.0</spring-ai.version>
+        <spring-ai-alibaba.version>1.1.0.0</spring-ai-alibaba.version>
+        <spring-ai-alibaba-extensions.version>1.1.2.0</spring-ai-alibaba-extensions.version>
     </properties>
+
+
 
 
     <modules>

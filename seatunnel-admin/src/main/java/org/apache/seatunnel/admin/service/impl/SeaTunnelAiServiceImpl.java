@@ -3,6 +3,7 @@ package org.apache.seatunnel.admin.service.impl;
 import jakarta.annotation.Resource;
 import org.apache.seatunnel.admin.llm.LlmClient;
 import org.apache.seatunnel.admin.service.SeaTunnelAiService;
+import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -12,7 +13,7 @@ public class SeaTunnelAiServiceImpl implements SeaTunnelAiService {
     private LlmClient llmClient;
 
     @Override
-    public String generateJson(String prompt) {
+    public ChatResponse generateJson(String prompt) {
 
         String finalPrompt = buildPrompt(prompt);
 

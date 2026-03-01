@@ -1,5 +1,7 @@
 package org.apache.seatunnel.admin.llm;
 
+import org.springframework.ai.chat.model.ChatResponse;
+
 public interface LlmClient {
-    String call(String prompt);
+    ChatResponse call(String prompt);
 }

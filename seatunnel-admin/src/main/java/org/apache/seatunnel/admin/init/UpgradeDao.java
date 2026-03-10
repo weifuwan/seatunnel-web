@@ -38,7 +38,7 @@ public abstract class UpgradeDao {
      * @param dbType db type
      */
     private void runInitSql(DbType dbType) {
-        String sqlFile = String.format("seatunnul_%s.sql", dbType.getDescp().toLowerCase(Locale.ROOT));
+        String sqlFile = String.format("seatunnel_%s.sql", dbType.getDescp().toLowerCase(Locale.ROOT));
         Resource mysqlSQLFilePath = new ClassPathResource("sql/" + sqlFile);
         try (Connection conn = dataSource.getConnection()) {
             // Execute the seatunnul_ddl.sql script to create the table structure of seatunnul

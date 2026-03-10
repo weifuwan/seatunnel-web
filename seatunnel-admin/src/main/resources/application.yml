@@ -6,7 +6,7 @@ server:
 
 seatunnel:
   client:
-    base-url: http://192.168.1.115:8080
+    base-url: http://127.0.0.1:8080
     context-path:
     connect-timeout-ms: 2000
     read-timeout-ms: 10000

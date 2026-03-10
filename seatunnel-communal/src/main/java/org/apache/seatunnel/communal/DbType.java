@@ -14,7 +14,8 @@ public enum DbType {
 
     MYSQL("MYSQL", "MYSQL", "MYSQL"),
     ORACLE("ORACLE", "ORACLE", "ORACLE"),
-    PGSQL("PGSQL", "PGSQL", "PGSQL");
+    PGSQL("PGSQL", "PGSQL", "PGSQL"),
+    H2("H2", "H2", "H2");
 
     private static final Map<String, DbType> DB_TYPE_MAP =
             Arrays.stream(DbType.values()).collect(toMap(DbType::getCode, Function.identity()));

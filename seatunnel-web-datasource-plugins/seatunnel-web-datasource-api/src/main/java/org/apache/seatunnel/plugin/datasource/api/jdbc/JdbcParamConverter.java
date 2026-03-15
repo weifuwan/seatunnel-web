@@ -14,4 +14,10 @@ public interface JdbcParamConverter {
      * @return parsed connection parameters
      */
     BaseConnectionParam createConnectionParams(String connectionJson);
+
+    /**
+     * check datasource param is valid.
+     * @throws IllegalArgumentException if invalid
+     */
+    void checkDatasourceParam(BaseConnectionParam baseConnectionParam);
 }

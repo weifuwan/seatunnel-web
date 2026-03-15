@@ -1,6 +1,5 @@
 package org.apache.seatunnel.web.api.handler;
 
-import org.apache.seatunnel.web.common.bean.entity.Result;
 import org.apache.seatunnel.web.common.bean.entity.ResultStatus;
 import org.apache.seatunnel.web.common.utils.ConvertUtil;
 import org.slf4j.Logger;

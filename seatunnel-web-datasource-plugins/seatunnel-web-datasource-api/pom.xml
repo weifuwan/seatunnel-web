@@ -22,6 +22,12 @@
 
         <dependency>
             <groupId>org.apache.seatunnel.web</groupId>
+            <artifactId>seatunnel-web-spi</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.seatunnel.web</groupId>
             <artifactId>seatunnel-web-datasource-connection</artifactId>
             <version>${project.version}</version>
         </dependency>

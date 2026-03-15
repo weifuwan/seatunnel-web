@@ -1,7 +1,6 @@
 package org.apache.seatunnel.plugin.datasource.api.jdbc;
 
 import org.apache.seatunnel.web.common.BaseConnectionParam;
-import org.apache.seatunnel.web.common.DbType;
 import org.apache.seatunnel.web.common.config.OptionRule;
 import org.apache.seatunnel.web.common.form.FormFieldConfig;
 import org.apache.seatunnel.plugin.datasource.api.form.ReflectionFormGenerator;

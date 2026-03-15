@@ -9,7 +9,7 @@ import org.apache.seatunnel.web.api.dao.SessionMapper;
 import org.apache.seatunnel.web.api.service.SessionService;
 import org.apache.seatunnel.web.common.bean.po.SessionPO;
 import org.apache.seatunnel.web.common.bean.po.UserPO;
-import org.apache.seatunnel.web.common.constant.Constant;
+import org.apache.seatunnel.web.common.constants.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -29,10 +29,10 @@ public class SessionServiceImpl extends ServiceImpl<SessionMapper, SessionPO>
 
     @Override
     public SessionPO getSession(HttpServletRequest request) {
-        String sessionId = request.getHeader(Constant.SESSION_ID);
+        String sessionId = request.getHeader(Constants.SESSION_ID);
 
         if (StringUtils.isBlank(sessionId)) {
-            Cookie cookie = WebUtils.getCookie(request, Constant.SESSION_ID);
+            Cookie cookie = WebUtils.getCookie(request, Constants.SESSION_ID);
 
             if (cookie != null) {
                 sessionId = cookie.getValue();
@@ -72,7 +72,7 @@ public class SessionServiceImpl extends ServiceImpl<SessionMapper, SessionPO>
                 }
             }
             sessionPO = sessionPOList.get(0);
-            if (now.getTime() - sessionPO.getLastLoginTime().getTime() <= Constant.SESSION_TIME_OUT * 1000) {
+            if (now.getTime() - sessionPO.getLastLoginTime().getTime() <= Constants.SESSION_TIME_OUT * 1000) {
                 /*
                  * updateProcessInstance the latest login time
                  */

@@ -6,7 +6,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import org.apache.seatunnel.web.common.bean.dto.pagination.PaginationBaseDTO;
-import org.apache.seatunnel.web.common.constant.PaginationConstant;
+import org.apache.seatunnel.web.common.constants.PaginationConstant;
 
 import java.io.Serial;
 import java.util.ArrayList;

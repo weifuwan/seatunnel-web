@@ -2,13 +2,13 @@ package org.apache.seatunnel.web.api.builder.sink;
 
 import com.typesafe.config.Config;
 import jakarta.annotation.Resource;
-import org.apache.seatunnel.web.api.service.DataSourceService;
-import org.apache.seatunnel.web.common.DbType;
-import org.apache.seatunnel.web.common.bean.vo.DataSourceVO;
-import org.apache.seatunnel.web.common.config.ConfigValidator;
-import org.apache.seatunnel.web.common.config.ReadonlyConfig;
 import org.apache.seatunnel.plugin.datasource.api.jdbc.DataSourceProcessor;
 import org.apache.seatunnel.plugin.datasource.api.utils.DataSourceUtils;
+import org.apache.seatunnel.web.api.service.DataSourceService;
+import org.apache.seatunnel.web.common.config.ConfigValidator;
+import org.apache.seatunnel.web.common.config.ReadonlyConfig;
+import org.apache.seatunnel.web.dao.entity.DataSource;
+import org.apache.seatunnel.web.spi.enums.DbType;
 import org.springframework.stereotype.Component;
 
 
@@ -62,7 +62,7 @@ public class JdbcSinkBuilder implements SinkNodeConfigBuilder {
         }
 
         // Retrieve the data source from database
-        DataSourceVO ds = dataSourceService.selectById(sinkId);
+        DataSource ds = dataSourceService.selectById(sinkId);
         if (ds == null) {
             throw new RuntimeException("Data source does not exist");
         }

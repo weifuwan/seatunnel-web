@@ -1,29 +1,17 @@
 package org.apache.seatunnel.web.api.service;
 
-import com.baomidou.mybatisplus.extension.service.IService;
 import org.apache.seatunnel.web.common.bean.dto.DataSourceDTO;
 import org.apache.seatunnel.web.common.bean.entity.PaginationResult;
-import org.apache.seatunnel.web.common.bean.po.DataSourcePO;
 import org.apache.seatunnel.web.common.bean.vo.DBOptionVO;
 import org.apache.seatunnel.web.common.bean.vo.DataSourceVO;
+import org.apache.seatunnel.web.dao.entity.DataSource;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
 
-/**
- * Service responsible for managing datasource instances.
- *
- * <p>This service handles the lifecycle of data sources, including:</p>
- * <ul>
- *     <li>Creation and update of datasource configurations</li>
- *     <li>Connection validation</li>
- *     <li>Query and pagination</li>
- *     <li>Soft deletion</li>
- *     <li>Driver upload and management</li>
- * </ul>
- */
-public interface DataSourceService extends IService<DataSourcePO> {
+
+public interface DataSourceService {
 
     /**
      * Creates and persists a new datasource instance.
@@ -36,7 +24,7 @@ public interface DataSourceService extends IService<DataSourcePO> {
      * @return created datasource descriptor including generated ID
      * @throws RuntimeException if validation or connectivity test fails
      */
-    DataSourceVO create(DataSourceDTO dto);
+    DataSource createDataSource(DataSourceDTO dto);
 
     /**
      * Updates an existing datasource instance.
@@ -48,7 +36,7 @@ public interface DataSourceService extends IService<DataSourcePO> {
      * @return the updated datasource ID
      * @throws RuntimeException if datasource does not exist or validation fails
      */
-    Long update(Long id, DataSourceDTO dto);
+    DataSource updateDataSource(Long id, DataSourceDTO dto);
 
     /**
      * Retrieves a datasource by its primary key.
@@ -57,7 +45,7 @@ public interface DataSourceService extends IService<DataSourcePO> {
      * @return datasource descriptor
      * @throws RuntimeException if datasource does not exist
      */
-    DataSourceVO selectById(Long id);
+    DataSource selectById(Long id);
 
     /**
      * Returns a paginated list of datasources.
@@ -67,7 +55,7 @@ public interface DataSourceService extends IService<DataSourcePO> {
      * @param dto query conditions and pagination parameters
      * @return paginated result including total count and records
      */
-    PaginationResult<DataSourceVO> paging(DataSourceDTO dto);
+    PaginationResult<DataSourceVO> queryDataSourceListPaging(DataSourceDTO dto);
 
     /**
      * Soft deletes a datasource.
@@ -75,7 +63,7 @@ public interface DataSourceService extends IService<DataSourcePO> {
      * @param id primary key
      * @return {@code true} if deletion succeeded
      */
-    Boolean delete(Long id);
+    void delete(Long id);
 
     /**
      * Tests connectivity of an existing datasource.

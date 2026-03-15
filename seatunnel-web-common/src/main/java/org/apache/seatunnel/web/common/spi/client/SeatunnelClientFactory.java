@@ -2,9 +2,6 @@
 package org.apache.seatunnel.web.common.spi.client;
 
 
-import org.apache.seatunnel.web.common.PrioritySPI;
-import org.apache.seatunnel.web.common.SPIIdentify;
-
 public interface SeatunnelClientFactory extends PrioritySPI {
 
     /**

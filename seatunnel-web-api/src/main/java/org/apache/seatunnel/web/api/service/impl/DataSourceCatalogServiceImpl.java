@@ -1,21 +1,22 @@
 package org.apache.seatunnel.web.api.service.impl;
 
 import jakarta.annotation.Resource;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.MapUtils;
+import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcCatalog;
+import org.apache.seatunnel.plugin.datasource.api.modal.DataSourceTableColumn;
+import org.apache.seatunnel.plugin.datasource.api.utils.DataSourceUtils;
+import org.apache.seatunnel.web.api.enums.Status;
+import org.apache.seatunnel.web.api.exceptions.ServiceException;
 import org.apache.seatunnel.web.api.service.DataSourceCatalogService;
 import org.apache.seatunnel.web.api.service.DataSourceService;
 import org.apache.seatunnel.web.common.BaseConnectionParam;
 import org.apache.seatunnel.web.common.QueryResult;
 import org.apache.seatunnel.web.common.bean.vo.ColumnOptionVO;
-import org.apache.seatunnel.web.common.bean.vo.DataSourceVO;
 import org.apache.seatunnel.web.common.bean.vo.OptionVO;
-import org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcCatalog;
-import org.apache.seatunnel.plugin.datasource.api.modal.DataSourceTableColumn;
-import org.apache.seatunnel.plugin.datasource.api.utils.DataSourceUtils;
+import org.apache.seatunnel.web.dao.entity.DataSource;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -25,103 +26,66 @@ import java.util.stream.Collectors;
 @Service
 public class DataSourceCatalogServiceImpl implements DataSourceCatalogService {
 
+    private static final String KEY_TABLE_PATH = "table_path";
+    private static final String KEY_QUERY = "query";
+    private static final String KEY_TASK_EXECUTE_TYPE = "taskExecuteType";
+    private static final String SINGLE_TABLE = "SINGLE_TABLE";
+
     @Resource
     private DataSourceService dataSourceService;
 
-    /**
-     * List all tables under the specified data source.
-     *
-     * @param datasourceId data source ID
-     * @return list of table options
-     */
     @Override
     public List<OptionVO> listTable(Long datasourceId) {
-        if (datasourceId == null) {
-            throw new IllegalArgumentException("Datasource ID must not be empty");
-        }
-
-        DataSourceVO dataSourceVO = getAndCheckDataSource(datasourceId);
-        BaseConnectionParam connectionParam = buildConnectionParam(dataSourceVO);
+        DataSource dataSource = getDataSourceOrThrow(datasourceId);
+        BaseConnectionParam connectionParam = buildConnectionParam(dataSource);
 
         try {
-            List<String> tables = DataSourceUtils
-                    .getDatasourceProcessor(dataSourceVO.getDbType())
-                    .getMetadataService(connectionParam)
-                    .listTables();
-
+            List<String> tables = getJdbcCatalog(dataSource, connectionParam).listTables();
             return tables.stream()
-                    .map(tableName -> {
-                        OptionVO optionVO = new OptionVO();
-                        optionVO.setLabel(tableName);
-                        optionVO.setValue(tableName);
-                        return optionVO;
-                    })
+                    .map(this::toOption)
                     .collect(Collectors.toList());
-
+        } catch (ServiceException e) {
+            throw e;
         } catch (Exception e) {
             log.error("Failed to list tables, datasourceId={}", datasourceId, e);
-            throw new RuntimeException("Failed to list tables");
+            throw new ServiceException(Status.DATASOURCE_METADATA_ERROR, e.getMessage());
         }
     }
 
-    /**
-     * Retrieves a list of table references from a datasource, with optional filtering based on match mode.
-     *
-     * @param datasourceId the ID of the datasource from which to list tables
-     * @param matchMode    the filtering mode:
-     *                     "2" - treat `keyword` as a regex pattern and match table names against it
-     *                     "3" - treat `keyword` as a comma-separated list of exact table names to match
-     * @param keyword      the filtering keyword, whose meaning depends on the matchMode; can be null or empty for no filtering
-     * @return a list of OptionVO objects representing the tables, filtered according to the matchMode and keyword
-     */
     @Override
     public List<OptionVO> listTableReference(Long datasourceId, String matchMode, String keyword) {
         List<OptionVO> allTables = listTable(datasourceId);
 
-        if ("2".equals(matchMode) && !StringUtils.isEmpty(keyword)) {
-            allTables = allTables.stream()
-                    .filter(t -> t.getValue().toString().matches(keyword))
-                    .collect(Collectors.toList());
-        } else if ("3".equals(matchMode) && !StringUtils.isEmpty(keyword)) {
-            String[] exacts = keyword.split(",");
-            allTables = allTables.stream()
-                    .filter(t -> {
-                        for (String e : exacts) {
-                            if (t.getValue().equals(e.trim())) return true;
-                        }
-                        return false;
-                    })
+        if (StringUtils.isBlank(keyword)) {
+            return allTables;
+        }
+
+        if ("2".equals(matchMode)) {
+            return allTables.stream()
+                    .filter(table -> String.valueOf(table.getValue()).matches(keyword))
                     .collect(Collectors.toList());
         }
+
+        if ("3".equals(matchMode)) {
+            String[] exactNames = keyword.split(",");
+            return allTables.stream()
+                    .filter(table -> matchExactTable(String.valueOf(table.getValue()), exactNames))
+                    .collect(Collectors.toList());
+        }
+
         return allTables;
     }
 
-
-    /**
-     * List column metadata for the specified table.
-     *
-     * @param datasourceId data source ID
-     * @param requestBody  requestBody query conditions including table name and optional filters
-     * @return list of column options
-     */
-    @SneakyThrows
     @Override
     public List<ColumnOptionVO> listColumn(Long datasourceId, Map<String, Object> requestBody) {
-        if (datasourceId == null) {
-            throw new IllegalArgumentException("Datasource ID must not be empty");
-        }
-        if (MapUtils.isEmpty(requestBody)) {
-            throw new IllegalArgumentException("Table request body must not be empty");
-        }
+        validateDatasourceId(datasourceId);
+        validateRequestBody(requestBody, "requestBody");
 
-        DataSourceVO dataSourceVO = getAndCheckDataSource(datasourceId);
-        BaseConnectionParam connectionParam = buildConnectionParam(dataSourceVO);
+        DataSource dataSource = getDataSourceOrThrow(datasourceId);
+        BaseConnectionParam connectionParam = buildConnectionParam(dataSource);
 
         try {
-            List<DataSourceTableColumn> columns = DataSourceUtils
-                    .getDatasourceProcessor(dataSourceVO.getDbType())
-                    .getMetadataService(connectionParam)
-                    .listColumns(requestBody);
+            List<DataSourceTableColumn> columns = getJdbcCatalog(dataSource, connectionParam).listColumns(requestBody);
 
             return columns.stream()
                     .map(column -> {
@@ -135,155 +99,168 @@ public class DataSourceCatalogServiceImpl implements DataSourceCatalogService {
                         return optionVO;
                     })
                     .collect(Collectors.toList());
-
+        } catch (ServiceException e) {
+            throw e;
         } catch (Exception e) {
-            log.error(
-                    "Failed to list columns, datasourceId={}",
-                    datasourceId,
-                    e
-            );
-            throw new RuntimeException("Failed to list columns");
+            log.error("Failed to list columns, datasourceId={}, requestBody={}", datasourceId, requestBody, e);
+            throw new ServiceException(Status.DATASOURCE_METADATA_ERROR, e.getMessage());
         }
     }
 
-    /**
-     * Query top 20 rows of data for preview.
-     *
-     * @param datasourceId data source ID
-     * @param requestBody  query parameters
-     * @return query result
-     */
     @Override
     public QueryResult getTop20Data(Long datasourceId, Map<String, Object> requestBody) {
-        if (datasourceId == null) {
-            throw new IllegalArgumentException("Datasource ID must not be empty");
-        }
-        if (requestBody == null || requestBody.isEmpty()) {
-            throw new IllegalArgumentException("Query parameters must not be empty");
-        }
+        validateDatasourceId(datasourceId);
+        validateRequestBody(requestBody, "requestBody");
 
-        DataSourceVO dataSourceVO = getAndCheckDataSource(datasourceId);
-        BaseConnectionParam connectionParam = buildConnectionParam(dataSourceVO);
+        DataSource dataSource = getDataSourceOrThrow(datasourceId);
+        BaseConnectionParam connectionParam = buildConnectionParam(dataSource);
 
         try {
-            return DataSourceUtils
-                    .getDatasourceProcessor(dataSourceVO.getDbType())
-                    .getMetadataService(connectionParam)
-                    .getTop20Data(requestBody);
-
+            return getJdbcCatalog(dataSource, connectionParam).getTop20Data(requestBody);
+        } catch (ServiceException e) {
+            throw e;
         } catch (Exception e) {
-            log.error("Failed to query preview data, datasourceId={}", datasourceId, e);
-            throw new RuntimeException(e.getMessage());
+            log.error("Failed to query top20 preview data, datasourceId={}, requestBody={}", datasourceId, requestBody, e);
+            throw new ServiceException(Status.DATASOURCE_METADATA_ERROR, e.getMessage());
         }
-    }
-
-    /**
-     * Get datasource and verify existence.
-     */
-    private DataSourceVO getAndCheckDataSource(Long datasourceId) {
-        DataSourceVO dataSourceVO = dataSourceService.selectById(datasourceId);
-        if (dataSourceVO == null) {
-            log.warn("Datasource not found, datasourceId={}", datasourceId);
-            throw new RuntimeException("Datasource does not exist");
-        }
-        return dataSourceVO;
-    }
-
-    /**
-     * Build connection parameters for the datasource.
-     */
-    private BaseConnectionParam buildConnectionParam(DataSourceVO dataSourceVO) {
-        return DataSourceUtils.buildConnectionParams(
-                dataSourceVO.getDbType(),
-                dataSourceVO.getConnectionParams()
-        );
     }
 
     @Override
     public Integer count(Long datasourceId, Map<String, Object> requestBody) {
-        if (datasourceId == null) {
-            throw new IllegalArgumentException("Datasource ID must not be empty");
-        }
-        if (requestBody == null || requestBody.isEmpty()) {
-            throw new IllegalArgumentException("Query parameters must not be empty");
-        }
+        validateDatasourceId(datasourceId);
+        validateRequestBody(requestBody, "requestBody");
 
-        DataSourceVO dataSourceVO = getAndCheckDataSource(datasourceId);
-        BaseConnectionParam connectionParam = buildConnectionParam(dataSourceVO);
+        DataSource dataSource = getDataSourceOrThrow(datasourceId);
+        BaseConnectionParam connectionParam = buildConnectionParam(dataSource);
 
         try {
-            return DataSourceUtils
-                    .getDatasourceProcessor(dataSourceVO.getDbType())
-                    .getMetadataService(connectionParam)
-                    .count(requestBody);
-
+            return getJdbcCatalog(dataSource, connectionParam).count(requestBody);
+        } catch (ServiceException e) {
+            throw e;
         } catch (Exception e) {
-            log.error("Failed to query preview data, datasourceId={}", datasourceId, e);
-            throw new RuntimeException("Failed to query preview data");
+            log.error("Failed to count preview data, datasourceId={}, requestBody={}", datasourceId, requestBody, e);
+            throw new ServiceException(Status.DATASOURCE_METADATA_ERROR, e.getMessage());
         }
     }
 
-    @SneakyThrows
     @Override
     public String buildSqlTemplate(Long datasourceId, Map<String, Object> requestBody) {
-        if (datasourceId == null) {
-            throw new IllegalArgumentException("Datasource ID must not be empty");
-        }
-        if (MapUtils.isEmpty(requestBody)) {
-            throw new IllegalArgumentException("Request body must not be empty");
-        }
+        validateDatasourceId(datasourceId);
+        validateRequestBody(requestBody, "requestBody");
 
-        Object tablePathObj = requestBody.get("table_path");
-        if (tablePathObj == null || !org.springframework.util.StringUtils.hasText(String.valueOf(tablePathObj))) {
-            throw new IllegalArgumentException("table_path must not be empty");
-        }
+        String tablePath = getRequiredText(requestBody, KEY_TABLE_PATH);
 
-        String tablePath = String.valueOf(tablePathObj);
-
-        DataSourceVO dataSourceVO = getAndCheckDataSource(datasourceId);
-        BaseConnectionParam connectionParam = buildConnectionParam(dataSourceVO);
-        JdbcCatalog jdbcCatalog = getJdbcCatalog(dataSourceVO, connectionParam);
+        DataSource dataSource = getDataSourceOrThrow(datasourceId);
+        BaseConnectionParam connectionParam = buildConnectionParam(dataSource);
+        JdbcCatalog jdbcCatalog = getJdbcCatalog(dataSource, connectionParam);
 
         Map<String, Object> columnRequest = Map.of(
-                "taskExecuteType", "SINGLE_TABLE",
-                "table_path", tablePath,
-                "query", ""
+                KEY_TASK_EXECUTE_TYPE, SINGLE_TABLE,
+                KEY_TABLE_PATH, tablePath,
+                KEY_QUERY, ""
         );
 
-        List<DataSourceTableColumn> columns = jdbcCatalog.listColumns(columnRequest);
-        if (columns == null || columns.isEmpty()) {
-            throw new RuntimeException("No columns found for table: " + tablePath);
+        try {
+            List<DataSourceTableColumn> columns = jdbcCatalog.listColumns(columnRequest);
+            if (columns == null || columns.isEmpty()) {
+                throw new ServiceException(Status.DATASOURCE_COLUMN_NOT_FOUND, tablePath);
+            }
+            return jdbcCatalog.buildSelectAllColumnsSql(tablePath, columns);
+        } catch (ServiceException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Failed to build sql template, datasourceId={}, tablePath={}", datasourceId, tablePath, e);
+            throw new ServiceException(Status.DATASOURCE_METADATA_ERROR, e.getMessage());
         }
-
-        return jdbcCatalog.buildSelectAllColumnsSql(tablePath, columns);
     }
 
     @Override
     public String resolveSql(Long datasourceId, Map<String, Object> requestBody) {
-        if (datasourceId == null) {
-            throw new IllegalArgumentException("Datasource ID must not be empty");
+        validateDatasourceId(datasourceId);
+        validateRequestBody(requestBody, "requestBody");
+
+        String query = getRequiredText(requestBody, KEY_QUERY);
+
+        DataSource dataSource = getDataSourceOrThrow(datasourceId);
+        BaseConnectionParam connectionParam = buildConnectionParam(dataSource);
+
+        try {
+            return getJdbcCatalog(dataSource, connectionParam).resolveSqlVariables(query);
+        } catch (ServiceException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Failed to resolve sql, datasourceId={}, query={}", datasourceId, query, e);
+            throw new ServiceException(Status.DATASOURCE_METADATA_ERROR, e.getMessage());
         }
-        if (MapUtils.isEmpty(requestBody)) {
-            throw new IllegalArgumentException("Request body must not be empty");
-        }
-
-        Object queryObj = requestBody.get("query");
-        if (queryObj == null || !org.springframework.util.StringUtils.hasText(String.valueOf(queryObj))) {
-            throw new IllegalArgumentException("query must not be empty");
-        }
-
-        String query = String.valueOf(queryObj);
-
-        DataSourceVO dataSourceVO = getAndCheckDataSource(datasourceId);
-        BaseConnectionParam connectionParam = buildConnectionParam(dataSourceVO);
-        JdbcCatalog jdbcCatalog = getJdbcCatalog(dataSourceVO, connectionParam);
-
-        return jdbcCatalog.resolveSqlVariables(query);
     }
 
-    private JdbcCatalog getJdbcCatalog(DataSourceVO dataSourceVO, BaseConnectionParam connectionParam) {
-        return DataSourceUtils
-                .getDatasourceProcessor(dataSourceVO.getDbType())
-                .getMetadataService(connectionParam);
+    private DataSource getDataSourceOrThrow(Long datasourceId) {
+        validateDatasourceId(datasourceId);
+
+        DataSource dataSource = dataSourceService.selectById(datasourceId);
+        if (dataSource == null) {
+            log.warn("Datasource not found, datasourceId={}", datasourceId);
+            throw new ServiceException(Status.DATASOURCE_NOT_EXIST);
+        }
+        return dataSource;
+    }
+
+    private BaseConnectionParam buildConnectionParam(DataSource dataSource) {
+        try {
+            return DataSourceUtils.buildConnectionParams(
+                    dataSource.getDbType(),
+                    dataSource.getConnectionParams()
+            );
+        } catch (Exception e) {
+            log.error("Failed to build connection param, datasourceId={}", dataSource.getId(), e);
+            throw new ServiceException(Status.DATASOURCE_METADATA_ERROR, e.getMessage());
+        }
+    }
+
+    private JdbcCatalog getJdbcCatalog(DataSource dataSource, BaseConnectionParam connectionParam) {
+        try {
+            return DataSourceUtils
+                    .getDatasourceProcessor(dataSource.getDbType())
+                    .getMetadataService(connectionParam);
+        } catch (Exception e) {
+            log.error("Failed to get jdbc catalog, datasourceId={}", dataSource.getId(), e);
+            throw new ServiceException(Status.DATASOURCE_METADATA_ERROR, e.getMessage());
+        }
+    }
+
+    private void validateDatasourceId(Long datasourceId) {
+        if (datasourceId == null || datasourceId <= 0) {
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "datasourceId");
+        }
+    }
+
+    private void validateRequestBody(Map<String, Object> requestBody, String fieldName) {
+        if (MapUtils.isEmpty(requestBody)) {
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, fieldName);
+        }
+    }
+
+    private String getRequiredText(Map<String, Object> requestBody, String key) {
+        Object value = requestBody.get(key);
+        if (value == null || StringUtils.isBlank(String.valueOf(value))) {
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, key);
+        }
+        return String.valueOf(value);
+    }
+
+    private boolean matchExactTable(String tableName, String[] exactNames) {
+        for (String exact : exactNames) {
+            if (tableName.equals(exact.trim())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private OptionVO toOption(String value) {
+        OptionVO optionVO = new OptionVO();
+        optionVO.setLabel(value);
+        optionVO.setValue(value);
+        return optionVO;
     }
 }

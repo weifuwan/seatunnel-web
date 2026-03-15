@@ -3,7 +3,7 @@ package org.apache.seatunnel.web.common.bean.entity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.ToString;
-import org.apache.seatunnel.web.common.constant.Constant;
+import org.apache.seatunnel.web.common.constants.Constants;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -27,6 +27,6 @@ public class BaseResult implements Serializable {
     }
 
     public boolean failed() {
-        return !Constant.SUCCESS.equals(code);
+        return !Constants.SUCCESS.equals(code);
     }
 }

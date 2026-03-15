@@ -3,7 +3,6 @@ package org.apache.seatunnel.plugin.datasource.api.jdbc;
 import org.apache.seatunnel.web.common.QueryResult;
 import org.apache.seatunnel.plugin.datasource.api.modal.DataSourceTableColumn;
 
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 

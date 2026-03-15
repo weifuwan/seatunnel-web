@@ -7,8 +7,6 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.seatunnel.web.api.dao.SeatunnelJobInstanceMapper;
-import org.apache.seatunnel.web.api.dao.SeatunnelJobMetricsMapper;
 import org.apache.seatunnel.web.api.service.SeaTunnelJobInstanceService;
 import org.apache.seatunnel.web.api.service.application.SeatunnelBatchJobDefinitionApplicationService;
 import org.apache.seatunnel.web.api.service.application.streaming.SeatunnelStreamingJobDefinitionApplicationService;
@@ -22,8 +20,6 @@ import org.apache.seatunnel.web.common.bean.dto.SeatunnelBatchJobDefinitionDTO;
 import org.apache.seatunnel.web.common.bean.dto.SeatunnelJobInstanceDTO;
 import org.apache.seatunnel.web.common.bean.dto.SeatunnelStreamingJobDefinitionDTO;
 import org.apache.seatunnel.web.common.bean.entity.PaginationResult;
-import org.apache.seatunnel.web.common.bean.po.SeatunnelJobInstancePO;
-import org.apache.seatunnel.web.common.bean.po.SeatunnelJobMetricsPO;
 import org.apache.seatunnel.web.common.bean.vo.SeatunnelBatchJobDefinitionVO;
 import org.apache.seatunnel.web.common.bean.vo.SeatunnelJobInstanceVO;
 import org.apache.seatunnel.web.common.enums.JobMode;
@@ -48,7 +44,7 @@ import java.util.Map;
 @Service
 @Slf4j
 public class SeaTunnelJobInstanceServiceImpl
-        extends ServiceImpl<SeatunnelJobInstanceMapper, SeatunnelJobInstancePO>
+
         implements SeaTunnelJobInstanceService {
 
     @Lazy

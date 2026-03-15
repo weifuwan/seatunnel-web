@@ -7,9 +7,8 @@ import org.apache.seatunnel.web.api.aspect.AccessLogAnnotation;
 import org.apache.seatunnel.web.api.service.SessionService;
 import org.apache.seatunnel.web.api.service.UsersService;
 import org.apache.seatunnel.web.common.bean.dto.UserDTO;
-import org.apache.seatunnel.web.common.bean.entity.Result;
 import org.apache.seatunnel.web.common.bean.po.UserPO;
-import org.apache.seatunnel.web.common.constant.Constant;
+import org.apache.seatunnel.web.common.constants.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -40,7 +39,7 @@ public class UsersController extends BaseController {
     @GetMapping(value = "/get-user-info")
     @ResponseStatus(HttpStatus.OK)
     @AccessLogAnnotation
-    public Result<UserPO> getUserInfo(@RequestAttribute(value = Constant.SESSION_USER) UserPO loginUserPO) {
+    public Result<UserPO> getUserInfo(@RequestAttribute(value = Constants.SESSION_USER) UserPO loginUserPO) {
         return Result.buildSuc(usersService.getUserInfo(loginUserPO));
 
     }
@@ -48,7 +47,7 @@ public class UsersController extends BaseController {
     @GetMapping("/currentUser")
     public Result<UserDTO> currentUser(HttpServletRequest request) {
 
-        UserPO loginUserPO = (UserPO) request.getAttribute(Constant.SESSION_USER);
+        UserPO loginUserPO = (UserPO) request.getAttribute(Constants.SESSION_USER);
 
         if (loginUserPO == null) {
             var session = sessionService.getSession(request);

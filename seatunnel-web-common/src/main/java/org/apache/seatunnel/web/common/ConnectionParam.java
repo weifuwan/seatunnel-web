@@ -1,5 +1,7 @@
 package org.apache.seatunnel.web.common;
 
+import org.apache.seatunnel.web.spi.enums.DbType;
+
 import java.io.Serializable;
 
 /**

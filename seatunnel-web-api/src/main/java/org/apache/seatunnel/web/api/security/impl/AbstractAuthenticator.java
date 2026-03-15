@@ -6,7 +6,7 @@ import org.apache.seatunnel.web.api.security.SecurityConfig;
 import org.apache.seatunnel.web.api.service.SessionService;
 import org.apache.seatunnel.web.api.service.UsersService;
 import org.apache.seatunnel.web.common.bean.po.UserPO;
-import org.apache.seatunnel.web.common.constant.Constant;
+import org.apache.seatunnel.web.common.constants.Constants;
 import org.apache.seatunnel.web.common.enums.Flag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,8 +46,8 @@ public abstract class AbstractAuthenticator implements Authenticator {
 
         logger.info("sessionId : {}", sessionId);
         Map<String, String> data = new HashMap<>();
-        data.put(Constant.SESSION_ID, sessionId);
-        data.put(Constant.SECURITY_CONFIG_TYPE, securityConfig.getType());
+        data.put(Constants.SESSION_ID, sessionId);
+        data.put(Constants.SECURITY_CONFIG_TYPE, securityConfig.getType());
         return data;
 
     }

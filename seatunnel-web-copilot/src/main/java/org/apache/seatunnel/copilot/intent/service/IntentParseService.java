@@ -3,7 +3,6 @@ package org.apache.seatunnel.copilot.intent.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.seatunnel.web.common.bean.dto.AiGenerateRequest;
-import org.apache.seatunnel.copilot.intent.*;
 import org.apache.seatunnel.copilot.intent.parser.IntentStructurer;
 import org.apache.seatunnel.copilot.intent.validate.CommonValidator;
 import org.apache.seatunnel.copilot.intent.validate.IntentValidator;

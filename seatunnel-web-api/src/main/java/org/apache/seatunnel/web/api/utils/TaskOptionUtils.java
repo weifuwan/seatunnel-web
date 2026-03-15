@@ -1,7 +1,6 @@
 package org.apache.seatunnel.web.api.utils;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.seatunnel.api.thirdparty.transfrom.domain.*;
 import org.apache.seatunnel.web.api.thirdparty.transfrom.domain.*;
 
 import java.io.IOException;

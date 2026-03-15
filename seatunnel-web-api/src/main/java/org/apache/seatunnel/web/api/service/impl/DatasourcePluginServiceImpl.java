@@ -1,169 +1,261 @@
 package org.apache.seatunnel.web.api.service.impl;
 
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.seatunnel.web.api.dao.DatasourcePluginConfigMapper;
-import org.apache.seatunnel.web.api.service.DatasourcePluginService;
-import org.apache.seatunnel.web.common.DbType;
-import org.apache.seatunnel.web.common.bean.po.DataSourcePluginConfigPO;
 import org.apache.seatunnel.plugin.datasource.api.jdbc.DataSourceProcessor;
 import org.apache.seatunnel.plugin.datasource.api.utils.DataSourceUtils;
+import org.apache.seatunnel.web.api.enums.Status;
+import org.apache.seatunnel.web.api.exceptions.ServiceException;
+import org.apache.seatunnel.web.api.service.DatasourcePluginService;
+import org.apache.seatunnel.web.common.form.*;
+import org.apache.seatunnel.web.common.utils.JSONUtils;
+import org.apache.seatunnel.web.dao.entity.DataSourcePluginConfig;
+import org.apache.seatunnel.web.dao.repository.DataSourcePluginConfigDao;
+import org.apache.seatunnel.web.spi.enums.DbType;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Service
-public class DatasourcePluginServiceImpl
-        extends ServiceImpl<DatasourcePluginConfigMapper, DataSourcePluginConfigPO>
-        implements DatasourcePluginService {
+public class DatasourcePluginServiceImpl implements DatasourcePluginService {
+
+    @Resource
+    private DataSourcePluginConfigDao dataSourcePluginConfigDao;
 
     @Override
     public PluginConfigResponse getPluginConfig(String pluginType) {
-        if (StringUtils.isBlank(pluginType)) {
-            throw new IllegalArgumentException("Plugin type must not be empty");
-        }
+        validatePluginType(pluginType);
 
-        LambdaQueryWrapper<DataSourcePluginConfigPO> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(DataSourcePluginConfigPO::getPluginType, pluginType);
-
-        DataSourcePluginConfigPO config = this.getOne(wrapper);
-        if (config == null) {
-            throw new RuntimeException("Plugin configuration not found: " + pluginType);
-        }
-
-        JSONObject schema = JSONObject.parseObject(config.getConfigSchema());
-        List<FormFieldConfig> formFields = parseConfigSchema(schema);
+        DbType dbType = parseDbType(pluginType);
+        DataSourcePluginConfig config = getPluginConfigOrThrow(dbType);
+        ObjectNode schema = parseSchema(config.getConfigSchema());
 
         PluginConfigResponse response = new PluginConfigResponse();
         response.setPluginType(config.getPluginType());
-        response.setFormFields(formFields);
+        response.setFormFields(parseConfigSchema(schema));
         return response;
     }
 
     @Override
     public void installPlugin(String pluginType) {
-        DbType dbType;
-        try {
-            dbType = DbType.valueOf(pluginType.toUpperCase());
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Unknown pluginType: " + pluginType);
-        }
+        validatePluginType(pluginType);
 
-        LambdaQueryWrapper<DataSourcePluginConfigPO> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(DataSourcePluginConfigPO::getPluginType, dbType);
-        DataSourcePluginConfigPO exist = this.getOne(wrapper);
-        if (exist != null) {
+        DbType dbType = parseDbType(pluginType);
+
+        if (dataSourcePluginConfigDao.existsByPluginType(dbType)) {
             return;
         }
 
-        DataSourceProcessor processor =
-                DataSourceUtils.getDatasourceProcessor(dbType);
-        List<FormFieldConfig> fields = processor.generateFormFields();
+        try {
+            DataSourceProcessor processor = DataSourceUtils.getDatasourceProcessor(dbType);
+            if (processor == null) {
+                throw new ServiceException(Status.QUERY_DATASOURCE_ERROR, "Datasource processor not found: " + dbType);
+            }
 
-        JSONObject schema = new JSONObject();
-        schema.put("fields", fields);
+            List<FormFieldConfig> fields = processor.generateFormFields();
 
-        DataSourcePluginConfigPO po = new DataSourcePluginConfigPO();
-        po.setPluginType(dbType);
-        po.setConfigSchema(schema.toJSONString());
-        po.initInsert();
-        this.save(po);
+            ObjectNode schema = JSONUtils.createObjectNode();
+            schema.set("fields", JSONUtils.toJsonNode(fields));
+
+            DataSourcePluginConfig entity = new DataSourcePluginConfig();
+            entity.setPluginType(dbType);
+            entity.setConfigSchema(JSONUtils.toJsonString(schema));
+            entity.initInsert();
+
+            int rows = dataSourcePluginConfigDao.insertPluginConfig(entity);
+            if (rows <= 0) {
+                throw new ServiceException(Status.UPDATE_DATASOURCE_ERROR, "Install datasource plugin failed: " + dbType);
+            }
+        } catch (ServiceException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Failed to install datasource plugin, pluginType={}", pluginType, e);
+            throw new ServiceException(Status.UPDATE_DATASOURCE_ERROR, e.getMessage());
+        }
     }
 
-    /**
-     * Parse JSON schema to form field configurations.
-     */
-    private List<FormFieldConfig> parseConfigSchema(JSONObject schema) {
-        if (schema == null) {
-            throw new IllegalArgumentException("Config schema must not be null");
+    private DataSourcePluginConfig getPluginConfigOrThrow(DbType dbType) {
+        try {
+            DataSourcePluginConfig config = dataSourcePluginConfigDao.queryByPluginType(dbType);
+            if (config == null) {
+                log.warn("Datasource plugin config not found, pluginType={}", dbType);
+                throw new ServiceException(Status.QUERY_DATASOURCE_ERROR, "Plugin configuration not found: " + dbType);
+            }
+            return config;
+        } catch (ServiceException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Failed to query datasource plugin config, pluginType={}", dbType, e);
+            throw new ServiceException(Status.QUERY_DATASOURCE_ERROR, e.getMessage());
+        }
+    }
+
+    private void validatePluginType(String pluginType) {
+        if (StringUtils.isBlank(pluginType)) {
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "pluginType");
+        }
+    }
+
+    private DbType parseDbType(String pluginType) {
+        try {
+            return DbType.valueOf(pluginType.trim().toUpperCase());
+        } catch (Exception e) {
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "pluginType");
+        }
+    }
+
+    private ObjectNode parseSchema(String schemaText) {
+        if (StringUtils.isBlank(schemaText)) {
+            throw new ServiceException(Status.QUERY_DATASOURCE_ERROR, "Config schema is empty");
         }
 
-        JSONArray fields = schema.getJSONArray("fields");
-        if (fields == null || fields.isEmpty()) {
+        try {
+            JsonNode jsonNode = JSONUtils.parseObject(schemaText);
+            if (!(jsonNode instanceof ObjectNode)) {
+                throw new ServiceException(Status.QUERY_DATASOURCE_ERROR, "Config schema must be a JSON object");
+            }
+            return (ObjectNode) jsonNode;
+        } catch (ServiceException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Failed to parse datasource plugin schema, schema={}", schemaText, e);
+            throw new ServiceException(Status.QUERY_DATASOURCE_ERROR, "Invalid config schema");
+        }
+    }
+
+    private List<FormFieldConfig> parseConfigSchema(ObjectNode schema) {
+        JsonNode fieldsNode = schema.get("fields");
+        if (fieldsNode == null || !fieldsNode.isArray() || fieldsNode.isEmpty()) {
             return new ArrayList<>();
         }
 
+        ArrayNode fields = (ArrayNode) fieldsNode;
         List<FormFieldConfig> formFields = new ArrayList<>(fields.size());
-        for (int i = 0; i < fields.size(); i++) {
-            JSONObject fieldJson = fields.getJSONObject(i);
-            formFields.add(parseField(fieldJson));
+        for (JsonNode fieldNode : fields) {
+
+            if (fieldNode instanceof ObjectNode) {
+                ObjectNode objectNode = (ObjectNode) fieldNode;
+                formFields.add(parseField(objectNode));
+            }
         }
         return formFields;
     }
 
-    /**
-     * Parse a single field definition.
-     */
-    private FormFieldConfig parseField(JSONObject fieldJson) {
+    private FormFieldConfig parseField(ObjectNode fieldNode) {
         FormFieldConfig field = new FormFieldConfig();
-
-        field.setKey(fieldJson.getString("key"));
-        field.setLabel(fieldJson.getString("label"));
-        field.setType(parseFieldType(fieldJson));
-        field.setPlaceholder(fieldJson.getString("placeholder"));
-        field.setDefaultValue(fieldJson.get("defaultValue"));
+        field.setKey(getText(fieldNode, "key"));
+        field.setLabel(getText(fieldNode, "label"));
+        field.setType(parseFieldType(fieldNode));
+        field.setPlaceholder(getText(fieldNode, "placeholder"));
+        field.setDefaultValue(getValue(fieldNode.get("defaultValue")));
 
         if (FieldType.SELECT.equals(field.getType())) {
-            field.setOptions(parseOptions(fieldJson.getJSONArray("options")));
+            field.setOptions(parseOptions(fieldNode.get("options")));
         }
 
-        field.setRules(parseRules(fieldJson.getJSONArray("rules")));
+        field.setRules(parseRules(fieldNode.get("rules")));
         return field;
     }
 
-    /**
-     * Parse field type safely.
-     */
-    private FieldType parseFieldType(JSONObject fieldJson) {
-        String type = fieldJson.getString("type");
+    private FieldType parseFieldType(ObjectNode fieldNode) {
+        String type = getText(fieldNode, "type");
         if (StringUtils.isBlank(type)) {
-            throw new IllegalArgumentException("Field type must not be empty");
+            throw new ServiceException(Status.QUERY_DATASOURCE_ERROR, "Field type must not be empty");
         }
-        return FieldType.valueOf(type.toUpperCase());
+
+        try {
+            return FieldType.valueOf(type.trim().toUpperCase());
+        } catch (Exception e) {
+            throw new ServiceException(Status.QUERY_DATASOURCE_ERROR, "Unsupported field type: " + type);
+        }
     }
 
-    /**
-     * Parse select options.
-     */
-    private List<Option> parseOptions(JSONArray optionsJson) {
-        if (optionsJson == null || optionsJson.isEmpty()) {
+    private List<Option> parseOptions(JsonNode optionsNode) {
+        if (optionsNode == null || !optionsNode.isArray() || optionsNode.isEmpty()) {
             return new ArrayList<>();
         }
 
-        List<Option> options = new ArrayList<>(optionsJson.size());
-        for (int i = 0; i < optionsJson.size(); i++) {
-            JSONObject opt = optionsJson.getJSONObject(i);
+        List<Option> options = new ArrayList<>(optionsNode.size());
+        for (JsonNode optionNode : optionsNode) {
+            if (!(optionNode instanceof ObjectNode)) {
+                continue;
+            }
+            ObjectNode objectNode = (ObjectNode) optionNode;
+
             Option option = new Option();
-            option.setLabel(opt.getString("label"));
-            option.setValue(opt.get("value"));
+            option.setLabel(getText(objectNode, "label"));
+            option.setValue(getValue(objectNode.get("value")));
             options.add(option);
         }
         return options;
     }
 
-    /**
-     * Parse validation rules.
-     */
-    private List<Rule> parseRules(JSONArray rulesJson) {
-        if (rulesJson == null || rulesJson.isEmpty()) {
+    private List<Rule> parseRules(JsonNode rulesNode) {
+        if (rulesNode == null || !rulesNode.isArray() || rulesNode.isEmpty()) {
             return new ArrayList<>();
         }
 
-        List<Rule> rules = new ArrayList<>(rulesJson.size());
-        for (int i = 0; i < rulesJson.size(); i++) {
-            JSONObject ruleJson = rulesJson.getJSONObject(i);
+        List<Rule> rules = new ArrayList<>(rulesNode.size());
+        for (JsonNode ruleNode : rulesNode) {
+            if (!(ruleNode instanceof ObjectNode)) {
+                continue;
+            }
+            ObjectNode objectNode = (ObjectNode) ruleNode;
+
             Rule rule = new Rule();
-            rule.setPattern(ruleJson.getString("pattern"));
-            rule.setMessage(ruleJson.getString("message"));
-            rule.setMin(ruleJson.getInteger("min"));
-            rule.setMax(ruleJson.getInteger("max"));
-            rule.setRequired(ruleJson.getBoolean("required"));
+            rule.setPattern(getText(objectNode, "pattern"));
+            rule.setMessage(getText(objectNode, "message"));
+            rule.setMin(getInteger(objectNode, "min"));
+            rule.setMax(getInteger(objectNode, "max"));
+            rule.setRequired(getBoolean(objectNode, "required"));
             rules.add(rule);
         }
         return rules;
+    }
+
+    private String getText(ObjectNode node, String key) {
+        JsonNode value = node.get(key);
+        if (value == null || value.isNull()) {
+            return null;
+        }
+        return value.isTextual() ? value.asText() : value.toString();
+    }
+
+    private Integer getInteger(ObjectNode node, String key) {
+        JsonNode value = node.get(key);
+        return value == null || value.isNull() ? null : value.asInt();
+    }
+
+    private Boolean getBoolean(ObjectNode node, String key) {
+        JsonNode value = node.get(key);
+        return value == null || value.isNull() ? null : value.asBoolean();
+    }
+
+    private Object getValue(JsonNode value) {
+        if (value == null || value.isNull()) {
+            return null;
+        }
+        if (value.isTextual()) {
+            return value.asText();
+        }
+        if (value.isInt()) {
+            return value.asInt();
+        }
+        if (value.isLong()) {
+            return value.asLong();
+        }
+        if (value.isBoolean()) {
+            return value.asBoolean();
+        }
+        if (value.isFloat() || value.isDouble() || value.isBigDecimal()) {
+            return value.asDouble();
+        }
+        return value.toString();
     }
 }

@@ -2,9 +2,9 @@ package org.apache.seatunnel.plugin.datasource.api.utils;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.seatunnel.web.common.BaseConnectionParam;
-import org.apache.seatunnel.web.common.DbType;
 import org.apache.seatunnel.plugin.datasource.api.jdbc.DataSourceProcessor;
 import org.apache.seatunnel.plugin.datasource.api.plugin.DataSourceProcessorProvider;
+import org.apache.seatunnel.web.spi.enums.DbType;
 
 import java.util.Map;
 
@@ -33,6 +33,10 @@ public class DataSourceUtils {
         return getDatasourceProcessor(dbType)
                 .getParamConverter()
                 .createConnectionParams(connectionJson);
+    }
+
+    public static void checkDatasourceParam(BaseConnectionParam baseConnectionParam) {
+        getDatasourceProcessor(baseConnectionParam.getDbType()).getParamConverter().checkDatasourceParam(baseConnectionParam);
     }
 
     /**

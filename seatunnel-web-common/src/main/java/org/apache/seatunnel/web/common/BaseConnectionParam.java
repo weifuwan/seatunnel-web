@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import lombok.Data;
 import org.apache.seatunnel.web.common.form.FieldType;
 import org.apache.seatunnel.web.common.form.FormField;
+import org.apache.seatunnel.web.spi.enums.DbType;
 
 @Data
 @JsonInclude(Include.NON_NULL)

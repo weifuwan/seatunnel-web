@@ -1,7 +1,7 @@
 package org.apache.seatunnel.web.common.bean.entity;
 
 import lombok.Getter;
-import org.apache.seatunnel.web.common.constant.Constant;
+import org.apache.seatunnel.web.common.constants.Constants;
 
 /**
  * 返回状态
@@ -10,7 +10,7 @@ import org.apache.seatunnel.web.common.constant.Constant;
 public enum ResultStatus {
     GATEWAY_INVALID_REQUEST(-1, "invalid request"),
 
-    SUCCESS(Constant.SUCCESS, "成功"),
+    SUCCESS(Constants.SUCCESS, "成功"),
     FAIL(1, "失败"),
 
     /**

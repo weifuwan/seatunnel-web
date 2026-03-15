@@ -1,23 +1,11 @@
 package org.apache.seatunnel.web.api.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import org.apache.seatunnel.web.common.bean.po.DataSourcePluginConfigPO;
 import org.apache.seatunnel.web.common.form.PluginConfigResponse;
+import org.apache.seatunnel.web.dao.entity.DataSourcePluginConfig;
 
-/**
- * Service responsible for managing datasource plugin configurations.
- *
- * <p>This service provides functionality to:</p>
- * <ul>
- *     <li>Retrieve dynamic form configuration for datasource plugins</li>
- *     <li>Install datasource plugins at runtime</li>
- *     <li>Persist plugin configuration metadata</li>
- * </ul>
- *
- * <p>The dynamic form configuration returned by this service is consumed
- * by the frontend to render plugin-specific configuration forms.</p>
- */
-public interface DatasourcePluginService extends IService<DataSourcePluginConfigPO> {
+
+public interface DatasourcePluginService {
 
     /**
      * Retrieves the dynamic form configuration for the requested plugin.

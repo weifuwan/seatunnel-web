@@ -6,7 +6,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.seatunnel.web.api.service.SeaTunnelJobExecutorService;
-import org.apache.seatunnel.web.common.bean.entity.Result;
 import org.apache.seatunnel.web.common.enums.RunMode;
 import org.springframework.web.bind.annotation.*;
 

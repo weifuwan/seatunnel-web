@@ -2,10 +2,10 @@ package org.apache.seatunnel.web.common.bean.dto.pagination;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
-import org.apache.seatunnel.web.common.constant.PaginationConstant;
+import org.apache.seatunnel.web.common.constants.PaginationConstant;
 
-import javax.validation.constraints.NotNull;
 
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)

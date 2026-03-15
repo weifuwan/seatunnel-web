@@ -3,7 +3,6 @@ package org.apache.seatunnel.web.common.bean.vo;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.*;
 import org.apache.seatunnel.web.common.enums.*;
-import org.apache.seatunnel.web.common.enums.*;
 
 import java.util.Date;
 

@@ -14,7 +14,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 
-@SpringBootApplication(scanBasePackages = {"org.apache.seatunnel.*"})
+@SpringBootApplication(scanBasePackages = {"org.apache.seatunnel.web.*"})
 @EnableConfigurationProperties
 @EnableScheduling
 @EnableAsync(proxyTargetClass = true)

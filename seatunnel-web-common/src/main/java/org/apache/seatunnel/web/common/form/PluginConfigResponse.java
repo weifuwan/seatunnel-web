@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.apache.seatunnel.web.common.DbType;
+import org.apache.seatunnel.web.spi.enums.DbType;
 
 import java.util.List;
 

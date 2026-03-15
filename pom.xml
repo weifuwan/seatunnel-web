@@ -54,6 +54,9 @@
         <module>seatunnel-web-copilot</module>
         <module>seatunnel-web-dao</module>
         <module>seatunnel-web-bom</module>
+        <module>seatunnel-web-spi</module>
+        <module>seatunnel-web-service</module>
+        <module>seatunnel-web-engine-client</module>
     </modules>
 
     <dependencyManagement>
@@ -61,6 +64,11 @@
             <dependency>
                 <groupId>org.apache.seatunnel.web</groupId>
                 <artifactId>seatunnel-web-dao</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.seatunnel.web</groupId>
+                <artifactId>seatunnel-web-common</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -108,6 +116,16 @@
                 <artifactId>seatunnel-web-datasource-all</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.apache.seatunnel.web</groupId>
+                <artifactId>seatunnel-web-service</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.seatunnel.web</groupId>
+                <artifactId>seatunnel-web-spi</artifactId>
+                <version>${project.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -133,7 +151,6 @@
             <artifactId>jsqlparser</artifactId>
             <version>${jsqlparser.version}</version>
         </dependency>
-
 
     </dependencies>
 

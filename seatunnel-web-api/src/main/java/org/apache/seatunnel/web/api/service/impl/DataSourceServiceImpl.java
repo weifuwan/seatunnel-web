@@ -1,34 +1,38 @@
 package org.apache.seatunnel.web.api.service.impl;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.seatunnel.web.api.dao.DataSourceMapper;
+import org.apache.seatunnel.plugin.datasource.api.jdbc.DataSourceProcessor;
+import org.apache.seatunnel.plugin.datasource.api.utils.DataSourceUtils;
+import org.apache.seatunnel.web.api.enums.Status;
+import org.apache.seatunnel.web.api.exceptions.ServiceException;
 import org.apache.seatunnel.web.api.service.DataSourceService;
+import org.apache.seatunnel.web.common.BaseConnectionParam;
 import org.apache.seatunnel.web.common.ConnectionParam;
-import org.apache.seatunnel.web.common.DbType;
 import org.apache.seatunnel.web.common.bean.dto.DataSourceDTO;
 import org.apache.seatunnel.web.common.bean.entity.PaginationResult;
-import org.apache.seatunnel.web.common.bean.po.DataSourcePO;
 import org.apache.seatunnel.web.common.bean.vo.DBOptionVO;
 import org.apache.seatunnel.web.common.bean.vo.DataSourceVO;
 import org.apache.seatunnel.web.common.enums.ConnStatus;
 import org.apache.seatunnel.web.common.utils.ConvertUtil;
 import org.apache.seatunnel.web.common.utils.JSONUtils;
-import org.apache.seatunnel.plugin.datasource.api.jdbc.DataSourceProcessor;
-import org.apache.seatunnel.plugin.datasource.api.utils.DataSourceUtils;
+import org.apache.seatunnel.web.dao.entity.DataSource;
+import org.apache.seatunnel.web.dao.repository.DataSourceDao;
+import org.apache.seatunnel.web.spi.enums.DbType;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.nio.file.*;
+import java.io.InputStream;
+import java.nio.file.CopyOption;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,196 +40,248 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Service
-public class DataSourceServiceImpl extends ServiceImpl<DataSourceMapper, DataSourcePO> implements DataSourceService {
+public class DataSourceServiceImpl extends BaseServiceImpl implements DataSourceService {
+
+    private static final long MAX_JDBC_DRIVER_SIZE = 200L * 1024 * 1024;
+    private static final String JDBC_DRIVER_DIR = "jdbc-drivers";
+    private static final String JDBC_JAR_SUFFIX = ".jar";
+
+    @Resource
+    private DataSourceDao dataSourceDao;
 
     @Override
-    public DataSourceVO create(DataSourceDTO dto) {
-        if (checkNameExists(dto.getDbName())) {
-            throw new IllegalArgumentException("Data source name already exists");
-        }
-
-        ConnectionParam connectionParam = DataSourceUtils.buildConnectionParams(dto.getDbType(), dto.getConnectionParams());
-        DataSourcePO dataSource = ConvertUtil.sourceToTarget(dto, DataSourcePO.class);
-        dataSource.setConnectionParams(JSONUtils.toJsonString(connectionParam));
-        dataSource.setOriginalJson(dto.getConnectionParams());
-        dataSource.setConnStatus(ConnStatus.CONNECTED_NONE);
-        dataSource.initInsert();
+    @Transactional(rollbackFor = Exception.class)
+    public DataSource createDataSource(DataSourceDTO dto) {
+        validateCreateRequest(dto);
 
         try {
-            save(dataSource);
-            return ConvertUtil.sourceToTarget(dataSource, DataSourceVO.class);
-        } catch (DuplicateKeyException ex) {
-            throw new RuntimeException("Failed to insert data source: " + dto.getDbName(), ex);
+            ConnectionParam connectionParam =
+                    DataSourceUtils.buildConnectionParams(dto.getDbType(), dto.getConnectionParams());
+
+            DataSource entity = ConvertUtil.sourceToTarget(dto, DataSource.class);
+            entity.setName(dto.getName().trim());
+            entity.setConnectionParams(JSONUtils.toJsonString(connectionParam));
+            entity.setOriginalJson(dto.getConnectionParams());
+            entity.setConnStatus(ConnStatus.CONNECTED_NONE);
+            entity.initInsert();
+
+            dataSourceDao.insert(entity);
+            return entity;
+        } catch (DuplicateKeyException e) {
+            log.warn("Create data source failed due to duplicate key, name={}", dto.getName(), e);
+            throw new ServiceException(Status.DATASOURCE_EXIST);
+        } catch (ServiceException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Create data source failed, name={}, dbType={}", dto.getName(), dto.getDbType(), e);
+            throw new ServiceException(Status.INTERNAL_SERVER_ERROR_ARGS, e.getMessage());
         }
     }
 
     @Override
-    public Long update(Long id, DataSourceDTO dto) {
-        DataSourceVO existing = selectById(id);
-        if (existing == null) {
-            throw new IllegalArgumentException("Data source does not exist: " + id);
-        }
+    @Transactional(rollbackFor = Exception.class)
+    public DataSource updateDataSource(Long id, DataSourceDTO dto) {
+        validateId(id);
 
-        ConnectionParam connectionParam = DataSourceUtils.buildConnectionParams(dto.getDbType(), dto.getConnectionParams());
-        DataSourcePO dataSource = ConvertUtil.sourceToTarget(dto, DataSourcePO.class);
-        dataSource.setConnectionParams(JSONUtils.toJsonString(connectionParam));
-        dataSource.setOriginalJson(dto.getConnectionParams());
-        dataSource.setId(id);
-        dataSource.initUpdate();
+        DataSource existing = getDataSourceOrThrow(id);
+        validateUpdateRequest(id, dto);
 
         try {
-            updateById(dataSource);
-            return id;
-        } catch (DuplicateKeyException ex) {
-            throw new RuntimeException("Failed to update data source: " + id, ex);
+            BaseConnectionParam connectionParam =
+                    DataSourceUtils.buildConnectionParams(dto.getDbType(), dto.getConnectionParams());
+            DataSourceUtils.checkDatasourceParam(connectionParam);
+
+            DataSource entity = ConvertUtil.sourceToTarget(dto, DataSource.class);
+            entity.setId(id);
+            entity.setName(dto.getName().trim());
+            entity.setConnectionParams(JSONUtils.toJsonString(connectionParam));
+            entity.setOriginalJson(dto.getConnectionParams());
+
+            /*
+             * 保留旧的连接状态，避免每次更新都被覆盖为空。
+             * 如果你业务上希望“只要更新配置就重置为未测试”，可以改成 CONNECTED_NONE。
+             */
+            entity.setConnStatus(existing.getConnStatus());
+            entity.initUpdate();
+
+            dataSourceDao.updateById(entity);
+            return entity;
+        } catch (DuplicateKeyException e) {
+            log.warn("Update data source failed due to duplicate key, id={}, name={}", id, dto.getName(), e);
+            throw new ServiceException(Status.DATASOURCE_EXIST);
+        } catch (ServiceException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Update data source failed, id={}, name={}, dbType={}", id, dto.getName(), dto.getDbType(), e);
+            throw new ServiceException(Status.INTERNAL_SERVER_ERROR_ARGS, e.getMessage());
         }
     }
 
     @Override
-    public DataSourceVO selectById(Long id) {
-        DataSourcePO po = getById(id);
-        return po == null ? null : ConvertUtil.sourceToTarget(po, DataSourceVO.class);
+    public DataSource selectById(Long id) {
+        validateId(id);
+        return getDataSourceOrThrow(id);
     }
 
     @Override
-    public PaginationResult<DataSourceVO> paging(DataSourceDTO dto) {
-        LambdaQueryWrapper<DataSourcePO> wrapper = buildWrapper(dto);
-        IPage<DataSourcePO> pageRequest = new Page<>(dto.getPageNo(), dto.getPageSize());
-        IPage<DataSourcePO> pageResult = page(pageRequest, wrapper);
+    public PaginationResult<DataSourceVO> queryDataSourceListPaging(DataSourceDTO dto) {
+        try {
+            IPage<DataSource> pageResult = dataSourceDao.queryPage(dto);
+            List<DataSourceVO> records =
+                    ConvertUtil.sourceListToTarget(pageResult.getRecords(), DataSourceVO.class);
 
-        List<DataSourceVO> records = ConvertUtil.sourceListToTarget(pageResult.getRecords(), DataSourceVO.class);
-        // Extract JDBC URL and environment description
-        records.forEach(item -> {
-            JSONObject json = JSON.parseObject(item.getConnectionParams());
-            item.setJdbcUrl(json.getString("url"));
-            if (item.getEnvironment() != null) {
-                item.setEnvironmentName(item.getEnvironment().getDescription());
-            }
-        });
+            records.forEach(this::fillDerivedFields);
 
-        return PaginationResult.buildSuc(records, pageResult);
-    }
-
-    @Override
-    public Boolean delete(Long id) {
-        if (id == null) {
-            throw new IllegalArgumentException("Data source ID is empty");
+            return PaginationResult.buildSuc(records, pageResult);
+        } catch (ServiceException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Query data source list paging failed, dto={}", dto, e);
+            throw new ServiceException(Status.INTERNAL_SERVER_ERROR_ARGS, e.getMessage());
         }
-        return removeById(id);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void delete(Long datasourceId) {
+        validateId(datasourceId);
+        getDataSourceOrThrow(datasourceId);
+
+        try {
+            dataSourceDao.deleteById(datasourceId);
+        } catch (ServiceException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Delete data source failed, id={}", datasourceId, e);
+            throw new ServiceException(Status.INTERNAL_SERVER_ERROR_ARGS, e.getMessage());
+        }
     }
 
     @Override
     public Boolean connectionTest(Long id) {
-        DataSourcePO po = getById(id);
-        if (po == null) {
-            throw new IllegalArgumentException("Data source not found: " + id);
-        }
-        return testConnection(po);
+        validateId(id);
+        DataSource dataSource = getDataSourceOrThrow(id);
+        return testConnection(dataSource);
     }
 
     @Override
     public Boolean batchConnectionTest(List<Long> ids) {
         if (ids == null || ids.isEmpty()) {
-            throw new IllegalArgumentException("Data source ID list is empty");
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "ids");
         }
 
-        return ids.parallelStream()
-                .allMatch(this::connectionTest);
+        return ids.parallelStream().allMatch(this::connectionTest);
     }
-
 
     @Override
     public Boolean connectionTestWithParam(String connJson) {
-        DbType dbType = extractDbType(connJson);
-        ConnectionParam param = DataSourceUtils.buildConnectionParams(dbType, connJson);
-        return checkConnection(dbType, param);
+        if (StringUtils.isBlank(connJson)) {
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "connectionParams");
+        }
+
+        try {
+            DbType dbType = extractDbType(connJson);
+            ConnectionParam param = DataSourceUtils.buildConnectionParams(dbType, connJson);
+            return checkConnection(dbType, param);
+        } catch (ServiceException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Connection test with param failed", e);
+            throw new ServiceException(Status.DATASOURCE_CONNECT_TEST_ERROR, e.getMessage());
+        }
     }
 
     @Override
     public List<DataSourceVO> listAll() {
-        List<DataSourcePO> entities = getBaseMapper().selectList(new LambdaQueryWrapper<>());
-        return ConvertUtil.sourceListToTarget(entities, DataSourceVO.class);
+        try {
+            List<DataSource> entities = dataSourceDao.queryAll();
+            List<DataSourceVO> result = ConvertUtil.sourceListToTarget(entities, DataSourceVO.class);
+            result.forEach(this::fillDerivedFields);
+            return result;
+        } catch (Exception e) {
+            log.error("List all data sources failed", e);
+            throw new ServiceException(Status.INTERNAL_SERVER_ERROR_ARGS, e.getMessage());
+        }
     }
 
     @Override
     public Map<String, Object> uploadJdbcDriver(MultipartFile file, String pluginType, boolean overwrite) {
-        if (file == null || file.isEmpty()) {
-            throw new RuntimeException("file is empty");
-        }
+        validateJdbcDriverFile(file);
 
-        String original = file.getOriginalFilename();
-        String filename = StringUtils.isNotBlank(original) ? Paths.get(original).getFileName().toString() : null;
-        if (!StringUtils.isNotBlank(filename)) {
-            throw new RuntimeException("invalid filename");
-        }
-
-        String lower = filename.toLowerCase();
-        if (!lower.endsWith(".jar")) {
-            throw new RuntimeException("only .jar is allowed");
-        }
-
-        long max = 200L * 1024 * 1024;
-        if (file.getSize() > max) {
-            throw new RuntimeException("file too large (>200MB)");
-        }
-
-        String userHome = System.getProperty("user.dir");
-        Path targetDir = Paths.get(userHome, "jdbc-drivers");
+        String originalFilename = file.getOriginalFilename();
+        assert originalFilename != null;
+        String filename = Paths.get(originalFilename).getFileName().toString();
+        Path targetDir = Paths.get(System.getProperty("user.dir"), JDBC_DRIVER_DIR);
 
         try {
             Files.createDirectories(targetDir);
 
             Path targetFile = targetDir.resolve(filename).normalize();
-
             if (!targetFile.startsWith(targetDir)) {
-                throw new RuntimeException("invalid file path");
+                throw new ServiceException(Status.DATASOURCE_FILE_NAME_INVALID);
             }
 
             if (Files.exists(targetFile) && !overwrite) {
-                throw new RuntimeException("file already exists, set overwrite=true to replace");
+                throw new ServiceException(Status.DATASOURCE_FILE_EXIST);
             }
 
-            Path tmp = Files.createTempFile(targetDir, filename + ".", ".uploading");
-            try {
-                Files.copy(file.getInputStream(), tmp, StandardCopyOption.REPLACE_EXISTING);
-                Files.move(tmp, targetFile, overwrite
-                        ? new CopyOption[]{StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE}
-                        : new CopyOption[]{StandardCopyOption.ATOMIC_MOVE});
+            Path tempFile = Files.createTempFile(targetDir, filename + ".", ".uploading");
+            try (InputStream inputStream = file.getInputStream()) {
+                Files.copy(inputStream, tempFile, StandardCopyOption.REPLACE_EXISTING);
+
+                CopyOption[] moveOptions = overwrite
+                        ? new CopyOption[] {StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE}
+                        : new CopyOption[] {StandardCopyOption.ATOMIC_MOVE};
+
+                Files.move(tempFile, targetFile, moveOptions);
             } finally {
                 try {
-                    Files.deleteIfExists(tmp);
-                } catch (Exception ignore) {
+                    Files.deleteIfExists(tempFile);
+                } catch (IOException ex) {
+                    log.warn("Delete temp jdbc driver file failed, tempFile={}", tempFile, ex);
                 }
             }
 
-            Map<String, Object> data = new HashMap<>();
-            data.put("fileName", filename);
-            data.put("absolutePath", targetFile.toAbsolutePath().toString());
-            data.put("driverLocation", filename);
+            Map<String, Object> result = new HashMap<>(4);
+            result.put("fileName", filename);
+            result.put("absolutePath", targetFile.toAbsolutePath().toString());
+            result.put("driverLocation", filename);
+            result.put("pluginType", pluginType);
 
-            return data;
-        } catch (IOException e) {
-            log.error("Upload JDBC driver failed, filename={}", filename, e);
-            throw new RuntimeException("upload failed: " + e.getMessage());
+            return result;
+        } catch (ServiceException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Upload jdbc driver failed, fileName={}", filename, e);
+            throw new ServiceException(Status.DATASOURCE_UPLOAD_FAILED, e.getMessage());
         }
     }
 
-    private DbType extractDbType(String connJson) {
-        JSONObject json = JSON.parseObject(connJson);
-        return DbType.valueOf(json.getString("type"));
+    @Override
+    public List<DBOptionVO> option(String dbType) {
+        try {
+            List<DataSource> entities = dataSourceDao.queryByDbType(dbType);
+            return entities.stream()
+                    .map(this::toOptionVO)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("Query data source options failed, dbType={}", dbType, e);
+            throw new ServiceException(Status.INTERNAL_SERVER_ERROR_ARGS, e.getMessage());
+        }
     }
 
-    private Boolean testConnection(DataSourcePO po) {
-        updateConnectionStatus(po, ConnStatus.CONNECTING);
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean batchDelete(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "ids");
+        }
+
         try {
-            ConnectionParam param = DataSourceUtils.buildConnectionParams(po.getDbType(), po.getConnectionParams());
-            boolean connected = checkConnection(po.getDbType(), param);
-            updateConnectionStatus(po, connected ? ConnStatus.CONNECTED_SUCCESS : ConnStatus.CONNECTED_FAILED);
-            return connected;
+            return dataSourceDao.deleteByIds(ids);
         } catch (Exception e) {
-            log.error("Connection test failed for data source: {}", po.getId(), e);
-            updateConnectionStatus(po, ConnStatus.CONNECTED_FAILED);
-            throw new RuntimeException(e.getMessage());
+            log.error("Batch delete data sources failed, ids={}", ids, e);
+            throw new ServiceException(Status.INTERNAL_SERVER_ERROR_ARGS, e.getMessage());
         }
     }
 
@@ -234,58 +290,163 @@ public class DataSourceServiceImpl extends ServiceImpl<DataSourceMapper, DataSou
             DataSourceProcessor processor = DataSourceUtils.getDatasourceProcessor(dbType);
             boolean connected = processor.getConnectionManager().checkDataSourceConnectivity(param);
             if (!connected) {
-                throw new RuntimeException("Data source connection failed");
+                throw new ServiceException(Status.DATASOURCE_CONNECT_FAILED);
             }
             return true;
+        } catch (ServiceException e) {
+            throw e;
         } catch (Exception e) {
-            log.error("Error checking connection for dbType {}: {}", dbType, e.getMessage());
-            throw new RuntimeException(e.getMessage());
+            log.error("Check data source connection failed, dbType={}", dbType, e);
+            throw new ServiceException(Status.DATASOURCE_CONNECT_TEST_ERROR, e.getMessage());
         }
     }
 
-    @Override
-    public List<DBOptionVO> option(String dbType) {
-        LambdaQueryWrapper<DataSourcePO> wrapper = new LambdaQueryWrapper<>();
-        if (StringUtils.isNotBlank(dbType)) {
-            wrapper.eq(DataSourcePO::getDbType, dbType);
+    private void validateCreateRequest(DataSourceDTO dto) {
+        validateDto(dto);
+
+        String name = dto.getName().trim();
+        if (dataSourceDao.checkName(name)) {
+            throw new ServiceException(Status.DATASOURCE_EXIST);
         }
-        List<DataSourcePO> pos = list(wrapper);
-        return pos.stream()
-                .map(po -> {
-                    DBOptionVO option = new DBOptionVO();
-                    option.setValue(po.getId());
-                    option.setLabel(po.getDbName());
-                    option.setDbType(po.getDbType());
-                    return option;
-                }).collect(Collectors.toList());
-    }
 
-    @Override
-    @Transactional
-    public boolean batchDelete(List<Long> ids) {
-        if (ids == null || ids.isEmpty()) {
-            throw new IllegalArgumentException("Data source ID list is empty");
+        if (checkDescriptionLength(dto.getRemark())) {
+            throw new ServiceException(Status.DESCRIPTION_TOO_LONG_ERROR);
         }
-        return removeByIds(ids);
     }
 
+    private void validateUpdateRequest(Long id, DataSourceDTO dto) {
+        validateDto(dto);
 
-    private LambdaQueryWrapper<DataSourcePO> buildWrapper(DataSourceDTO dto) {
-        LambdaQueryWrapper<DataSourcePO> wrapper = new LambdaQueryWrapper<>();
-        if (StringUtils.isNotBlank(dto.getDbName())) wrapper.eq(DataSourcePO::getDbName, dto.getDbName());
-        if (dto.getDbType() != null) wrapper.eq(DataSourcePO::getDbType, dto.getDbType());
-        if (dto.getEnvironment() != null) wrapper.eq(DataSourcePO::getEnvironment, dto.getEnvironment());
-        return wrapper;
+        String name = dto.getName().trim();
+        if (dataSourceDao.checkNameExcludeId(name, id)) {
+            throw new ServiceException(Status.DATASOURCE_EXIST);
+        }
+
+        if (checkDescriptionLength(dto.getRemark())) {
+            throw new ServiceException(Status.DESCRIPTION_TOO_LONG_ERROR);
+        }
     }
 
-    private boolean checkNameExists(String dbName) {
-        return count(new LambdaQueryWrapper<DataSourcePO>()
-                .eq(DataSourcePO::getDbName, dbName.trim())) > 0;
+    private void validateDto(DataSourceDTO dto) {
+        if (dto == null) {
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "dataSourceDTO");
+        }
+        if (StringUtils.isBlank(dto.getName())) {
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "name");
+        }
+        if (dto.getDbType() == null) {
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "dbType");
+        }
+        if (StringUtils.isBlank(dto.getConnectionParams())) {
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "connectionParams");
+        }
     }
 
+    private void validateId(Long id) {
+        if (id == null || id <= 0) {
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "id");
+        }
+    }
 
-    private void updateConnectionStatus(DataSourcePO po, ConnStatus status) {
-        po.setConnStatus(status);
-        updateById(po);
+    private void validateJdbcDriverFile(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new ServiceException(Status.DATASOURCE_FILE_EMPTY);
+        }
+
+        String originalFilename = file.getOriginalFilename();
+        if (StringUtils.isBlank(originalFilename)) {
+            throw new ServiceException(Status.DATASOURCE_FILE_NAME_INVALID);
+        }
+
+        String safeFilename = Paths.get(originalFilename).getFileName().toString();
+        if (StringUtils.isBlank(safeFilename)) {
+            throw new ServiceException(Status.DATASOURCE_FILE_NAME_INVALID);
+        }
+
+        if (!StringUtils.endsWithIgnoreCase(safeFilename, JDBC_JAR_SUFFIX)) {
+            throw new ServiceException(Status.DATASOURCE_FILE_TYPE_ERROR);
+        }
+
+        if (file.getSize() > MAX_JDBC_DRIVER_SIZE) {
+            throw new ServiceException(Status.DATASOURCE_FILE_TOO_LARGE);
+        }
+    }
+
+    private DataSource getDataSourceOrThrow(Long id) {
+        DataSource entity = dataSourceDao.queryById(id);
+        if (entity == null) {
+            throw new ServiceException(Status.DATASOURCE_NOT_EXIST);
+        }
+        return entity;
+    }
+
+    private DbType extractDbType(String connJson) {
+        String type = JSONUtils.getNodeString(connJson, "type");
+        if (StringUtils.isBlank(type)) {
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "type");
+        }
+
+        try {
+            return DbType.valueOf(type);
+        } catch (IllegalArgumentException e) {
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "type");
+        }
+    }
+
+    private Boolean testConnection(DataSource dataSource) {
+        updateConnectionStatus(dataSource.getId(), ConnStatus.CONNECTING);
+        try {
+            ConnectionParam param = DataSourceUtils.buildConnectionParams(
+                    dataSource.getDbType(),
+                    dataSource.getConnectionParams()
+            );
+
+            boolean connected = checkConnection(dataSource.getDbType(), param);
+            updateConnectionStatus(
+                    dataSource.getId(),
+                    connected ? ConnStatus.CONNECTED_SUCCESS : ConnStatus.CONNECTED_FAILED
+            );
+            return connected;
+        } catch (ServiceException e) {
+            updateConnectionStatus(dataSource.getId(), ConnStatus.CONNECTED_FAILED);
+            throw e;
+        } catch (Exception e) {
+            log.error("Connection test failed, dataSourceId={}", dataSource.getId(), e);
+            updateConnectionStatus(dataSource.getId(), ConnStatus.CONNECTED_FAILED);
+            throw new ServiceException(Status.DATASOURCE_CONNECT_TEST_ERROR, e.getMessage());
+        }
+    }
+
+    private void updateConnectionStatus(Long id, ConnStatus status) {
+        try {
+            dataSourceDao.updateConnStatus(id, status);
+        } catch (Exception e) {
+            log.error("Update connection status failed, id={}, status={}", id, status, e);
+        }
+    }
+
+    private void fillDerivedFields(DataSourceVO vo) {
+        if (vo == null) {
+            return;
+        }
+
+        try {
+            String jdbcUrl = JSONUtils.getNodeString(vo.getConnectionParams(), "url");
+            vo.setJdbcUrl(jdbcUrl);
+        } catch (Exception e) {
+            log.warn("Parse jdbc url from connection params failed");
+        }
+
+        if (vo.getEnvironment() != null) {
+            vo.setEnvironmentName(vo.getEnvironment().getDescription());
+        }
+    }
+
+    private DBOptionVO toOptionVO(DataSource entity) {
+        DBOptionVO option = new DBOptionVO();
+        option.setValue(entity.getId());
+        option.setLabel(entity.getName());
+        option.setDbType(entity.getDbType());
+        return option;
     }
 }

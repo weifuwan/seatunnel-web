@@ -6,7 +6,6 @@ import org.apache.seatunnel.web.api.service.application.SeatunnelBatchJobDefinit
 import org.apache.seatunnel.web.common.bean.dto.SeatunnelBatchJobDefinitionDTO;
 import org.apache.seatunnel.web.common.bean.dto.SeatunnelBatchJobDefinitionQueryDTO;
 import org.apache.seatunnel.web.common.bean.entity.PaginationResult;
-import org.apache.seatunnel.web.common.bean.entity.Result;
 import org.apache.seatunnel.web.common.bean.vo.SeatunnelBatchJobDefinitionVO;
 import org.apache.seatunnel.web.common.utils.CodeGenerateUtils;
 import org.springframework.validation.annotation.Validated;

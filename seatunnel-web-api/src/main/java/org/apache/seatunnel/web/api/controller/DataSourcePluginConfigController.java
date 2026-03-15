@@ -1,54 +1,70 @@
 package org.apache.seatunnel.web.api.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.Parameters;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.seatunnel.web.api.enums.Status;
+import org.apache.seatunnel.web.api.exceptions.ApiException;
+import org.apache.seatunnel.web.api.exceptions.ServiceException;
 import org.apache.seatunnel.web.api.service.DatasourcePluginService;
-import org.apache.seatunnel.web.common.bean.entity.Result;
+import org.apache.seatunnel.web.api.utils.Result;
 import org.apache.seatunnel.web.common.form.PluginConfigResponse;
 import org.springframework.web.bind.annotation.*;
 
+import static org.apache.seatunnel.web.api.enums.Status.*;
 
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/data-source/plugin/config")
+@Tag(name = "DATA_SOURCE_PLUGIN_TAG")
 public class DataSourcePluginConfigController {
 
     @Resource
     private DatasourcePluginService datasourcePluginService;
 
     /**
-     * Get the configuration form for a specific data source plugin.
-     *
-     * @param pluginType Type of the plugin
-     * @return Plugin configuration form
+     * Get datasource plugin configuration form.
      */
     @GetMapping
-    public Result<PluginConfigResponse> getPluginConfig(@RequestParam("pluginType") String pluginType) {
-        if (pluginType == null || pluginType.trim().isEmpty()) {
-            throw new RuntimeException("Plugin type cannot be empty");
+    @Operation(summary = "getPluginConfig", description = "GET_DATASOURCE_PLUGIN_CONFIG_NOTES")
+    @Parameters({
+            @Parameter(name = "pluginType", description = "PLUGIN_TYPE", required = true)
+    })
+    @ApiException(DATASOURCE_PLUGIN_CONFIG_ERROR)
+    public Result<PluginConfigResponse> getPluginConfig(
+            @RequestParam("pluginType") String pluginType) {
+
+        if (StringUtils.isBlank(pluginType)) {
+            throw new ServiceException(Status.DATASOURCE_PLUGIN_TYPE_EMPTY);
         }
 
-        try {
-            PluginConfigResponse config = datasourcePluginService.getPluginConfig(pluginType);
-            return Result.buildSuc(config);
-        } catch (Exception e) {
-            log.error("Failed to fetch plugin config for type {}: {}", pluginType, e.getMessage(), e);
-            return Result.buildFailure(e.getMessage());
-        }
+        return Result.buildSuc(
+                datasourcePluginService.getPluginConfig(pluginType)
+        );
     }
 
+    /**
+     * Install datasource plugin.
+     */
     @PostMapping("/install")
-    public Result<Boolean> installPlugin(@RequestParam("pluginType") String pluginType) {
-        if (pluginType == null || pluginType.trim().isEmpty()) {
-            return Result.buildFailure("Plugin type cannot be empty");
+    @Operation(summary = "installPlugin", description = "INSTALL_DATASOURCE_PLUGIN_NOTES")
+    @Parameters({
+            @Parameter(name = "pluginType", description = "PLUGIN_TYPE", required = true)
+    })
+    @ApiException(DATASOURCE_PLUGIN_INSTALL_ERROR)
+    public Result<Boolean> installPlugin(
+            @RequestParam("pluginType") String pluginType) {
+
+        if (StringUtils.isBlank(pluginType)) {
+            throw new ServiceException(Status.DATASOURCE_PLUGIN_TYPE_EMPTY);
         }
 
-        try {
-            datasourcePluginService.installPlugin(pluginType);
-            return Result.buildSuc(true);
-        } catch (Exception e) {
-            log.error("Failed to install plugin for type {}: {}", pluginType, e.getMessage(), e);
-            return Result.buildFailure(e.getMessage());
-        }
+        datasourcePluginService.installPlugin(pluginType);
+
+        return Result.buildSuc(true);
     }
 }

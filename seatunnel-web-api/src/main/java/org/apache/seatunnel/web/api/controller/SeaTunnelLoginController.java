@@ -10,9 +10,8 @@ import org.apache.seatunnel.web.api.security.Authenticator;
 import org.apache.seatunnel.web.api.service.SessionService;
 import org.apache.seatunnel.web.api.service.UsersService;
 import org.apache.seatunnel.web.common.bean.dto.UserDTO;
-import org.apache.seatunnel.web.common.bean.entity.Result;
 import org.apache.seatunnel.web.common.bean.po.UserPO;
-import org.apache.seatunnel.web.common.constant.Constant;
+import org.apache.seatunnel.web.common.constants.Constants;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -81,7 +80,7 @@ public class SeaTunnelLoginController extends BaseController {
         String ip = getClientIpAddress(request);
         sessionService.signOut(ip, loginUserPO);
         // clear session
-        request.removeAttribute(Constant.SESSION_USER);
+        request.removeAttribute(Constants.SESSION_USER);
         return Result.buildSuc();
     }
 

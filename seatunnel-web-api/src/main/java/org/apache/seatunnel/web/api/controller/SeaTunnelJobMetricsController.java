@@ -10,7 +10,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import org.apache.seatunnel.web.api.service.SeaTunnelJobMetricsService;
-import org.apache.seatunnel.web.common.bean.entity.Result;
 import org.apache.seatunnel.web.common.bean.vo.OverviewChartsVO;
 import org.apache.seatunnel.web.common.bean.vo.OverviewSummaryVO;
 import org.apache.seatunnel.web.common.enums.TimeRange;

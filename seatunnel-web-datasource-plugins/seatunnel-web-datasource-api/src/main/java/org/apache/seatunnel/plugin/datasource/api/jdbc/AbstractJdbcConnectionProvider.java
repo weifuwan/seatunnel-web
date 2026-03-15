@@ -8,7 +8,6 @@ import org.apache.seatunnel.web.plugin.datasource.connection.DefaultConnectionMa
 import org.apache.seatunnel.web.plugin.datasource.connection.api.DataSourceConfig;
 import org.apache.seatunnel.web.plugin.datasource.connection.api.DataSourceId;
 import org.apache.seatunnel.web.plugin.datasource.connection.api.DriverDescriptor;
-import org.apache.seatunnel.web.plugin.datasource.connection.driver.*;
 import org.springframework.util.StringUtils;
 
 import java.io.File;

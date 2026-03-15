@@ -3,7 +3,7 @@ package org.apache.seatunnel.plugin.datasource.api.constants;
 
 import com.google.common.collect.Sets;
 import lombok.experimental.UtilityClass;
-import org.apache.seatunnel.web.common.constant.DateConstants;
+import org.apache.seatunnel.web.common.constants.DateConstants;
 
 import java.time.Duration;
 import java.util.Set;

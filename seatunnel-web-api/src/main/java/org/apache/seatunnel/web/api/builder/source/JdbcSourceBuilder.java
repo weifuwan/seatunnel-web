@@ -3,14 +3,14 @@ package org.apache.seatunnel.web.api.builder.source;
 import com.typesafe.config.Config;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.seatunnel.plugin.datasource.api.jdbc.DataSourceProcessor;
+import org.apache.seatunnel.plugin.datasource.api.utils.DataSourceUtils;
 import org.apache.seatunnel.web.api.service.DataSourceService;
-import org.apache.seatunnel.web.common.DbType;
-import org.apache.seatunnel.web.common.bean.vo.DataSourceVO;
 import org.apache.seatunnel.web.common.config.ConfigValidator;
 import org.apache.seatunnel.web.common.config.ReadonlyConfig;
 import org.apache.seatunnel.web.common.enums.HoconBuildStage;
-import org.apache.seatunnel.plugin.datasource.api.jdbc.DataSourceProcessor;
-import org.apache.seatunnel.plugin.datasource.api.utils.DataSourceUtils;
+import org.apache.seatunnel.web.dao.entity.DataSource;
+import org.apache.seatunnel.web.spi.enums.DbType;
 import org.springframework.stereotype.Component;
 
 
@@ -62,7 +62,7 @@ public class JdbcSourceBuilder implements SourceNodeConfigBuilder {
         Long sourceId = data.getLong("sourceId");
 
         // Retrieve the data source from database
-        DataSourceVO ds = dataSourceService.selectById(sourceId);
+        DataSource ds = dataSourceService.selectById(sourceId);
         if (ds == null) {
             throw new RuntimeException("Data source does not exist");
         }

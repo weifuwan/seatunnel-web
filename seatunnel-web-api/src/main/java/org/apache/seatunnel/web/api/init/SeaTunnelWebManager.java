@@ -1,6 +1,5 @@
 package org.apache.seatunnel.web.api.init;
 
-import org.apache.seatunnel.web.common.DbType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;

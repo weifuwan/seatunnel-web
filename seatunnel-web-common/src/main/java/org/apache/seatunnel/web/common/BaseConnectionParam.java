@@ -1,0 +1,39 @@
+package org.apache.seatunnel.web.common;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import lombok.Data;
+import org.apache.seatunnel.web.common.form.FieldType;
+import org.apache.seatunnel.web.common.form.FormField;
+
+@Data
+@JsonInclude(Include.NON_NULL)
+public abstract class BaseConnectionParam implements ConnectionParam {
+
+    protected String url;
+
+    @FormField(label = "主机地址IP", required = true, placeholder = "localhost", order = 1, defaultValue = "localhost")
+    private String host;
+
+    @FormField(label = "端口号", required = true, placeholder = "3306", type = FieldType.NUMBER, order = 2)
+    private String port;
+
+    @FormField(label = "数据库", required = true, order = 3)
+    protected String database;
+
+    @FormField(label = "用户名", required = true, order = 4)
+    protected String user;
+
+    @FormField(label = "密码", required = true, type = FieldType.PASSWORD, order = 5)
+    protected String password;
+
+    @FormField(label = "驱动Jar包", order = 6)
+    protected String driverLocation;
+
+    protected String driver;
+
+    protected DbType dbType;
+
+    protected String schemaName;
+
+}

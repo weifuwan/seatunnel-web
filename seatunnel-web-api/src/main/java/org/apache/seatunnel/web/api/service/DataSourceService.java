@@ -1,0 +1,151 @@
+package org.apache.seatunnel.web.api.service;
+
+import com.baomidou.mybatisplus.extension.service.IService;
+import org.apache.seatunnel.web.common.bean.dto.DataSourceDTO;
+import org.apache.seatunnel.web.common.bean.entity.PaginationResult;
+import org.apache.seatunnel.web.common.bean.po.DataSourcePO;
+import org.apache.seatunnel.web.common.bean.vo.DBOptionVO;
+import org.apache.seatunnel.web.common.bean.vo.DataSourceVO;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Service responsible for managing datasource instances.
+ *
+ * <p>This service handles the lifecycle of data sources, including:</p>
+ * <ul>
+ *     <li>Creation and update of datasource configurations</li>
+ *     <li>Connection validation</li>
+ *     <li>Query and pagination</li>
+ *     <li>Soft deletion</li>
+ *     <li>Driver upload and management</li>
+ * </ul>
+ */
+public interface DataSourceService extends IService<DataSourcePO> {
+
+    /**
+     * Creates and persists a new datasource instance.
+     *
+     * <p>Before saving, the implementation should validate
+     * plugin-specific parameters and optionally test connectivity.</p>
+     *
+     * @param dto creation request containing plugin type,
+     *            connection parameters, environment, etc.
+     * @return created datasource descriptor including generated ID
+     * @throws RuntimeException if validation or connectivity test fails
+     */
+    DataSourceVO create(DataSourceDTO dto);
+
+    /**
+     * Updates an existing datasource instance.
+     *
+     * <p>If connection parameters change, connectivity should be revalidated.</p>
+     *
+     * @param id primary key of the datasource
+     * @param dto updated values (only non-null fields are applied)
+     * @return the updated datasource ID
+     * @throws RuntimeException if datasource does not exist or validation fails
+     */
+    Long update(Long id, DataSourceDTO dto);
+
+    /**
+     * Retrieves a datasource by its primary key.
+     *
+     * @param id primary key
+     * @return datasource descriptor
+     * @throws RuntimeException if datasource does not exist
+     */
+    DataSourceVO selectById(Long id);
+
+    /**
+     * Returns a paginated list of datasources.
+     *
+     * <p>Filters may include name, plugin type, creator, or environment.</p>
+     *
+     * @param dto query conditions and pagination parameters
+     * @return paginated result including total count and records
+     */
+    PaginationResult<DataSourceVO> paging(DataSourceDTO dto);
+
+    /**
+     * Soft deletes a datasource.
+     *
+     * @param id primary key
+     * @return {@code true} if deletion succeeded
+     */
+    Boolean delete(Long id);
+
+    /**
+     * Tests connectivity of an existing datasource.
+     *
+     * @param id primary key
+     * @return {@code true} if connection succeeds
+     */
+    Boolean connectionTest(Long id);
+
+    /**
+     * Returns a list of datasource options filtered by database type.
+     *
+     * <p>Mainly used for populating dropdown selectors in the UI.</p>
+     *
+     * @param dbType database type (e.g. MySQL, Oracle, Kafka)
+     * @return list of id/name option pairs
+     */
+    List<DBOptionVO> option(String dbType);
+
+    /**
+     * Batch soft deletion of datasources.
+     *
+     * @param ids datasource IDs
+     * @return {@code true} if all deletions succeed
+     */
+    boolean batchDelete(List<Long> ids);
+
+    /**
+     * Batch connection test for multiple datasources.
+     *
+     * @param ids datasource IDs
+     * @return {@code true} only if all connections succeed
+     */
+    Boolean batchConnectionTest(List<Long> ids);
+
+    /**
+     * Tests connectivity using connection parameters
+     * without persisting the datasource.
+     *
+     * <p>This method is typically used in datasource creation
+     * or editing forms to validate parameters before saving.</p>
+     *
+     * @param connJson JSON string containing plugin-specific parameters
+     * @return {@code true} if connection succeeds
+     */
+    Boolean connectionTestWithParam(String connJson);
+
+    /**
+     * Retrieves all datasources.
+     *
+     * <p>No pagination applied.</p>
+     *
+     * @return list of all datasources
+     */
+    List<DataSourceVO> listAll();
+
+    /**
+     * Uploads a JDBC driver file for a specific plugin.
+     *
+     * <p>The uploaded driver will be stored and associated with
+     * the specified plugin type.</p>
+     *
+     * @param file uploaded JDBC driver (usually a .jar)
+     * @param pluginType plugin identifier (e.g. mysql, postgres)
+     * @param overwrite whether to overwrite an existing driver
+     * @return result metadata such as file path or status
+     */
+    Map<String, Object> uploadJdbcDriver(
+            MultipartFile file,
+            String pluginType,
+            boolean overwrite
+    );
+}

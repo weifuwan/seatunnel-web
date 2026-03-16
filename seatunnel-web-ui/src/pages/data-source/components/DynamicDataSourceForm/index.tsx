@@ -1,5 +1,5 @@
 import HttpUtils from "@/utils/HttpUtils";
-import { LoadingOutlined } from "@ant-design/icons";
+import { InfoCircleOutlined, LoadingOutlined } from "@ant-design/icons";
 import { useIntl } from "@umijs/max";
 import {
   Button,
@@ -9,6 +9,7 @@ import {
   message,
   Select,
   Switch,
+  Tooltip,
 } from "antd";
 import TextArea from "antd/es/input/TextArea";
 import { useEffect, useState } from "react";
@@ -17,6 +18,21 @@ import { DynamicDataSourceFormProps, FormField } from "../../type";
 import CustomKVList from "./components/CustomKVList";
 import DriverLocationField from "./components/DriverLocationField";
 import { getConfigInitialValues, transformRules } from "./utils/formUtils";
+
+const ENV_OPTIONS = [
+  {
+    value: "DEVELOP",
+    label: <div>🟢 开发环境</div>,
+  },
+  {
+    value: "TEST",
+    label: <div>🟡 测试环境</div>,
+  },
+  {
+    value: "PROD",
+    label: <div>🔴 生产环境</div>,
+  },
+];
 
 const DynamicDataSourceForm: React.FC<DynamicDataSourceFormProps> = ({
   dbType,
@@ -201,12 +217,16 @@ const DynamicDataSourceForm: React.FC<DynamicDataSourceFormProps> = ({
 
         <Form.Item
           label={
-            <div style={{ height: 32, lineHeight: "33px" }}>
+            <span>
               {intl.formatMessage({
                 id: "pages.datasource.form.env",
                 defaultMessage: "Env",
               })}
-            </div>
+              &nbsp;
+              <Tooltip title="Deployment environment of the datasource">
+                <InfoCircleOutlined style={{ color: "#999" }} />
+              </Tooltip>
+            </span>
           }
           name="environment"
           rules={[
@@ -220,19 +240,15 @@ const DynamicDataSourceForm: React.FC<DynamicDataSourceFormProps> = ({
           ]}
         >
           <Select
+            size="small"
             placeholder={intl.formatMessage({
               id: "pages.datasource.form.selectPlaceholder",
               defaultMessage: "Select...",
             })}
-            size="small"
-            options={[
-              { label: "DEVELOP", value: "DEVELOP" },
-              { label: "TEST", value: "TEST" },
-              { label: "PROD", value: "PROD" },
-            ]}
+            showSearch
+            options={ENV_OPTIONS}
           />
         </Form.Item>
-
         <Form.Item
           label={
             <div style={{ height: 32, lineHeight: "33px" }}>

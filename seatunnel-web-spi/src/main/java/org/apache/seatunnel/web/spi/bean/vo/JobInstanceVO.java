@@ -11,7 +11,7 @@ import java.util.Date;
 @AllArgsConstructor
 @NoArgsConstructor
 @ToString
-public class SeatunnelJobInstanceVO {
+public class JobInstanceVO {
 
     private Long id;
 

@@ -7,11 +7,11 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.seatunnel.web.dao.entity.JobInstance;
 import org.apache.seatunnel.web.spi.bean.dto.SeatunnelJobInstanceDTO;
-import org.apache.seatunnel.web.spi.bean.vo.SeatunnelJobInstanceVO;
+import org.apache.seatunnel.web.spi.bean.vo.JobInstanceVO;
 
 @Mapper
 public interface JobInstanceMapper extends BaseMapper<JobInstance> {
-    IPage<SeatunnelJobInstanceVO> pageWithDefinition(
+    IPage<JobInstanceVO> pageWithDefinition(
             Page<?> page,
             @Param("dto") SeatunnelJobInstanceDTO dto);
 

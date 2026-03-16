@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1/job/batch-definition")
 @Validated
 @Tag(name = "Batch Job Definition", description = "APIs for managing batch job definitions")
-public class SeaTunnelBatchJobDefinitionController {
+public class BatchJobDefinitionController {
 
     @Resource
     private BatchJobDefinitionService batchJobDefinitionService;

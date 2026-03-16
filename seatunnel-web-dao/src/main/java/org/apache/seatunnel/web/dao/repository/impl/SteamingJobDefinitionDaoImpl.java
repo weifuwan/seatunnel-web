@@ -7,7 +7,7 @@ import org.apache.seatunnel.web.dao.mapper.StreamingJobDefinitionMapper;
 import org.apache.seatunnel.web.dao.repository.BaseDao;
 import org.apache.seatunnel.web.dao.repository.StreamingJobDefinitionDao;
 import org.apache.seatunnel.web.spi.bean.dto.StreamingJobDefinitionQueryDTO;
-import org.apache.seatunnel.web.spi.bean.vo.SeatunnelStreamJobDefinitionVO;
+import org.apache.seatunnel.web.spi.bean.vo.StreamingJobDefinitionVO;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -31,7 +31,7 @@ public class SteamingJobDefinitionDaoImpl
 
 
     @Override
-    public List<SeatunnelStreamJobDefinitionVO> selectPageWithLatestInstance(
+    public List<StreamingJobDefinitionVO> selectPageWithLatestInstance(
             StreamingJobDefinitionQueryDTO dto,
             int offset,
             int pageSize) {

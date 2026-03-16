@@ -23,7 +23,7 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/v1")
-public class SeaTunnelLoginController extends BaseController {
+public class LoginController extends BaseController {
 
     @Resource
     private SessionService sessionService;

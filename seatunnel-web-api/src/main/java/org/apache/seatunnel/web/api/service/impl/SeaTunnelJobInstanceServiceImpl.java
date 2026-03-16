@@ -25,7 +25,7 @@ import org.apache.seatunnel.web.spi.bean.dto.SeatunnelJobInstanceDTO;
 import org.apache.seatunnel.web.spi.bean.dto.SeatunnelStreamingJobDefinitionDTO;
 import org.apache.seatunnel.web.spi.bean.entity.PaginationResult;
 import org.apache.seatunnel.web.spi.bean.vo.BatchJobDefinitionVO;
-import org.apache.seatunnel.web.spi.bean.vo.SeatunnelJobInstanceVO;
+import org.apache.seatunnel.web.spi.bean.vo.JobInstanceVO;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -76,7 +76,7 @@ public class SeaTunnelJobInstanceServiceImpl implements SeaTunnelJobInstanceServ
     }
 
     @Override
-    public SeatunnelJobInstanceVO create(Long jobDefineId, RunMode runMode) {
+    public JobInstanceVO create(Long jobDefineId, RunMode runMode) {
         log.info("Creating job instance, jobDefineId={}, runMode={}", jobDefineId, runMode);
 
         BaseJobDefinitionCommand definitionDTO = loadDefinition(jobDefineId);
@@ -85,12 +85,12 @@ public class SeaTunnelJobInstanceServiceImpl implements SeaTunnelJobInstanceServ
         jobInstanceDao.insert(instance);
 
         log.info("Job instance created successfully, instanceId={}", instance.getId());
-        return ConvertUtil.sourceToTarget(instance, SeatunnelJobInstanceVO.class);
+        return ConvertUtil.sourceToTarget(instance, JobInstanceVO.class);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public SeatunnelJobInstanceVO createAndSubmit(Long jobDefineId, RunMode runMode) {
+    public JobInstanceVO createAndSubmit(Long jobDefineId, RunMode runMode) {
         BaseJobDefinitionCommand definitionDTO = loadDefinition(jobDefineId);
         JobInstance instance = buildJobInstance(definitionDTO, runMode);
 
@@ -129,7 +129,7 @@ public class SeaTunnelJobInstanceServiceImpl implements SeaTunnelJobInstanceServ
     }
 
     @Override
-    public PaginationResult<SeatunnelJobInstanceVO> paging(SeatunnelJobInstanceDTO dto) {
+    public PaginationResult<JobInstanceVO> paging(SeatunnelJobInstanceDTO dto) {
         var result = jobInstanceDao.pageWithDefinition(dto);
 
         if (result.getRecords() != null) {
@@ -162,13 +162,13 @@ public class SeaTunnelJobInstanceServiceImpl implements SeaTunnelJobInstanceServ
     }
 
     @Override
-    public SeatunnelJobInstanceVO selectById(Long id) {
+    public JobInstanceVO selectById(Long id) {
         JobInstance po = jobInstanceDao.queryById(id);
         if (po == null) {
             throw new RuntimeException("Job instance not found: " + id);
         }
 
-        SeatunnelJobInstanceVO vo = ConvertUtil.sourceToTarget(po, SeatunnelJobInstanceVO.class);
+        JobInstanceVO vo = ConvertUtil.sourceToTarget(po, JobInstanceVO.class);
         if (vo.getRuntimeConfig() != null) {
             vo.setRuntimeConfig(HoconSensitiveMaskUtil.maskSensitiveInfo(vo.getRuntimeConfig()));
         }
@@ -177,7 +177,7 @@ public class SeaTunnelJobInstanceServiceImpl implements SeaTunnelJobInstanceServ
 
     @Override
     public String getLogContent(Long instanceId) {
-        SeatunnelJobInstanceVO instance = selectById(instanceId);
+        JobInstanceVO instance = selectById(instanceId);
 
         String logPath = instance.getLogPath();
         if (logPath == null || logPath.isEmpty()) {

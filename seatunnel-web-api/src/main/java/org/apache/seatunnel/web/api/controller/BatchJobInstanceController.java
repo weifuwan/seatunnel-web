@@ -13,7 +13,7 @@ import org.apache.seatunnel.web.api.service.SeaTunnelJobInstanceService;
 import org.apache.seatunnel.web.spi.bean.dto.SeatunnelJobInstanceDTO;
 import org.apache.seatunnel.web.spi.bean.entity.PaginationResult;
 import org.apache.seatunnel.web.spi.bean.entity.Result;
-import org.apache.seatunnel.web.spi.bean.vo.SeatunnelJobInstanceVO;
+import org.apache.seatunnel.web.spi.bean.vo.JobInstanceVO;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1/job/batch-instance")
 @Validated
 @Tag(name = "Batch Job Instance", description = "APIs for managing batch job instances and execution logs")
-public class SeaTunnelBatchJobInstanceController {
+public class BatchJobInstanceController {
 
     @Resource
     private SeaTunnelJobInstanceService seatunnelJobInstanceService;
@@ -39,7 +39,7 @@ public class SeaTunnelBatchJobInstanceController {
      */
     @PostMapping("/page")
     @Operation(summary = "Pagination query", description = "Get paginated list of job instances")
-    public PaginationResult<SeatunnelJobInstanceVO> paging(
+    public PaginationResult<JobInstanceVO> paging(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description = "Pagination and filter parameters",
                     content = @Content(examples = @ExampleObject("""
@@ -70,10 +70,10 @@ public class SeaTunnelBatchJobInstanceController {
             @ApiResponse(responseCode = "200", description = "Job instance found"),
             @ApiResponse(responseCode = "404", description = "Job instance not found")
     })
-    public Result<SeatunnelJobInstanceVO> selectById(
+    public Result<JobInstanceVO> selectById(
             @Parameter(description = "Job instance ID", required = true, example = "10001")
             @PathVariable("id") @NotNull Long id) {
-        SeatunnelJobInstanceVO jobInstance = seatunnelJobInstanceService.selectById(id);
+        JobInstanceVO jobInstance = seatunnelJobInstanceService.selectById(id);
         return Result.buildSuc(jobInstance);
     }
 

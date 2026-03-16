@@ -16,7 +16,7 @@ import org.apache.seatunnel.web.spi.bean.dto.SeatunnelStreamingJobDefinitionDTO;
 import org.apache.seatunnel.web.spi.bean.dto.StreamingJobDefinitionQueryDTO;
 import org.apache.seatunnel.web.spi.bean.entity.PaginationResult;
 import org.apache.seatunnel.web.spi.bean.entity.Result;
-import org.apache.seatunnel.web.spi.bean.vo.SeatunnelStreamJobDefinitionVO;
+import org.apache.seatunnel.web.spi.bean.vo.StreamingJobDefinitionVO;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,7 +28,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1/job/stream-definition")
 @Validated
 @Tag(name = "Stream Job Definition", description = "APIs for managing stream job definitions")
-public class SeaTunnelStreamJobDefinitionController {
+public class StreamingJobDefinitionController {
 
     @Resource
     private StreamingJobDefinitionService streamingJobDefinitionService;
@@ -114,10 +114,10 @@ public class SeaTunnelStreamJobDefinitionController {
             @ApiResponse(responseCode = "200", description = "Job definition found"),
             @ApiResponse(responseCode = "404", description = "Job definition not found")
     })
-    public Result<SeatunnelStreamJobDefinitionVO> selectById(
+    public Result<StreamingJobDefinitionVO> selectById(
             @Parameter(description = "Job definition ID", required = true, example = "1001")
             @PathVariable("id") @NotNull Long id) {
-        SeatunnelStreamJobDefinitionVO jobDefinition = streamingJobDefinitionService.selectById(id);
+        StreamingJobDefinitionVO jobDefinition = streamingJobDefinitionService.selectById(id);
         return Result.buildSuc(jobDefinition);
     }
 
@@ -132,7 +132,7 @@ public class SeaTunnelStreamJobDefinitionController {
             summary = "Pagination query",
             description = "Get paginated list of stream job definitions"
     )
-    public PaginationResult<SeatunnelStreamJobDefinitionVO> paging(
+    public PaginationResult<StreamingJobDefinitionVO> paging(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description = "Pagination and filter parameters",
                     content = @Content(examples = @ExampleObject("""

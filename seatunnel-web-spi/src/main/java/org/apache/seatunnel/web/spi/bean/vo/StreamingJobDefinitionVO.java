@@ -12,7 +12,7 @@ import java.util.Date;
 @AllArgsConstructor
 @NoArgsConstructor
 @ToString
-public class SeatunnelStreamJobDefinitionVO {
+public class StreamingJobDefinitionVO {
 
     @TableId(type = IdType.INPUT)
     private Long id;

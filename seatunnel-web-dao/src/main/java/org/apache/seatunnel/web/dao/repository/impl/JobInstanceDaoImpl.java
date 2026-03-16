@@ -12,7 +12,7 @@ import org.apache.seatunnel.web.dao.mapper.JobInstanceMapper;
 import org.apache.seatunnel.web.dao.repository.BaseDao;
 import org.apache.seatunnel.web.dao.repository.JobInstanceDao;
 import org.apache.seatunnel.web.spi.bean.dto.SeatunnelJobInstanceDTO;
-import org.apache.seatunnel.web.spi.bean.vo.SeatunnelJobInstanceVO;
+import org.apache.seatunnel.web.spi.bean.vo.JobInstanceVO;
 import org.springframework.stereotype.Repository;
 
 import java.util.Date;
@@ -30,11 +30,11 @@ public class JobInstanceDaoImpl
     }
 
     @Override
-    public IPage<SeatunnelJobInstanceVO> pageWithDefinition(SeatunnelJobInstanceDTO dto) {
+    public IPage<JobInstanceVO> pageWithDefinition(SeatunnelJobInstanceDTO dto) {
         long pageNo = dto.getPageNo() == null || dto.getPageNo() < 1 ? 1 : dto.getPageNo();
         long pageSize = dto.getPageSize() == null || dto.getPageSize() < 1 ? 10 : dto.getPageSize();
 
-        Page<SeatunnelJobInstanceVO> page = new Page<>(pageNo, pageSize);
+        Page<JobInstanceVO> page = new Page<>(pageNo, pageSize);
         return jobInstanceMapper.pageWithDefinition(page, dto);
     }
 

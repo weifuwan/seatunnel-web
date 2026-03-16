@@ -6,15 +6,15 @@ import org.apache.seatunnel.web.dao.entity.JobInstance;
 import org.apache.seatunnel.web.spi.bean.dto.BaseJobDefinitionCommand;
 import org.apache.seatunnel.web.spi.bean.dto.SeatunnelJobInstanceDTO;
 import org.apache.seatunnel.web.spi.bean.entity.PaginationResult;
-import org.apache.seatunnel.web.spi.bean.vo.SeatunnelJobInstanceVO;
+import org.apache.seatunnel.web.spi.bean.vo.JobInstanceVO;
 
 public interface SeaTunnelJobInstanceService {
 
-    SeatunnelJobInstanceVO create(Long jobDefineId, RunMode runMode);
+    JobInstanceVO create(Long jobDefineId, RunMode runMode);
 
-    SeatunnelJobInstanceVO createAndSubmit(Long jobDefineId, RunMode runMode);
+    JobInstanceVO createAndSubmit(Long jobDefineId, RunMode runMode);
 
-    PaginationResult<SeatunnelJobInstanceVO> paging(SeatunnelJobInstanceDTO dto);
+    PaginationResult<JobInstanceVO> paging(SeatunnelJobInstanceDTO dto);
 
     String buildJobConfig(BaseJobDefinitionCommand dto);
 
@@ -24,7 +24,7 @@ public interface SeaTunnelJobInstanceService {
 
     String buildStreamingHoconConfig(BaseJobDefinitionCommand dto);
 
-    SeatunnelJobInstanceVO selectById(Long id);
+    JobInstanceVO selectById(Long id);
 
     String getLogContent(Long instanceId);
 

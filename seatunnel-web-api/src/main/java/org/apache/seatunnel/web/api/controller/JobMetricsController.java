@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/job/metrics")
 @Tag(name = "Job Metrics", description = "APIs for retrieving job metrics, statistics and charts")
-public class SeaTunnelJobMetricsController {
+public class JobMetricsController {
 
     @Resource
     private SeaTunnelJobMetricsService seatunnelJobMetricsService;

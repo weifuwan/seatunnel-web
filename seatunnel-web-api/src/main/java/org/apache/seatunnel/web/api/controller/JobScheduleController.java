@@ -20,7 +20,7 @@ import java.util.List;
 @RequestMapping("/api/v1/job/schedule")
 @Validated
 @Tag(name = "Job Schedule", description = "APIs for managing job schedules and cron expressions")
-public class SeaTunnelJobScheduleController {
+public class JobScheduleController {
 
     @Resource
     private SeaTunnelJobScheduleService seatunnelJobScheduleService;

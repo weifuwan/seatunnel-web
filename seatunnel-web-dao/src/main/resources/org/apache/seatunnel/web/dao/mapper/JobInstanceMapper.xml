@@ -3,7 +3,7 @@
 <mapper namespace="org.apache.seatunnel.web.dao.mapper.JobInstanceMapper">
 
     <select id="pageWithDefinition"
-            resultType="org.apache.seatunnel.web.spi.bean.vo.SeatunnelJobInstanceVO">
+            resultType="org.apache.seatunnel.web.spi.bean.vo.JobInstanceVO">
 
         SELECT
         i.id,

@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/executor")
 @Tag(name = "Job Executor", description = "APIs for executing SeaTunnel jobs")
-public class SeaTunnelJobExecutorController {
+public class JobExecutorController {
 
     @Resource
     private SeaTunnelJobExecutorService jobExecutorService;

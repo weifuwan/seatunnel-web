@@ -12,13 +12,11 @@ import org.apache.seatunnel.web.core.definition.model.JobDefinitionAnalysisResul
 import org.apache.seatunnel.web.core.definition.registry.JobDefinitionHandlerRegistry;
 import org.apache.seatunnel.web.dao.entity.StreamingJobDefinition;
 import org.apache.seatunnel.web.dao.repository.StreamingJobDefinitionDao;
-import org.apache.seatunnel.web.dao.repository.StreamingJobDefinitionDao;
 import org.apache.seatunnel.web.spi.bean.dto.SeatunnelStreamJobDefinitionDTO;
 import org.apache.seatunnel.web.spi.bean.dto.StreamingJobDefinitionQueryDTO;
 import org.apache.seatunnel.web.spi.bean.dto.SeatunnelStreamingJobDefinitionDTO;
-import org.apache.seatunnel.web.spi.bean.dto.StreamingJobDefinitionQueryDTO;
 import org.apache.seatunnel.web.spi.bean.entity.PaginationResult;
-import org.apache.seatunnel.web.spi.bean.vo.SeatunnelStreamJobDefinitionVO;
+import org.apache.seatunnel.web.spi.bean.vo.StreamingJobDefinitionVO;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -65,7 +63,7 @@ public class StreamingJobDefinitionServiceImpl implements StreamingJobDefinition
         return po.getId();
     }
 
-    public SeatunnelStreamJobDefinitionVO selectById(Long id) {
+    public StreamingJobDefinitionVO selectById(Long id) {
         if (id == null) {
             throw new IllegalArgumentException("Job definition ID cannot be null");
         }
@@ -75,17 +73,17 @@ public class StreamingJobDefinitionServiceImpl implements StreamingJobDefinition
             throw new RuntimeException("Job definition is not exist");
         }
 
-        return ConvertUtil.sourceToTarget(po, SeatunnelStreamJobDefinitionVO.class);
+        return ConvertUtil.sourceToTarget(po, StreamingJobDefinitionVO.class);
     }
 
-    public PaginationResult<SeatunnelStreamJobDefinitionVO> paging(StreamingJobDefinitionQueryDTO dto) {
+    public PaginationResult<StreamingJobDefinitionVO> paging(StreamingJobDefinitionQueryDTO dto) {
         if (dto == null) {
             throw new IllegalArgumentException("Job definition query dto cannot be null");
         }
 
         int offset = (dto.getPageNo() - 1) * dto.getPageSize();
 
-        List<SeatunnelStreamJobDefinitionVO> voList =
+        List<StreamingJobDefinitionVO> voList =
                 repository.selectPageWithLatestInstance(dto, offset, dto.getPageSize());
 
         Long total = repository.count(dto);

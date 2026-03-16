@@ -30,8 +30,5 @@ public class MysqlServerIdInitializer extends ServiceImpl<CdcServerIdMapper, Cdc
         }
     }
 
-    public void release(String jobId) {
-        mapper.releaseByJob(jobId);
-    }
 }
 

@@ -1,9 +1,8 @@
 package org.apache.seatunnel.web.api.service;
 
-import com.baomidou.mybatisplus.extension.service.IService;
-import org.apache.seatunnel.web.common.bean.dto.SeatunnelJobScheduleDTO;
-import org.apache.seatunnel.web.common.bean.po.SeatunnelJobSchedulePO;
 import org.apache.seatunnel.web.common.enums.ScheduleStatusEnum;
+import org.apache.seatunnel.web.dao.entity.JobSchedule;
+import org.apache.seatunnel.web.spi.bean.dto.SeatunnelJobScheduleDTO;
 import org.quartz.SchedulerException;
 
 import java.util.List;
@@ -14,7 +13,7 @@ import java.util.List;
  * This service provides operations for creating, updating, triggering,
  * starting, stopping, and querying Quartz-based job schedules.
  */
-public interface SeaTunnelJobScheduleService extends IService<SeatunnelJobSchedulePO> {
+public interface SeaTunnelJobScheduleService  {
 
     /**
      * Create a new task schedule.
@@ -50,7 +49,7 @@ public interface SeaTunnelJobScheduleService extends IService<SeatunnelJobSchedu
      * @param taskDefinitionId the task definition ID
      * @return the task schedule persistent object
      */
-    SeatunnelJobSchedulePO getByTaskDefinitionId(Long taskDefinitionId);
+    JobSchedule getByTaskDefinitionId(Long taskDefinitionId);
 
     /**
      * Start a scheduled task.
@@ -94,7 +93,7 @@ public interface SeaTunnelJobScheduleService extends IService<SeatunnelJobSchedu
      *
      * @return list of running task schedules
      */
-    List<SeatunnelJobSchedulePO> getRunningSchedules();
+    List<JobSchedule> getRunningSchedules();
 
     /**
      * Check whether a schedule exists for the given task definition ID.

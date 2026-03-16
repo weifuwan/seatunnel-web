@@ -1,15 +1,14 @@
 package org.apache.seatunnel.web.api.service;
 
-import com.baomidou.mybatisplus.extension.service.IService;
-import org.apache.seatunnel.web.common.bean.dto.BaseJobDefinitionCommand;
-import org.apache.seatunnel.web.common.bean.dto.SeatunnelJobInstanceDTO;
-import org.apache.seatunnel.web.common.bean.entity.PaginationResult;
-import org.apache.seatunnel.web.common.bean.po.SeatunnelJobInstancePO;
-import org.apache.seatunnel.web.common.bean.vo.SeatunnelJobInstanceVO;
 import org.apache.seatunnel.web.common.enums.JobStatus;
 import org.apache.seatunnel.web.common.enums.RunMode;
+import org.apache.seatunnel.web.dao.entity.JobInstance;
+import org.apache.seatunnel.web.spi.bean.dto.BaseJobDefinitionCommand;
+import org.apache.seatunnel.web.spi.bean.dto.SeatunnelJobInstanceDTO;
+import org.apache.seatunnel.web.spi.bean.entity.PaginationResult;
+import org.apache.seatunnel.web.spi.bean.vo.SeatunnelJobInstanceVO;
 
-public interface SeaTunnelJobInstanceService extends IService<SeatunnelJobInstancePO> {
+public interface SeaTunnelJobInstanceService {
 
     SeatunnelJobInstanceVO create(Long jobDefineId, RunMode runMode);
 
@@ -46,4 +45,6 @@ public interface SeaTunnelJobInstanceService extends IService<SeatunnelJobInstan
     void reconcileInstanceStatus(Long instanceId);
 
     void reconcileUnfinishedInstanceStatuses();
+
+    void updateById(JobInstance po);
 }

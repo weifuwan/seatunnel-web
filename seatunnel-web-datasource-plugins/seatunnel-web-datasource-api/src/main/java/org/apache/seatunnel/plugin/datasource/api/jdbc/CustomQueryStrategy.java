@@ -1,6 +1,5 @@
 package org.apache.seatunnel.plugin.datasource.api.jdbc;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.seatunnel.plugin.datasource.api.utils.SqlValidator;
 
 /**

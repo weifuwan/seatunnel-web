@@ -1,11 +1,11 @@
 package org.apache.seatunnel.web.api.service.support;
 
-import org.apache.seatunnel.web.common.bean.dto.BaseJobDefinitionCommand;
-import org.apache.seatunnel.web.common.bean.po.SeatunnelJobInstancePO;
 import org.apache.seatunnel.web.common.enums.JobMode;
 import org.apache.seatunnel.web.common.enums.JobStatus;
 import org.apache.seatunnel.web.common.enums.RunMode;
 import org.apache.seatunnel.web.common.enums.SyncModeEnum;
+import org.apache.seatunnel.web.dao.entity.JobInstance;
+import org.apache.seatunnel.web.spi.bean.dto.BaseJobDefinitionCommand;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
@@ -15,14 +15,14 @@ import java.util.Date;
 @Component
 public class JobInstanceFactory {
 
-    public SeatunnelJobInstancePO create(BaseJobDefinitionCommand dto,
-                                         Long instanceId,
-                                         String runtimeConfig,
-                                         RunMode runMode,
-                                         String logPath) {
+    public JobInstance create(BaseJobDefinitionCommand dto,
+                              Long instanceId,
+                              String runtimeConfig,
+                              RunMode runMode,
+                              String logPath) {
         Date now = new Date();
 
-        return SeatunnelJobInstancePO.builder()
+        return JobInstance.builder()
                 .id(instanceId)
                 .jobDefinitionId(dto.getId())
                 .jobType(resolveJobMode(dto))

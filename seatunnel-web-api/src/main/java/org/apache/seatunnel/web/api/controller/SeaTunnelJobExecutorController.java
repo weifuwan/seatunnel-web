@@ -7,6 +7,7 @@ import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.seatunnel.web.api.service.SeaTunnelJobExecutorService;
 import org.apache.seatunnel.web.common.enums.RunMode;
+import org.apache.seatunnel.web.spi.bean.entity.Result;
 import org.springframework.web.bind.annotation.*;
 
 @Slf4j

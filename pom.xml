@@ -17,7 +17,6 @@
     <name>SeaTunnel</name>
 
 
-
     <properties>
         <maven-compiler-plugin.version>3.3</maven-compiler-plugin.version>
         <maven-assembly-plugin.version>3.3.0</maven-assembly-plugin.version>
@@ -55,7 +54,7 @@
         <module>seatunnel-web-dao</module>
         <module>seatunnel-web-bom</module>
         <module>seatunnel-web-spi</module>
-        <module>seatunnel-web-service</module>
+        <module>seatunnel-web-core</module>
         <module>seatunnel-web-engine-client</module>
     </modules>
 
@@ -118,12 +117,17 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.seatunnel.web</groupId>
-                <artifactId>seatunnel-web-service</artifactId>
+                <artifactId>seatunnel-web-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.seatunnel.web</groupId>
                 <artifactId>seatunnel-web-spi</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.seatunnel.web</groupId>
+                <artifactId>seatunnel-web-engine-client</artifactId>
                 <version>${project.version}</version>
             </dependency>
         </dependencies>

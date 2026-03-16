@@ -1,7 +1,7 @@
 package org.apache.seatunnel.web.api.exceptions;
 
 
-import org.apache.seatunnel.web.api.enums.Status;
+import org.apache.seatunnel.web.spi.enums.Status;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;

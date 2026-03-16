@@ -1,8 +1,8 @@
 package org.apache.seatunnel.web.api.service;
 
 import org.apache.seatunnel.web.common.QueryResult;
-import org.apache.seatunnel.web.common.bean.vo.ColumnOptionVO;
-import org.apache.seatunnel.web.common.bean.vo.OptionVO;
+import org.apache.seatunnel.web.spi.bean.vo.ColumnOptionVO;
+import org.apache.seatunnel.web.spi.bean.vo.OptionVO;
 
 import java.util.List;
 import java.util.Map;

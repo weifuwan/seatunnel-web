@@ -136,9 +136,14 @@
         </dependency>
 
         <dependency>
-            <groupId>org.apache.seatunnel.web</groupId>
-            <artifactId>seatunnel-web-spi</artifactId>
+            <groupId>org.codehaus.janino</groupId>
+            <artifactId>janino</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+        </dependency>
+
     </dependencies>
 
 

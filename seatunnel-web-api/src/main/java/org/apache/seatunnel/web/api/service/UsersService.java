@@ -1,16 +1,16 @@
 package org.apache.seatunnel.web.api.service;
 
 
-import com.baomidou.mybatisplus.extension.service.IService;
-import org.apache.seatunnel.web.common.bean.po.UserPO;
+import org.apache.seatunnel.web.dao.entity.User;
 
 /**
  * users service
  */
-public interface UsersService extends IService<UserPO> {
+public interface UsersService  {
 
+    User queryUser(String userId, String password);
 
-    UserPO queryUser(String userId, String password);
+    User getUserInfo(User loginUser);
 
-    UserPO getUserInfo(UserPO loginUserPO);
+    User getById(int userId);
 }

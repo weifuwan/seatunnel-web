@@ -1,21 +1,27 @@
 package org.apache.seatunnel.web.api.utils;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
-import org.apache.seatunnel.api.dag.*;
-import org.apache.seatunnel.web.api.dag.*;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.apache.seatunnel.web.common.utils.JSONUtils;
+import org.apache.seatunnel.web.core.dag.DagCheckResult;
+import org.apache.seatunnel.web.core.dag.DagGraph;
+import org.apache.seatunnel.web.core.dag.DagValidator;
+import org.apache.seatunnel.web.core.dag.GraphConnectivityValidator;
+import org.apache.seatunnel.web.core.dag.IsolatedNodeValidator;
+import org.apache.seatunnel.web.core.dag.CycleDetectionValidator;
+import org.apache.seatunnel.web.core.dag.TransformSingleConnectionValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.ArrayList;
 
 /**
  * Utility class for parsing and validating DAG definitions.
- * <p>
- * Provides methods to:
+ *
+ * <p>Provides methods to:
  * <ul>
  *   <li>Parse DAG JSON definitions</li>
  *   <li>Execute a chain of {@link DagValidator}s</li>
@@ -38,7 +44,7 @@ public final class DagUtil {
             ));
 
     private DagUtil() {
-        // Prevent instantiation
+        throw new UnsupportedOperationException("Construct DagUtil");
     }
 
     /**
@@ -69,14 +75,12 @@ public final class DagUtil {
             throw new DagValidationException(errorMsg.toString());
         }
 
-        // Log warnings if any
         result.getWarnings().forEach(warning -> log.warn("DAG warning: {}", warning));
 
-        // Build validated DAG graph
-        JSONObject dagJson = JSON.parseObject(json);
+        ObjectNode dagJson = JSONUtils.parseObject(json);
         DagGraph graph = new DagGraph();
-        graph.setNodes(jsonArrayToList(dagJson.getJSONArray("nodes")));
-        graph.setEdges(jsonArrayToList(dagJson.getJSONArray("edges")));
+        graph.setNodes(jsonArrayToList((ArrayNode) dagJson.path("nodes")));
+        graph.setEdges(jsonArrayToList((ArrayNode) dagJson.path("edges")));
         return graph;
     }
 
@@ -100,9 +104,9 @@ public final class DagUtil {
      */
     public static DagCheckResult checkOnly(String json, List<DagValidator> validators) {
         try {
-            JSONObject dagJson = JSON.parseObject(json);
-            List<JSONObject> nodes = jsonArrayToList(dagJson.getJSONArray("nodes"));
-            List<JSONObject> edges = jsonArrayToList(dagJson.getJSONArray("edges"));
+            ObjectNode dagJson = JSONUtils.parseObject(json);
+            List<ObjectNode> nodes = jsonArrayToList((ArrayNode) dagJson.path("nodes"));
+            List<ObjectNode> edges = jsonArrayToList((ArrayNode) dagJson.path("edges"));
             return performValidation(nodes, edges, validators);
         } catch (Exception e) {
             DagCheckResult result = new DagCheckResult();
@@ -120,8 +124,8 @@ public final class DagUtil {
      * @return validation result
      */
     private static DagCheckResult performValidation(
-            List<JSONObject> nodes,
-            List<JSONObject> edges,
+            List<ObjectNode> nodes,
+            List<ObjectNode> edges,
             List<DagValidator> validators) {
 
         DagCheckResult result = new DagCheckResult();
@@ -132,8 +136,9 @@ public final class DagUtil {
         }
 
         for (DagValidator validator : validators) {
-            // Fail-fast if an error already exists
-            if (!result.isValid()) break;
+            if (!result.isValid()) {
+                break;
+            }
 
             try {
                 validator.validate(nodes, edges, result);
@@ -147,13 +152,23 @@ public final class DagUtil {
     }
 
     /**
-     * Helper method to convert JSONArray to List<JSONObject>.
+     * Helper method to convert ArrayNode to List<ObjectNode>.
      *
-     * @param array input JSONArray
-     * @return List of JSONObjects
+     * @param array input ArrayNode
+     * @return List of ObjectNode
      */
-    private static List<JSONObject> jsonArrayToList(JSONArray array) {
-        return array.toJavaList(JSONObject.class);
+    private static List<ObjectNode> jsonArrayToList(ArrayNode array) {
+        List<ObjectNode> result = new ArrayList<>();
+        if (array == null || array.isEmpty()) {
+            return result;
+        }
+
+        array.forEach(node -> {
+            if (node instanceof ObjectNode) {
+                result.add((ObjectNode) node);
+            }
+        });
+        return result;
     }
 
     /**

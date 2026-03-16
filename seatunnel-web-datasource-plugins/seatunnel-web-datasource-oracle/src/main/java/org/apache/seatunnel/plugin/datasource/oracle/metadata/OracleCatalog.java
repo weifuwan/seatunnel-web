@@ -1,11 +1,11 @@
 package org.apache.seatunnel.plugin.datasource.oracle.metadata;
 
 import lombok.extern.slf4j.Slf4j;
-import org.apache.seatunnel.web.common.BaseConnectionParam;
 import org.apache.seatunnel.plugin.datasource.api.jdbc.AbstractJdbcCatalog;
 import org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConnectionProvider;
 import org.apache.seatunnel.plugin.datasource.api.jdbc.TablePath;
 import org.apache.seatunnel.plugin.datasource.api.modal.DataSourceTableColumn;
+import org.apache.seatunnel.web.spi.datasource.BaseConnectionParam;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;

@@ -1,7 +1,7 @@
 package org.apache.seatunnel.web.api.config;
 
-import org.apache.seatunnel.web.api.thirdparty.client.SeatunnelClientProperties;
-import org.apache.seatunnel.web.api.thirdparty.client.SeatunnelRestClient;
+import org.apache.seatunnel.web.engine.client.client.SeatunnelClientProperties;
+import org.apache.seatunnel.web.engine.client.client.SeatunnelRestClient;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

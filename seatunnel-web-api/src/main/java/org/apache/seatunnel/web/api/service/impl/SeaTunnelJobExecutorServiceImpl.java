@@ -1,11 +1,11 @@
 package org.apache.seatunnel.web.api.service.impl;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.seatunnel.web.api.metrics.JobSubmitter;
 import org.apache.seatunnel.web.api.service.SeaTunnelJobExecutorService;
 import org.apache.seatunnel.web.api.service.SeaTunnelJobInstanceService;
-import org.apache.seatunnel.web.api.thirdparty.metrics.JobSubmitter;
-import org.apache.seatunnel.web.common.bean.vo.SeatunnelJobInstanceVO;
 import org.apache.seatunnel.web.common.enums.RunMode;
+import org.apache.seatunnel.web.spi.bean.vo.SeatunnelJobInstanceVO;
 import org.springframework.stereotype.Service;
 
 

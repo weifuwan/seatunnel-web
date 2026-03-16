@@ -2,7 +2,7 @@ package org.apache.seatunnel.plugin.datasource.pgsql.param;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.apache.seatunnel.web.common.BaseConnectionParam;
+import org.apache.seatunnel.web.spi.datasource.BaseConnectionParam;
 
 @Data
 @EqualsAndHashCode(callSuper = true)

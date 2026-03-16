@@ -2,10 +2,10 @@ package org.apache.seatunnel.plugin.datasource.mysql.param;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.apache.seatunnel.web.common.BaseConnectionParam;
 import org.apache.seatunnel.web.common.KeyValuePair;
-import org.apache.seatunnel.web.common.form.FieldType;
-import org.apache.seatunnel.web.common.form.FormField;
+import org.apache.seatunnel.web.spi.datasource.BaseConnectionParam;
+import org.apache.seatunnel.web.spi.form.FieldType;
+import org.apache.seatunnel.web.spi.form.FormField;
 
 import java.util.HashMap;
 import java.util.List;

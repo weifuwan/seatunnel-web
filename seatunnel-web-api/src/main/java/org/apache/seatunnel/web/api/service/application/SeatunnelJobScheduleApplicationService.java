@@ -3,10 +3,10 @@ package org.apache.seatunnel.web.api.service.application;
 import jakarta.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.seatunnel.web.api.service.SeaTunnelJobScheduleService;
-import org.apache.seatunnel.web.common.bean.dto.SeatunnelBatchJobDefinitionDTO;
-import org.apache.seatunnel.web.common.bean.dto.SeatunnelJobScheduleDTO;
-import org.apache.seatunnel.web.common.bean.po.SeatunnelJobSchedulePO;
 import org.apache.seatunnel.web.common.enums.ScheduleStatusEnum;
+import org.apache.seatunnel.web.dao.entity.JobSchedule;
+import org.apache.seatunnel.web.spi.bean.dto.SeatunnelBatchJobDefinitionDTO;
+import org.apache.seatunnel.web.spi.bean.dto.SeatunnelJobScheduleDTO;
 import org.quartz.SchedulerException;
 import org.springframework.stereotype.Service;
 
@@ -21,7 +21,7 @@ public class SeatunnelJobScheduleApplicationService {
             return;
         }
 
-        SeatunnelJobSchedulePO existing =
+        JobSchedule existing =
                 seatunnelJobScheduleService.getByTaskDefinitionId(jobDefinitionId);
 
         SeatunnelJobScheduleDTO scheduleDTO = new SeatunnelJobScheduleDTO();
@@ -53,7 +53,7 @@ public class SeatunnelJobScheduleApplicationService {
         seatunnelJobScheduleService.removeByDefinitionId(jobDefinitionId);
     }
 
-    public SeatunnelJobSchedulePO getByTaskDefinitionId(Long jobDefinitionId) {
+    public JobSchedule getByTaskDefinitionId(Long jobDefinitionId) {
         return seatunnelJobScheduleService.getByTaskDefinitionId(jobDefinitionId);
     }
 }

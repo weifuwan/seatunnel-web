@@ -2,12 +2,13 @@ package org.apache.seatunnel.plugin.datasource.pgsql.param;
 
 import com.google.auto.service.AutoService;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.seatunnel.web.common.BaseConnectionParam;
 import org.apache.seatunnel.plugin.datasource.api.hocon.DataSourceHoconBuilder;
 import org.apache.seatunnel.plugin.datasource.api.hocon.DataSourceHoconBuilderFactory;
 import org.apache.seatunnel.plugin.datasource.api.jdbc.*;
 import org.apache.seatunnel.plugin.datasource.pgsql.connection.PgSQLConnectionProvider;
 import org.apache.seatunnel.plugin.datasource.pgsql.metadata.PgSQLCatalog;
+import org.apache.seatunnel.web.spi.datasource.BaseConnectionParam;
+import org.apache.seatunnel.web.spi.enums.DbType;
 
 @AutoService(DataSourceProcessor.class)
 @Slf4j

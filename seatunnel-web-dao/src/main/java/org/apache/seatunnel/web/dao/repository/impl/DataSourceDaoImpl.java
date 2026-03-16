@@ -6,12 +6,12 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import jakarta.annotation.Resource;
 import lombok.NonNull;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.seatunnel.web.common.bean.dto.DataSourceDTO;
 import org.apache.seatunnel.web.common.enums.ConnStatus;
 import org.apache.seatunnel.web.dao.entity.DataSource;
 import org.apache.seatunnel.web.dao.mapper.DataSourceMapper;
 import org.apache.seatunnel.web.dao.repository.BaseDao;
 import org.apache.seatunnel.web.dao.repository.DataSourceDao;
+import org.apache.seatunnel.web.spi.bean.dto.DataSourceDTO;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -22,8 +22,8 @@ public class DataSourceDaoImpl extends BaseDao<DataSource, DataSourceMapper> imp
     @Resource
     private DataSourceMapper dataSourceMapper;
 
-    public DataSourceDaoImpl(@NonNull DataSourceMapper sessionMapper) {
-        super(sessionMapper);
+    public DataSourceDaoImpl(@NonNull DataSourceMapper dataSourceMapper) {
+        super(dataSourceMapper);
     }
 
     @Override

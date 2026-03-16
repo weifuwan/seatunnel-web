@@ -1,7 +1,8 @@
 package org.apache.seatunnel.plugin.datasource.oracle.param;
 
-import org.apache.seatunnel.web.common.BaseConnectionParam;
-import org.apache.seatunnel.web.common.spi.enums.DbConnectType;
+
+import org.apache.seatunnel.web.spi.datasource.BaseConnectionParam;
+import org.apache.seatunnel.web.spi.enums.DbConnectType;
 
 public class OracleConnectionParam extends BaseConnectionParam {
 

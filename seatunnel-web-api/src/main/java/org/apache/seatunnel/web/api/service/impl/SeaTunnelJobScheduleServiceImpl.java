@@ -1,21 +1,20 @@
 package org.apache.seatunnel.web.api.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.seatunnel.web.api.dao.TaskScheduleMapper;
 import org.apache.seatunnel.web.api.quartz.QuartzJob;
 import org.apache.seatunnel.web.api.service.SeaTunnelJobScheduleService;
-import org.apache.seatunnel.web.common.bean.dto.SeatunnelJobScheduleDTO;
-import org.apache.seatunnel.web.common.bean.po.SeatunnelJobSchedulePO;
 import org.apache.seatunnel.web.common.enums.ScheduleStatusEnum;
 import org.apache.seatunnel.web.common.utils.ConvertUtil;
 import org.apache.seatunnel.web.common.utils.Utils;
+import org.apache.seatunnel.web.dao.entity.JobSchedule;
+import org.apache.seatunnel.web.dao.repository.JobScheduleDao;
+import org.apache.seatunnel.web.spi.bean.dto.SeatunnelJobScheduleDTO;
 import org.quartz.*;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -23,12 +22,12 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-/**
- * Task Schedule Service Implementation
- */
 @Slf4j
 @Service
-public class SeaTunnelJobScheduleServiceImpl extends ServiceImpl<TaskScheduleMapper, SeatunnelJobSchedulePO> implements SeaTunnelJobScheduleService {
+public class SeaTunnelJobScheduleServiceImpl implements SeaTunnelJobScheduleService {
+
+    @Resource
+    private JobScheduleDao jobScheduleDao;
 
     private final Scheduler scheduler;
 
@@ -37,18 +36,24 @@ public class SeaTunnelJobScheduleServiceImpl extends ServiceImpl<TaskScheduleMap
     }
 
     @Override
-    public Long createTaskSchedule(SeatunnelJobScheduleDTO seatunnelJobScheduleDTO) throws SchedulerException {
-        log.info("Creating job schedule: {}", seatunnelJobScheduleDTO);
+    @Transactional(rollbackFor = Exception.class)
+    public Long createTaskSchedule(SeatunnelJobScheduleDTO dto) throws SchedulerException {
+        log.info("Creating job schedule: {}", dto);
 
-        if (existsByTaskDefinitionId(seatunnelJobScheduleDTO.getJobDefinitionId())) {
+        if (dto == null || dto.getJobDefinitionId() == null) {
+            throw new RuntimeException("Job definition id cannot be null");
+        }
+
+        if (jobScheduleDao.existsByJobDefinitionId(dto.getJobDefinitionId())) {
             throw new RuntimeException("Schedule configuration already exists for this job definition");
         }
 
-        SeatunnelJobSchedulePO po = ConvertUtil.sourceToTarget(seatunnelJobScheduleDTO, SeatunnelJobSchedulePO.class);
+        JobSchedule po = ConvertUtil.sourceToTarget(dto, JobSchedule.class);
         po.initInsert();
-        boolean saveResult = save(po);
-        if (!saveResult) {
-            throw new RuntimeException("Failed to save job schedule configuration");
+
+        int saveResult = jobScheduleDao.insert(po);
+        if (saveResult <= 0) {
+            throw new RuntimeException("Failed to create task schedule");
         }
 
         log.info("Task schedule created successfully, ID: {}", po.getId());
@@ -56,33 +61,41 @@ public class SeaTunnelJobScheduleServiceImpl extends ServiceImpl<TaskScheduleMap
     }
 
     @Override
-    public boolean updateTaskSchedule(SeatunnelJobScheduleDTO seatunnelJobScheduleDTO) throws SchedulerException {
-        log.info("Updating task schedule: {}", seatunnelJobScheduleDTO);
+    @Transactional(rollbackFor = Exception.class)
+    public boolean updateTaskSchedule(SeatunnelJobScheduleDTO dto) throws SchedulerException {
+        log.info("Updating task schedule: {}", dto);
 
-        SeatunnelJobSchedulePO existingSchedule = getById(seatunnelJobScheduleDTO.getId());
+        if (dto == null || dto.getId() == null) {
+            throw new RuntimeException("Schedule id cannot be null");
+        }
+
+        JobSchedule existingSchedule = jobScheduleDao.queryById(dto.getId());
         if (existingSchedule == null) {
             throw new RuntimeException("Task schedule configuration does not exist");
         }
 
+        JobSchedule schedule = new JobSchedule();
+        BeanUtils.copyProperties(dto, schedule);
 
-        SeatunnelJobSchedulePO seatunnelJobSchedulePO = new SeatunnelJobSchedulePO();
-        BeanUtils.copyProperties(seatunnelJobScheduleDTO, seatunnelJobSchedulePO);
-
-
-        boolean updateResult = updateById(seatunnelJobSchedulePO);
+        boolean updateResult = jobScheduleDao.updateById(schedule);
         if (!updateResult) {
             throw new RuntimeException("Failed to update task schedule configuration");
         }
 
-        log.info("Task schedule updated successfully, ID: {}", seatunnelJobScheduleDTO.getId());
+        log.info("Task schedule updated successfully, ID: {}", dto.getId());
         return true;
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean deleteByTaskDefinitionId(Long taskDefinitionId) {
         log.info("Deleting schedule by task definition ID: {}", taskDefinitionId);
 
-        SeatunnelJobSchedulePO taskSchedule = getByTaskDefinitionId(taskDefinitionId);
+        if (taskDefinitionId == null) {
+            return true;
+        }
+
+        JobSchedule taskSchedule = jobScheduleDao.queryByJobDefinitionId(taskDefinitionId);
         if (taskSchedule == null) {
             log.warn("Schedule configuration not found for task definition ID: {}", taskDefinitionId);
             return true;
@@ -90,89 +103,92 @@ public class SeaTunnelJobScheduleServiceImpl extends ServiceImpl<TaskScheduleMap
 
         stopSchedule(taskSchedule.getId());
 
-        LambdaQueryWrapper<SeatunnelJobSchedulePO> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(SeatunnelJobSchedulePO::getJobDefinitionId, taskDefinitionId);
-        boolean removeResult = remove(queryWrapper);
-
+        boolean removeResult = jobScheduleDao.deleteByJobDefinitionId(taskDefinitionId);
         log.info("Schedule deletion by task definition ID completed: {}, Result: {}", taskDefinitionId, removeResult);
         return removeResult;
     }
 
     @Override
-    public SeatunnelJobSchedulePO getByTaskDefinitionId(Long taskDefinitionId) {
-        LambdaQueryWrapper<SeatunnelJobSchedulePO> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(SeatunnelJobSchedulePO::getJobDefinitionId, taskDefinitionId);
-        return getOne(queryWrapper);
+    public JobSchedule getByTaskDefinitionId(Long taskDefinitionId) {
+        return jobScheduleDao.queryByJobDefinitionId(taskDefinitionId);
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public Boolean startSchedule(Long taskScheduleId) {
         log.info("Starting task schedule: {}", taskScheduleId);
 
-        SeatunnelJobSchedulePO taskSchedule = getById(taskScheduleId);
-        if (taskSchedule == null) {
+        JobSchedule jobSchedule = jobScheduleDao.queryById(taskScheduleId);
+        if (jobSchedule == null) {
             throw new RuntimeException("Task schedule configuration does not exist");
         }
+
         try {
-            JobKey jobKey = JobKey.jobKey(taskScheduleId + "");
+            JobKey jobKey = buildJobKey(taskScheduleId);
+            TriggerKey triggerKey = buildTriggerKey(taskScheduleId);
 
             if (scheduler.checkExists(jobKey)) {
                 scheduler.deleteJob(jobKey);
                 log.info("Deleted existing Job: {}", taskScheduleId);
             }
 
-            JobDetail jobDetail = createJobDetail(taskSchedule);
-            Trigger trigger = createTrigger(taskSchedule);
+            JobDetail jobDetail = createJobDetail(jobSchedule);
+            Trigger trigger = createTrigger(jobSchedule, triggerKey);
 
             scheduler.scheduleJob(jobDetail, trigger);
         } catch (SchedulerException e) {
-            e.printStackTrace();
-            throw new RuntimeException("Failed to start schedule");
+            log.error("Failed to start schedule, scheduleId={}", taskScheduleId, e);
+            throw new RuntimeException("Failed to start schedule", e);
         }
 
-        Date nextExecutionTime = Utils.getNextExecutionTime(taskSchedule.getCronExpression());
-        updateNextScheduleTime(taskScheduleId, nextExecutionTime);
-        updateScheduleStatus(taskScheduleId, ScheduleStatusEnum.ACTIVE);
+        Date nextExecutionTime = Utils.getNextExecutionTime(jobSchedule.getCronExpression());
+        jobScheduleDao.updateNextScheduleTime(taskScheduleId, nextExecutionTime);
+        jobScheduleDao.updateScheduleStatus(taskScheduleId, ScheduleStatusEnum.ACTIVE);
 
         log.info("Task schedule started successfully: {}", taskScheduleId);
         return true;
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public Boolean stopSchedule(Long taskScheduleId) {
         log.info("Stopping task schedule: {}", taskScheduleId);
 
-        SeatunnelJobSchedulePO taskSchedule = getById(taskScheduleId);
+        JobSchedule taskSchedule = jobScheduleDao.queryById(taskScheduleId);
         if (taskSchedule == null) {
             throw new RuntimeException("Task schedule configuration does not exist");
         }
 
-        JobKey jobKey = JobKey.jobKey(taskScheduleId + "");
+        JobKey jobKey = buildJobKey(taskScheduleId);
         try {
             if (scheduler.checkExists(jobKey)) {
                 scheduler.deleteJob(jobKey);
             }
         } catch (SchedulerException e) {
-            e.printStackTrace();
-            throw new RuntimeException("Failed to stop schedule");
+            log.error("Failed to stop schedule, scheduleId={}", taskScheduleId, e);
+            throw new RuntimeException("Failed to stop schedule", e);
         }
 
-        updateScheduleStatus(taskScheduleId, ScheduleStatusEnum.PAUSED);
+        jobScheduleDao.updateScheduleStatus(taskScheduleId, ScheduleStatusEnum.PAUSED);
 
         log.info("Task schedule stopped successfully: {}", taskScheduleId);
-        return Boolean.TRUE;
+        return true;
     }
 
     @Override
     public boolean triggerSchedule(Long taskScheduleId) throws SchedulerException {
         log.info("Triggering task schedule immediately: {}", taskScheduleId);
 
-        SeatunnelJobSchedulePO taskSchedule = getById(taskScheduleId);
+        JobSchedule taskSchedule = jobScheduleDao.queryById(taskScheduleId);
         if (taskSchedule == null) {
             throw new RuntimeException("Task schedule configuration does not exist");
         }
 
-        JobKey jobKey = JobKey.jobKey(taskScheduleId + "");
+        JobKey jobKey = buildJobKey(taskScheduleId);
+        if (!scheduler.checkExists(jobKey)) {
+            throw new RuntimeException("Schedule has not been started yet");
+        }
+
         scheduler.triggerJob(jobKey);
 
         log.info("Task schedule triggered successfully: {}", taskScheduleId);
@@ -180,16 +196,24 @@ public class SeaTunnelJobScheduleServiceImpl extends ServiceImpl<TaskScheduleMap
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean updateScheduleTime(Long taskScheduleId, String cronExpression) throws SchedulerException {
         log.info("Updating schedule time: {}, Cron: {}", taskScheduleId, cronExpression);
 
-        SeatunnelJobSchedulePO taskSchedule = getById(taskScheduleId);
+        if (StringUtils.isBlank(cronExpression)) {
+            throw new RuntimeException("Cron expression cannot be empty");
+        }
+
+        JobSchedule taskSchedule = jobScheduleDao.queryById(taskScheduleId);
         if (taskSchedule == null) {
             throw new RuntimeException("Task schedule configuration does not exist");
         }
 
-        taskSchedule.setCronExpression(cronExpression);
-        updateById(taskSchedule);
+        taskSchedule.setCronExpression(cronExpression.trim());
+        boolean updateResult = jobScheduleDao.updateById(taskSchedule);
+        if (!updateResult) {
+            throw new RuntimeException("Failed to update schedule time");
+        }
 
         if (ScheduleStatusEnum.ACTIVE.equals(taskSchedule.getScheduleStatus())) {
             stopSchedule(taskScheduleId);
@@ -201,48 +225,32 @@ public class SeaTunnelJobScheduleServiceImpl extends ServiceImpl<TaskScheduleMap
     }
 
     @Override
-    public List<SeatunnelJobSchedulePO> getRunningSchedules() {
-        LambdaQueryWrapper<SeatunnelJobSchedulePO> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(SeatunnelJobSchedulePO::getScheduleStatus, "RUNNING");
-        return list(queryWrapper);
+    public List<JobSchedule> getRunningSchedules() {
+        return jobScheduleDao.queryByScheduleStatus(ScheduleStatusEnum.ACTIVE);
     }
 
     @Override
     public boolean existsByTaskDefinitionId(Long taskDefinitionId) {
-        LambdaQueryWrapper<SeatunnelJobSchedulePO> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(SeatunnelJobSchedulePO::getJobDefinitionId, taskDefinitionId);
-        return count(queryWrapper) > 0;
+        return jobScheduleDao.existsByJobDefinitionId(taskDefinitionId);
     }
 
     @Override
     public boolean updateScheduleStatus(Long taskScheduleId, ScheduleStatusEnum status) {
-        LambdaUpdateWrapper<SeatunnelJobSchedulePO> updateWrapper = new LambdaUpdateWrapper<>();
-        updateWrapper.set(SeatunnelJobSchedulePO::getScheduleStatus, status)
-                .eq(SeatunnelJobSchedulePO::getId, taskScheduleId);
-        return update(updateWrapper);
+        return jobScheduleDao.updateScheduleStatus(taskScheduleId, status);
     }
 
     @Override
     public boolean updateLastScheduleTime(Long taskScheduleId) {
-        LambdaUpdateWrapper<SeatunnelJobSchedulePO> updateWrapper = new LambdaUpdateWrapper<>();
-        updateWrapper.set(SeatunnelJobSchedulePO::getLastScheduleTime, new Date())
-                .eq(SeatunnelJobSchedulePO::getId, taskScheduleId);
-        return update(updateWrapper);
+        return jobScheduleDao.updateLastScheduleTime(taskScheduleId, new Date());
     }
 
     @Override
     public boolean updateNextScheduleTime(Long taskScheduleId, Date nextScheduleTime) {
-        LambdaUpdateWrapper<SeatunnelJobSchedulePO> updateWrapper = new LambdaUpdateWrapper<>();
-        updateWrapper.set(SeatunnelJobSchedulePO::getNextScheduleTime, nextScheduleTime)
-                .eq(SeatunnelJobSchedulePO::getId, taskScheduleId);
-        return update(updateWrapper);
+        return jobScheduleDao.updateNextScheduleTime(taskScheduleId, nextScheduleTime);
     }
 
     /**
-     * Get the last 5 execution times based on Cron expression
-     *
-     * @param cronExpression Cron expression
-     * @return List of the last 5 execution time strings
+     * 获取未来 5 次执行时间
      */
     @Override
     public List<String> getLast5ExecutionTimesByCron(String cronExpression) {
@@ -251,18 +259,16 @@ public class SeaTunnelJobScheduleServiceImpl extends ServiceImpl<TaskScheduleMap
         }
 
         String cleanedCron = cronExpression.trim().replaceAll("\\s+", " ");
-
         if (!isValidCronExpression(cleanedCron)) {
             throw new RuntimeException("Invalid cron expression format: " + cleanedCron);
         }
 
-        SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        CronExpression expression = null;
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        CronExpression expression;
         try {
             expression = new CronExpression(cleanedCron);
         } catch (ParseException e) {
-            e.printStackTrace();
-            throw new RuntimeException("Failed to parse cron expression: " + cleanedCron + ", Error: " + e.getMessage());
+            throw new RuntimeException("Failed to parse cron expression: " + cleanedCron, e);
         }
 
         Date now = new Date();
@@ -272,56 +278,58 @@ public class SeaTunnelJobScheduleServiceImpl extends ServiceImpl<TaskScheduleMap
             if (now == null) {
                 break;
             }
-            executionTimes.add(DATE_FORMAT.format(now));
+            executionTimes.add(dateFormat.format(now));
         }
         return executionTimes;
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void removeByDefinitionId(Long definitionId) {
-
         if (definitionId == null) {
             return;
         }
 
-        SeatunnelJobSchedulePO schedule =
-                getByTaskDefinitionId(definitionId);
-
+        JobSchedule schedule = jobScheduleDao.queryByJobDefinitionId(definitionId);
         if (schedule == null) {
             return;
         }
 
         try {
-
-            // 如果是 ACTIVE 先停止
             if (ScheduleStatusEnum.ACTIVE.equals(schedule.getScheduleStatus())) {
                 stopSchedule(schedule.getId());
             }
-
-            removeById(schedule.getId());
-
+            jobScheduleDao.deleteById(schedule.getId());
         } catch (Exception e) {
             throw new RuntimeException("Failed to remove schedule", e);
         }
     }
-
 
     private boolean isValidCronExpression(String cronExpression) {
         String[] parts = cronExpression.split(" ");
         return parts.length == 5 || parts.length == 6;
     }
 
-    private JobDetail createJobDetail(SeatunnelJobSchedulePO taskSchedule) {
+    private JobKey buildJobKey(Long taskScheduleId) {
+        return JobKey.jobKey(String.valueOf(taskScheduleId));
+    }
+
+    private TriggerKey buildTriggerKey(Long taskScheduleId) {
+        return TriggerKey.triggerKey(String.valueOf(taskScheduleId));
+    }
+
+    private JobDetail createJobDetail(JobSchedule taskSchedule) {
         return JobBuilder.newJob(QuartzJob.class)
-                .withIdentity(taskSchedule.getId() + "")
+                .withIdentity(buildJobKey(taskSchedule.getId()))
                 .usingJobData("jobScheduleId", taskSchedule.getId())
                 .usingJobData("jobDefinitionId", taskSchedule.getJobDefinitionId())
                 .build();
     }
 
-    private Trigger createTrigger(SeatunnelJobSchedulePO taskSchedule) {
+    private Trigger createTrigger(JobSchedule taskSchedule, TriggerKey triggerKey) {
         return TriggerBuilder.newTrigger()
-                .withIdentity(taskSchedule.getId() + "")
+                .withIdentity(triggerKey)
+                .forJob(buildJobKey(taskSchedule.getId()))
                 .withSchedule(CronScheduleBuilder.cronSchedule(taskSchedule.getCronExpression()))
                 .build();
     }

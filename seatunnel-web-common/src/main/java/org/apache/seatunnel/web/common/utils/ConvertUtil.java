@@ -1,6 +1,5 @@
 package org.apache.seatunnel.web.common.utils;
 
-import com.alibaba.fastjson.JSON;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 
@@ -48,19 +47,6 @@ public class ConvertUtil {
         return targetList;
     }
 
-
-    public static <T> T toObj(String json, Type resultType) {
-        if (resultType instanceof Class) {
-            Class<T> clazz = (Class<T>) resultType;
-            return str2ObjByJson(json, clazz);
-        }
-
-        return JSON.parseObject(json, resultType);
-    }
-
-    public static <T> T str2ObjByJson(String srcStr, Class<T> tgtClass) {
-        return JSON.parseObject(srcStr, tgtClass);
-    }
 
     public static String list2String(List<?> list, String separator) {
         if (list == null || list.isEmpty()) {

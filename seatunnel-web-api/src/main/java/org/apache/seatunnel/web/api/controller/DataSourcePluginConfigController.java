@@ -7,15 +7,16 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.seatunnel.web.api.enums.Status;
 import org.apache.seatunnel.web.api.exceptions.ApiException;
 import org.apache.seatunnel.web.api.exceptions.ServiceException;
 import org.apache.seatunnel.web.api.service.DatasourcePluginService;
-import org.apache.seatunnel.web.api.utils.Result;
-import org.apache.seatunnel.web.common.form.PluginConfigResponse;
+import org.apache.seatunnel.web.spi.bean.entity.Result;
+import org.apache.seatunnel.web.spi.enums.Status;
+import org.apache.seatunnel.web.spi.form.PluginConfigResponse;
 import org.springframework.web.bind.annotation.*;
 
-import static org.apache.seatunnel.web.api.enums.Status.*;
+import static org.apache.seatunnel.web.spi.enums.Status.*;
+
 
 @Slf4j
 @RestController

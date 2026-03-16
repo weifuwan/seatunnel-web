@@ -9,9 +9,10 @@ import org.apache.seatunnel.web.api.aspect.AccessLogAnnotation;
 import org.apache.seatunnel.web.api.security.Authenticator;
 import org.apache.seatunnel.web.api.service.SessionService;
 import org.apache.seatunnel.web.api.service.UsersService;
-import org.apache.seatunnel.web.common.bean.dto.UserDTO;
-import org.apache.seatunnel.web.common.bean.po.UserPO;
 import org.apache.seatunnel.web.common.constants.Constants;
+import org.apache.seatunnel.web.dao.entity.User;
+import org.apache.seatunnel.web.spi.bean.dto.UserDTO;
+import org.apache.seatunnel.web.spi.bean.entity.Result;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -75,7 +76,7 @@ public class SeaTunnelLoginController extends BaseController {
      */
     @PostMapping(value = "/signOut")
     @AccessLogAnnotation(ignoreRequestArgs = {"loginUser", "request"})
-    public Result<Boolean> signOut(UserPO loginUserPO,
+    public Result<Boolean> signOut(User loginUserPO,
                                    HttpServletRequest request) {
         String ip = getClientIpAddress(request);
         sessionService.signOut(ip, loginUserPO);

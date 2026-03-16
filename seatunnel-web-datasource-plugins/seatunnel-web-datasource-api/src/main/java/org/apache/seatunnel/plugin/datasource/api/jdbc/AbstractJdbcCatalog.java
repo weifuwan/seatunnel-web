@@ -2,11 +2,11 @@ package org.apache.seatunnel.plugin.datasource.api.jdbc;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.seatunnel.web.common.BaseConnectionParam;
+import org.apache.seatunnel.plugin.datasource.api.utils.SqlTimeVariableParser;
 import org.apache.seatunnel.web.common.FrontedTableColumn;
 import org.apache.seatunnel.web.common.QueryResult;
 import org.apache.seatunnel.plugin.datasource.api.modal.DataSourceTableColumn;
-import org.apache.seatunnel.plugin.datasource.api.utils.SqlTimeVariableParser;
+import org.apache.seatunnel.web.spi.datasource.BaseConnectionParam;
 
 import java.sql.*;
 import java.util.ArrayList;

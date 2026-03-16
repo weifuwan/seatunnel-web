@@ -1,34 +1,32 @@
 package org.apache.seatunnel.web.api.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.seatunnel.web.api.service.BatchJobDefinitionService;
 import org.apache.seatunnel.web.api.service.SeaTunnelJobInstanceService;
-import org.apache.seatunnel.web.api.service.application.SeatunnelBatchJobDefinitionApplicationService;
-import org.apache.seatunnel.web.api.service.application.streaming.SeatunnelStreamingJobDefinitionApplicationService;
-import org.apache.seatunnel.web.api.service.support.JobConfigBuildService;
+import org.apache.seatunnel.web.api.service.StreamingJobDefinitionService;
 import org.apache.seatunnel.web.api.service.support.JobInstanceFactory;
 import org.apache.seatunnel.web.api.service.support.JobInstanceStatusReconcileService;
-import org.apache.seatunnel.web.api.thirdparty.client.SeatunnelRestClient;
 import org.apache.seatunnel.web.api.utils.HoconSensitiveMaskUtil;
-import org.apache.seatunnel.web.common.bean.dto.BaseJobDefinitionCommand;
-import org.apache.seatunnel.web.common.bean.dto.SeatunnelBatchJobDefinitionDTO;
-import org.apache.seatunnel.web.common.bean.dto.SeatunnelJobInstanceDTO;
-import org.apache.seatunnel.web.common.bean.dto.SeatunnelStreamingJobDefinitionDTO;
-import org.apache.seatunnel.web.common.bean.entity.PaginationResult;
-import org.apache.seatunnel.web.common.bean.vo.SeatunnelBatchJobDefinitionVO;
-import org.apache.seatunnel.web.common.bean.vo.SeatunnelJobInstanceVO;
 import org.apache.seatunnel.web.common.enums.JobMode;
 import org.apache.seatunnel.web.common.enums.JobStatus;
 import org.apache.seatunnel.web.common.enums.RunMode;
 import org.apache.seatunnel.web.common.utils.CodeGenerateUtils;
 import org.apache.seatunnel.web.common.utils.ConvertUtil;
+import org.apache.seatunnel.web.core.hocon.JobConfigBuild;
+import org.apache.seatunnel.web.dao.entity.JobInstance;
+import org.apache.seatunnel.web.dao.repository.JobInstanceDao;
+import org.apache.seatunnel.web.dao.repository.JobMetricsDao;
+import org.apache.seatunnel.web.engine.client.client.SeatunnelRestClient;
+import org.apache.seatunnel.web.spi.bean.dto.BaseJobDefinitionCommand;
+import org.apache.seatunnel.web.spi.bean.dto.SeatunnelBatchJobDefinitionDTO;
+import org.apache.seatunnel.web.spi.bean.dto.SeatunnelJobInstanceDTO;
+import org.apache.seatunnel.web.spi.bean.dto.SeatunnelStreamingJobDefinitionDTO;
+import org.apache.seatunnel.web.spi.bean.entity.PaginationResult;
+import org.apache.seatunnel.web.spi.bean.vo.BatchJobDefinitionVO;
+import org.apache.seatunnel.web.spi.bean.vo.SeatunnelJobInstanceVO;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,25 +41,25 @@ import java.util.Map;
 
 @Service
 @Slf4j
-public class SeaTunnelJobInstanceServiceImpl
-
-        implements SeaTunnelJobInstanceService {
-
-    @Lazy
-    @Resource
-    private SeatunnelBatchJobDefinitionApplicationService batchDefinitionApplicationService;
+public class SeaTunnelJobInstanceServiceImpl implements SeaTunnelJobInstanceService {
 
     @Resource
-    private SeatunnelStreamingJobDefinitionApplicationService streamingDefinitionApplicationService;
+    private BatchJobDefinitionService batchDefinitionApplicationService;
 
     @Resource
-    private SeatunnelJobMetricsMapper metricsMapper;
+    private StreamingJobDefinitionService streamingDefinitionApplicationService;
+
+    @Resource
+    private JobInstanceDao jobInstanceDao;
+
+    @Resource
+    private JobMetricsDao jobMetricsDao;
 
     @Resource
     private SeatunnelRestClient seatunnelRestClient;
 
     @Resource
-    private JobConfigBuildService jobConfigBuildService;
+    private JobConfigBuild jobConfigBuild;
 
     @Resource
     private JobInstanceFactory jobInstanceFactory;
@@ -82,12 +80,9 @@ public class SeaTunnelJobInstanceServiceImpl
         log.info("Creating job instance, jobDefineId={}, runMode={}", jobDefineId, runMode);
 
         BaseJobDefinitionCommand definitionDTO = loadDefinition(jobDefineId);
-        SeatunnelJobInstancePO instance = buildJobInstance(definitionDTO, runMode);
+        JobInstance instance = buildJobInstance(definitionDTO, runMode);
 
-        boolean saved = save(instance);
-        if (!saved) {
-            throw new IllegalStateException("Failed to save job instance");
-        }
+        jobInstanceDao.insert(instance);
 
         log.info("Job instance created successfully, instanceId={}", instance.getId());
         return ConvertUtil.sourceToTarget(instance, SeatunnelJobInstanceVO.class);
@@ -97,12 +92,9 @@ public class SeaTunnelJobInstanceServiceImpl
     @Transactional(rollbackFor = Exception.class)
     public SeatunnelJobInstanceVO createAndSubmit(Long jobDefineId, RunMode runMode) {
         BaseJobDefinitionCommand definitionDTO = loadDefinition(jobDefineId);
-        SeatunnelJobInstancePO instance = buildJobInstance(definitionDTO, runMode);
+        JobInstance instance = buildJobInstance(definitionDTO, runMode);
 
-        boolean saved = save(instance);
-        if (!saved) {
-            throw new IllegalStateException("Failed to save job instance");
-        }
+        jobInstanceDao.insert(instance);
 
         try {
             Date submitTime = new Date();
@@ -118,22 +110,12 @@ public class SeaTunnelJobInstanceServiceImpl
                 submitStatus = JobStatus.INITIALIZING;
             }
 
-            SeatunnelJobInstancePO update = new SeatunnelJobInstancePO();
-            update.setId(instance.getId());
-            update.setEngineJobId(engineJobId);
-            update.setJobStatus(submitStatus);
-            update.setSubmitTime(submitTime);
-            update.setLastStatusSyncTime(submitTime);
-            update.setUpdateTime(new Date());
-
-            if (JobStatus.RUNNING.equals(submitStatus)
-                    || JobStatus.INITIALIZING.equals(submitStatus)
-                    || JobStatus.PENDING.equals(submitStatus)
-                    || JobStatus.SCHEDULED.equals(submitStatus)) {
-                update.setStartTime(submitTime);
-            }
-
-            updateById(update);
+            jobInstanceDao.updateSubmitResult(
+                    instance.getId(),
+                    engineJobId,
+                    submitStatus,
+                    submitTime
+            );
 
             log.info("Job submitted successfully, instanceId={}, engineJobId={}, status={}",
                     instance.getId(), engineJobId, submitStatus);
@@ -148,16 +130,12 @@ public class SeaTunnelJobInstanceServiceImpl
 
     @Override
     public PaginationResult<SeatunnelJobInstanceVO> paging(SeatunnelJobInstanceDTO dto) {
-        long pageNo = dto.getPageNo() == null || dto.getPageNo() < 1 ? 1 : dto.getPageNo();
-        long pageSize = dto.getPageSize() == null || dto.getPageSize() < 1 ? 10 : dto.getPageSize();
-
-        Page<SeatunnelJobInstanceVO> page = new Page<>(pageNo, pageSize);
-        IPage<SeatunnelJobInstanceVO> result = baseMapper.pageWithDefinition(page, dto);
+        var result = jobInstanceDao.pageWithDefinition(dto);
 
         if (result.getRecords() != null) {
-            result.getRecords().forEach(item -> {
-                item.setRuntimeConfig(HoconSensitiveMaskUtil.maskSensitiveInfo(item.getRuntimeConfig()));
-            });
+            result.getRecords().forEach(item ->
+                    item.setRuntimeConfig(HoconSensitiveMaskUtil.maskSensitiveInfo(item.getRuntimeConfig()))
+            );
         }
 
         return PaginationResult.buildSuc(result.getRecords(), result);
@@ -165,29 +143,29 @@ public class SeaTunnelJobInstanceServiceImpl
 
     @Override
     public String buildJobConfig(BaseJobDefinitionCommand dto) {
-        return jobConfigBuildService.buildJobConfig(dto);
+        return jobConfigBuild.buildJobConfig(dto);
     }
 
     @Override
     public String buildHoconConfig(BaseJobDefinitionCommand dto) {
-        return jobConfigBuildService.buildBatchDagConfig(dto);
+        return jobConfigBuild.buildBatchDagConfig(dto);
     }
 
     @Override
     public String buildHoconConfigByWholeSync(BaseJobDefinitionCommand dto) {
-        return jobConfigBuildService.buildWholeSyncConfig(dto);
+        return jobConfigBuild.buildWholeSyncConfig(dto);
     }
 
     @Override
     public String buildStreamingHoconConfig(BaseJobDefinitionCommand dto) {
-        return jobConfigBuildService.buildStreamingConfig(dto);
+        return jobConfigBuild.buildStreamingConfig(dto);
     }
 
     @Override
     public SeatunnelJobInstanceVO selectById(Long id) {
-        SeatunnelJobInstancePO po = getById(id);
+        JobInstance po = jobInstanceDao.queryById(id);
         if (po == null) {
-            throw new RuntimeException("Job instance not found");
+            throw new RuntimeException("Job instance not found: " + id);
         }
 
         SeatunnelJobInstanceVO vo = ConvertUtil.sourceToTarget(po, SeatunnelJobInstanceVO.class);
@@ -224,21 +202,7 @@ public class SeaTunnelJobInstanceServiceImpl
         if (definitionId == null) {
             return false;
         }
-
-        long count = lambdaQuery()
-                .eq(SeatunnelJobInstancePO::getJobDefinitionId, definitionId)
-                .in(SeatunnelJobInstancePO::getJobStatus,
-                        JobStatus.INITIALIZING,
-                        JobStatus.CREATED,
-                        JobStatus.PENDING,
-                        JobStatus.SCHEDULED,
-                        JobStatus.RUNNING,
-                        JobStatus.FAILING,
-                        JobStatus.DOING_SAVEPOINT,
-                        JobStatus.CANCELING)
-                .count();
-
-        return count > 0;
+        return jobInstanceDao.existsRunningInstance(definitionId);
     }
 
     @Override
@@ -246,10 +210,7 @@ public class SeaTunnelJobInstanceServiceImpl
         if (definitionId == null) {
             return;
         }
-
-        lambdaUpdate()
-                .eq(SeatunnelJobInstancePO::getJobDefinitionId, definitionId)
-                .remove();
+        jobInstanceDao.deleteByDefinitionId(definitionId);
     }
 
     @Override
@@ -257,24 +218,18 @@ public class SeaTunnelJobInstanceServiceImpl
         if (definitionId == null) {
             return;
         }
-
-        metricsMapper.delete(
-                new LambdaQueryWrapper<SeatunnelJobMetricsPO>()
-                        .eq(SeatunnelJobMetricsPO::getJobDefinitionId, definitionId)
-        );
+        jobMetricsDao.deleteByDefinitionId(definitionId);
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void removeAllByDefinitionId(Long definitionId) {
         if (definitionId == null) {
             return;
         }
 
-        deleteMetricsByDefinitionId(definitionId);
-
-        lambdaUpdate()
-                .eq(SeatunnelJobInstancePO::getJobDefinitionId, definitionId)
-                .remove();
+        jobMetricsDao.deleteByDefinitionId(definitionId);
+        jobInstanceDao.deleteByDefinitionId(definitionId);
     }
 
     @Override
@@ -287,19 +242,7 @@ public class SeaTunnelJobInstanceServiceImpl
         if (instanceId == null || status == null) {
             return;
         }
-
-        boolean endState = status.isEndState();
-
-        lambdaUpdate()
-                .eq(SeatunnelJobInstancePO::getId, instanceId)
-                .set(SeatunnelJobInstancePO::getJobStatus, status)
-                .set(errorMessage != null && !errorMessage.isBlank(),
-                        SeatunnelJobInstancePO::getErrorMessage,
-                        truncate(errorMessage, 2000))
-                .set(SeatunnelJobInstancePO::getLastStatusSyncTime, new Date())
-                .set(SeatunnelJobInstancePO::getUpdateTime, new Date())
-                .set(endState, SeatunnelJobInstancePO::getEndTime, new Date())
-                .update();
+        jobInstanceDao.updateStatus(instanceId, status, errorMessage);
     }
 
     @Override
@@ -307,19 +250,7 @@ public class SeaTunnelJobInstanceServiceImpl
         if (instanceId == null || status == null) {
             return;
         }
-
-        boolean endState = status.isEndState();
-
-        lambdaUpdate()
-                .eq(SeatunnelJobInstancePO::getId, instanceId)
-                .set(SeatunnelJobInstancePO::getJobStatus, status)
-                .set(engineJobId != null && !engineJobId.isBlank(),
-                        SeatunnelJobInstancePO::getEngineJobId,
-                        engineJobId)
-                .set(SeatunnelJobInstancePO::getLastStatusSyncTime, new Date())
-                .set(SeatunnelJobInstancePO::getUpdateTime, new Date())
-                .set(endState, SeatunnelJobInstancePO::getEndTime, new Date())
-                .update();
+        jobInstanceDao.updateStatusAndEngineId(instanceId, status, engineJobId);
     }
 
     @Override
@@ -332,8 +263,13 @@ public class SeaTunnelJobInstanceServiceImpl
         jobInstanceStatusReconcileService.reconcileUnfinishedInstanceStatuses();
     }
 
+    @Override
+    public void updateById(JobInstance po) {
+        jobInstanceDao.updateById(po);
+    }
+
     private BaseJobDefinitionCommand loadDefinition(Long jobDefineId) {
-        SeatunnelBatchJobDefinitionVO batchVo = null;
+        BatchJobDefinitionVO batchVo = null;
         try {
             batchVo = batchDefinitionApplicationService.selectById(jobDefineId);
         } catch (Exception ignored) {
@@ -358,8 +294,7 @@ public class SeaTunnelJobInstanceServiceImpl
         }
     }
 
-    private SeatunnelJobInstancePO buildJobInstance(BaseJobDefinitionCommand definitionDTO,
-                                                    RunMode runMode) {
+    private JobInstance buildJobInstance(BaseJobDefinitionCommand definitionDTO, RunMode runMode) {
         Long id = generateInstanceId();
         String runtimeConfig = buildJobConfig(definitionDTO);
 
@@ -434,15 +369,5 @@ public class SeaTunnelJobInstanceServiceImpl
             }
         }
         return null;
-    }
-
-    private String truncate(String text, int maxLength) {
-        if (text == null) {
-            return null;
-        }
-        if (text.length() <= maxLength) {
-            return text;
-        }
-        return text.substring(0, maxLength);
     }
 }

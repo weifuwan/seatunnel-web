@@ -1,8 +1,7 @@
 package org.apache.seatunnel.web.api.service;
 
-import org.apache.seatunnel.web.common.bean.dto.AiGenerateRequest;
 import org.springframework.ai.chat.model.ChatResponse;
 
 public interface SeaTunnelAiService {
-    ChatResponse copilot(AiGenerateRequest aiGenerateRequest);
+//    ChatResponse copilot(AiGenerateRequest aiGenerateRequest);
 }

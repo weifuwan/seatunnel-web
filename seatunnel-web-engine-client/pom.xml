@@ -12,5 +12,27 @@
 
     <artifactId>seatunnel-web-engine-client</artifactId>
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.apache.seatunnel.web</groupId>
+                <artifactId>seatunnel-web-bom</artifactId>
+                <version>${project.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.seatunnel.web</groupId>
+            <artifactId>seatunnel-web-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.seatunnel.web</groupId>
+            <artifactId>seatunnel-web-dao</artifactId>
+        </dependency>
+    </dependencies>
 
 </project>

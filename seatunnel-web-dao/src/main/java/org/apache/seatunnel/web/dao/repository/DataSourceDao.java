@@ -2,9 +2,9 @@ package org.apache.seatunnel.web.dao.repository;
 
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import org.apache.seatunnel.web.common.bean.dto.DataSourceDTO;
 import org.apache.seatunnel.web.common.enums.ConnStatus;
 import org.apache.seatunnel.web.dao.entity.DataSource;
+import org.apache.seatunnel.web.spi.bean.dto.DataSourceDTO;
 
 import java.util.List;
 

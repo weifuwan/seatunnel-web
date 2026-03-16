@@ -8,16 +8,17 @@ import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.seatunnel.web.api.exceptions.ApiException;
 import org.apache.seatunnel.web.api.service.DataSourceCatalogService;
-import org.apache.seatunnel.web.api.utils.Result;
+import org.apache.seatunnel.web.spi.bean.entity.Result;
 import org.apache.seatunnel.web.common.QueryResult;
-import org.apache.seatunnel.web.common.bean.vo.ColumnOptionVO;
-import org.apache.seatunnel.web.common.bean.vo.OptionVO;
+import org.apache.seatunnel.web.spi.bean.vo.ColumnOptionVO;
+import org.apache.seatunnel.web.spi.bean.vo.OptionVO;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
 
-import static org.apache.seatunnel.web.api.enums.Status.*;
+import static org.apache.seatunnel.web.spi.enums.Status.*;
+
 
 @Slf4j
 @RestController

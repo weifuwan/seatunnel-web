@@ -1,7 +1,8 @@
 package org.apache.seatunnel.web.api.handler;
 
-import org.apache.seatunnel.web.common.bean.entity.ResultStatus;
+import org.apache.seatunnel.web.spi.bean.entity.Result;
 import org.apache.seatunnel.web.common.utils.ConvertUtil;
+import org.apache.seatunnel.web.spi.bean.entity.ResultStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.support.DefaultMessageSourceResolvable;

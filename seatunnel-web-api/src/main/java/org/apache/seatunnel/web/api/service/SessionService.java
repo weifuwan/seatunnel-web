@@ -1,16 +1,14 @@
 package org.apache.seatunnel.web.api.service;
 
 
-import com.baomidou.mybatisplus.extension.service.IService;
-import org.apache.seatunnel.web.common.bean.po.SessionPO;
-import org.apache.seatunnel.web.common.bean.po.UserPO;
-
 import jakarta.servlet.http.HttpServletRequest;
+import org.apache.seatunnel.web.dao.entity.Session;
+import org.apache.seatunnel.web.dao.entity.User;
 
 /**
  * session service
  */
-public interface SessionService extends IService<SessionPO> {
+public interface SessionService {
 
     /**
      * get user session from request
@@ -18,7 +16,7 @@ public interface SessionService extends IService<SessionPO> {
      * @param request request
      * @return session
      */
-    SessionPO getSession(HttpServletRequest request);
+    Session getSession(HttpServletRequest request);
 
     /**
      * create session
@@ -27,7 +25,7 @@ public interface SessionService extends IService<SessionPO> {
      * @param ip ip
      * @return session string
      */
-    String createSession(UserPO userPO, String ip);
+    String createSession(User userPO, String ip);
 
     /**
      * sign out
@@ -36,5 +34,5 @@ public interface SessionService extends IService<SessionPO> {
      * @param ip   no use
      * @param loginUserPO login user
      */
-    void signOut(String ip, UserPO loginUserPO);
+    void signOut(String ip, User loginUserPO);
 }

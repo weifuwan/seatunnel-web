@@ -1,10 +1,11 @@
 package org.apache.seatunnel.plugin.datasource.api.jdbc;
 
-import org.apache.seatunnel.web.common.BaseConnectionParam;
 import org.apache.seatunnel.web.common.config.OptionRule;
-import org.apache.seatunnel.web.common.form.FormFieldConfig;
 import org.apache.seatunnel.plugin.datasource.api.form.ReflectionFormGenerator;
 import org.apache.seatunnel.plugin.datasource.api.hocon.DataSourceHoconBuilder;
+import org.apache.seatunnel.web.spi.datasource.BaseConnectionParam;
+import org.apache.seatunnel.web.spi.enums.DbType;
+import org.apache.seatunnel.web.spi.form.FormFieldConfig;
 
 import java.util.List;
 

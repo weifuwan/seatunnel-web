@@ -4,6 +4,8 @@ import org.apache.commons.lang3.StringUtils;
 
 import jakarta.servlet.http.HttpServletRequest;
 
+import static org.apache.seatunnel.web.common.constants.Constants.*;
+
 /**
  * base controller
  */

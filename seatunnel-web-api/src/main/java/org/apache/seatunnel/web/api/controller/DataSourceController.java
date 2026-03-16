@@ -7,16 +7,16 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.seatunnel.web.api.enums.Status;
 import org.apache.seatunnel.web.api.exceptions.ApiException;
 import org.apache.seatunnel.web.api.exceptions.ServiceException;
 import org.apache.seatunnel.web.api.service.DataSourceService;
-import org.apache.seatunnel.web.api.utils.Result;
-import org.apache.seatunnel.web.common.bean.dto.DataSourceDTO;
-import org.apache.seatunnel.web.common.bean.entity.PaginationResult;
-import org.apache.seatunnel.web.common.bean.vo.DBOptionVO;
-import org.apache.seatunnel.web.common.bean.vo.DataSourceVO;
+import org.apache.seatunnel.web.spi.bean.dto.DataSourceDTO;
+import org.apache.seatunnel.web.spi.bean.entity.PaginationResult;
+import org.apache.seatunnel.web.spi.bean.entity.Result;
 import org.apache.seatunnel.web.dao.entity.DataSource;
+import org.apache.seatunnel.web.spi.bean.vo.DBOptionVO;
+import org.apache.seatunnel.web.spi.bean.vo.DataSourceVO;
+import org.apache.seatunnel.web.spi.enums.Status;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -24,7 +24,8 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 import java.util.Map;
 
-import static org.apache.seatunnel.web.api.enums.Status.*;
+import static org.apache.seatunnel.web.spi.enums.Status.*;
+
 
 @Slf4j
 @RestController

@@ -1,11 +1,10 @@
 package org.apache.seatunnel.web.api.service;
 
-import com.baomidou.mybatisplus.extension.service.IService;
 import lombok.NonNull;
-import org.apache.seatunnel.web.common.bean.po.SeatunnelJobMetricsPO;
-import org.apache.seatunnel.web.common.bean.vo.OverviewChartsVO;
-import org.apache.seatunnel.web.common.bean.vo.OverviewSummaryVO;
 import org.apache.seatunnel.web.common.enums.TimeRange;
+import org.apache.seatunnel.web.dao.entity.JobMetrics;
+import org.apache.seatunnel.web.spi.bean.vo.OverviewChartsVO;
+import org.apache.seatunnel.web.spi.bean.vo.OverviewSummaryVO;
 
 import java.util.List;
 import java.util.Map;
@@ -26,7 +25,7 @@ import java.util.Map;
  *     <li>Generating time-based chart data for monitoring UI</li>
  * </ul>
  */
-public interface SeaTunnelJobMetricsService extends IService<SeatunnelJobMetricsPO> {
+public interface SeaTunnelJobMetricsService {
 
     /**
      * Retrieves job metrics from the execution engine.
@@ -37,7 +36,7 @@ public interface SeaTunnelJobMetricsService extends IService<SeatunnelJobMetrics
      * @param jobEngineId unique identifier of the job in the execution engine
      * @return map of metrics indexed by metric identifier
      */
-    Map<Integer, SeatunnelJobMetricsPO> getJobMetricsFromEngineMap(
+    Map<Integer, JobMetrics> getJobMetricsFromEngineMap(
             @NonNull Long jobEngineId
     );
 
@@ -50,7 +49,7 @@ public interface SeaTunnelJobMetricsService extends IService<SeatunnelJobMetrics
      *
      * @param metricsList list of metrics to store
      */
-    void saveMetricsBatch(@NonNull List<SeatunnelJobMetricsPO> metricsList);
+    void saveMetricsBatch(@NonNull List<JobMetrics> metricsList);
 
     /**
      * Returns aggregated overview statistics for the dashboard.
@@ -64,7 +63,7 @@ public interface SeaTunnelJobMetricsService extends IService<SeatunnelJobMetrics
      * </ul>
      *
      * @param timeRange time window for aggregation
-     * @param taskType optional task type filter
+     * @param taskType  optional task type filter
      * @return aggregated overview statistics
      */
     OverviewSummaryVO summary(TimeRange timeRange, String taskType);
@@ -77,7 +76,7 @@ public interface SeaTunnelJobMetricsService extends IService<SeatunnelJobMetrics
      * within a given time range.</p>
      *
      * @param timeRange time window for chart generation
-     * @param taskType optional task type filter
+     * @param taskType  optional task type filter
      * @return chart-ready data structure for visualization
      */
     OverviewChartsVO charts(TimeRange timeRange, String taskType);

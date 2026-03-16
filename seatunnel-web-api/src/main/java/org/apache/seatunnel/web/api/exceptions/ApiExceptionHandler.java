@@ -1,8 +1,8 @@
 package org.apache.seatunnel.web.api.exceptions;
 
 import lombok.extern.slf4j.Slf4j;
-import org.apache.seatunnel.web.api.enums.Status;
-import org.apache.seatunnel.web.api.utils.Result;
+import org.apache.seatunnel.web.spi.bean.entity.Result;
+import org.apache.seatunnel.web.spi.enums.Status;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestControllerAdvice;

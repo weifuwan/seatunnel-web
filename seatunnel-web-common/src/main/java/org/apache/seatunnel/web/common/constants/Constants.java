@@ -71,10 +71,7 @@ public class Constants {
     public static final long SLEEP_TIME_MILLIS = 2_000L;
 
 
-    /**
-     * complement date default cron string
-     */
-    public static final String DEFAULT_CRON_STRING = "0 0 0 * * ? *";
+
     /**
      * schedule timezone
      */

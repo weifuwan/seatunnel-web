@@ -47,7 +47,7 @@
 
         <dependency>
             <groupId>org.apache.seatunnel.web</groupId>
-            <artifactId>seatunnel-web-service</artifactId>
+            <artifactId>seatunnel-web-core</artifactId>
         </dependency>
 
         <dependency>

@@ -1,10 +1,10 @@
 package org.apache.seatunnel.plugin.datasource.oracle.param;
 
-import org.apache.seatunnel.web.common.BaseConnectionParam;
-import org.apache.seatunnel.web.common.spi.enums.DbConnectType;
 import org.apache.seatunnel.web.common.utils.JSONUtils;
 import org.apache.seatunnel.plugin.datasource.api.constants.DataSourceConstants;
 import org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcParamConverter;
+import org.apache.seatunnel.web.spi.datasource.BaseConnectionParam;
+import org.apache.seatunnel.web.spi.enums.DbConnectType;
 
 public class OracleParamConverter implements JdbcParamConverter {
 
@@ -14,6 +14,11 @@ public class OracleParamConverter implements JdbcParamConverter {
         assert oracleConnectionParam != null;
         oracleConnectionParam.setUrl(buildUrl(oracleConnectionParam));
         return oracleConnectionParam;
+    }
+
+    @Override
+    public void checkDatasourceParam(BaseConnectionParam baseConnectionParam) {
+
     }
 
     private String buildUrl(OracleConnectionParam param) {

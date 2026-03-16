@@ -2,10 +2,10 @@ package org.apache.seatunnel.web.api.service;
 
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import org.apache.seatunnel.web.common.bean.dto.SeatunnelStreamJobDefinitionDTO;
-import org.apache.seatunnel.web.common.bean.entity.PaginationResult;
-import org.apache.seatunnel.web.common.bean.po.SeatunnelStreamJobDefinitionPO;
-import org.apache.seatunnel.web.common.bean.vo.SeatunnelStreamJobDefinitionVO;
+import org.apache.seatunnel.web.dao.entity.StreamJobDefinition;
+import org.apache.seatunnel.web.spi.bean.dto.SeatunnelStreamJobDefinitionDTO;
+import org.apache.seatunnel.web.spi.bean.entity.PaginationResult;
+import org.apache.seatunnel.web.spi.bean.vo.SeatunnelStreamJobDefinitionVO;
 
 /**
  * Service interface for managing SeaTunnel job definitions.
@@ -13,7 +13,7 @@ import org.apache.seatunnel.web.common.bean.vo.SeatunnelStreamJobDefinitionVO;
  * Provides CRUD operations, pagination queries, and configuration generation
  * for SeaTunnel job definitions.
  */
-public interface SeaTunnelStreamJobDefinitionService extends IService<SeatunnelStreamJobDefinitionPO> {
+public interface SeaTunnelStreamJobDefinitionService extends IService<StreamJobDefinition> {
 
     /**
      * Create a new SeaTunnel job definition.

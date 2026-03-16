@@ -1,6 +1,5 @@
 package org.apache.seatunnel.plugin.datasource.mysql.builder;
 
-import com.alibaba.fastjson.JSON;
 import com.google.auto.service.AutoService;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -12,6 +11,7 @@ import org.apache.seatunnel.plugin.datasource.api.hocon.DataSourceHoconBuilder;
 import org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConnectionProvider;
 import org.apache.seatunnel.plugin.datasource.api.jdbc.ServerIdManager;
 import org.apache.seatunnel.plugin.datasource.mysql.param.MySQLConnectionParam;
+import org.apache.seatunnel.web.common.utils.JSONUtils;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -29,7 +29,7 @@ public class MySqlCdcBuilder implements DataSourceHoconBuilder {
                                    JdbcConnectionProvider provider, HoconBuildStage stage) {
 
         MySQLConnectionParam param =
-                JSON.parseObject(connectionParam, MySQLConnectionParam.class);
+                JSONUtils.parseObject(connectionParam, MySQLConnectionParam.class);
 
         Map<String, Object> map = new HashMap<>();
 

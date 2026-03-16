@@ -1,8 +1,6 @@
 package org.apache.seatunnel.web.api.service;
 
-import com.baomidou.mybatisplus.extension.service.IService;
-import org.apache.seatunnel.web.common.form.PluginConfigResponse;
-import org.apache.seatunnel.web.dao.entity.DataSourcePluginConfig;
+import org.apache.seatunnel.web.spi.form.PluginConfigResponse;
 
 
 public interface DatasourcePluginService {

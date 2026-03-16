@@ -1,35 +1,42 @@
 package org.apache.seatunnel.web.api.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import org.apache.seatunnel.web.api.dao.UserMapper;
+import jakarta.annotation.Resource;
 import org.apache.seatunnel.web.api.service.UsersService;
 import org.apache.seatunnel.web.api.utils.EncryptionUtils;
-import org.apache.seatunnel.web.common.bean.po.UserPO;
 import org.apache.seatunnel.web.common.enums.UserType;
+import org.apache.seatunnel.web.dao.entity.User;
+import org.apache.seatunnel.web.dao.mapper.UserMapper;
 import org.springframework.stereotype.Service;
 
 @Service
-public class UsersServiceImpl extends ServiceImpl<UserMapper, UserPO>
-        implements UsersService {
+public class UsersServiceImpl implements UsersService {
+
+    @Resource
+    private UserMapper userMapper;
 
     @Override
-    public UserPO queryUser(String name, String password) {
+    public User queryUser(String name, String password) {
         String md5 = EncryptionUtils.getMd5(password);
-        LambdaQueryWrapper<UserPO> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(UserPO::getUserName, name)
-                .eq(UserPO::getUserPassword, md5);
-        return getBaseMapper().selectOne(wrapper);
+        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(User::getUserName, name)
+                .eq(User::getUserPassword, md5);
+        return userMapper.selectOne(wrapper);
     }
 
     @Override
-    public UserPO getUserInfo(UserPO loginUserPO) {
-        UserPO userPO;
-        if (loginUserPO.getUserType() == UserType.ADMIN_USER) {
-            userPO = loginUserPO;
+    public User getUserInfo(User loginUser) {
+        User User;
+        if (loginUser.getUserType() == UserType.ADMIN_USER) {
+            User = loginUser;
         } else {
-            userPO = getById(loginUserPO.getId());
+            User = userMapper.selectById(loginUser.getId());
         }
-        return userPO;
+        return User;
+    }
+
+    @Override
+    public User getById(int userId) {
+        return userMapper.selectById(userId);
     }
 }

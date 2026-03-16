@@ -18,6 +18,27 @@
             <groupId>org.apache.seatunnel.web</groupId>
             <artifactId>seatunnel-web-common</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>org.apache.seatunnel.web</groupId>
+            <artifactId>seatunnel-web-datasource-all</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.zaxxer</groupId>
+            <artifactId>HikariCP</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

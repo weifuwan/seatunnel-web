@@ -2,7 +2,7 @@ package org.apache.seatunnel.web.api.exceptions;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.apache.seatunnel.web.api.enums.Status;
+import org.apache.seatunnel.web.spi.enums.Status;
 
 import java.text.MessageFormat;
 

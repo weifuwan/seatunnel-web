@@ -1,20 +1,19 @@
 package org.apache.seatunnel.web.api.service.impl;
 
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import jakarta.annotation.Resource;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.seatunnel.web.api.dao.SeatunnelJobMetricsMapper;
 import org.apache.seatunnel.web.api.service.SeaTunnelJobMetricsService;
-import org.apache.seatunnel.web.api.thirdparty.client.SeatunnelEngineRestClient;
-import org.apache.seatunnel.web.common.bean.entity.Scale;
-import org.apache.seatunnel.web.common.bean.entity.TimeWindow;
-import org.apache.seatunnel.web.common.bean.po.SeatunnelJobMetricsPO;
-import org.apache.seatunnel.web.common.bean.vo.ChartDataItemVO;
-import org.apache.seatunnel.web.common.bean.vo.OverviewChartsVO;
-import org.apache.seatunnel.web.common.bean.vo.OverviewSummaryVO;
 import org.apache.seatunnel.web.common.enums.TimeRange;
 import org.apache.seatunnel.web.common.enums.UnitKind;
+import org.apache.seatunnel.web.dao.entity.JobMetrics;
+import org.apache.seatunnel.web.dao.repository.JobMetricsDao;
+import org.apache.seatunnel.web.engine.client.client.SeatunnelEngineRestClient;
+import org.apache.seatunnel.web.spi.bean.entity.Scale;
+import org.apache.seatunnel.web.spi.bean.entity.TimeWindow;
+import org.apache.seatunnel.web.spi.bean.vo.ChartDataItemVO;
+import org.apache.seatunnel.web.spi.bean.vo.OverviewChartsVO;
+import org.apache.seatunnel.web.spi.bean.vo.OverviewSummaryVO;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -26,28 +25,16 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Implementation of SeatunnelJobMetricsService.
- * <p>
- * Responsibilities:
- * 1. Fetch real-time metrics from engine
- * 2. Persist metrics into database
- * 3. Provide aggregated summary data
- * 4. Provide trend chart data
- * <p>
- * This service acts as the metrics aggregation layer between:
- * - Engine metrics extractor
- * - Database layer
- * - Overview dashboard
- */
+
 @Service
 @Slf4j
-public class SeaTunnelJobMetricsServiceImpl
-        extends ServiceImpl<SeatunnelJobMetricsMapper, SeatunnelJobMetricsPO>
-        implements SeaTunnelJobMetricsService {
+public class SeaTunnelJobMetricsServiceImpl implements SeaTunnelJobMetricsService {
 
     @Resource
     private SeatunnelEngineRestClient engineRestClient;
+
+    @Resource
+    private JobMetricsDao jobMetricsDao;
 
     /**
      * Default time zone used for metrics calculation.
@@ -65,7 +52,7 @@ public class SeaTunnelJobMetricsServiceImpl
      * Fetch real-time metrics map from engine by jobEngineId.
      */
     @Override
-    public Map<Integer, SeatunnelJobMetricsPO> getJobMetricsFromEngineMap(@NonNull Long jobEngineId) {
+    public Map<Integer, JobMetrics> getJobMetricsFromEngineMap(@NonNull Long jobEngineId) {
         Map<String, Object> jobInfo = engineRestClient.jobInfo(jobEngineId);
         if (jobInfo == null) {
             return new ConcurrentHashMap<>();
@@ -83,8 +70,8 @@ public class SeaTunnelJobMetricsServiceImpl
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    private Map<Integer, SeatunnelJobMetricsPO> parseMetricsToPipelineMap(Map<String, Object> metrics) {
-        Map<Integer, SeatunnelJobMetricsPO> result = new ConcurrentHashMap<>();
+    private Map<Integer, JobMetrics> parseMetricsToPipelineMap(Map<String, Object> metrics) {
+        Map<Integer, JobMetrics> result = new ConcurrentHashMap<>();
         if (metrics == null || metrics.isEmpty()) {
             return result;
         }
@@ -98,13 +85,13 @@ public class SeaTunnelJobMetricsServiceImpl
                 Integer pid = Integer.valueOf(e.getKey());
                 if (!(e.getValue() instanceof Map)) continue;
                 Map block = (Map) e.getValue();
-                SeatunnelJobMetricsPO po = mapBlock(pid, block);
+                JobMetrics po = mapBlock(pid, block);
                 result.put(pid, po);
             }
             return result;
         }
 
-        SeatunnelJobMetricsPO po = new SeatunnelJobMetricsPO();
+        JobMetrics po = new JobMetrics();
         po.setPipelineId(0);
 
         po.setReadRowCount(getLong(metrics, "SourceReceivedCount"));
@@ -136,8 +123,8 @@ public class SeaTunnelJobMetricsServiceImpl
         }
     }
 
-    private SeatunnelJobMetricsPO mapBlock(Integer pid, Map block) {
-        SeatunnelJobMetricsPO po = new SeatunnelJobMetricsPO();
+    private JobMetrics mapBlock(Integer pid, Map block) {
+        JobMetrics po = new JobMetrics();
         po.setPipelineId(pid);
 
         po.setReadRowCount(getLong(block, "readRowCount", "ReadRowCount", "SourceReceivedCount", "sourceReceivedCount"));
@@ -162,7 +149,7 @@ public class SeaTunnelJobMetricsServiceImpl
         return po;
     }
 
-    private void applyByMetricName(SeatunnelJobMetricsPO po, String metricName, Number num) {
+    private void applyByMetricName(JobMetrics po, String metricName, Number num) {
         if (metricName == null || num == null) return;
 
         String lower = metricName.toLowerCase(Locale.ROOT);
@@ -248,14 +235,14 @@ public class SeaTunnelJobMetricsServiceImpl
      * Batch insert metrics into database.
      */
     @Override
-    public void saveMetricsBatch(@NonNull List<SeatunnelJobMetricsPO> metricsList) {
+    public void saveMetricsBatch(@NonNull List<JobMetrics> metricsList) {
         int BATCH_SIZE = 1000;
 
         if (metricsList.isEmpty()) {
             return;
         }
 
-        this.saveBatch(metricsList, BATCH_SIZE);
+        jobMetricsDao.insertBatch(metricsList);
     }
 
     /**
@@ -270,7 +257,7 @@ public class SeaTunnelJobMetricsServiceImpl
     public OverviewSummaryVO summary(TimeRange timeRange, String taskType) {
         TimeWindow w = parseTimeRange(timeRange);
 
-        Map<String, Object> row = this.getBaseMapper().selectOverviewSummary(
+        Map<String, Object> row = jobMetricsDao.selectOverviewSummary(
                 w.getStart().format(DT),
                 w.getEnd().format(DT),
                 taskType
@@ -343,7 +330,7 @@ public class SeaTunnelJobMetricsServiceImpl
         String granularity = pickGranularity(timeRange);
 
         List<Map<String, Object>> recordsTrendRows =
-                this.getBaseMapper().selectRecordsTrend(
+                jobMetricsDao.selectRecordsTrend(
                         w.getStart().format(DT),
                         w.getEnd().format(DT),
                         taskType,
@@ -351,7 +338,7 @@ public class SeaTunnelJobMetricsServiceImpl
                 );
 
         List<Map<String, Object>> bytesTrendRows =
-                this.getBaseMapper().selectBytesTrend(
+                jobMetricsDao.selectBytesTrend(
                         w.getStart().format(DT),
                         w.getEnd().format(DT),
                         taskType,
@@ -359,7 +346,7 @@ public class SeaTunnelJobMetricsServiceImpl
                 );
 
         List<Map<String, Object>> recordsSpeedRows =
-                this.getBaseMapper().selectRecordsSpeedTrend(
+                jobMetricsDao.selectRecordsSpeedTrend(
                         w.getStart().format(DT),
                         w.getEnd().format(DT),
                         taskType,
@@ -367,7 +354,7 @@ public class SeaTunnelJobMetricsServiceImpl
                 );
 
         List<Map<String, Object>> bytesSpeedRows =
-                this.getBaseMapper().selectBytesSpeedTrend(
+                jobMetricsDao.selectBytesSpeedTrend(
                         w.getStart().format(DT),
                         w.getEnd().format(DT),
                         taskType,

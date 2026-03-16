@@ -10,9 +10,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.validation.constraints.NotNull;
 import org.apache.seatunnel.web.api.service.SeaTunnelJobInstanceService;
-import org.apache.seatunnel.web.common.bean.dto.SeatunnelJobInstanceDTO;
-import org.apache.seatunnel.web.common.bean.entity.PaginationResult;
-import org.apache.seatunnel.web.common.bean.vo.SeatunnelJobInstanceVO;
+import org.apache.seatunnel.web.spi.bean.dto.SeatunnelJobInstanceDTO;
+import org.apache.seatunnel.web.spi.bean.entity.PaginationResult;
+import org.apache.seatunnel.web.spi.bean.entity.Result;
+import org.apache.seatunnel.web.spi.bean.vo.SeatunnelJobInstanceVO;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 

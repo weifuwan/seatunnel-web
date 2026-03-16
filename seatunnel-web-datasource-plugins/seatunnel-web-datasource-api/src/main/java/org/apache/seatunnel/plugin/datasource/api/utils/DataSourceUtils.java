@@ -1,9 +1,9 @@
 package org.apache.seatunnel.plugin.datasource.api.utils;
 
 import lombok.extern.slf4j.Slf4j;
-import org.apache.seatunnel.web.common.BaseConnectionParam;
 import org.apache.seatunnel.plugin.datasource.api.jdbc.DataSourceProcessor;
 import org.apache.seatunnel.plugin.datasource.api.plugin.DataSourceProcessorProvider;
+import org.apache.seatunnel.web.spi.datasource.BaseConnectionParam;
 import org.apache.seatunnel.web.spi.enums.DbType;
 
 import java.util.Map;

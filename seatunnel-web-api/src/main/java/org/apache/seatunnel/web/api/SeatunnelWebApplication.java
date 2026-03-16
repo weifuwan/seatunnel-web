@@ -3,7 +3,6 @@ package org.apache.seatunnel.web.api;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import org.apache.seatunnel.web.api.components.MysqlServerIdInitializer;
-import org.apache.seatunnel.web.api.init.SeaTunnelWebManager;
 import org.apache.seatunnel.plugin.datasource.api.plugin.DataSourceProcessorProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,8 +23,7 @@ public class SeatunnelWebApplication {
     @Resource
     private MysqlServerIdInitializer mysqlServerIdInitializer;
 
-    @Resource
-    private SeaTunnelWebManager seaTunnelWebManager;
+
 
     private static final Logger logger = LoggerFactory.getLogger(SeatunnelWebApplication.class);
 
@@ -41,10 +39,6 @@ public class SeatunnelWebApplication {
 
     @PostConstruct
     public void initialized() {
-        logger.info("start SeaTunnel Web init sql");
-        seaTunnelWebManager.initSeaTunnelWeb();
-        logger.info("init SeaTunnel Web finished");
-
         try {
             int parallelismPerJob = 5;
             int maxConcurrentJobs = 10;

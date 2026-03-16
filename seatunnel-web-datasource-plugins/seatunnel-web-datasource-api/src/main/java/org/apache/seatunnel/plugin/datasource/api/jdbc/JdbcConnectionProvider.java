@@ -1,6 +1,6 @@
 package org.apache.seatunnel.plugin.datasource.api.jdbc;
 
-import org.apache.seatunnel.web.common.ConnectionParam;
+import org.apache.seatunnel.web.spi.datasource.ConnectionParam;
 
 import java.sql.Connection;
 

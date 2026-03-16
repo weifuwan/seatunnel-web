@@ -8,14 +8,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.seatunnel.plugin.datasource.api.jdbc.DataSourceProcessor;
 import org.apache.seatunnel.plugin.datasource.api.utils.DataSourceUtils;
-import org.apache.seatunnel.web.api.enums.Status;
 import org.apache.seatunnel.web.api.exceptions.ServiceException;
 import org.apache.seatunnel.web.api.service.DatasourcePluginService;
-import org.apache.seatunnel.web.common.form.*;
 import org.apache.seatunnel.web.common.utils.JSONUtils;
 import org.apache.seatunnel.web.dao.entity.DataSourcePluginConfig;
 import org.apache.seatunnel.web.dao.repository.DataSourcePluginConfigDao;
 import org.apache.seatunnel.web.spi.enums.DbType;
+import org.apache.seatunnel.web.spi.enums.Status;
+import org.apache.seatunnel.web.spi.form.*;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;

@@ -31,6 +31,8 @@
         <stomp-websocket.version>2.3.4</stomp-websocket.version>
         <slf4j.version>1.7.36</slf4j.version>
         <guava.version>31.1-jre</guava.version>
+        <janino.version>3.0.16</janino.version>
+        <snakeyaml.version>1.33</snakeyaml.version>
     </properties>
 
 
@@ -187,17 +189,27 @@
             </dependency>
 
             <!-- sl4j -->
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-api</artifactId>
-                <version>${slf4j.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-log4j12</artifactId>
-                <version>${slf4j.version}</version>
-            </dependency>
+<!--            <dependency>-->
+<!--                <groupId>org.slf4j</groupId>-->
+<!--                <artifactId>slf4j-api</artifactId>-->
+<!--                <version>${slf4j.version}</version>-->
+<!--            </dependency>-->
+<!--            <dependency>-->
+<!--                <groupId>org.slf4j</groupId>-->
+<!--                <artifactId>slf4j-log4j12</artifactId>-->
+<!--                <version>${slf4j.version}</version>-->
+<!--            </dependency>-->
 
+            <dependency>
+                <groupId>org.codehaus.janino</groupId>
+                <artifactId>janino</artifactId>
+                <version>${janino.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.yaml</groupId>
+                <artifactId>snakeyaml</artifactId>
+                <version>${snakeyaml.version}</version>
+            </dependency>
 
             <dependency>
                 <groupId>com.google.guava</groupId>

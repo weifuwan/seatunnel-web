@@ -2,12 +2,13 @@ package org.apache.seatunnel.plugin.datasource.api.jdbc;
 
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.seatunnel.web.common.BaseConnectionParam;
-import org.apache.seatunnel.web.common.ConnectionParam;
 import org.apache.seatunnel.web.plugin.datasource.connection.DefaultConnectionManager;
 import org.apache.seatunnel.web.plugin.datasource.connection.api.DataSourceConfig;
 import org.apache.seatunnel.web.plugin.datasource.connection.api.DataSourceId;
 import org.apache.seatunnel.web.plugin.datasource.connection.api.DriverDescriptor;
+import org.apache.seatunnel.web.plugin.datasource.connection.driver.*;
+import org.apache.seatunnel.web.spi.datasource.BaseConnectionParam;
+import org.apache.seatunnel.web.spi.datasource.ConnectionParam;
 import org.springframework.util.StringUtils;
 
 import java.io.File;

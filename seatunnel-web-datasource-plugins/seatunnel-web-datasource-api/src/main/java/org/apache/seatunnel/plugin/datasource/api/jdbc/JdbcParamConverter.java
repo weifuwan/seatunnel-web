@@ -1,6 +1,6 @@
 package org.apache.seatunnel.plugin.datasource.api.jdbc;
 
-import org.apache.seatunnel.web.common.BaseConnectionParam;
+import org.apache.seatunnel.web.spi.datasource.BaseConnectionParam;
 
 /**
  * Converter for JDBC connection parameters.

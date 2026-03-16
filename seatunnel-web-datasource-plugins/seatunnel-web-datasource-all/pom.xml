@@ -26,6 +26,7 @@
             <groupId>org.apache.seatunnel.web</groupId>
             <artifactId>seatunnel-web-datasource-pgsql</artifactId>
         </dependency>
+
     </dependencies>
 
     <dependencyManagement>

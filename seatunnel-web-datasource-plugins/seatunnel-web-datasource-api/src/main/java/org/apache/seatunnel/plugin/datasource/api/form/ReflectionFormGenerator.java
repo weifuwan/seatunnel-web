@@ -1,9 +1,10 @@
 package org.apache.seatunnel.plugin.datasource.api.form;
 
 import org.apache.seatunnel.web.common.KeyValuePair;
-import org.apache.seatunnel.web.common.form.FormField;
-import org.apache.seatunnel.web.common.form.FormFieldConfig;
-import org.apache.seatunnel.web.common.form.Rule;
+import org.apache.seatunnel.web.common.utils.JSONUtils;
+import org.apache.seatunnel.web.spi.form.FormField;
+import org.apache.seatunnel.web.spi.form.FormFieldConfig;
+import org.apache.seatunnel.web.spi.form.Rule;
 
 import java.lang.reflect.Field;
 import java.util.*;
@@ -101,7 +102,7 @@ public class ReflectionFormGenerator {
 
                 if (field.getType() == List.class) {
                     config.setDefaultValue(
-                            JSON.parseArray(defaultValue, KeyValuePair.class)
+                            JSONUtils.toList(defaultValue, KeyValuePair.class)
                     );
                 } else {
                     config.setDefaultValue(defaultValue);

@@ -1,10 +1,10 @@
 package org.apache.seatunnel.web.api.service;
 
-import org.apache.seatunnel.web.common.bean.dto.DataSourceDTO;
-import org.apache.seatunnel.web.common.bean.entity.PaginationResult;
-import org.apache.seatunnel.web.common.bean.vo.DBOptionVO;
-import org.apache.seatunnel.web.common.bean.vo.DataSourceVO;
 import org.apache.seatunnel.web.dao.entity.DataSource;
+import org.apache.seatunnel.web.spi.bean.dto.DataSourceDTO;
+import org.apache.seatunnel.web.spi.bean.entity.PaginationResult;
+import org.apache.seatunnel.web.spi.bean.vo.DBOptionVO;
+import org.apache.seatunnel.web.spi.bean.vo.DataSourceVO;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;

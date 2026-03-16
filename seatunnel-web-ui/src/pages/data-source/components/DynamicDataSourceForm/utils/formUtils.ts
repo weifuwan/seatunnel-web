@@ -11,15 +11,50 @@ export const transformRules = (rules: FormRule[] | undefined): any[] => {
   });
 };
 
-export const getConfigInitialValues = (formConfig: FormField[]): Record<string, any> => {
+export const getConfigInitialValues = (fields: FormField[]) => {
   const initialValues: Record<string, any> = {};
-  formConfig.forEach((field) => {
-    if (field.defaultValue !== undefined) {
-      initialValues[field.key] = field.defaultValue;
-    }
+
+  fields.forEach((field) => {
+    initialValues[field.key] = parseDefaultValueByType(field);
   });
-  console.log(initialValues);
+
   return initialValues;
+};
+
+const parseDefaultValueByType = (field: FormField) => {
+  const value = field.defaultValue;
+
+  if (value === undefined || value === null || value === "") {
+    if (field.type === "CUSTOM_SELECT") {
+      return [];
+    }
+    return value;
+  }
+
+  switch (field.type) {
+    case "NUMBER":
+      return Number(value);
+
+    case "SWITCH":
+      if (typeof value === "boolean") return value;
+      return value === "true" || value === true;
+
+    case "CUSTOM_SELECT":
+      if (Array.isArray(value)) return value;
+      if (typeof value === "string") {
+        try {
+          const parsed = JSON.parse(value);
+          return Array.isArray(parsed) ? parsed : [];
+        } catch (e) {
+          console.error(`Failed to parse defaultValue for ${field.key}`, e);
+          return [];
+        }
+      }
+      return [];
+
+    default:
+      return value;
+  }
 };
 
 /** 只给“当前为空”的字段补默认值 */

@@ -305,7 +305,7 @@ const DynamicDataSourceForm: React.FC<DynamicDataSourceFormProps> = ({
         >
           {formConfig.map((field) => {
             if (field.type === "CUSTOM_SELECT") {
-              return <CustomKVList key={field.key} intl={intl} />;
+              return <CustomKVList key={field.key} intl={intl} field={field} />;
             }
 
             return (

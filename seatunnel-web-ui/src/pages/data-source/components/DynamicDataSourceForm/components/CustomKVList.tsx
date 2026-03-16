@@ -1,16 +1,27 @@
-import { Button, Form, Input, Space } from "antd";
 import { MinusCircleOutlined, PlusOutlined } from "@ant-design/icons";
+import { Button, Form, Input, Space } from "antd";
+import { FormField } from "../../../type";
 
-export default function CustomKVList(props: { intl: any }) {
-  const { intl } = props;
+export default function CustomKVList(props: { intl: any; field: FormField }) {
+  const { intl, field } = props;
 
   return (
-    <div style={{ paddingLeft: "113px" }}>
-      <Form.List name="other">
+    <Form.Item
+      labelCol={{ span: 3 }}
+      wrapperCol={{ span: 19 }}
+      label={
+        <div style={{ height: 32, lineHeight: "33px" }}>{field.label}</div>
+      }
+    >
+      <Form.List name={field.key}>
         {(fields, { add, remove }) => (
-          <>
+          <div style={{ width: "100%" }}>
             {fields.map(({ key, name, ...restField }) => (
-              <Space key={key} style={{ display: "flex", marginBottom: 8 }} align="baseline">
+              <Space
+                key={key}
+                style={{ display: "flex", marginBottom: 8 }}
+                align="baseline"
+              >
                 <Form.Item
                   {...restField}
                   name={[name, "key"]}
@@ -31,14 +42,14 @@ export default function CustomKVList(props: { intl: any }) {
                       defaultMessage: "key",
                     })}
                     size="small"
-                    style={{ width: "310px" }}
+                    style={{ width: 310 }}
                   />
                 </Form.Item>
 
                 <Form.Item
                   {...restField}
-                  style={{ marginBottom: 0 }}
                   name={[name, "value"]}
+                  style={{ marginBottom: 0 }}
                   rules={[
                     {
                       required: true,
@@ -55,7 +66,7 @@ export default function CustomKVList(props: { intl: any }) {
                       defaultMessage: "value",
                     })}
                     size="small"
-                    style={{ width: "310px" }}
+                    style={{ width: 310 }}
                   />
                 </Form.Item>
 
@@ -63,12 +74,12 @@ export default function CustomKVList(props: { intl: any }) {
               </Space>
             ))}
 
-            <Form.Item>
+            <Form.Item style={{ marginBottom: 0 }}>
               <Button
                 type="dashed"
                 size="small"
-                style={{ width: "650px" }}
-                onClick={() => add()}
+                style={{ width: 650 }}
+                onClick={() => add({ key: "", value: "" })}
                 block
                 icon={<PlusOutlined />}
               >
@@ -78,9 +89,9 @@ export default function CustomKVList(props: { intl: any }) {
                 })}
               </Button>
             </Form.Item>
-          </>
+          </div>
         )}
       </Form.List>
-    </div>
+    </Form.Item>
   );
 }

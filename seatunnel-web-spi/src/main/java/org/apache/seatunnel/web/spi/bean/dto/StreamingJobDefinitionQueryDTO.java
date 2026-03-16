@@ -1,0 +1,50 @@
+package org.apache.seatunnel.web.spi.bean.dto;
+
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.*;
+import org.apache.seatunnel.web.common.enums.JobMode;
+import org.apache.seatunnel.web.common.enums.SyncModeEnum;
+import org.apache.seatunnel.web.spi.bean.dto.pagination.PaginationBaseDTO;
+
+import java.util.Date;
+
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@ToString(callSuper = true)
+@EqualsAndHashCode(callSuper = true)
+@Schema(description = "Streaming job definition DTO")
+public class StreamingJobDefinitionQueryDTO extends PaginationBaseDTO {
+
+    @TableId(type = IdType.INPUT)
+    private Long id;
+
+    private String sourceType;
+
+    private String sinkType;
+
+    private JobMode jobType;
+
+    private SyncModeEnum syncMode;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private Date createTimeStart;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private Date createTimeEnd;
+
+    private String jobName;
+
+    private String status;
+
+    private String sourceTable;
+
+    private String scheduleConfig;
+
+    private String sinkTable;
+
+}

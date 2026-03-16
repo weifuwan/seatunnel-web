@@ -2,6 +2,7 @@ package org.apache.seatunnel.web.core.definition.assembler;
 
 import org.apache.seatunnel.web.core.definition.model.JobDefinitionAnalysisResult;
 import org.apache.seatunnel.web.dao.entity.BatchJobDefinition;
+import org.apache.seatunnel.web.dao.entity.StreamingJobDefinition;
 import org.apache.seatunnel.web.spi.bean.dto.SeatunnelStreamingJobDefinitionDTO;
 import org.springframework.stereotype.Component;
 
@@ -10,10 +11,10 @@ import java.util.Date;
 @Component
 public class StreamingJobDefinitionAssembler {
 
-    public BatchJobDefinition create(SeatunnelStreamingJobDefinitionDTO dto,
+    public StreamingJobDefinition create(SeatunnelStreamingJobDefinitionDTO dto,
                                      JobDefinitionAnalysisResult analysis,
                                      Date now) {
-        return BatchJobDefinition.builder()
+        return StreamingJobDefinition.builder()
                 .id(dto.getId())
                 .jobName(dto.getJobName())
                 .jobDesc(dto.getJobDesc())
@@ -22,7 +23,7 @@ public class StreamingJobDefinitionAssembler {
                 .clientId(dto.getClientId())
                 .parallelism(dto.getParallelism())
                 .jobType(dto.getJobType())
-                .syncMode(dto.getSyncMode())
+//                .syncMode(dto.getSyncMode())
                 .sourceType(analysis.getSourceType())
                 .sourceTable(analysis.getSourceTableJson())
                 .sinkType(analysis.getSinkType())
@@ -32,7 +33,7 @@ public class StreamingJobDefinitionAssembler {
                 .build();
     }
 
-    public void update(BatchJobDefinition po,
+    public void update(StreamingJobDefinition po,
                        SeatunnelStreamingJobDefinitionDTO dto,
                        JobDefinitionAnalysisResult analysis,
                        Date now) {
@@ -42,7 +43,7 @@ public class StreamingJobDefinitionAssembler {
         po.setClientId(dto.getClientId());
         po.setParallelism(dto.getParallelism());
         po.setJobType(dto.getJobType());
-        po.setSyncMode(dto.getSyncMode());
+//        po.setSyncMode(dto.getSyncMode());
         po.setSourceType(analysis.getSourceType());
         po.setSourceTable(analysis.getSourceTableJson());
         po.setSinkType(analysis.getSinkType());

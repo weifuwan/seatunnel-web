@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.*;
+import org.apache.seatunnel.web.common.enums.JobMode;
 
 import java.util.Date;
 
@@ -13,7 +14,7 @@ import java.util.Date;
 @NoArgsConstructor
 @ToString
 @TableName("t_seatunnel_stream_job_definition")
-public class StreamJobDefinition {
+public class StreamingJobDefinition {
 
     @TableId(type = IdType.INPUT)
     private Long id;
@@ -26,7 +27,7 @@ public class StreamJobDefinition {
 
     private String pluginName;
 
-    private String jobType;
+    private JobMode jobType;
 
     private Integer jobVersion;
 

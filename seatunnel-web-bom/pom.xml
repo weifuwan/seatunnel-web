@@ -33,6 +33,7 @@
         <guava.version>31.1-jre</guava.version>
         <janino.version>3.0.16</janino.version>
         <snakeyaml.version>1.33</snakeyaml.version>
+        <mysql-connector.version>8.0.33</mysql-connector.version>
     </properties>
 
 
@@ -215,6 +216,12 @@
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
                 <version>${guava.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.mysql</groupId>
+                <artifactId>mysql-connector-j</artifactId>
+                <version>${mysql-connector.version}</version>
             </dependency>
 
         </dependencies>

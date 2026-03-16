@@ -2,9 +2,9 @@ package org.apache.seatunnel.web.dao.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
-import org.apache.seatunnel.web.dao.entity.StreamJobDefinition;
+import org.apache.seatunnel.web.dao.entity.StreamingJobDefinition;
 
 @Mapper
-public interface StreamingJobDefinitionMapper extends BaseMapper<StreamJobDefinition> {
+public interface StreamingJobDefinitionMapper extends BaseMapper<StreamingJobDefinition> {
 
 }

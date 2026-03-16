@@ -14,11 +14,11 @@ seatunnel:
 spring:
   profiles:
     active: dev
-    banner:
-      charset: UTF-8
-    jackson:
-      time-zone: UTC
-      date-format: "yyyy-MM-dd HH:mm:ss"
+  banner:
+    charset: UTF-8
+  jackson:
+    time-zone: GMT+8
+    date-format: "yyyy-MM-dd HH:mm:ss"
   servlet:
     multipart:
       max-file-size: 1024MB
@@ -32,19 +32,17 @@ spring:
     password: 123456
     hikari:
       connection-test-query: select 1
-      pool-name: DolphinScheduler
+      pool-name: seatunnel-web
   application:
     name: seatunnel-web
   main:
     allow-bean-definition-overriding: true
-  jackson:
-    time-zone: GMT+8
 
   quartz:
     auto-startup: false
     job-store-type: jdbc
     jdbc:
-        initialize-schema: never
+      initialize-schema: never
     properties:
       org.quartz.jobStore.isClustered: true
       org.quartz.jobStore.class: org.springframework.scheduling.quartz.LocalDataSourceJobStore

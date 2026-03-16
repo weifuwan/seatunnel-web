@@ -10,21 +10,26 @@ import org.apache.seatunnel.web.core.definition.assembler.StreamingJobDefinition
 import org.apache.seatunnel.web.core.definition.handler.JobDefinitionHandler;
 import org.apache.seatunnel.web.core.definition.model.JobDefinitionAnalysisResult;
 import org.apache.seatunnel.web.core.definition.registry.JobDefinitionHandlerRegistry;
-import org.apache.seatunnel.web.dao.entity.BatchJobDefinition;
-import org.apache.seatunnel.web.dao.repository.BatchJobDefinitionDao;
-import org.apache.seatunnel.web.spi.bean.dto.BatchJobDefinitionQueryDTO;
+import org.apache.seatunnel.web.dao.entity.StreamingJobDefinition;
+import org.apache.seatunnel.web.dao.repository.StreamingJobDefinitionDao;
+import org.apache.seatunnel.web.dao.repository.StreamingJobDefinitionDao;
+import org.apache.seatunnel.web.spi.bean.dto.SeatunnelStreamJobDefinitionDTO;
+import org.apache.seatunnel.web.spi.bean.dto.StreamingJobDefinitionQueryDTO;
 import org.apache.seatunnel.web.spi.bean.dto.SeatunnelStreamingJobDefinitionDTO;
+import org.apache.seatunnel.web.spi.bean.dto.StreamingJobDefinitionQueryDTO;
 import org.apache.seatunnel.web.spi.bean.entity.PaginationResult;
-import org.apache.seatunnel.web.spi.bean.vo.BatchJobDefinitionVO;
+import org.apache.seatunnel.web.spi.bean.vo.SeatunnelStreamJobDefinitionVO;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 import java.util.List;
 
+@Service
 public class StreamingJobDefinitionServiceImpl implements StreamingJobDefinitionService {
 
     @Resource
-    private BatchJobDefinitionDao repository;
+    private StreamingJobDefinitionDao repository;
 
     @Resource
     private JobDefinitionHandlerRegistry handlerRegistry;
@@ -40,7 +45,7 @@ public class StreamingJobDefinitionServiceImpl implements StreamingJobDefinition
         validateSaveRequest(dto);
 
         Date now = new Date();
-        BatchJobDefinition existing = repository.queryById(dto.getId());
+        StreamingJobDefinition existing = repository.queryById(dto.getId());
         if (existing != null) {
             streamingJobLifecycleService.validateCanUpdate(dto.getId());
         }
@@ -48,7 +53,7 @@ public class StreamingJobDefinitionServiceImpl implements StreamingJobDefinition
         JobDefinitionHandler handler = handlerRegistry.getHandler(dto);
         JobDefinitionAnalysisResult analysis = handler.analyze(dto);
 
-        BatchJobDefinition po;
+        StreamingJobDefinition po;
         if (existing == null) {
             po = assembler.create(dto, analysis, now);
         } else {
@@ -60,27 +65,27 @@ public class StreamingJobDefinitionServiceImpl implements StreamingJobDefinition
         return po.getId();
     }
 
-    public BatchJobDefinitionVO selectById(Long id) {
+    public SeatunnelStreamJobDefinitionVO selectById(Long id) {
         if (id == null) {
             throw new IllegalArgumentException("Job definition ID cannot be null");
         }
 
-        BatchJobDefinition po = repository.queryById(id);
+        StreamingJobDefinition po = repository.queryById(id);
         if (po == null) {
             throw new RuntimeException("Job definition is not exist");
         }
 
-        return ConvertUtil.sourceToTarget(po, BatchJobDefinitionVO.class);
+        return ConvertUtil.sourceToTarget(po, SeatunnelStreamJobDefinitionVO.class);
     }
 
-    public PaginationResult<BatchJobDefinitionVO> paging(BatchJobDefinitionQueryDTO dto) {
+    public PaginationResult<SeatunnelStreamJobDefinitionVO> paging(StreamingJobDefinitionQueryDTO dto) {
         if (dto == null) {
             throw new IllegalArgumentException("Job definition query dto cannot be null");
         }
 
         int offset = (dto.getPageNo() - 1) * dto.getPageSize();
 
-        List<BatchJobDefinitionVO> voList =
+        List<SeatunnelStreamJobDefinitionVO> voList =
                 repository.selectPageWithLatestInstance(dto, offset, dto.getPageSize());
 
         Long total = repository.count(dto);
@@ -94,13 +99,18 @@ public class StreamingJobDefinitionServiceImpl implements StreamingJobDefinition
             throw new IllegalArgumentException("Job definition ID cannot be null");
         }
 
-        BatchJobDefinition po = repository.queryById(id);
+        StreamingJobDefinition po = repository.queryById(id);
         if (po == null) {
             return false;
         }
 
         streamingJobLifecycleService.validateCanDelete(id);
         return repository.deleteById(id);
+    }
+
+    @Override
+    public String buildHoconConfig(SeatunnelStreamJobDefinitionDTO dto) {
+        return null;
     }
 
     public String buildHoconConfig(SeatunnelStreamingJobDefinitionDTO dto) {

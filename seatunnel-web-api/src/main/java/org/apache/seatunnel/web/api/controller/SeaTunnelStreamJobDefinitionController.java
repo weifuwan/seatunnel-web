@@ -10,8 +10,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
-import org.apache.seatunnel.web.api.service.SeaTunnelStreamJobDefinitionService;
+import org.apache.seatunnel.web.api.service.StreamingJobDefinitionService;
 import org.apache.seatunnel.web.spi.bean.dto.SeatunnelStreamJobDefinitionDTO;
+import org.apache.seatunnel.web.spi.bean.dto.SeatunnelStreamingJobDefinitionDTO;
+import org.apache.seatunnel.web.spi.bean.dto.StreamingJobDefinitionQueryDTO;
 import org.apache.seatunnel.web.spi.bean.entity.PaginationResult;
 import org.apache.seatunnel.web.spi.bean.entity.Result;
 import org.apache.seatunnel.web.spi.bean.vo.SeatunnelStreamJobDefinitionVO;
@@ -29,7 +31,7 @@ import org.springframework.web.bind.annotation.*;
 public class SeaTunnelStreamJobDefinitionController {
 
     @Resource
-    private SeaTunnelStreamJobDefinitionService seatunnelStreamJobDefinitionService;
+    private StreamingJobDefinitionService streamingJobDefinitionService;
 
     @PostMapping("/hocon")
     @Operation(
@@ -68,7 +70,7 @@ public class SeaTunnelStreamJobDefinitionController {
                             """))
             )
             @Valid @RequestBody SeatunnelStreamJobDefinitionDTO dto) {
-        return Result.buildSuc(seatunnelStreamJobDefinitionService.buildHoconConfig(dto));
+        return Result.buildSuc(streamingJobDefinitionService.buildHoconConfig(dto));
     }
 
     /**
@@ -87,45 +89,14 @@ public class SeaTunnelStreamJobDefinitionController {
             @ApiResponse(responseCode = "400", description = "Invalid input data"),
             @ApiResponse(responseCode = "409", description = "Job definition with same name already exists")
     })
-    public Result<Long> create(
+    public Result<Long> saveOrUpdate(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description = "Stream job definition data",
                     required = true
             )
-            @Valid @RequestBody SeatunnelStreamJobDefinitionDTO dto) {
-        Long id = seatunnelStreamJobDefinitionService.create(dto);
+            @Valid @RequestBody SeatunnelStreamingJobDefinitionDTO dto) {
+        Long id = streamingJobDefinitionService.saveOrUpdate(dto);
         return Result.buildSuc(id);
-    }
-
-    /**
-     * Update an existing stream job definition
-     *
-     * @param id  Job definition ID
-     * @param dto Updated job definition data
-     * @return Updated job definition ID
-     */
-    @PutMapping("/{id}")
-    @Operation(
-            summary = "Update stream job definition",
-            description = "Update an existing stream job definition by ID"
-    )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Job definition updated successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid input data"),
-            @ApiResponse(responseCode = "404", description = "Job definition not found"),
-            @ApiResponse(responseCode = "409", description = "Job definition name conflict")
-    })
-    public Result<Long> update(
-            @Parameter(description = "Job definition ID", required = true, example = "1001")
-            @PathVariable("id") @NotNull Long id,
-
-            @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "Updated stream job definition data",
-                    required = true
-            )
-            @Valid @RequestBody SeatunnelStreamJobDefinitionDTO dto) {
-        Long updatedId = seatunnelStreamJobDefinitionService.update(id, dto);
-        return Result.buildSuc(updatedId);
     }
 
     /**
@@ -146,7 +117,7 @@ public class SeaTunnelStreamJobDefinitionController {
     public Result<SeatunnelStreamJobDefinitionVO> selectById(
             @Parameter(description = "Job definition ID", required = true, example = "1001")
             @PathVariable("id") @NotNull Long id) {
-        SeatunnelStreamJobDefinitionVO jobDefinition = seatunnelStreamJobDefinitionService.selectById(id);
+        SeatunnelStreamJobDefinitionVO jobDefinition = streamingJobDefinitionService.selectById(id);
         return Result.buildSuc(jobDefinition);
     }
 
@@ -175,8 +146,8 @@ public class SeaTunnelStreamJobDefinitionController {
                             }
                             """))
             )
-            @RequestBody SeatunnelStreamJobDefinitionDTO dto) {
-        return seatunnelStreamJobDefinitionService.paging(dto);
+            @RequestBody StreamingJobDefinitionQueryDTO dto) {
+        return streamingJobDefinitionService.paging(dto);
     }
 
     /**
@@ -197,7 +168,7 @@ public class SeaTunnelStreamJobDefinitionController {
     })
     public Result<Boolean> delete(
             @Parameter(description = "Job definition ID", required = true, example = "1001")
-            @PathVariable("id") @NotNull String id) {
-        return Result.buildSuc(seatunnelStreamJobDefinitionService.delete(id));
+            @PathVariable("id") @NotNull Long id) {
+        return Result.buildSuc(streamingJobDefinitionService.delete(id));
     }
 }

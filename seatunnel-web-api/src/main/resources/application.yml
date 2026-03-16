@@ -13,7 +13,7 @@ seatunnel:
 
 spring:
   profiles:
-    active: dev
+    active: mysql
   banner:
     charset: UTF-8
   jackson:
@@ -37,6 +37,15 @@ spring:
     name: seatunnel-web
   main:
     allow-bean-definition-overriding: true
+  ai:
+    deepseek:
+      api-key: sk-****
+      base-url: "https://api.deepseek.com"
+      chat:
+        options:
+          model: deepseek-chat
+      embedding:
+        enabled: false
 
   quartz:
     auto-startup: false

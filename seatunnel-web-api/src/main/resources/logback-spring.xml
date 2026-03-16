@@ -31,11 +31,7 @@
     </appender>
 
     <root level="INFO">
-        <if condition="${DOCKER:-false}">
-            <then>
-                <appender-ref ref="STDOUT"/>
-            </then>
-        </if>
+        <appender-ref ref="STDOUT"/>
         <appender-ref ref="APILOGFILE"/>
     </root>
 </configuration>

@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.seatunnel.web.api.exceptions.ServiceException;
 import org.apache.seatunnel.web.api.service.BatchJobDefinitionService;
-import org.apache.seatunnel.web.api.service.SeaTunnelJobInstanceService;
+import org.apache.seatunnel.web.api.service.JobInstanceService;
 import org.apache.seatunnel.web.api.service.application.SeatunnelJobScheduleApplicationService;
 import org.apache.seatunnel.web.common.enums.ScheduleStatusEnum;
 import org.apache.seatunnel.web.common.utils.ConvertUtil;
@@ -46,7 +46,7 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
 
     @Lazy
     @Resource
-    private SeaTunnelJobInstanceService seatunnelJobInstanceService;
+    private JobInstanceService seatunnelJobInstanceService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)

@@ -13,7 +13,7 @@ import java.util.List;
  * This service provides operations for creating, updating, triggering,
  * starting, stopping, and querying Quartz-based job schedules.
  */
-public interface SeaTunnelJobScheduleService  {
+public interface JobScheduleService {
 
     /**
      * Create a new task schedule.

@@ -4,7 +4,7 @@ import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.seatunnel.web.api.quartz.QuartzJob;
-import org.apache.seatunnel.web.api.service.SeaTunnelJobScheduleService;
+import org.apache.seatunnel.web.api.service.JobScheduleService;
 import org.apache.seatunnel.web.common.enums.ScheduleStatusEnum;
 import org.apache.seatunnel.web.common.utils.ConvertUtil;
 import org.apache.seatunnel.web.common.utils.Utils;
@@ -24,14 +24,14 @@ import java.util.List;
 
 @Slf4j
 @Service
-public class SeaTunnelJobScheduleServiceImpl implements SeaTunnelJobScheduleService {
+public class JobScheduleServiceImpl implements JobScheduleService {
 
     @Resource
     private JobScheduleDao jobScheduleDao;
 
     private final Scheduler scheduler;
 
-    public SeaTunnelJobScheduleServiceImpl(Scheduler scheduler) {
+    public JobScheduleServiceImpl(Scheduler scheduler) {
         this.scheduler = scheduler;
     }
 

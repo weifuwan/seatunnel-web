@@ -4,7 +4,7 @@ import org.apache.seatunnel.web.api.service.SeaTunnelAiService;
 import org.springframework.stereotype.Service;
 
 @Service
-public class SeaTunnelCopilotAiServiceImpl implements SeaTunnelAiService {
+public class CopilotAiServiceImpl implements SeaTunnelAiService {
 
 
 }

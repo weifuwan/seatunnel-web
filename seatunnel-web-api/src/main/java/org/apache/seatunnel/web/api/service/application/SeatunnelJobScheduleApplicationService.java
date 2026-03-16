@@ -2,7 +2,7 @@ package org.apache.seatunnel.web.api.service.application;
 
 import jakarta.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.seatunnel.web.api.service.SeaTunnelJobScheduleService;
+import org.apache.seatunnel.web.api.service.JobScheduleService;
 import org.apache.seatunnel.web.common.enums.ScheduleStatusEnum;
 import org.apache.seatunnel.web.dao.entity.JobSchedule;
 import org.apache.seatunnel.web.spi.bean.dto.SeatunnelBatchJobDefinitionDTO;
@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service;
 public class SeatunnelJobScheduleApplicationService {
 
     @Resource
-    private SeaTunnelJobScheduleService seatunnelJobScheduleService;
+    private JobScheduleService seatunnelJobScheduleService;
 
     public void saveOrUpdateSchedule(Long jobDefinitionId, SeatunnelBatchJobDefinitionDTO dto) {
         if (dto.getScheduleStatus() == null || StringUtils.isBlank(dto.getCronExpression())) {

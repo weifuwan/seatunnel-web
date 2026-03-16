@@ -2,7 +2,7 @@ package org.apache.seatunnel.web.api.components.runner;
 
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.seatunnel.web.api.service.SeaTunnelJobInstanceService;
+import org.apache.seatunnel.web.api.service.JobInstanceService;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 public class SeatunnelJobInstanceStatusScheduler {
 
     @Resource
-    private SeaTunnelJobInstanceService seatunnelJobInstanceService;
+    private JobInstanceService seatunnelJobInstanceService;
 
     @Scheduled(fixedDelayString = "${seatunnel.job.status-reconcile-interval-ms:30000}")
     public void scheduledReconcile() {

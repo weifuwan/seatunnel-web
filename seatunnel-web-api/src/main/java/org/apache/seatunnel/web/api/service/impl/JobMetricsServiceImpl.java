@@ -3,7 +3,7 @@ package org.apache.seatunnel.web.api.service.impl;
 import jakarta.annotation.Resource;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.seatunnel.web.api.service.SeaTunnelJobMetricsService;
+import org.apache.seatunnel.web.api.service.JobMetricsService;
 import org.apache.seatunnel.web.common.enums.TimeRange;
 import org.apache.seatunnel.web.common.enums.UnitKind;
 import org.apache.seatunnel.web.dao.entity.JobMetrics;
@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 @Slf4j
-public class SeaTunnelJobMetricsServiceImpl implements SeaTunnelJobMetricsService {
+public class JobMetricsServiceImpl implements JobMetricsService {
 
     @Resource
     private SeatunnelEngineRestClient engineRestClient;

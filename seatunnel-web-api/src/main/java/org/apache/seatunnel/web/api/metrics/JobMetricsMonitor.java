@@ -2,8 +2,8 @@ package org.apache.seatunnel.web.api.metrics;
 
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.seatunnel.web.api.service.SeaTunnelJobInstanceService;
-import org.apache.seatunnel.web.api.service.SeaTunnelJobMetricsService;
+import org.apache.seatunnel.web.api.service.JobInstanceService;
+import org.apache.seatunnel.web.api.service.JobMetricsService;
 import org.apache.seatunnel.web.api.websocket.WorkflowWebSocketService;
 import org.apache.seatunnel.web.common.utils.CodeGenerateUtils;
 import org.apache.seatunnel.web.dao.entity.JobMetrics;
@@ -31,10 +31,10 @@ public class JobMetricsMonitor {
     private final Map<Long, JobFileLogger> loggers = new ConcurrentHashMap<>();
 
     @Resource
-    private SeaTunnelJobMetricsService metricsService;
+    private JobMetricsService metricsService;
 
     @Resource
-    private SeaTunnelJobInstanceService instanceService;
+    private JobInstanceService instanceService;
 
     @Resource
     private WorkflowWebSocketService webSocketService;

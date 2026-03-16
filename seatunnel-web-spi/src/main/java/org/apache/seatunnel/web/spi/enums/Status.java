@@ -132,6 +132,29 @@ public enum Status {
     DELETE_BATCH_JOB_DEFINITION_ERROR(11304, "delete batch job definition error", "删除批处理任务定义失败"),
     BUILD_BATCH_JOB_HOCON_CONFIG_ERROR(11305, "build batch job hocon config error", "生成批处理任务 HOCON 配置失败"),
     GET_BATCH_JOB_UNIQUE_ID_ERROR(11306, "get batch job unique id error", "获取批处理任务唯一标识失败"),
+    EXECUTE_JOB_DEFINITION_ERROR(11401, "execute job definition error", "执行任务定义失败"),
+    QUERY_JOB_DEFINITION_ERROR(11402, "query job definition error", "查询任务定义失败"),
+    JOB_EXECUTION_START_ERROR(11403, "job execution start error", "任务启动失败"),
+    JOB_DEFINITION_EXECUTE_ERROR(11401, "execute job definition error", "执行任务定义失败"),
+    JOB_DEFINITION_ID_INVALID(11402, "job definition id is invalid", "任务定义ID无效"),
+    JOB_DEFINITION_EXECUTE_PARAM_ERROR(11403, "job execute parameter is invalid", "任务执行参数无效"),
+
+    QUERY_JOB_METRICS_SUMMARY_ERROR(11501, "query job metrics summary error", "查询任务指标汇总失败"),
+    QUERY_JOB_METRICS_CHARTS_ERROR(11502, "query job metrics charts error", "查询任务指标图表失败"),
+    QUERY_JOB_SCHEDULE_EXECUTION_TIMES_ERROR(11601, "query job schedule execution times error", "查询任务调度执行时间失败"),
+    START_JOB_SCHEDULE_ERROR(11602, "start job schedule error", "启动任务调度失败"),
+    STOP_JOB_SCHEDULE_ERROR(11603, "stop job schedule error", "停止任务调度失败"),
+
+    QUERY_BATCH_JOB_INSTANCE_ERROR(11701, "query batch job instance error", "查询批处理任务实例失败"),
+    BATCH_JOB_INSTANCE_NOT_EXIST(11702, "batch job instance not exists", "批处理任务实例不存在"),
+    QUERY_BATCH_JOB_INSTANCE_LOG_ERROR(11703, "query batch job instance log error", "查询批处理任务实例日志失败"),
+    BATCH_JOB_INSTANCE_LOG_NOT_EXIST(11704, "batch job instance log not exists", "批处理任务实例日志不存在"),
+    CREATE_BATCH_JOB_INSTANCE_ERROR(11705, "create batch job instance error", "创建批处理任务实例失败"),
+    BUILD_JOB_INSTANCE_CONFIG_ERROR(11706, "build job instance config error", "构建任务实例配置失败"),
+    JOB_DEFINITION_NOT_EXIST(11707, "job definition not exists", "任务定义不存在"),
+    DELETE_BATCH_JOB_INSTANCE_ERROR(11708, "delete batch job instance error", "删除批处理任务实例失败"),
+    UPDATE_BATCH_JOB_INSTANCE_ERROR(11709, "update batch job instance error", "更新批处理任务实例失败"),
+    GENERATE_JOB_INSTANCE_ID_ERROR(11710, "generate job instance id error", "生成任务实例ID失败"),
     ;
 
 

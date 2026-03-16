@@ -78,7 +78,7 @@ management:
 # Mybatis-plus configuration, you don't need to change it
 mybatis-plus:
   mapper-locations: classpath:org/apache/seatunnel/web/dao/mapper/*Mapper.xml
-  type-aliases-package: org.apache.dolphinscheduler.dao.entity
+  type-aliases-package: org.apache.seatunnel.web.dao.entity
   configuration:
     cache-enabled: false
     call-setters-on-nulls: true

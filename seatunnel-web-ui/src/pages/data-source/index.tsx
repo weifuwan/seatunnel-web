@@ -126,7 +126,7 @@ const Index = () => {
               defaultMessage: 'Are you sure you delete datasource [{name}] ?',
             },
             {
-              name: <span style={{ color: 'orange' }}>{record.dbName}</span>,
+              name: <span style={{ color: 'orange' }}>{record.name}</span>,
             },
           )}
           <br />

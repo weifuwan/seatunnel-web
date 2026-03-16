@@ -178,7 +178,7 @@ const DynamicDataSourceForm: React.FC<DynamicDataSourceFormProps> = ({
               })}
             </div>
           }
-          name="dbName"
+          name="name"
           rules={[
             {
               required: true,

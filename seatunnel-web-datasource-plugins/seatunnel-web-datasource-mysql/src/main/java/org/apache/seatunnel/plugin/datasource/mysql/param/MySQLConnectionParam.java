@@ -1,8 +1,10 @@
 package org.apache.seatunnel.plugin.datasource.mysql.param;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.apache.seatunnel.web.common.KeyValuePair;
+import org.apache.seatunnel.web.common.deserializer.KeyValuePairListDeserializer;
 import org.apache.seatunnel.web.spi.datasource.BaseConnectionParam;
 import org.apache.seatunnel.web.spi.form.FieldType;
 import org.apache.seatunnel.web.spi.form.FormField;
@@ -22,6 +24,7 @@ public class MySQLConnectionParam extends BaseConnectionParam {
             order = 7,
             defaultValue = "[{\"key\":\"useSSL\",\"value\":\"false\"},{\"key\":\"allowPublicKeyRetrieval\",\"value\":\"true\"}]"
     )
+    @JsonDeserialize(using = KeyValuePairListDeserializer.class)
     protected List<KeyValuePair> other;
 
     @FormField(

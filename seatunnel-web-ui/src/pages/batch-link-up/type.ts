@@ -10,7 +10,7 @@ export enum Operate {
 
 export interface DataSource {
     id?: string;
-    dbName?: string;
+    name?: string;
     enShortName?: string;
     enName?: string;
     cnName?: string;

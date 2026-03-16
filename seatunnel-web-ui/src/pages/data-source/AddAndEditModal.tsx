@@ -34,7 +34,7 @@ const AddAndEditDataSourceModal = forwardRef<
           dbType: dbType,
           ...value,
           // 将配置表单数据作为 JSON 传递
-          connectionParams: JSON.stringify({ ...configValues, type: dbType }),
+          connectionParams: JSON.stringify({ ...configValues, dbType: dbType }),
         };
         const isAdd = type === Operate.Add;
 
@@ -102,7 +102,7 @@ const AddAndEditDataSourceModal = forwardRef<
       if (type === Operate.Edit && content?.dbType) {
         setDbType(content.dbType);
         form.setFieldsValue({
-          dbName: content?.dbName,
+          name: content?.name,
           environment: content?.environment,
           remark: content?.remark,
         });

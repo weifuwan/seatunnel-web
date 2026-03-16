@@ -49,7 +49,7 @@ const SearchForm: React.FC<SearchFormProps> = ({ form, onSearch }) => {
       </Form.Item>
 
       <Form.Item
-        name="dbName"
+        name="name"
         label={intl.formatMessage({
           id: 'pages.datasource.search.name',
           defaultMessage: 'DataSource Name',

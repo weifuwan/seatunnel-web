@@ -17,4 +17,12 @@ public enum ConnStatus {
     private final String code;
     private final String description;
 
+    public static ConnStatus of(String code) {
+        for (ConnStatus status : values()) {
+            if (status.code.equals(code)) {
+                return status;
+            }
+        }
+        throw new IllegalArgumentException("Unknown ConnStatus: " + code);
+    }
 }

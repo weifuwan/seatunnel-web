@@ -42,6 +42,6 @@ public class SteamingJobDefinitionDaoImpl
     @Override
     public Long count(StreamingJobDefinitionQueryDTO dto) {
 //        return streamingJobDefinitionMapper.selectDefinitionCount(dto.getJobName());
-        return null;
+        return 0L;
     }
 }

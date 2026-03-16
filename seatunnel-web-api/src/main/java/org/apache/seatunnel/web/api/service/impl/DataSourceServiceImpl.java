@@ -96,11 +96,6 @@ public class DataSourceServiceImpl extends BaseServiceImpl implements DataSource
             entity.setName(dto.getName().trim());
             entity.setConnectionParams(JSONUtils.toJsonString(connectionParam));
             entity.setOriginalJson(dto.getConnectionParams());
-
-            /*
-             * 保留旧的连接状态，避免每次更新都被覆盖为空。
-             * 如果你业务上希望“只要更新配置就重置为未测试”，可以改成 CONNECTED_NONE。
-             */
             entity.setConnStatus(existing.getConnStatus());
             entity.initUpdate();
 

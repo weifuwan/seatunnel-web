@@ -57,6 +57,9 @@ public enum Status {
     DELETE_DATA_SOURCE_FAILURE(10038, "delete data source failure", "删除数据源失败"),
     VERIFY_DATASOURCE_NAME_FAILURE(10039, "verify datasource name failure", "验证数据源名称失败"),
 
+
+
+
     // -------------------- DataSource Catalog --------------------
 
     DATASOURCE_CATALOG_TABLE_LIST_ERROR(
@@ -120,6 +123,15 @@ public enum Status {
                 "plugin type cannot be empty",
                 "插件类型不能为空"
     ),
+
+    // -------------------- Batch Job Definition --------------------
+
+    BATCH_JOB_DEFINITION_NOT_EXIST(11301, "batch job definition not exists", "批处理任务定义不存在"),
+    SAVE_OR_UPDATE_BATCH_JOB_DEFINITION_ERROR(11302, "save or update batch job definition error", "保存或更新批处理任务定义失败"),
+    QUERY_BATCH_JOB_DEFINITION_ERROR(11303, "query batch job definition error", "查询批处理任务定义失败"),
+    DELETE_BATCH_JOB_DEFINITION_ERROR(11304, "delete batch job definition error", "删除批处理任务定义失败"),
+    BUILD_BATCH_JOB_HOCON_CONFIG_ERROR(11305, "build batch job hocon config error", "生成批处理任务 HOCON 配置失败"),
+    GET_BATCH_JOB_UNIQUE_ID_ERROR(11306, "get batch job unique id error", "获取批处理任务唯一标识失败"),
     ;
 
 

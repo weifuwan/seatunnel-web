@@ -11,7 +11,7 @@ import org.springframework.web.client.RestTemplate;
 
 @Configuration
 @EnableConfigurationProperties(SeaTunnelClientProperties.class)
-public class SeatunnelClientConfig {
+public class SeaTunnelClientConfig {
 
     @Bean
     public RestTemplate seatunnelRestTemplate(SeaTunnelClientProperties props) {
@@ -22,8 +22,8 @@ public class SeatunnelClientConfig {
     }
 
     @Bean
-    public SeaTunnelRestClient seatunnelRestClient(RestTemplate seatunnelRestTemplate,
-                                                   SeaTunnelClientResolver seatunnelClientResolver) {
-        return new SeaTunnelRestClient(seatunnelRestTemplate, seatunnelClientResolver);
+    public SeaTunnelRestClient seatunnelRestClient(RestTemplate restTemplate,
+                                                   SeaTunnelClientResolver seaTunnelClientResolver) {
+        return new SeaTunnelRestClient(restTemplate, seaTunnelClientResolver);
     }
 }

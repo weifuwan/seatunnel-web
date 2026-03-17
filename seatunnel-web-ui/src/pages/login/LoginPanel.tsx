@@ -16,7 +16,6 @@ import "./index.less";
 import SeaTunnelIcon from "./SeaTunnelIcon";
 import { loginApi } from "./type";
 
-/** 复用你已有的 ActionType */
 type ActionType =
   | "BLINK"
   | "SMILE"
@@ -28,13 +27,23 @@ type ActionType =
 
 type LoginPanelProps = {
   onFire: (type: ActionType) => void;
+  onPanelHoverChange?: (hovered: boolean) => void;
+  onFieldFocusChange?: (field: "userName" | "userPassword" | null) => void;
+  onPasswordVisibilityChange?: (visible: boolean) => void;
 };
 
-export default function LoginPanel({ onFire }: LoginPanelProps) {
+export default function LoginPanel({
+  onFire,
+  onPanelHoverChange,
+  onFieldFocusChange,
+  onPasswordVisibilityChange,
+}: LoginPanelProps) {
   const [loading, setLoading] = useState(false);
+  const [pwdVisible, setPwdVisible] = useState(false);
+  const [type] = useState<string>("account");
 
-  // 简单节流：输入时别每个 keypress 都触发动作
   const lastFireRef = useRef<Record<string, number>>({});
+
   const fireThrottled = (key: string, type: ActionType, gapMs = 700) => {
     const now = Date.now();
     const last = lastFireRef.current[key] || 0;
@@ -44,21 +53,15 @@ export default function LoginPanel({ onFire }: LoginPanelProps) {
     }
   };
 
-  // ====== ✨ 新增：微动效 keyframes（内联，不依赖 css 文件） ======
   const keyframes = `
     @keyframes stw-fadeUp {
       from { opacity: 0; transform: translateY(10px); }
       to   { opacity: 1; transform: translateY(0); }
     }
     @keyframes stw-breath {
-    0%   { transform: scale(1); }
-    50%  { transform: scale(1.06); }
-    100% { transform: scale(1); }
-    }
-    @keyframes stw-glow {
-      0%   { opacity: .35; transform: translate(-10%, -10%) scale(1); }
-      50%  { opacity: .55; transform: translate(-8%, -12%) scale(1.05); }
-      100% { opacity: .35; transform: translate(-10%, -10%) scale(1); }
+      0%   { transform: scale(1); }
+      50%  { transform: scale(1.06); }
+      100% { transform: scale(1); }
     }
     @keyframes stw-gridShift {
       0%   { background-position: 0px 0px, 0px 0px, 0 0; }
@@ -72,21 +75,16 @@ export default function LoginPanel({ onFire }: LoginPanelProps) {
     }
   `;
 
-  // ====== ✨ 新增：整体包裹层（让 SeaTunnel Web 不再单调） ======
-
-  // 背景微动效：柔和网格 + 流动光斑（很克制）
   const animatedBgStyle: React.CSSProperties = {
     position: "absolute",
     inset: -1,
     pointerEvents: "none",
-    // 三层：细网格 / 斜纹点阵 / 纯色底
     backgroundImage:
       "linear-gradient(rgba(17,24,39,0.05) 1px, transparent 1px)," +
       "linear-gradient(90deg, rgba(17,24,39,0.05) 1px, transparent 1px)," +
       "radial-gradient(circle at 20% 15%, rgba(99,102,241,0.25), transparent 55%)," +
       "radial-gradient(circle at 85% 45%, rgba(56,189,248,0.22), transparent 60%)",
     backgroundSize: "28px 28px, 28px 28px, auto, auto",
-    filter: "blur(0px)",
     opacity: 1,
     animation: "stw-gridShift 12s linear infinite",
     maskImage:
@@ -97,7 +95,6 @@ export default function LoginPanel({ onFire }: LoginPanelProps) {
     () => ({
       width: "100%",
       height: "100%",
-      // borderRadius: 16,
       background: "rgba(255,255,255,0.88)",
       backdropFilter: "blur(10px)",
       WebkitBackdropFilter: "blur(10px)",
@@ -107,29 +104,12 @@ export default function LoginPanel({ onFire }: LoginPanelProps) {
       padding: 24,
       display: "flex",
       flexDirection: "column",
-      //   justifyContent: "center",
       position: "relative",
       zIndex: 1,
       animation: "stw-fadeUp 520ms ease-out both",
     }),
     []
   );
-
-  // 顶部 icon：呼吸光晕 + 轻微漂浮
-  const iconWrapStyle: React.CSSProperties = {
-    width: 46,
-    height: 46,
-    borderRadius: 16,
-    // background:
-    //   "linear-gradient(135deg, rgba(99,102,241,0.16), rgba(56,189,248,0.12))",
-    border: "1px solid rgba(99,102,241,0.22)",
-    display: "grid",
-    placeItems: "center",
-    marginBottom: 10,
-    position: "relative",
-    animation: "stw-breath 3.2s ease-in-out infinite",
-    transformOrigin: "center",
-  };
 
   const brandTextStyle: React.CSSProperties = {
     marginLeft: 10,
@@ -146,7 +126,6 @@ export default function LoginPanel({ onFire }: LoginPanelProps) {
     textAlign: "center",
   };
 
-  // 主按钮：微光扫过（hover/常驻都可以，这里做 hover 时更明显）
   const primaryBtnStyle: React.CSSProperties = {
     width: "100%",
     borderRadius: 999,
@@ -179,10 +158,7 @@ export default function LoginPanel({ onFire }: LoginPanelProps) {
     animation: "stw-shine 2.8s ease-in-out infinite",
   };
 
-  const [userLoginState, setUserLoginState] = useState<any>({});
-  const [type, setType] = useState<string>("account");
   const { initialState, setInitialState } = useModel("@@initialState");
-
   const { message } = App.useApp();
   const intl = useIntl();
 
@@ -200,32 +176,41 @@ export default function LoginPanel({ onFire }: LoginPanelProps) {
 
   const handleSubmit = async (values: API.LoginParams) => {
     try {
-      // 登录
+      setLoading(true);
+
       const data = await loginApi.login({ ...values, type });
+
       if (data.code === 0) {
         const defaultLoginSuccessMessage = intl.formatMessage({
           id: "pages.login.success",
           defaultMessage: "登录成功！",
         });
+
+        onFire("THANKS");
         message.success(defaultLoginSuccessMessage);
+
         await fetchUserInfo();
+
         const urlParams = new URL(window.location.href).searchParams;
         window.location.href = urlParams.get("redirect") || "/";
         return;
-      } else {
-        onFire("TILT");
-        message.error(data?.message || "");
       }
+
+      onFire("TILT");
+      message.error(data?.message || "");
     } catch (error) {
       const defaultLoginFailureMessage = intl.formatMessage({
         id: "pages.login.failure",
         defaultMessage: "登录失败，请重试！",
       });
+
       console.log(error);
+      onFire("SHAKE");
       message.error(defaultLoginFailureMessage);
+    } finally {
+      setLoading(false);
     }
   };
-
 
   return (
     <div
@@ -235,40 +220,16 @@ export default function LoginPanel({ onFire }: LoginPanelProps) {
         position: "relative",
         overflow: "hidden",
       }}
+      onMouseEnter={() => onPanelHoverChange?.(true)}
+      onMouseLeave={() => {
+        onPanelHoverChange?.(false);
+        onFieldFocusChange?.(null);
+      }}
     >
       <style>{keyframes}</style>
       <div style={animatedBgStyle} />
 
       <div style={cardStyle}>
-        {/* <div
-          style={{
-            width: "100%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            marginBottom: 70,
-            userSelect: "none",
-          }}
-        >
-          <div style={iconWrapStyle} aria-hidden>
-            
-            <div
-              style={{
-                width: 24,
-                height: 24,
-                position: "relative",
-                cursor: "pointer",
-                zIndex: 1,
-              }}
-              onClick={() => onFire("THANKS")}
-              title="Hello"
-            >
-              <ZetaIcon />
-            </div>
-          </div>
-
-          <span style={brandTextStyle}>SeaTunnel Web</span>
-        </div> */}
         <div
           style={{
             position: "relative",
@@ -277,22 +238,24 @@ export default function LoginPanel({ onFire }: LoginPanelProps) {
         >
           <div className="header_main">
             <div className="header_spinner2"></div>
+
             <div className="header_spinner_closer2">
               <div className="header_spinner_closer2_inner">
                 <SeaTunnelIcon />
               </div>
             </div>
+
             <div className="header_spinner">
               <div className="innersphere innersphere1"></div>
               <div className="innersphere innersphere2"></div>
               <div className="innersphere innersphere3"></div>
               <div className="innersphere innersphere4"></div>
             </div>
+
             <div className="header_spinner_closer">
               <div
                 style={{
                   display: "flex",
-                  // marginTop: "11.5rem",
                   justifyContent: "center",
                   height: "100%",
                 }}
@@ -302,8 +265,8 @@ export default function LoginPanel({ onFire }: LoginPanelProps) {
             </div>
           </div>
         </div>
+
         <div className="portfolio_text_container">
-          {/* <hr className="header_separator" /> */}
           <h1 className="portfolio_text">WelCome Back</h1>
         </div>
 
@@ -311,10 +274,6 @@ export default function LoginPanel({ onFire }: LoginPanelProps) {
           <Form.Item
             label="userName"
             name="userName"
-            // rules={[
-            //   { required: true, message: "Please enter your email" },
-            //   { type: "email", message: "Invalid email format" },
-            // ]}
             style={{ marginBottom: 12 }}
           >
             <Input
@@ -322,7 +281,11 @@ export default function LoginPanel({ onFire }: LoginPanelProps) {
               variant="filled"
               prefix={<MailOutlined style={{ color: "rgba(17,24,39,0.45)" }} />}
               placeholder="Enter your email"
-              onFocus={() => onFire("SURPRISE")}
+              onFocus={() => {
+                onFieldFocusChange?.("userName");
+                onFire("SURPRISE");
+              }}
+              onBlur={() => onFieldFocusChange?.(null)}
               onChange={() => fireThrottled("email_change", "SURPRISE", 900)}
               autoComplete="email"
             />
@@ -339,9 +302,21 @@ export default function LoginPanel({ onFire }: LoginPanelProps) {
               variant="filled"
               prefix={<LockOutlined style={{ color: "rgba(17,24,39,0.45)" }} />}
               placeholder="Enter your password"
-              onFocus={() => onFire("BLINK")}
+              onFocus={() => {
+                onFieldFocusChange?.("userPassword");
+                onFire("BLINK");
+              }}
+              onBlur={() => onFieldFocusChange?.(null)}
               onChange={() => fireThrottled("pwd_change", "BLINK", 900)}
               autoComplete="current-password"
+              visibilityToggle={{
+                visible: pwdVisible,
+                onVisibleChange: (visible) => {
+                  setPwdVisible(visible);
+                  onPasswordVisibilityChange?.(visible);
+                  onFire(visible ? "SURPRISE" : "BLINK");
+                },
+              }}
             />
           </Form.Item>
 

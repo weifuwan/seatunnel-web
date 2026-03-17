@@ -8,7 +8,7 @@ import org.apache.seatunnel.web.common.enums.TimeRange;
 import org.apache.seatunnel.web.common.enums.UnitKind;
 import org.apache.seatunnel.web.dao.entity.JobMetrics;
 import org.apache.seatunnel.web.dao.repository.JobMetricsDao;
-import org.apache.seatunnel.web.engine.client.client.SeatunnelEngineRestClient;
+import org.apache.seatunnel.web.engine.client.rest.SeaTunnelEngineRestClient;
 import org.apache.seatunnel.web.spi.bean.entity.Scale;
 import org.apache.seatunnel.web.spi.bean.entity.TimeWindow;
 import org.apache.seatunnel.web.spi.bean.vo.ChartDataItemVO;
@@ -31,7 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class JobMetricsServiceImpl implements JobMetricsService {
 
     @Resource
-    private SeatunnelEngineRestClient engineRestClient;
+    private SeaTunnelEngineRestClient engineRestClient;
 
     @Resource
     private JobMetricsDao jobMetricsDao;

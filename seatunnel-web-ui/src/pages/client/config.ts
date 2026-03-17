@@ -1,125 +1,66 @@
 import { HealthStateEnum } from "./components/HealthState";
 
-
-export const bootstrapServersErrCodes = [10, 11, 12];
-export const zkErrCodes = [20, 21];
-export const jmxErrCodes = [30, 31];
-
 export const statusFilters = [
   {
-    label: 'Live',
+    label: "Live",
     value: 1,
   },
   {
-    label: 'Down',
+    label: "Down",
     value: 2,
   },
 ];
 
-export const sortFieldList = [
-  {
-    label: '接入时间',
-    value: 'createTime',
-  },
-  {
-    label: '健康状态',
-    value: 'HealthState',
-  },
-  {
-    label: 'Messages',
-    value: 'LeaderMessages',
-  },
-  {
-    label: 'MessageSize',
-    value: 'TotalLogSize',
-  },
-  {
-    label: 'BytesIn',
-    value: 'BytesIn',
-  },
-  {
-    label: 'BytesOut',
-    value: 'BytesOut',
-  },
-  {
-    label: 'Brokers',
-    value: 'Brokers',
-  },
+export const engineTypeOptions = [
+  { label: "Zeta", value: "ZETA" },
+  { label: "Spark", value: "SPARK" },
+  { label: "Flink", value: "FLINK" },
 ];
 
 export const sortTypes = [
   {
-    label: '升序',
-    value: 'asc',
+    label: "升序",
+    value: "asc",
   },
   {
-    label: '降序',
-    value: 'desc',
+    label: "降序",
+    value: "desc",
   },
 ];
 
-export const linesMetric = ['cpuUsage', 'memoryUsage'];
-export const pointsMetric = ['HealthScore', 'HealthCheckPassed', 'HealthCheckTotal', 'Brokers', 'Zookeepers', ...linesMetric].concat(
-  process.env.BUSINESS_VERSION
-    ? ['LoadReBalanceCpu', 'LoadReBalanceDisk', 'LoadReBalanceEnable', 'LoadReBalanceNwIn', 'LoadReBalanceNwOut']
-    : []
-);
+export const sortFieldOptions = [
+  {
+    label: "接入时间",
+    value: "createTime",
+  },
+  {
+    label: "心跳时间",
+    value: "heartbeatTime",
+  },
+  {
+    label: "健康状态",
+    value: "healthStatus",
+  },
+];
 
-export const metricNameMap = {
-  LeaderMessages: 'Messages',
-  TotalLogSize: 'LogSize',
-} as {
-  [key: string]: string;
+export const healthStatusToHealthState = (
+  healthStatus?: number
+): HealthStateEnum => {
+  if (healthStatus === 1) {
+    return HealthStateEnum.GOOD;
+  }
+  if (healthStatus === 2) {
+    return HealthStateEnum.DOWN;
+  }
+  return HealthStateEnum.UNKNOWN;
 };
 
-export const sliderValueMap = {
-  1: {
-    code: HealthStateEnum.GOOD,
-    key: 'goodCount',
-    name: '好',
-  },
-  2: {
-    code: HealthStateEnum.MEDIUM,
-    key: 'mediumCount',
-    name: '中',
-  },
-  3: {
-    code: HealthStateEnum.POOR,
-    key: 'poorCount',
-    name: '差',
-  },
-  4: {
-    code: HealthStateEnum.DOWN,
-    key: 'deadCount',
-    name: 'Down',
-  },
-  5: {
-    code: HealthStateEnum.UNKNOWN,
-    key: 'unknownCount',
-    name: 'Unknown',
-  },
+export const healthStatusTextMap: Record<number, string> = {
+  1: "运行中",
+  2: "离线",
 };
 
-export const healthSorceList = {
-  0: '',
-  1: '好',
-  2: '中',
-  3: '差',
-  4: 'Down',
-  5: 'Unknown',
+export const clientStatusTextMap: Record<number, string> = {
+  1: "启用",
+  2: "停用",
 };
-
-export interface IMetricPoint {
-  aggType: string;
-  createTime: number;
-  metricName: string;
-  timeStamp: number;
-  unit: string;
-  updateTime: number;
-  value: number;
-  metricLines?: {
-    name: string;
-    data: [number | string, number | string];
-  };
-}
-

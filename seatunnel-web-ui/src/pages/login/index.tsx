@@ -188,16 +188,9 @@ function hash01(nonce: number, key: string) {
 
 function getResponsiveScale(stageW: number, stageH: number) {
   if (!stageW || !stageH) return 1;
-
-  // 参考设计尺寸，可按你的页面继续微调
   const scaleX = stageW / 1100;
   const scaleY = stageH / 760;
-
-  // 取保守值，避免高度不够时溢出
-  const scale = Math.min(scaleX, scaleY);
-
-  // 限制范围，避免极端尺寸下失真
-  return clamp(scale, 0.58, 1.42);
+  return clamp(Math.min(scaleX, scaleY), 0.58, 1.42);
 }
 
 function scaleSpec(spec: CharacterSpec, scale: number): CharacterSpec {
@@ -287,6 +280,10 @@ function computeLayout(
   return { relLeft, groupW, relBottom, groupH };
 }
 
+function lerp(a: number, b: number, t: number) {
+  return a + (b - a) * t;
+}
+
 /** ===================== Character ===================== */
 function Character(props: {
   variant: Variant;
@@ -296,23 +293,41 @@ function Character(props: {
   action: GlobalAction;
   globalTilt: number;
   bootT: number;
+  stageRect: { left: number; top: number; width: number; height: number };
+  sceneLookMode: "track" | "peekRight";
   style?: CSSProperties;
 }) {
-  const { variant, spec, scale, mouse, action, globalTilt, bootT, style } =
-    props;
+  const {
+    variant,
+    spec,
+    scale,
+    mouse,
+    action,
+    globalTilt,
+    bootT,
+    stageRect,
+    sceneLookMode,
+    style,
+  } = props;
 
   const entry = BASE_ENTRY[variant];
 
   const eyeLeftRef = useRef<HTMLDivElement | null>(null);
   const eyeRightRef = useRef<HTMLDivElement | null>(null);
+  const bodyRef = useRef<HTMLDivElement | null>(null);
 
   const [expression, setExpression] = useState<Expression>("idle");
   const [blink, setBlink] = useState(false);
-
   const [tilt, setTilt] = useState(0);
   const [bow, setBow] = useState(0);
 
+  const [pupilLeft, setPupilLeft] = useState<Pt>({ x: 0, y: 0 });
+  const [pupilRight, setPupilRight] = useState<Pt>({ x: 0, y: 0 });
+
   const timersRef = useRef<number[]>([]);
+  const targetLeftRef = useRef<Pt>({ x: 0, y: 0 });
+  const targetRightRef = useRef<Pt>({ x: 0, y: 0 });
+  const bodyCenterRef = useRef<Pt | null>(null);
 
   const clearTimers = () => {
     timersRef.current.forEach((t) => window.clearTimeout(t));
@@ -324,28 +339,107 @@ function Character(props: {
     fn();
   };
 
-  const offsets = useMemo(() => {
+  /** ===== Measure body center only when needed ===== */
+  useEffect(() => {
+    const update = () => {
+      bodyCenterRef.current = getCenter(bodyRef.current);
+    };
+
+    update();
+
+    const ro = new ResizeObserver(update);
+    if (bodyRef.current) ro.observe(bodyRef.current);
+    window.addEventListener("resize", update);
+
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", update);
+    };
+  }, []);
+
+  /** ===== Decide target look point ===== */
+  const lookTarget = useMemo(() => {
+    if (sceneLookMode === "peekRight") {
+      return {
+        x: stageRect.left + stageRect.width + 160,
+        y: stageRect.top + stageRect.height * 0.45,
+      };
+    }
+    return mouse;
+  }, [mouse, sceneLookMode, stageRect]);
+
+  /** ===== Update pupil target ===== */
+  useEffect(() => {
     const cL = getCenter(eyeLeftRef.current);
     const cR = getCenter(eyeRightRef.current);
 
     const left = cL
-      ? vecToPupilOffset(cL, mouse, spec.pupilMaxR)
+      ? vecToPupilOffset(cL, lookTarget, spec.pupilMaxR)
       : { x: 0, y: 0 };
     const right = cR
-      ? vecToPupilOffset(cR, mouse, spec.pupilMaxR)
+      ? vecToPupilOffset(cR, lookTarget, spec.pupilMaxR)
       : { x: 0, y: 0 };
 
-    return {
-      left: {
-        x: clamp(left.x, -spec.pupilMaxR, spec.pupilMaxR),
-        y: clamp(left.y, -spec.pupilMaxR, spec.pupilMaxR),
-      },
-      right: {
-        x: clamp(right.x, -spec.pupilMaxR, spec.pupilMaxR),
-        y: clamp(right.y, -spec.pupilMaxR, spec.pupilMaxR),
-      },
+    targetLeftRef.current = {
+      x: clamp(left.x, -spec.pupilMaxR, spec.pupilMaxR),
+      y: clamp(left.y, -spec.pupilMaxR, spec.pupilMaxR),
     };
-  }, [mouse, spec.pupilMaxR]);
+
+    targetRightRef.current = {
+      x: clamp(right.x, -spec.pupilMaxR, spec.pupilMaxR),
+      y: clamp(right.y, -spec.pupilMaxR, spec.pupilMaxR),
+    };
+  }, [lookTarget, spec.pupilMaxR]);
+
+  /** ===== Smooth pupil motion via rAF ===== */
+  useEffect(() => {
+    let raf = 0;
+
+    const tick = () => {
+      setPupilLeft((prev) => ({
+        x: lerp(prev.x, targetLeftRef.current.x, 0.25),
+        y: lerp(prev.y, targetLeftRef.current.y, 0.25),
+      }));
+
+      setPupilRight((prev) => ({
+        x: lerp(prev.x, targetRightRef.current.x, 0.25),
+        y: lerp(prev.y, targetRightRef.current.y, 0.25),
+      }));
+
+      raf = requestAnimationFrame(tick);
+    };
+
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  /** ===== Random idle blink ===== */
+  useEffect(() => {
+    let blinkTimer = 0;
+    let reopenTimer = 0;
+    let disposed = false;
+
+    const loop = () => {
+      const wait = 2400 + Math.random() * 2800;
+      blinkTimer = window.setTimeout(() => {
+        if (disposed) return;
+        setBlink(true);
+        reopenTimer = window.setTimeout(() => {
+          if (disposed) return;
+          setBlink(false);
+          loop();
+        }, 120 + Math.random() * 50);
+      }, wait);
+    };
+
+    loop();
+
+    return () => {
+      disposed = true;
+      window.clearTimeout(blinkTimer);
+      window.clearTimeout(reopenTimer);
+    };
+  }, []);
 
   /** ===== Entry animation ===== */
   const dist = Math.round((entry.dist ?? 220) * scale);
@@ -368,6 +462,30 @@ function Character(props: {
   const pop = smooth01((p - 0.72) / 0.28);
   const enterScale = 1 + 0.05 * pop * (1 - (p > 0.95 ? (p - 0.95) / 0.05 : 0));
 
+  /** ===== Mouse-based face parallax / body lean ===== */
+  const bodyCenter = bodyCenterRef.current;
+  let faceShiftX = 0;
+  let faceShiftY = 0;
+  let mouseLean = 0;
+
+  if (bodyCenter) {
+    const dx = lookTarget.x - bodyCenter.x;
+    const dy = lookTarget.y - bodyCenter.y;
+
+    faceShiftX = clamp(dx / 26, -12 * scale, 12 * scale);
+    faceShiftY = clamp(dy / 42, -8 * scale, 8 * scale);
+    mouseLean = clamp(dx / 90, -5.5, 5.5);
+  }
+
+  /** ===== Idle breathing ===== */
+  const idlePhase =
+    ((bootT + (variant === "orange" ? 0 : variant === "blue" ? 280 : variant === "black" ? 540 : 820)) %
+      2200) /
+    2200;
+  const breathe = Math.sin(idlePhase * Math.PI * 2);
+  const breatheY = breathe * 2.8 * scale;
+  const breatheScaleY = 1 + breathe * 0.01;
+
   /** ===== Actions ===== */
   const doBlink = () =>
     runAction(() => {
@@ -378,6 +496,7 @@ function Character(props: {
   const doSurprise = () =>
     runAction(() => {
       setExpression("surprise");
+      setBlink(false);
       timersRef.current.push(
         window.setTimeout(() => setExpression("idle"), 900)
       );
@@ -438,7 +557,6 @@ function Character(props: {
   useEffect(() => {
     const j = hash01(action.nonce, variant);
     const amp = spec.actionAmp * (0.92 + j * 0.16);
-
     const delay = Math.round(spec.actionDelayBaseMs + j * 24);
 
     const t = window.setTimeout(() => {
@@ -476,13 +594,14 @@ function Character(props: {
   }, []);
 
   const global = globalTilt * 0.65;
+
   const bodyTransform = `
     translateX(${enterX}px)
-    translateY(${enterY}px)
+    translateY(${enterY + breatheY}px)
     scale(${enterScale})
-    rotate(${global + tilt}deg)
+    rotate(${global + mouseLean * 0.25 + tilt}deg)
     translateY(${bow * 10 * scale}px)
-    scaleY(${1 - bow * 0.06})
+    scaleY(${(1 - bow * 0.06) * breatheScaleY})
   `;
 
   const eyeStyle: React.CSSProperties = {
@@ -493,6 +612,7 @@ function Character(props: {
     position: "relative",
     overflow: "hidden",
     transition: "height 120ms ease",
+    boxShadow: "inset 0 1px 2px rgba(0,0,0,0.08)",
   };
 
   const pupilStyleBase: React.CSSProperties = {
@@ -504,7 +624,8 @@ function Character(props: {
     left: "50%",
     top: "50%",
     opacity: blink ? 0 : 1,
-    transition: "transform 60ms linear, opacity 80ms ease",
+    transition: "opacity 80ms ease",
+    willChange: "transform",
   };
 
   const mouthColor =
@@ -516,9 +637,9 @@ function Character(props: {
         <div
           style={{
             position: "absolute",
-            top: spec.mouthTop,
+            top: spec.mouthTop + faceShiftY * 0.25,
             left: "50%",
-            transform: "translateX(-50%)",
+            transform: `translateX(calc(-50% + ${faceShiftX * 0.2}px))`,
             width: Math.max(8, Math.round(10 * scale)),
             height: Math.max(10, Math.round(14 * scale)),
             borderRadius: 999,
@@ -534,9 +655,9 @@ function Character(props: {
         <div
           style={{
             position: "absolute",
-            top: spec.mouthTop,
+            top: spec.mouthTop + faceShiftY * 0.2,
             left: "50%",
-            transform: "translateX(-50%)",
+            transform: `translateX(calc(-50% + ${faceShiftX * 0.18}px))`,
             width: Math.max(16, Math.round(22 * scale)),
             height: Math.max(8, Math.round(12 * scale)),
             borderBottomLeftRadius: 999,
@@ -559,9 +680,9 @@ function Character(props: {
       <div
         style={{
           position: "absolute",
-          top: spec.mouthTop,
+          top: spec.mouthTop + faceShiftY * 0.18,
           left: "50%",
-          transform: "translateX(-50%)",
+          transform: `translateX(calc(-50% + ${faceShiftX * 0.15}px))`,
           width: Math.max(14, Math.round(18 * scale)),
           height: Math.max(4, Math.round(6 * scale)),
           borderRadius: 999,
@@ -574,13 +695,15 @@ function Character(props: {
 
   const faceLayer: CSSProperties = {
     position: "absolute",
-    top: spec.faceTop,
+    top: spec.faceTop + faceShiftY,
     left: 0,
     right: 0,
     display: "flex",
     justifyContent: "center",
     gap: spec.eyeGap,
     pointerEvents: "none",
+    transform: `translateX(${faceShiftX}px)`,
+    transition: "transform 120ms linear, top 120ms linear",
   };
 
   const transition = "transform 420ms cubic-bezier(0.22, 1.4, 0.36, 1)";
@@ -613,14 +736,14 @@ function Character(props: {
     };
 
     return (
-      <div style={wrap}>
+      <div ref={bodyRef} style={wrap}>
         <div style={circle} />
         <div style={faceLayer}>
           <div ref={eyeLeftRef} style={eyeStyle}>
             <div
               style={{
                 ...pupilStyleBase,
-                transform: `translate(-50%, -50%) translate(${offsets.left.x}px, ${offsets.left.y}px)`,
+                transform: `translate(-50%, -50%) translate(${pupilLeft.x}px, ${pupilLeft.y}px)`,
               }}
             />
           </div>
@@ -628,7 +751,7 @@ function Character(props: {
             <div
               style={{
                 ...pupilStyleBase,
-                transform: `translate(-50%, -50%) translate(${offsets.right.x}px, ${offsets.right.y}px)`,
+                transform: `translate(-50%, -50%) translate(${pupilRight.x}px, ${pupilRight.y}px)`,
               }}
             />
           </div>
@@ -652,13 +775,13 @@ function Character(props: {
   };
 
   return (
-    <div style={body}>
+    <div ref={bodyRef} style={body}>
       <div style={faceLayer}>
         <div ref={eyeLeftRef} style={eyeStyle}>
           <div
             style={{
               ...pupilStyleBase,
-              transform: `translate(-50%, -50%) translate(${offsets.left.x}px, ${offsets.left.y}px)`,
+              transform: `translate(-50%, -50%) translate(${pupilLeft.x}px, ${pupilLeft.y}px)`,
             }}
           />
         </div>
@@ -666,7 +789,7 @@ function Character(props: {
           <div
             style={{
               ...pupilStyleBase,
-              transform: `translate(-50%, -50%) translate(${offsets.right.x}px, ${offsets.right.y}px)`,
+              transform: `translate(-50%, -50%) translate(${pupilRight.x}px, ${pupilRight.y}px)`,
             }}
           />
         </div>
@@ -686,8 +809,9 @@ const CharactersScene = forwardRef<
     bootT: number;
     stageW: number;
     stageH: number;
+    stageRect: { left: number; top: number; width: number; height: number };
   }
->(({ mouse, action, globalTilt, bootT, stageW, stageH }, ref) => {
+>(({ mouse, action, globalTilt, bootT, stageW, stageH, stageRect }, ref) => {
   const responsiveScale = useMemo(
     () => getResponsiveScale(stageW, stageH),
     [stageW, stageH]
@@ -711,18 +835,34 @@ const CharactersScene = forwardRef<
   const baseLeft = Math.max(0, (stageW - groupW) / 2);
   const baseBottom = Math.max(0, (stageH - groupH) / 2);
 
+  const sceneLookMode: "track" | "peekRight" = useMemo(() => {
+    const stageRight = stageRect.left + stageRect.width;
+    const nearFormArea = mouse.x > stageRight - 30;
+    return nearFormArea ? "peekRight" : "track";
+  }, [mouse.x, stageRect]);
+
   return (
     <div
       ref={ref}
       style={{
         width: "100%",
         height: "100vh",
-        background: "#f6f6f8",
-        // borderRadius: 16,
+        background:
+          "radial-gradient(circle at 30% 20%, #ffffff 0%, #f8f8fb 38%, #f3f4f8 100%)",
         position: "relative",
         overflow: "hidden",
       }}
     >
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          background:
+            "linear-gradient(180deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0) 28%)",
+          pointerEvents: "none",
+        }}
+      />
+
       <Character
         variant="orange"
         spec={specs.orange}
@@ -731,6 +871,8 @@ const CharactersScene = forwardRef<
         action={action}
         globalTilt={globalTilt}
         bootT={bootT}
+        stageRect={stageRect}
+        sceneLookMode={sceneLookMode}
         style={{
           position: "absolute",
           left: baseLeft + relLeft.orange,
@@ -747,6 +889,8 @@ const CharactersScene = forwardRef<
         action={action}
         globalTilt={globalTilt}
         bootT={bootT}
+        stageRect={stageRect}
+        sceneLookMode={sceneLookMode}
         style={{
           position: "absolute",
           left: baseLeft + relLeft.blue,
@@ -763,6 +907,8 @@ const CharactersScene = forwardRef<
         action={action}
         globalTilt={globalTilt}
         bootT={bootT}
+        stageRect={stageRect}
+        sceneLookMode={sceneLookMode}
         style={{
           position: "absolute",
           left: baseLeft + relLeft.black,
@@ -779,6 +925,8 @@ const CharactersScene = forwardRef<
         action={action}
         globalTilt={globalTilt}
         bootT={bootT}
+        stageRect={stageRect}
+        sceneLookMode={sceneLookMode}
         style={{
           position: "absolute",
           left: baseLeft + relLeft.yellow,
@@ -804,8 +952,18 @@ export default function BlueCrewDemo() {
 
   const [globalTilt, setGlobalTilt] = useState(0);
   const [bootT, setBootT] = useState(0);
-  const bootStartRef = useRef<number>(0);
+  const [stageRect, setStageRect] = useState({
+    left: 0,
+    top: 0,
+    width: 0,
+    height: 0,
+  });
 
+  const bootStartRef = useRef<number>(0);
+  const mouseTargetRef = useRef<Pt>({ x: 0, y: 0 });
+  const tiltTargetRef = useRef(0);
+
+  /** ===== Boot timeline ===== */
   useEffect(() => {
     bootStartRef.current = performance.now();
     let raf = 0;
@@ -820,43 +978,68 @@ export default function BlueCrewDemo() {
     return () => cancelAnimationFrame(raf);
   }, []);
 
+  /** ===== Smooth mouse + tilt ===== */
   useEffect(() => {
     const onMove = (e: MouseEvent) => {
-      setMouse({ x: e.clientX, y: e.clientY });
+      mouseTargetRef.current = { x: e.clientX, y: e.clientY };
 
-      const el = stageRef.current;
-      if (!el) return;
+      const r = stageRef.current?.getBoundingClientRect();
+      if (!r) return;
 
-      const r = el.getBoundingClientRect();
       const cx = r.left + r.width / 2;
-
       const dx = (e.clientX - cx) / (r.width / 2);
-      const maxDeg = 6;
-      const target = clamp(dx, -1, 1) * maxDeg;
-
-      setGlobalTilt((prev) => prev * 0.85 + target * 0.15);
+      tiltTargetRef.current = clamp(dx, -1, 1) * 6;
     };
 
     window.addEventListener("mousemove", onMove, { passive: true });
-    return () => window.removeEventListener("mousemove", onMove);
+
+    let raf = 0;
+    const animate = () => {
+      setMouse((prev) => ({
+        x: lerp(prev.x, mouseTargetRef.current.x, 0.22),
+        y: lerp(prev.y, mouseTargetRef.current.y, 0.22),
+      }));
+
+      setGlobalTilt((prev) => lerp(prev, tiltTargetRef.current, 0.14));
+
+      raf = requestAnimationFrame(animate);
+    };
+
+    raf = requestAnimationFrame(animate);
+
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      cancelAnimationFrame(raf);
+    };
   }, []);
 
-  const [stageSize, setStageSize] = useState({ w: 0, h: 0 });
-
+  /** ===== Stage measurement ===== */
   useEffect(() => {
     const el = stageRef.current;
     if (!el) return;
 
     const update = () => {
       const r = el.getBoundingClientRect();
-      setStageSize({ w: r.width, h: r.height });
+      setStageRect({
+        left: r.left,
+        top: r.top,
+        width: r.width,
+        height: r.height,
+      });
     };
 
     const ro = new ResizeObserver(update);
     ro.observe(el);
     update();
 
-    return () => ro.disconnect();
+    window.addEventListener("scroll", update, true);
+    window.addEventListener("resize", update);
+
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("scroll", update, true);
+      window.removeEventListener("resize", update);
+    };
   }, []);
 
   const fire = (type: ActionType) => setAction({ type, nonce: Date.now() });
@@ -880,8 +1063,9 @@ export default function BlueCrewDemo() {
             action={action}
             globalTilt={globalTilt}
             bootT={bootT}
-            stageW={stageSize.w}
-            stageH={stageSize.h}
+            stageW={stageRect.width}
+            stageH={stageRect.height}
+            stageRect={stageRect}
           />
         </Col>
 

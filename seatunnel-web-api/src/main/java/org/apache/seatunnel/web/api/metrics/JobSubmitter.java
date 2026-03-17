@@ -5,7 +5,7 @@ import org.apache.seatunnel.web.common.enums.JobSubmitStage;
 import org.apache.seatunnel.web.common.exception.JobSubmitException;
 import org.apache.seatunnel.web.dao.entity.JobInstance;
 import org.apache.seatunnel.web.dao.repository.JobInstanceDao;
-import org.apache.seatunnel.web.engine.client.client.SeatunnelRestClient;
+import org.apache.seatunnel.web.engine.client.rest.SeaTunnelRestClient;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
@@ -16,14 +16,14 @@ import java.util.Map;
 public class JobSubmitter {
 
     private final JobConfigFileService configFileService;
-    private final SeatunnelRestClient restClient;
+    private final SeaTunnelRestClient restClient;
     private final JobMetricsMonitor metricsMonitor;
     private final JobResultWatcher resultWatcher;
     private final JobResultHandler resultHandler;
     private final JobInstanceDao jobInstanceDao;
 
     public JobSubmitter(JobConfigFileService configFileService,
-                        SeatunnelRestClient restClient,
+                        SeaTunnelRestClient restClient,
                         JobMetricsMonitor metricsMonitor,
                         JobResultWatcher resultWatcher,
                         JobResultHandler resultHandler,

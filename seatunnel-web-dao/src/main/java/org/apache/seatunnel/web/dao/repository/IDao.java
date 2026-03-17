@@ -1,5 +1,7 @@
 package org.apache.seatunnel.web.dao.repository;
 
+import com.baomidou.mybatisplus.core.conditions.Wrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import lombok.NonNull;
 
 import java.io.Serializable;
@@ -63,5 +65,15 @@ public interface IDao<Entity> {
      * Delete the entities by condition.
      */
     boolean deleteByCondition(Entity queryCondition);
+
+    /**
+     * Select list by wrapper.
+     */
+    List<Entity> selectList(Wrapper<Entity> queryWrapper);
+
+    /**
+     * Select page by wrapper.
+     */
+    IPage<Entity> selectPage(IPage<Entity> page, Wrapper<Entity> queryWrapper);
 
 }

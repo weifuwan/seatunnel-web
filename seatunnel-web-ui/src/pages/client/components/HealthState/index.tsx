@@ -1,14 +1,14 @@
-import React from 'react';
-import GoodState from '@/assets/health-good.png';
-import MediumState from '@/assets/health-medium.png';
-import PoorState from '@/assets/health-poor.png';
-import DownState from '@/assets/health-down.png';
-import UnknownState from '@/assets/health-unknown.png';
-import GoodStateEmoji from '@/assets/health-good-emoji.png';
-import MediumStateEmoji from '@/assets/health-medium-emoji.png';
-import PoorStateEmoji from '@/assets/health-poor-emoji.png';
-import DownStateEmoji from '@/assets/health-down-emoji.png';
-import './index.less';
+import React from "react";
+import GoodState from "@/assets/health-good.png";
+import MediumState from "@/assets/health-medium.png";
+import PoorState from "@/assets/health-poor.png";
+import DownState from "@/assets/health-down.png";
+import UnknownState from "@/assets/health-unknown.png";
+import GoodStateEmoji from "@/assets/health-good-emoji.png";
+import MediumStateEmoji from "@/assets/health-medium-emoji.png";
+import PoorStateEmoji from "@/assets/health-poor-emoji.png";
+import DownStateEmoji from "@/assets/health-down-emoji.png";
+import "./index.less";
 
 export enum HealthStateEnum {
   UNKNOWN = -1,
@@ -41,26 +41,36 @@ const HEALTH_STATE_EMOJI_MAP = {
 };
 
 const HEALTH_STATE_DESC_MAP = {
-  [HealthStateEnum.GOOD]: '状态优异',
-  [HealthStateEnum.MEDIUM]: '状态良好',
-  [HealthStateEnum.POOR]: '状态较差',
-  [HealthStateEnum.DOWN]: '状态异常',
-  [HealthStateEnum.UNKNOWN]: '状态异常',
+  [HealthStateEnum.GOOD]: "状态优异",
+  [HealthStateEnum.MEDIUM]: "状态良好",
+  [HealthStateEnum.POOR]: "状态较差",
+  [HealthStateEnum.DOWN]: "状态异常",
+  [HealthStateEnum.UNKNOWN]: "状态未知",
 };
 
-export const getHealthStateEmoji = (state: HealthStateEnum, width = 16, height = 16) => {
+export const getHealthStateEmoji = (
+  state: HealthStateEnum,
+  width = 16,
+  height = 16
+) => {
   return (
     <img
       width={width}
       height={height}
       style={{ marginTop: -3 }}
-      src={HEALTH_STATE_EMOJI_MAP[state] || HEALTH_STATE_EMOJI_MAP[HealthStateEnum.UNKNOWN]}
+      src={
+        HEALTH_STATE_EMOJI_MAP[state] ||
+        HEALTH_STATE_EMOJI_MAP[HealthStateEnum.UNKNOWN]
+      }
     />
   );
 };
 
 export const getHealthStateDesc = (state: HealthStateEnum) => {
-  return HEALTH_STATE_DESC_MAP[state] || HEALTH_STATE_DESC_MAP[HealthStateEnum.UNKNOWN];
+  return (
+    HEALTH_STATE_DESC_MAP[state] ||
+    HEALTH_STATE_DESC_MAP[HealthStateEnum.UNKNOWN]
+  );
 };
 
 const HealthState = (props: HealthStateProps) => {
@@ -68,7 +78,10 @@ const HealthState = (props: HealthStateProps) => {
 
   return (
     <div className="health-state" style={{ width, height }}>
-      <img src={HEALTH_STATE_MAP[state] || UnknownState} />
+      <img
+        src={HEALTH_STATE_MAP[state] || UnknownState}
+        style={{ width: "100%", height: "100%" }}
+      />
     </div>
   );
 };

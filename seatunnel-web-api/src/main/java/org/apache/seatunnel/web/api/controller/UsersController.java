@@ -22,8 +22,6 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1/users")
 public class UsersController extends BaseController {
 
-    private static final Logger logger = LoggerFactory.getLogger(UsersController.class);
-
     @Resource
     private UsersService usersService;
 

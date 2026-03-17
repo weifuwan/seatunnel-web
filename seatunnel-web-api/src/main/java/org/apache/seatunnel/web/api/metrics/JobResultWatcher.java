@@ -4,7 +4,7 @@ import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.seatunnel.web.common.enums.JobResult;
 import org.apache.seatunnel.web.common.enums.JobStatus;
-import org.apache.seatunnel.web.engine.client.client.SeatunnelRestClient;
+import org.apache.seatunnel.web.engine.client.rest.SeaTunnelRestClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -25,7 +25,7 @@ public class JobResultWatcher {
     private JobResultHandler resultHandler;
 
     @Resource
-    private SeatunnelRestClient seatunnelRestClient;
+    private SeaTunnelRestClient seatunnelRestClient;
 
     @Value("${seatunnel.result.poll-interval-ms:2000}")
     private long pollIntervalMs;

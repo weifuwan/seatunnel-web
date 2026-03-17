@@ -1,4 +1,4 @@
-package org.apache.seatunnel.web.engine.client.client;
+package org.apache.seatunnel.web.engine.client.rest;
 
 import org.apache.seatunnel.web.engine.client.exceptions.SeatunnelClientException;
 import org.springframework.core.io.ByteArrayResource;
@@ -17,19 +17,25 @@ import java.util.Map;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 @Service
-public class SeatunnelRestClient {
+public class SeaTunnelRestClient {
 
     private final RestTemplate restTemplate;
-    private final String baseApiUrl;
+    private final SeaTunnelClientResolver seatunnelClientResolver;
 
-    public SeatunnelRestClient(RestTemplate restTemplate, String baseApiUrl) {
+    public SeaTunnelRestClient(RestTemplate restTemplate,
+                               SeaTunnelClientResolver seatunnelClientResolver) {
         this.restTemplate = restTemplate;
-        this.baseApiUrl = baseApiUrl;
+        this.seatunnelClientResolver = seatunnelClientResolver;
     }
 
-    private String url(String path) {
-        if (path == null || path.isEmpty()) return baseApiUrl;
-        if (!path.startsWith("/")) path = "/" + path;
+    private String url(Long clientId, String path) {
+        String baseApiUrl = seatunnelClientResolver.resolveBaseApiUrl(clientId);
+        if (path == null || path.isEmpty()) {
+            return baseApiUrl;
+        }
+        if (!path.startsWith("/")) {
+            path = "/" + path;
+        }
         return baseApiUrl + path;
     }
 
@@ -46,7 +52,9 @@ public class SeatunnelRestClient {
         return new SeatunnelClientException(hint, -1, "", e);
     }
 
-    private String safe(String s) { return s == null ? "" : s; }
+    private String safe(String s) {
+        return s == null ? "" : s;
+    }
 
     private HttpHeaders jsonHeaders() {
         HttpHeaders h = new HttpHeaders();
@@ -64,9 +72,9 @@ public class SeatunnelRestClient {
 
     /* ===================== GET ===================== */
 
-    public Map overview(Map<String, String> tags) {
+    public Map overview(Long clientId, Map<String, String> tags) {
         try {
-            UriComponentsBuilder b = UriComponentsBuilder.fromHttpUrl(url("/overview"));
+            UriComponentsBuilder b = UriComponentsBuilder.fromHttpUrl(url(clientId, "/overview"));
             if (tags != null) {
                 for (Map.Entry<String, String> e : tags.entrySet()) {
                     b.queryParam(e.getKey(), e.getValue());
@@ -78,43 +86,45 @@ public class SeatunnelRestClient {
         }
     }
 
-    public List runningJobs() {
+    public List runningJobs(Long clientId) {
         try {
-            return restTemplate.getForObject(url("/running-jobs"), List.class);
+            return restTemplate.getForObject(url(clientId, "/running-jobs"), List.class);
         } catch (Exception e) {
             throw wrap(e, "GET /running-jobs failed");
         }
     }
 
-    public Map jobInfo(long jobId) {
+    public Map jobInfo(Long clientId, long jobId) {
         try {
-            return restTemplate.getForObject(url("/job-info/" + jobId), Map.class);
+            return restTemplate.getForObject(url(clientId, "/job-info/" + jobId), Map.class);
         } catch (Exception e) {
             throw wrap(e, "GET /job-info/{jobId} failed");
         }
     }
 
-    public List finishedJobs(String state) {
+    public List finishedJobs(Long clientId, String state) {
         try {
-            if (state == null || state.trim().isEmpty()) state = "UNKNOWABLE";
-            return restTemplate.getForObject(url("/finished-jobs/" + state), List.class);
+            if (state == null || state.trim().isEmpty()) {
+                state = "UNKNOWABLE";
+            }
+            return restTemplate.getForObject(url(clientId, "/finished-jobs/" + state), List.class);
         } catch (Exception e) {
             throw wrap(e, "GET /finished-jobs/{state} failed");
         }
     }
 
-    public List systemMonitoringInformation() {
+    public List systemMonitoringInformation(Long clientId) {
         try {
-            return restTemplate.getForObject(url("/system-monitoring-information"), List.class);
+            return restTemplate.getForObject(url(clientId, "/system-monitoring-information"), List.class);
         } catch (Exception e) {
             throw wrap(e, "GET /system-monitoring-information failed");
         }
     }
 
-    public Object logs(Long jobIdOrNull, String formatOrNull) {
+    public Object logs(Long clientId, Long jobIdOrNull, String formatOrNull) {
         try {
             String path = (jobIdOrNull == null) ? "/logs" : ("/logs/" + jobIdOrNull);
-            UriComponentsBuilder b = UriComponentsBuilder.fromHttpUrl(url(path));
+            UriComponentsBuilder b = UriComponentsBuilder.fromHttpUrl(url(clientId, path));
             if (formatOrNull != null && !formatOrNull.trim().isEmpty()) {
                 b.queryParam("format", formatOrNull);
             }
@@ -124,19 +134,19 @@ public class SeatunnelRestClient {
         }
     }
 
-    public Object nodeLogs() {
+    public Object nodeLogs(Long clientId) {
         try {
-            return restTemplate.getForObject(url("/log"), Object.class);
+            return restTemplate.getForObject(url(clientId, "/log"), Object.class);
         } catch (Exception e) {
             throw wrap(e, "GET /log failed");
         }
     }
 
-    public String metrics(boolean openMetrics) {
+    public String metrics(Long clientId, boolean openMetrics) {
         try {
             String path = openMetrics ? "/openmetrics" : "/metrics";
             ResponseEntity<String> resp = restTemplate.exchange(
-                    url(path),
+                    url(clientId, path),
                     HttpMethod.GET,
                     new HttpEntity<Void>((Void) null, new HttpHeaders()),
                     String.class
@@ -149,16 +159,29 @@ public class SeatunnelRestClient {
 
     /* ===================== POST ===================== */
 
-    public Map submitJobText(String configText, String format, String jobId, String jobName, Boolean isStartWithSavePoint) {
+    public Map submitJobText(Long clientId,
+                             String configText,
+                             String format,
+                             String jobId,
+                             String jobName,
+                             Boolean isStartWithSavePoint) {
         try {
-            if (format == null || format.trim().isEmpty()) format = "json";
+            if (format == null || format.trim().isEmpty()) {
+                format = "json";
+            }
 
-            UriComponentsBuilder b = UriComponentsBuilder.fromHttpUrl(url("/submit-job"))
+            UriComponentsBuilder b = UriComponentsBuilder.fromHttpUrl(url(clientId, "/submit-job"))
                     .queryParam("format", format);
 
-            if (jobId != null && !jobId.trim().isEmpty()) b.queryParam("jobId", jobId);
-            if (jobName != null && !jobName.trim().isEmpty()) b.queryParam("jobName", jobName);
-            if (isStartWithSavePoint != null) b.queryParam("isStartWithSavePoint", isStartWithSavePoint);
+            if (jobId != null && !jobId.trim().isEmpty()) {
+                b.queryParam("jobId", jobId);
+            }
+            if (jobName != null && !jobName.trim().isEmpty()) {
+                b.queryParam("jobName", jobName);
+            }
+            if (isStartWithSavePoint != null) {
+                b.queryParam("isStartWithSavePoint", isStartWithSavePoint);
+            }
 
             HttpEntity<String> entity = new HttpEntity<>(configText == null ? "" : configText, textHeaders());
             return restTemplate.postForObject(b.build(true).toUri(), entity, Map.class);
@@ -167,14 +190,24 @@ public class SeatunnelRestClient {
         }
     }
 
-    public Map submitJobJson(Object configJsonObject, String jobId, String jobName, Boolean isStartWithSavePoint) {
+    public Map submitJobJson(Long clientId,
+                             Object configJsonObject,
+                             String jobId,
+                             String jobName,
+                             Boolean isStartWithSavePoint) {
         try {
-            UriComponentsBuilder b = UriComponentsBuilder.fromHttpUrl(url("/submit-job"))
+            UriComponentsBuilder b = UriComponentsBuilder.fromHttpUrl(url(clientId, "/submit-job"))
                     .queryParam("format", "json");
 
-            if (jobId != null && !jobId.trim().isEmpty()) b.queryParam("jobId", jobId);
-            if (jobName != null && !jobName.trim().isEmpty()) b.queryParam("jobName", jobName);
-            if (isStartWithSavePoint != null) b.queryParam("isStartWithSavePoint", isStartWithSavePoint);
+            if (jobId != null && !jobId.trim().isEmpty()) {
+                b.queryParam("jobId", jobId);
+            }
+            if (jobName != null && !jobName.trim().isEmpty()) {
+                b.queryParam("jobName", jobName);
+            }
+            if (isStartWithSavePoint != null) {
+                b.queryParam("isStartWithSavePoint", isStartWithSavePoint);
+            }
 
             HttpEntity<Object> entity = new HttpEntity<>(configJsonObject, jsonHeaders());
             return restTemplate.postForObject(b.build(true).toUri(), entity, Map.class);
@@ -183,7 +216,7 @@ public class SeatunnelRestClient {
         }
     }
 
-    public Map submitJobUpload(byte[] fileBytes, String filename) {
+    public Map submitJobUpload(Long clientId, byte[] fileBytes, String filename) {
         try {
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
 
@@ -203,7 +236,7 @@ public class SeatunnelRestClient {
             HttpEntity<MultiValueMap<String, Object>> req = new HttpEntity<>(body, headers);
 
             ResponseEntity<Map> resp = restTemplate.exchange(
-                    url("/submit-job/upload"),
+                    url(clientId, "/submit-job/upload"),
                     HttpMethod.POST,
                     req,
                     Map.class
@@ -214,60 +247,70 @@ public class SeatunnelRestClient {
         }
     }
 
-    public List submitJobsBatch(List jobConfigs) {
+    public List submitJobsBatch(Long clientId, List jobConfigs) {
         try {
             HttpEntity<Object> entity = new HttpEntity<>(jobConfigs, jsonHeaders());
-            ResponseEntity<List> resp = restTemplate.exchange(url("/submit-jobs"), HttpMethod.POST, entity, List.class);
+            ResponseEntity<List> resp = restTemplate.exchange(
+                    url(clientId, "/submit-jobs"),
+                    HttpMethod.POST,
+                    entity,
+                    List.class
+            );
             return resp.getBody();
         } catch (Exception e) {
             throw wrap(e, "POST /submit-jobs failed");
         }
     }
 
-    public Map stopJob(long jobId, boolean isStopWithSavePoint) {
+    public Map stopJob(Long clientId, long jobId, boolean isStopWithSavePoint) {
         try {
             Map<String, Object> body = new java.util.LinkedHashMap<>();
             body.put("jobId", jobId);
             body.put("isStopWithSavePoint", isStopWithSavePoint);
 
             HttpEntity<Object> entity = new HttpEntity<>(body, jsonHeaders());
-            return restTemplate.postForObject(url("/stop-job"), entity, Map.class);
+            return restTemplate.postForObject(url(clientId, "/stop-job"), entity, Map.class);
         } catch (Exception e) {
             throw wrap(e, "POST /stop-job failed");
         }
     }
 
-    public List stopJobsBatch(List<Map<String, Object>> items) {
+    public List stopJobsBatch(Long clientId, List<Map<String, Object>> items) {
         try {
             HttpEntity<Object> entity = new HttpEntity<>(items, jsonHeaders());
-            ResponseEntity<List> resp = restTemplate.exchange(url("/stop-jobs"), HttpMethod.POST, entity, List.class);
+            ResponseEntity<List> resp = restTemplate.exchange(
+                    url(clientId, "/stop-jobs"),
+                    HttpMethod.POST,
+                    entity,
+                    List.class
+            );
             return resp.getBody();
         } catch (Exception e) {
             throw wrap(e, "POST /stop-jobs failed");
         }
     }
 
-    public Map encryptConfig(Object config) {
+    public Map encryptConfig(Long clientId, Object config) {
         try {
             HttpEntity<Object> entity = new HttpEntity<>(config, jsonHeaders());
-            return restTemplate.postForObject(url("/encrypt-config"), entity, Map.class);
+            return restTemplate.postForObject(url(clientId, "/encrypt-config"), entity, Map.class);
         } catch (Exception e) {
             throw wrap(e, "POST /encrypt-config failed");
         }
     }
 
-    public Map updateTags(Map<String, String> tags) {
+    public Map updateTags(Long clientId, Map<String, String> tags) {
         try {
             Map<String, String> body = (tags == null) ? Collections.emptyMap() : tags;
             HttpEntity<Object> entity = new HttpEntity<>(body, jsonHeaders());
-            return restTemplate.postForObject(url("/update-tags"), entity, Map.class);
+            return restTemplate.postForObject(url(clientId, "/update-tags"), entity, Map.class);
         } catch (Exception e) {
             throw wrap(e, "POST /update-tags failed");
         }
     }
 
-    public Map submitJobUploadText(String text, String filename) {
+    public Map submitJobUploadText(Long clientId, String text, String filename) {
         byte[] bytes = (text == null ? "" : text).getBytes(StandardCharsets.UTF_8);
-        return submitJobUpload(bytes, filename);
+        return submitJobUpload(clientId, bytes, filename);
     }
 }

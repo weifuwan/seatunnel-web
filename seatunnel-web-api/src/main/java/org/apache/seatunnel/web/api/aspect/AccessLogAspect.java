@@ -37,7 +37,7 @@ public class AccessLogAspect {
     private static final Pattern sensitiveDataPattern = Pattern.compile(sensitiveDataRegEx, Pattern.CASE_INSENSITIVE);
 
     @Pointcut("@annotation(org.apache.seatunnel.web.api.aspect.AccessLogAnnotation)")
-    public void logPointCut(){
+    public void logPointCut() {
         // Do nothing because of it's a pointcut
     }
 
@@ -46,7 +46,7 @@ public class AccessLogAspect {
         long startTime = System.currentTimeMillis();
 
         // fetch AccessLogAnnotation
-        MethodSignature sign =  (MethodSignature) proceedingJoinPoint.getSignature();
+        MethodSignature sign = (MethodSignature) proceedingJoinPoint.getSignature();
         Method method = sign.getMethod();
         AccessLogAnnotation annotation = method.getAnnotation(AccessLogAnnotation.class);
 
@@ -92,20 +92,25 @@ public class AccessLogAspect {
     private String parseArgs(ProceedingJoinPoint proceedingJoinPoint, AccessLogAnnotation annotation) {
         Object[] args = proceedingJoinPoint.getArgs();
         String argsString = Arrays.toString(args);
+
         if (annotation.ignoreRequestArgs().length > 0) {
             String[] parameterNames = ((MethodSignature) proceedingJoinPoint.getSignature()).getParameterNames();
-            if (parameterNames.length > 0) {
-                Set<String> ignoreSet = Arrays.stream(annotation.ignoreRequestArgs()).collect(Collectors.toSet());
-                HashMap<String, Object> argsMap = new HashMap<>();
 
-                for (int i = 0; i < parameterNames.length; i++) {
-                    if (!ignoreSet.contains(parameterNames[i])) {
-                        argsMap.put(parameterNames[i], args[i]);
-                    }
-                }
-                argsString = argsMap.toString();
+            if (parameterNames == null || parameterNames.length == 0) {
+                return argsString;
             }
+
+            Set<String> ignoreSet = Arrays.stream(annotation.ignoreRequestArgs()).collect(Collectors.toSet());
+            HashMap<String, Object> argsMap = new HashMap<>();
+
+            for (int i = 0; i < Math.min(parameterNames.length, args.length); i++) {
+                if (!ignoreSet.contains(parameterNames[i])) {
+                    argsMap.put(parameterNames[i], args[i]);
+                }
+            }
+            argsString = argsMap.toString();
         }
+
         return argsString;
     }
 
@@ -115,7 +120,7 @@ public class AccessLogAspect {
         boolean exists = false;
         while (matcher.find()) {
             if (matcher.groupCount() == 3) {
-                stream = IntStream.concat(stream, IntStream.range(matcher.end(1),matcher.end(2)));
+                stream = IntStream.concat(stream, IntStream.range(matcher.end(1), matcher.end(2)));
                 exists = true;
             }
         }

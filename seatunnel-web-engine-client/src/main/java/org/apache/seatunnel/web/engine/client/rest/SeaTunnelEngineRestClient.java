@@ -1,4 +1,4 @@
-package org.apache.seatunnel.web.engine.client.client;
+package org.apache.seatunnel.web.engine.client.rest;
 
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Component;
@@ -7,10 +7,10 @@ import java.util.Map;
 
 @Component
 @SuppressWarnings({"rawtypes","unchecked"})
-public class SeatunnelEngineRestClient {
+public class SeaTunnelEngineRestClient {
 
     @Resource
-    private SeatunnelRestClient seatunnelRestClient;
+    private SeaTunnelRestClient seatunnelRestClient;
 
     public Map<String, Object> jobInfo(Long jobEngineId) {
         return seatunnelRestClient.jobInfo(jobEngineId);

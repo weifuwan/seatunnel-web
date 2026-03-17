@@ -44,7 +44,7 @@ public class LoginController extends BaseController {
      */
 
     @PostMapping(value = "/login")
-    @AccessLogAnnotation(ignoreRequestArgs = {"userPassword", "request", "response"})
+    @AccessLogAnnotation(ignoreRequestArgs = {"userDTO", "request", "response"})
     public Result<Boolean> login(@RequestBody UserDTO userDTO,
                                  HttpServletRequest request,
                                  HttpServletResponse response) {

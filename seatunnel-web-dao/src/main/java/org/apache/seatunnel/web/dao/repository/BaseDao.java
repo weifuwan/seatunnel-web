@@ -1,7 +1,9 @@
 package org.apache.seatunnel.web.dao.repository;
 
+import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import lombok.NonNull;
 import org.apache.commons.collections4.CollectionUtils;
 
@@ -89,6 +91,16 @@ public abstract class BaseDao<ENTITY, MYBATIS_MAPPER extends BaseMapper<ENTITY>>
             throw new IllegalArgumentException("queryCondition can not be null");
         }
         return mybatisMapper.delete(new QueryWrapper<>(queryCondition)) > 0;
+    }
+
+    @Override
+    public List<ENTITY> selectList(Wrapper<ENTITY> queryWrapper) {
+        return mybatisMapper.selectList(queryWrapper);
+    }
+
+    @Override
+    public IPage<ENTITY> selectPage(IPage<ENTITY> page, Wrapper<ENTITY> queryWrapper) {
+        return mybatisMapper.selectPage(page, queryWrapper);
     }
 
 }

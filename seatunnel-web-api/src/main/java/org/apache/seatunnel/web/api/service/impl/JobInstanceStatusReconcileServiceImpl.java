@@ -6,7 +6,7 @@ import org.apache.seatunnel.web.api.service.support.JobInstanceStatusReconcileSe
 import org.apache.seatunnel.web.common.enums.JobStatus;
 import org.apache.seatunnel.web.dao.entity.JobInstance;
 import org.apache.seatunnel.web.dao.repository.JobInstanceDao;
-import org.apache.seatunnel.web.engine.client.client.SeatunnelRestClient;
+import org.apache.seatunnel.web.engine.client.rest.SeaTunnelRestClient;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
@@ -22,7 +22,7 @@ public class JobInstanceStatusReconcileServiceImpl implements JobInstanceStatusR
     private JobInstanceDao jobInstanceDao;
 
     @Resource
-    private SeatunnelRestClient seatunnelRestClient;
+    private SeaTunnelRestClient seatunnelRestClient;
 
     @Override
     public void reconcileInstanceStatus(Long instanceId) {

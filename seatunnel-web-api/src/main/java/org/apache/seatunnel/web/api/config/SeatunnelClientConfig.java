@@ -1,7 +1,8 @@
 package org.apache.seatunnel.web.api.config;
 
-import org.apache.seatunnel.web.engine.client.client.SeatunnelClientProperties;
-import org.apache.seatunnel.web.engine.client.client.SeatunnelRestClient;
+import org.apache.seatunnel.web.engine.client.rest.SeaTunnelClientProperties;
+import org.apache.seatunnel.web.engine.client.rest.SeaTunnelClientResolver;
+import org.apache.seatunnel.web.engine.client.rest.SeaTunnelRestClient;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -9,11 +10,11 @@ import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 
 @Configuration
-@EnableConfigurationProperties(SeatunnelClientProperties.class)
+@EnableConfigurationProperties(SeaTunnelClientProperties.class)
 public class SeatunnelClientConfig {
 
     @Bean
-    public RestTemplate seatunnelRestTemplate(SeatunnelClientProperties props) {
+    public RestTemplate seatunnelRestTemplate(SeaTunnelClientProperties props) {
         SimpleClientHttpRequestFactory f = new SimpleClientHttpRequestFactory();
         f.setConnectTimeout(props.getConnectTimeoutMs());
         f.setReadTimeout(props.getReadTimeoutMs());
@@ -21,8 +22,8 @@ public class SeatunnelClientConfig {
     }
 
     @Bean
-    public SeatunnelRestClient seatunnelRestClient(RestTemplate seatunnelRestTemplate,
-                                                   SeatunnelClientProperties props) {
-        return new SeatunnelRestClient(seatunnelRestTemplate, props.baseApiUrl());
+    public SeaTunnelRestClient seatunnelRestClient(RestTemplate seatunnelRestTemplate,
+                                                   SeaTunnelClientResolver seatunnelClientResolver) {
+        return new SeaTunnelRestClient(seatunnelRestTemplate, seatunnelClientResolver);
     }
 }

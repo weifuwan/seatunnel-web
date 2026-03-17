@@ -14,16 +14,11 @@ import org.springframework.web.client.RestTemplate;
 public class SeaTunnelClientConfig {
 
     @Bean
-    public RestTemplate seatunnelRestTemplate(SeaTunnelClientProperties props) {
+    public RestTemplate seaTunnelRestTemplate(SeaTunnelClientProperties props) {
         SimpleClientHttpRequestFactory f = new SimpleClientHttpRequestFactory();
         f.setConnectTimeout(props.getConnectTimeoutMs());
         f.setReadTimeout(props.getReadTimeoutMs());
         return new RestTemplate(f);
     }
 
-    @Bean
-    public SeaTunnelRestClient seatunnelRestClient(RestTemplate restTemplate,
-                                                   SeaTunnelClientResolver seaTunnelClientResolver) {
-        return new SeaTunnelRestClient(restTemplate, seaTunnelClientResolver);
-    }
 }

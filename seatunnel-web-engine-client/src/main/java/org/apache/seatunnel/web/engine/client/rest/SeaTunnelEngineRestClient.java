@@ -13,6 +13,6 @@ public class SeaTunnelEngineRestClient {
     private SeaTunnelRestClient seatunnelRestClient;
 
     public Map<String, Object> jobInfo(Long jobEngineId) {
-        return seatunnelRestClient.jobInfo(jobEngineId);
+        return seatunnelRestClient.jobInfo(1L,jobEngineId);
     }
 }

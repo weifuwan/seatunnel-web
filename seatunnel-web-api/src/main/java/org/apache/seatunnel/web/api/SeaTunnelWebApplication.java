@@ -17,19 +17,16 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableConfigurationProperties
 @EnableScheduling
 @EnableAsync(proxyTargetClass = true)
-public class SeatunnelWebApplication {
-
+public class SeaTunnelWebApplication {
 
     @Resource
     private MysqlServerIdInitializer mysqlServerIdInitializer;
 
-
-
-    private static final Logger logger = LoggerFactory.getLogger(SeatunnelWebApplication.class);
+    private static final Logger logger = LoggerFactory.getLogger(SeaTunnelWebApplication.class);
 
     public static void main(String[] args) {
         try {
-            SpringApplication sa = new SpringApplication(SeatunnelWebApplication.class);
+            SpringApplication sa = new SpringApplication(SeaTunnelWebApplication.class);
             sa.run(args);
             DataSourceProcessorProvider.initialize();
         } catch (Exception e) {

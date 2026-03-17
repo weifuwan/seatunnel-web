@@ -54,7 +54,7 @@ public class JobSubmitter {
 
             jobLogger.info("Submitting job via REST API...");
             String filename = "job-" + instanceId + ".conf";
-            Map resp = restClient.submitJobUpload(
+            Map resp = restClient.submitJobUpload(1L,
                     (hoconConfig == null ? "" : hoconConfig).getBytes(StandardCharsets.UTF_8),
                     filename
             );

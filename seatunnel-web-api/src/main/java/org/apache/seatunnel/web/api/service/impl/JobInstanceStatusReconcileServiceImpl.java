@@ -92,7 +92,7 @@ public class JobInstanceStatusReconcileServiceImpl implements JobInstanceStatusR
 
     private JobStatus queryActualJobStatus(Long engineJobId) {
         try {
-            Map<?, ?> jobInfo = seatunnelRestClient.jobInfo(engineJobId);
+            Map<?, ?> jobInfo = seatunnelRestClient.jobInfo(1L,engineJobId);
             JobStatus status = parseJobStatus(jobInfo);
             if (status != null) {
                 return status;
@@ -117,7 +117,7 @@ public class JobInstanceStatusReconcileServiceImpl implements JobInstanceStatusR
                 JobStatus.UNKNOWABLE
         }) {
             try {
-                List<?> jobs = seatunnelRestClient.finishedJobs(candidate.name());
+                List<?> jobs = seatunnelRestClient.finishedJobs(1L,candidate.name());
                 if (containsEngineJobId(jobs, engineJobId)) {
                     return candidate;
                 }

@@ -45,7 +45,7 @@ public class JobResultWatcher {
                         throw new IllegalStateException("Polling job-info timeout, engineId=" + engineId);
                     }
 
-                    Map jobInfo = seatunnelRestClient.jobInfo(engineId);
+                    Map jobInfo = seatunnelRestClient.jobInfo(1L, engineId);
                     String statusStr = (jobInfo == null) ? null : String.valueOf(jobInfo.get("jobStatus"));
 
                     if (statusStr == null || "null".equals(statusStr)) {

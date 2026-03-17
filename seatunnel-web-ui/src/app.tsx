@@ -5,20 +5,18 @@ import {
   Question,
   SelectLang,
 } from "@/components";
-import { currentUser as queryCurrentUser } from "@/services/ant-design-pro/api";
-import { LinkOutlined } from "@ant-design/icons";
 import type { Settings as LayoutSettings } from "@ant-design/pro-components";
 import { SettingDrawer } from "@ant-design/pro-components";
 import "@ant-design/v5-patch-for-react-19";
 import type { RequestConfig, RunTimeLayoutConfig } from "@umijs/max";
-import { history, Link } from "@umijs/max";
+import { history } from "@umijs/max";
 import defaultSettings from "../config/defaultSettings";
+import { Knowledge } from "./components/RightContent";
 import { errorConfig } from "./requestErrorConfig";
 import HttpUtils from "./utils/HttpUtils";
-import { Knowledge } from "./components/RightContent";
 
 const isDev = process.env.NODE_ENV === "development";
-const loginPath = '/login';
+const loginPath = "/login";
 
 /**
  * @see https://umijs.org/docs/api/runtime-config#getinitialstate
@@ -31,8 +29,10 @@ export async function getInitialState(): Promise<{
 }> {
   const fetchUserInfo = async () => {
     try {
-      console.log("-0-0-29093")
-      const msg = await HttpUtils.get<API.CurrentUser | undefined>("/api/v1/users/currentUser");
+      console.log("-0-0-29093");
+      const msg = await HttpUtils.get<API.CurrentUser | undefined>(
+        "/api/v1/users/currentUser"
+      );
       console.log(msg);
       return msg.data;
     } catch (_error) {
@@ -66,6 +66,9 @@ export const layout: RunTimeLayoutConfig = ({
   setInitialState,
 }) => {
   return {
+    menuProps: {
+      defaultOpenKeys: ["/sync"],
+    },
     actionsRender: () => [
       <Knowledge key="knowledge" />,
       <Question key="doc" />,

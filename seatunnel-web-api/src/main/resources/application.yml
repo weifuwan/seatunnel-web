@@ -23,8 +23,8 @@ spring:
     multipart:
       max-file-size: 1024MB
       max-request-size: 1024MB
-#  messages:
-#    basename: i18n/messages
+  messages:
+    basename: i18n/messages
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://192.168.1.113:3306/seatunnel_web?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8

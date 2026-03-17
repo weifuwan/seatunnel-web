@@ -130,7 +130,7 @@ const ImageInput: FC<UploaderProps> = ({ display, cropShape, onImageInput }) => 
             >
               <span style={{ pointerEvents: 'none' }}>Drop your image here, or&nbsp;</span>
               <button
-                style={{ cursor: 'pointer', color: '#155aef', border: 'none', backgroundColor: "rgb(249, 250, 251)" }}
+                style={{ cursor: 'pointer', color: 'hsl(231 48% 48%)', border: 'none', backgroundColor: "rgb(249, 250, 251)" }}
                 onClick={() => inputRef.current?.click()}
               >
                 browse

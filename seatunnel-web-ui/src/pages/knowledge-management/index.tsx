@@ -64,7 +64,7 @@ interface FormValues {
   expression?: string;
 }
 
-const PRIMARY_COLOR = "#155aef";
+const PRIMARY_COLOR = "hsl(231 48% 48%)";
 const PRIMARY_BG = "#eaf2ff";
 const INFO_BG = "#f0f6ff";
 const INFO_BORDER = "#d6e4ff";

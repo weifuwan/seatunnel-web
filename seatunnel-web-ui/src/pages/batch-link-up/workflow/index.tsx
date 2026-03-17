@@ -296,7 +296,7 @@ function FlowComponent({ form, params, goBack }) {
           }
           return {
             ...edge,
-            style: { ...edge.style, stroke: "#155aef" },
+            style: { ...edge.style, stroke: "hsl(231 48% 48%)" },
           };
         }
         return edge;

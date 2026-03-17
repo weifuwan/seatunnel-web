@@ -41,12 +41,12 @@ public class JobMetricsDaoImpl
 
     @Override
     public List<Map<String, Object>> selectRecordsSpeedTrend(String startTime, String endTime, String taskType, String granularity) {
-        return selectRecordsSpeedTrend(startTime, endTime, taskType, granularity);
+        return jobMetricsMapper.selectRecordsSpeedTrend(startTime, endTime, taskType, granularity);
     }
 
     @Override
     public List<Map<String, Object>> selectBytesSpeedTrend(String startTime, String endTime, String taskType, String granularity) {
-        return selectBytesSpeedTrend(startTime, endTime, taskType, granularity);
+        return jobMetricsMapper.selectBytesSpeedTrend(startTime, endTime, taskType, granularity);
     }
 
     @Override

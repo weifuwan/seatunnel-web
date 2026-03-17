@@ -125,17 +125,13 @@
         <finalName>${project.artifactId}</finalName>
         <plugins>
             <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-                <configuration>
-                    <includeSystemScope>true</includeSystemScope>
-                </configuration>
-            </plugin>
-            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
+                <artifactId>maven-jar-plugin</artifactId>
                 <configuration>
-                    <skipTests>true</skipTests>
+                    <excludes>
+                        <exclude>*.yaml</exclude>
+                        <exclude>*.xml</exclude>
+                    </excludes>
                 </configuration>
             </plugin>
         </plugins>

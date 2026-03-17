@@ -17,17 +17,17 @@ const LineChart: React.FC<LineChartProps> = ({ data, xAxisData, title, unit, loa
     const chart = echarts.init(chartRef.current);
 
     const option: echarts.EChartsOption = {
-      title: {
-        text: title,
-        left: 'left',
-        textStyle: {
+      // title: {
+      //   text: title,
+      //   left: 'left',
+      //   textStyle: {
          
-          color: '#333',
-          fontSize: 16, 
-          fontWeight: 'bold', 
-          fontFamily: 'Arial, sans-serif', 
-        },
-      },
+      //     color: '#333',
+      //     fontSize: 16, 
+      //     fontWeight: 'bold', 
+      //     fontFamily: 'Arial, sans-serif', 
+      //   },
+      // },
       tooltip: {
         trigger: 'axis',
       },
@@ -76,7 +76,7 @@ const LineChart: React.FC<LineChartProps> = ({ data, xAxisData, title, unit, loa
     <div
       ref={chartRef}
       style={{
-        width: '100%',
+        width: '75vh',
         height: '330px',
       }}
     />

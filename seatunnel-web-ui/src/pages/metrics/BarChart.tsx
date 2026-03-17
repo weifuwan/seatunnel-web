@@ -30,16 +30,16 @@ const BarChart: React.FC<BChartProps> = ({ data, xAxisData, title, unit, loading
     }
 
     const option: echarts.EChartsOption = {
-      title: {
-        text: title,
-        left: 'left',
-        textStyle: {
-          color: '#333',
-          fontSize: 16,
-          fontWeight: 'bold',
-          fontFamily: 'Arial, sans-serif',
-        },
-      },
+      // title: {
+      //   text: title,
+      //   left: 'left',
+      //   textStyle: {
+      //     color: '#333',
+      //     fontSize: 16,
+      //     fontWeight: 'bold',
+      //     fontFamily: 'Arial, sans-serif',
+      //   },
+      // },
       tooltip: {
         trigger: 'axis',
         formatter: (params: any) => {
@@ -69,7 +69,7 @@ const BarChart: React.FC<BChartProps> = ({ data, xAxisData, title, unit, loading
           barWidth: barWidth,
           // barMaxWidth: "5%",
           itemStyle: {
-            color: '#155aef',
+            color: 'hsl(231 48% 48%)',
             borderRadius: [4, 4, 0, 0],
           },
           emphasis: {
@@ -107,7 +107,7 @@ const BarChart: React.FC<BChartProps> = ({ data, xAxisData, title, unit, loading
     <div
       ref={chartRef}
       style={{
-        width: '100%',
+        width: '75vh',
         height: '330px',
       }}
     />

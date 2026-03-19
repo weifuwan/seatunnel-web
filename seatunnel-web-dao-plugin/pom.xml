@@ -6,32 +6,15 @@
 
     <parent>
         <groupId>org.apache.seatunnel.web</groupId>
-        <artifactId>seatunnel-web-datasource-plugins</artifactId>
+        <artifactId>seatunnel-web</artifactId>
         <version>1.0.0</version>
     </parent>
 
-    <artifactId>seatunnel-web-datasource-all</artifactId>
-    <version>1.0.0</version>
-
-    <dependencies>
-        <dependency>
-            <groupId>org.apache.seatunnel.web</groupId>
-            <artifactId>seatunnel-web-datasource-mysql</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.seatunnel.web</groupId>
-            <artifactId>seatunnel-web-datasource-oracle</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.seatunnel.web</groupId>
-            <artifactId>seatunnel-web-datasource-postgresql</artifactId>
-        </dependency>
-
-    </dependencies>
+    <artifactId>seatunnel-web-dao-plugin</artifactId>
+    <packaging>pom</packaging>
 
     <dependencyManagement>
         <dependencies>
-
             <dependency>
                 <groupId>org.apache.seatunnel.web</groupId>
                 <artifactId>seatunnel-web-bom</artifactId>
@@ -42,5 +25,12 @@
         </dependencies>
     </dependencyManagement>
 
+    <modules>
+        <module>seatunnel-web-dao-api</module>
+        <module>seatunnel-web-dao-plugin-all</module>
+        <module>seatunnel-web-dao-h2</module>
+        <module>seatunnel-web-dao-mysql</module>
+        <module>seatunnel-web-dao-postgresql</module>
+    </modules>
 
 </project>

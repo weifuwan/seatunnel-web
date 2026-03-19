@@ -6,22 +6,20 @@
 
     <parent>
         <groupId>org.apache.seatunnel.web</groupId>
-        <artifactId>seatunnel-web</artifactId>
+        <artifactId>seatunnel-web-datasource-plugins</artifactId>
         <version>1.0.0</version>
     </parent>
 
-    <artifactId>seatunnel-web-datasource-plugins</artifactId>
+    <artifactId>seatunnel-web-datasource-postgresql</artifactId>
     <version>1.0.0</version>
 
-    <packaging>pom</packaging>
-
-    <modules>
-        <module>seatunnel-web-datasource-all</module>
-        <module>seatunnel-web-datasource-api</module>
-        <module>seatunnel-web-datasource-mysql</module>
-        <module>seatunnel-web-datasource-oracle</module>
-        <module>seatunnel-web-datasource-postgresql</module>
-    </modules>
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.seatunnel.web</groupId>
+            <artifactId>seatunnel-web-datasource-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+    </dependencies>
 
 
 </project>

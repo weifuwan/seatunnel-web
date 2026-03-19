@@ -52,6 +52,7 @@
         <module>seatunnel-web-ui</module>
         <module>seatunnel-web-copilot</module>
         <module>seatunnel-web-dao</module>
+        <module>seatunnel-web-dao-plugin</module>
         <module>seatunnel-web-bom</module>
         <module>seatunnel-web-spi</module>
         <module>seatunnel-web-core</module>
@@ -107,12 +108,17 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.seatunnel.web</groupId>
-                <artifactId>seatunnel-web-datasource-pgsql</artifactId>
+                <artifactId>seatunnel-web-datasource-postgresql</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.seatunnel.web</groupId>
                 <artifactId>seatunnel-web-datasource-all</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.seatunnel.web</groupId>
+                <artifactId>seatunnel-web-dao-plugin-all</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -128,6 +134,11 @@
             <dependency>
                 <groupId>org.apache.seatunnel.web</groupId>
                 <artifactId>seatunnel-web-engine-client</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.seatunnel.web</groupId>
+                <artifactId>seatunnel-web-dao-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
         </dependencies>

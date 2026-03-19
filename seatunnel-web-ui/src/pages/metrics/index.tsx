@@ -185,7 +185,7 @@ const App: React.FC = () => {
       <main className="h-full overflow-auto p-4 md:p-6">
         <div className="min-h-full rounded-3xl bg-slate-50/60 p-6 md:p-8">
           <div className="mx-auto max-w-[1600px]">
-            <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="mb-8 flex gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <h1 className="flex items-center gap-2 text-2xl font-bold md:text-3xl">
                   <svg

@@ -1,7 +1,7 @@
 module.exports = {
   content: [
-    './src/pages/**/*.tsx',
-    './src/components/**/*.tsx',
-    './src/layouts/**/*.tsx',
+    "./src/**/*.{js,jsx,ts,tsx}",
+    "./pages/**/*.{js,jsx,ts,tsx}",
+    "./components/**/*.{js,jsx,ts,tsx}",
   ],
-}
+};

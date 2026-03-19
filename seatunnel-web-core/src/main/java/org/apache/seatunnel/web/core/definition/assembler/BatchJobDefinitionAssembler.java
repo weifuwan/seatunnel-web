@@ -19,7 +19,6 @@ public class BatchJobDefinitionAssembler {
                 .jobDesc(dto.getJobDesc())
                 .jobDefinitionInfo(analysis.getNormalizedJobDefinitionInfo())
                 .jobVersion(1)
-                .clientId(dto.getClientId())
                 .parallelism(dto.getParallelism())
                 .jobType(dto.getJobType())
                 .syncMode(dto.getSyncMode())
@@ -39,7 +38,6 @@ public class BatchJobDefinitionAssembler {
         po.setJobName(dto.getJobName());
         po.setJobDesc(dto.getJobDesc());
         po.setJobDefinitionInfo(analysis.getNormalizedJobDefinitionInfo());
-        po.setClientId(dto.getClientId());
         po.setParallelism(dto.getParallelism());
         po.setJobType(dto.getJobType());
         po.setSyncMode(dto.getSyncMode());

@@ -20,10 +20,8 @@ public class StreamingJobDefinitionAssembler {
                 .jobDesc(dto.getJobDesc())
                 .jobDefinitionInfo(analysis.getNormalizedJobDefinitionInfo())
                 .jobVersion(1)
-                .clientId(dto.getClientId())
                 .parallelism(dto.getParallelism())
                 .jobType(dto.getJobType())
-//                .syncMode(dto.getSyncMode())
                 .sourceType(analysis.getSourceType())
                 .sourceTable(analysis.getSourceTableJson())
                 .sinkType(analysis.getSinkType())
@@ -40,10 +38,8 @@ public class StreamingJobDefinitionAssembler {
         po.setJobName(dto.getJobName());
         po.setJobDesc(dto.getJobDesc());
         po.setJobDefinitionInfo(analysis.getNormalizedJobDefinitionInfo());
-        po.setClientId(dto.getClientId());
         po.setParallelism(dto.getParallelism());
         po.setJobType(dto.getJobType());
-//        po.setSyncMode(dto.getSyncMode());
         po.setSourceType(analysis.getSourceType());
         po.setSourceTable(analysis.getSourceTableJson());
         po.setSinkType(analysis.getSinkType());

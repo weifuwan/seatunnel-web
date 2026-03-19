@@ -1,5 +1,5 @@
 {
-  "name": "ant-design-pro",
+  "name": "seatunnel-web",
   "version": "6.0.0",
   "private": true,
   "description": "An out-of-box UI solution for enterprise applications",
@@ -44,6 +44,7 @@
     "@stomp/stompjs": "^7.1.0",
     "antd": "^5.25.4",
     "antd-style": "^3.7.0",
+    "autoprefixer": "^10.4.27",
     "classnames": "^2.5.1",
     "dayjs": "^1.11.13",
     "dnd-kit": "^0.0.2",
@@ -52,6 +53,7 @@
     "framer-motion": "^12.38.0",
     "legendary-cursor": "^1.0.2",
     "lucide-react": "^0.577.0",
+    "postcss": "^8.5.8",
     "react": "^18.3.0",
     "react-countup": "^6.5.3",
     "react-dom": "^18.3.0",

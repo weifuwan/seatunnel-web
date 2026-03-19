@@ -28,8 +28,6 @@ public class BatchJobDefinition {
 
     private Integer jobVersion;
 
-    private Long clientId;
-
     private Integer parallelism;
 
     private JobMode jobType;

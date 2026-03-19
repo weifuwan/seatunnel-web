@@ -31,8 +31,6 @@ public class StreamingJobDefinition {
 
     private Integer jobVersion;
 
-    private Long clientId;
-
     private int parallelism;
 
     private String scheduleStatus;

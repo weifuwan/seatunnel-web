@@ -1,0 +1,2 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  org.apache.seatunnel.web.dao.plugin.h2.MysqlDaoPluginAutoConfiguration

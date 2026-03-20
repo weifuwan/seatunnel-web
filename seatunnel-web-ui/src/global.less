@@ -185,6 +185,7 @@ ol {
 .ant-pro-layout .ant-pro-layout-content {
   padding-block: 0 !important;
   padding-inline: 0 !important;
+  background-color: white !important;
 }
 
 .ant-card .ant-card-body {
@@ -707,4 +708,259 @@ ol {
 /* 选中后固定停在 4px 位置 */
 .ant-menu-item-selected .ant-pro-base-menu-inline-item-text {
   transform: translateX(4px);
+}
+
+.ant-pro-global-header {
+  margin-inline: 0px !important;
+}
+
+/* =========================
+   Ant Design Pro / ProLayout
+   侧边栏默认收起，hover 自动展开
+   收起时只显示 icon，隐藏菜单文字
+   放到 src/global.less
+   ========================= */
+
+@pro-sider-collapsed-width: 64px;
+@pro-sider-expanded-width: 256px;
+@pro-sider-transition-duration: 0.2s;
+@pro-sider-text-gap: 10px;
+@pro-sider-icon-width: 16px;
+
+/* 建议：
+   如果你外层有自定义类，比如 .custom-hover-sider-layout，
+   可以把下面所有 .ant-layout 改成：
+   .custom-hover-sider-layout .ant-layout
+   这样更安全，不会误伤别的布局
+*/
+
+.ant-layout {
+
+  /* =========================
+     1. 默认：占位 div 收起
+     ========================= */
+  >div:first-child[style*='width'] {
+    width: @pro-sider-collapsed-width !important;
+    min-width: @pro-sider-collapsed-width !important;
+    max-width: @pro-sider-collapsed-width !important;
+    flex: 0 0 @pro-sider-collapsed-width !important;
+    overflow: hidden;
+    transition: all @pro-sider-transition-duration ease !important;
+  }
+
+  /* =========================
+     2. 默认：真正的 sider 收起
+     ========================= */
+  >aside.ant-layout-sider.ant-pro-sider {
+    width: @pro-sider-collapsed-width !important;
+    min-width: @pro-sider-collapsed-width !important;
+    max-width: @pro-sider-collapsed-width !important;
+    flex: 0 0 @pro-sider-collapsed-width !important;
+    overflow: hidden;
+    transition: all @pro-sider-transition-duration ease !important;
+    z-index: 100;
+
+    /* 菜单内容容器 */
+    .ant-menu-title-content {
+      display: inline-flex;
+      align-items: center;
+      overflow: hidden;
+      max-width: 100%;
+    }
+
+    /* 菜单项整体布局 */
+    .ant-pro-base-menu-inline-item-title {
+      display: flex;
+      align-items: center;
+      overflow: hidden;
+      min-width: 0;
+    }
+
+    /* icon 固定显示 */
+    .ant-pro-base-menu-inline-item-icon {
+      flex: 0 0 @pro-sider-icon-width;
+      min-width: @pro-sider-icon-width;
+      width: @pro-sider-icon-width;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 20px;
+      width: 24px;
+    }
+
+    /* 默认彻底隐藏菜单文字 */
+    .ant-pro-base-menu-inline-item-text {
+      width: 0 !important;
+      min-width: 0 !important;
+      max-width: 0 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      border: 0 !important;
+      opacity: 0 !important;
+      overflow: hidden !important;
+      white-space: nowrap !important;
+      display: inline-block !important;
+      transition:
+        opacity 0.12s ease,
+        width @pro-sider-transition-duration ease,
+        max-width @pro-sider-transition-duration ease,
+        margin @pro-sider-transition-duration ease !important;
+    }
+
+    /* 链接型菜单项避免内容撑开 */
+    .ant-menu-item a {
+      overflow: hidden;
+      display: block;
+      width: 100%;
+    }
+
+    /* 子菜单箭头默认隐藏 */
+    .ant-menu-submenu-arrow {
+      opacity: 0 !important;
+      transition: opacity 0.12s ease !important;
+    }
+  }
+
+  /* =========================
+     3. hover 到 sider 时：展开
+     ========================= */
+  &:has(> aside.ant-layout-sider.ant-pro-sider:hover) {
+
+    /* 占位 div 跟着展开 */
+    >div:first-child[style*='width'] {
+      width: @pro-sider-expanded-width !important;
+      min-width: @pro-sider-expanded-width !important;
+      max-width: @pro-sider-expanded-width !important;
+      flex: 0 0 @pro-sider-expanded-width !important;
+    }
+
+    /* 真正 sider 展开 */
+    >aside.ant-layout-sider.ant-pro-sider {
+      width: @pro-sider-expanded-width !important;
+      min-width: @pro-sider-expanded-width !important;
+      max-width: @pro-sider-expanded-width !important;
+      flex: 0 0 @pro-sider-expanded-width !important;
+
+      /* 展开后恢复菜单文字 */
+      .ant-pro-base-menu-inline-item-text {
+        width: auto !important;
+        min-width: auto !important;
+        max-width: 200px !important;
+        margin-inline-start: @pro-sider-text-gap !important;
+        opacity: 1 !important;
+      }
+
+      /* 展开后显示箭头 */
+      .ant-menu-submenu-arrow {
+        opacity: 1 !important;
+      }
+
+      /* 避免展开后文字被裁剪 */
+      .ant-menu-title-content,
+      .ant-pro-base-menu-inline-item-title {
+        overflow: visible;
+      }
+    }
+  }
+}
+
+/* =========================
+   4. 收起按钮动画
+   ========================= */
+.ant-pro-sider-collapsed-button {
+  transition: all @pro-sider-transition-duration ease;
+  z-index: 101;
+}
+
+/* =========================
+   5. logo 区域可选优化
+   防止 logo 文本把侧栏撑开
+   ========================= */
+.ant-pro-sider-logo {
+  overflow: hidden;
+
+  img,
+  a,
+  h1,
+  span,
+  div {
+    white-space: nowrap;
+    transition: all @pro-sider-transition-duration ease;
+  }
+}
+
+.ant-menu-item-only-child {
+  padding-left: 8px !important;
+}
+
+.ant-pro-layout .ant-layout-header.ant-pro-layout-header {
+  border-block-end: 0px;
+}
+
+.ant-pro-global-header-logo img {
+  margin-left: 17px;
+  padding-right: 12px;
+
+}
+
+.ant-pro-base-menu-inline-item-title {
+  gap: 0px;
+}
+
+
+.ant-pro-global-header-logo {
+  margin-inline-end: 0
+}
+
+/* =========================
+   Header 跟随 sider 宽度变化
+   关键：覆盖组件内联 min-width
+   ========================= */
+
+.ant-pro-global-header-right-content {
+  width: calc(100vw - @pro-sider-collapsed-width) !important;
+  min-width: 0 !important;
+  flex: 1 1 auto !important;
+  background: white;
+  border-top-left-radius: 16px;
+  transition: all 0.22s ease !important;
+}
+
+/* hover 到 sider 时：header 同步按展开宽度计算 */
+.ant-layout:has(> aside.ant-layout-sider.ant-pro-sider:hover) {
+  .ant-pro-global-header-right-content {
+    width: calc(100vw - 16vw) !important;
+    min-width: 0 !important;
+  }
+}
+
+.ant-pro-global-header-logo,
+.ant-pro-global-header-logo a {
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  margin-right: 4px;
+}
+
+.ant-pro-global-header-logo h1 {
+  width: 0 !important;
+  max-width: 0 !important;
+  margin: 0 !important;
+  opacity: 0 !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+  transition:
+    opacity 0.12s ease,
+    width @pro-sider-transition-duration ease,
+    max-width @pro-sider-transition-duration ease,
+    margin @pro-sider-transition-duration ease !important;
+}
+
+.ant-layout:has(> aside.ant-layout-sider.ant-pro-sider:hover) {
+  .ant-pro-global-header-logo h1 {
+    width: auto !important;
+    max-width: 220px !important;
+    margin-inline-start: 8px !important;
+    opacity: 1 !important;
+  }
 }

@@ -15,8 +15,7 @@ const Settings: ProLayoutProps & {
   fixedHeader: false,
   fixSiderbar: true,
   colorWeak: false,
-  
-  title: 'Seatunnel Web',
+  title: 'SeaTunnel Web',
   pwa: true,
   logo: '/logo.png',
   iconfontUrl: '',

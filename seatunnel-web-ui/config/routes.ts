@@ -25,24 +25,15 @@ export default [
   },
   {
     icon: 'product',
-    name: 'data-sync',
-    path: '/sync',
-    routes: [
-      {
-        path: '/sync',
-        redirect: '/sync/batch-link-up',
-      },
-      {
-        name: 'batch',
-        path: '/sync/batch-link-up',
-        component: './batch-link-up',
-      },
-      {
-        name: 'stream',
-        path: '/sync/stream-link-up',
-        component: './stream-link-up',
-      },
-    ]
+    name: 'data-sync.batch',
+    path: '/sync/batch-link-up',
+    component: './batch-link-up',
+  },
+  {
+    icon: 'product',
+    name: 'data-sync.stream',
+    path: '/sync/stream-link-up',
+    component: './stream-link-up',
   },
   {
     icon: 'monitor',

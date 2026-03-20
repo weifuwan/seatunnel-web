@@ -12,35 +12,36 @@
  */
 export default [
   {
+    icon: 'monitor',
+    name: 'metrics',
+    path: '/metrics',
+    component: './metrics',
+  },
+  {
     icon: 'database',
     name: 'datasource',
     path: '/data-source',
     component: './data-source',
   },
   {
-    icon: 'monitor',
+    icon: 'bulb',
     name: 'client',
     path: '/client',
     component: './client',
   },
   {
-    icon: 'product',
+    icon: 'sun',
     name: 'data-sync.batch',
     path: '/sync/batch-link-up',
     component: './batch-link-up',
   },
   {
-    icon: 'product',
+    icon: 'wifi',
     name: 'data-sync.stream',
     path: '/sync/stream-link-up',
     component: './stream-link-up',
   },
-  {
-    icon: 'monitor',
-    name: 'metrics',
-    path: '/metrics',
-    component: './metrics',
-  },
+
   {
     icon: 'read',
     name: 'knowledge-management',

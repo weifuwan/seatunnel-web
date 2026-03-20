@@ -1,10 +1,10 @@
-package org.apache.seatunnel.web.core.definition.handler;
+package org.apache.seatunnel.web.core.job.handler;
 
 import jakarta.annotation.Resource;
 import org.apache.seatunnel.web.common.enums.JobMode;
 import org.apache.seatunnel.web.common.enums.SyncModeEnum;
-import org.apache.seatunnel.web.core.definition.model.JobDefinitionAnalysisResult;
-import org.apache.seatunnel.web.core.definition.parser.JobDefinitionResolver;
+import org.apache.seatunnel.web.core.job.model.JobDefinitionAnalysisResult;
+import org.apache.seatunnel.web.core.job.parser.JobDefinitionResolver;
 import org.apache.seatunnel.web.core.hocon.JobConfigBuild;
 import org.apache.seatunnel.web.core.utils.DagUtil;
 import org.apache.seatunnel.web.spi.bean.dto.BaseJobDefinitionCommand;

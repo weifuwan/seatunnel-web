@@ -2,10 +2,13 @@ import { Button, Select } from "antd";
 import React from "react";
 
 // 图标组件
+import {
+  generateCDCDataSourceOptions,
+  generateDataSourceOptions,
+} from "../batch-link-up/DataSourceSelect";
 import DataSourceSelect from "./DataSourceSelect";
 import IconRightArrow from "./IconRightArrow";
 import "./index.less";
-import { generateCDCDataSourceOptions, generateDataSourceOptions } from "../batch-link-up/DataSourceSelect";
 
 const { Option } = Select;
 
@@ -59,11 +62,10 @@ const DataSyncHeader: React.FC<DataSyncHeaderProps> = ({
                 className="jy-dc-ui-title-name-content"
                 title="BaStreamingtch Data Sync Job"
               >
-                Streaming Data Sync Job
+                实时数据同步任务
               </div>
               <div className="jy-dc-ui-title-sub-name">
-                Build enterprise-grade data sync jobs in minutes with a fully
-                guided, white-screen configuration.
+                完全向导式白屏化配置，轻松上手企业级数据同步任务配置。先选择您要同步的來源和去向类型，系统会自动展示它们支持的所有同步方案，一步即可建立所需同步任务。
               </div>
             </div>
           </div>
@@ -77,8 +79,8 @@ const DataSyncHeader: React.FC<DataSyncHeaderProps> = ({
               value={sourceType}
               onChange={handleSourceChange}
               dataSourceOptions={generateCDCDataSourceOptions()}
-              placeholder="SOURCE"
-              prefix="SOURCE："
+              placeholder="来源"
+              prefix="来源："
             />
 
             <div
@@ -91,8 +93,8 @@ const DataSyncHeader: React.FC<DataSyncHeaderProps> = ({
               value={targetType}
               dataSourceOptions={generateDataSourceOptions()}
               onChange={handleTargetChange}
-              placeholder="SINK"
-              prefix="SINK："
+              placeholder="去向"
+              prefix="去向："
             />
 
             <Button
@@ -101,7 +103,7 @@ const DataSyncHeader: React.FC<DataSyncHeaderProps> = ({
               disabled={isButtonDisabled}
               onClick={handleCreateClick}
             >
-              START
+              开始
             </Button>
           </div>
         </div>

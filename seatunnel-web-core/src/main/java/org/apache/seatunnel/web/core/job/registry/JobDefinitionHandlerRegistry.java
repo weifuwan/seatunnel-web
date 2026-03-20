@@ -1,7 +1,7 @@
-package org.apache.seatunnel.web.core.definition.registry;
+package org.apache.seatunnel.web.core.job.registry;
 
 import jakarta.annotation.Resource;
-import org.apache.seatunnel.web.core.definition.handler.JobDefinitionHandler;
+import org.apache.seatunnel.web.core.job.handler.JobDefinitionHandler;
 import org.apache.seatunnel.web.spi.bean.dto.BaseJobDefinitionCommand;
 import org.springframework.stereotype.Component;
 

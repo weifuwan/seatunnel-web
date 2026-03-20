@@ -1,20 +1,19 @@
-package org.apache.seatunnel.web.core.definition.assembler;
+package org.apache.seatunnel.web.core.job.assembler;
 
-import org.apache.seatunnel.web.core.definition.model.JobDefinitionAnalysisResult;
+import org.apache.seatunnel.web.core.job.model.JobDefinitionAnalysisResult;
 import org.apache.seatunnel.web.dao.entity.BatchJobDefinition;
-import org.apache.seatunnel.web.dao.entity.StreamingJobDefinition;
-import org.apache.seatunnel.web.spi.bean.dto.SeatunnelStreamingJobDefinitionDTO;
+import org.apache.seatunnel.web.spi.bean.dto.SeatunnelBatchJobDefinitionDTO;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
 
 @Component
-public class StreamingJobDefinitionAssembler {
+public class BatchJobDefinitionAssembler {
 
-    public StreamingJobDefinition create(SeatunnelStreamingJobDefinitionDTO dto,
+    public BatchJobDefinition create(SeatunnelBatchJobDefinitionDTO dto,
                                      JobDefinitionAnalysisResult analysis,
                                      Date now) {
-        return StreamingJobDefinition.builder()
+        return BatchJobDefinition.builder()
                 .id(dto.getId())
                 .jobName(dto.getJobName())
                 .jobDesc(dto.getJobDesc())
@@ -22,6 +21,7 @@ public class StreamingJobDefinitionAssembler {
                 .jobVersion(1)
                 .parallelism(dto.getParallelism())
                 .jobType(dto.getJobType())
+                .syncMode(dto.getSyncMode())
                 .sourceType(analysis.getSourceType())
                 .sourceTable(analysis.getSourceTableJson())
                 .sinkType(analysis.getSinkType())
@@ -31,8 +31,8 @@ public class StreamingJobDefinitionAssembler {
                 .build();
     }
 
-    public void update(StreamingJobDefinition po,
-                       SeatunnelStreamingJobDefinitionDTO dto,
+    public void update(BatchJobDefinition po,
+                       SeatunnelBatchJobDefinitionDTO dto,
                        JobDefinitionAnalysisResult analysis,
                        Date now) {
         po.setJobName(dto.getJobName());
@@ -40,6 +40,7 @@ public class StreamingJobDefinitionAssembler {
         po.setJobDefinitionInfo(analysis.getNormalizedJobDefinitionInfo());
         po.setParallelism(dto.getParallelism());
         po.setJobType(dto.getJobType());
+        po.setSyncMode(dto.getSyncMode());
         po.setSourceType(analysis.getSourceType());
         po.setSourceTable(analysis.getSourceTableJson());
         po.setSinkType(analysis.getSinkType());

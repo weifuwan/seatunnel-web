@@ -11,7 +11,6 @@
         d.job_desc AS jobDesc,
         d.job_definition_info AS jobDefinitionInfo,
         d.job_version AS jobVersion,
-        d.client_id AS clientId,
         d.parallelism AS parallelism,
         d.source_type AS sourceType,
         d.source_table AS sourceTable,

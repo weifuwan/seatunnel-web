@@ -33,7 +33,7 @@ public class StreamingJobDefinitionController {
     @Resource
     private StreamingJobDefinitionService streamingJobDefinitionService;
 
-    @PostMapping("/hocon")
+    @PostMapping("/buildHoconConfig")
     @Operation(
             summary = "Build HOCON config",
             description = "Generate HOCON configuration from stream job definition"

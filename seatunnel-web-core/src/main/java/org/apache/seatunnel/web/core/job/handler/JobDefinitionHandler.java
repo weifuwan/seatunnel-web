@@ -1,6 +1,6 @@
-package org.apache.seatunnel.web.core.definition.handler;
+package org.apache.seatunnel.web.core.job.handler;
 
-import org.apache.seatunnel.web.core.definition.model.JobDefinitionAnalysisResult;
+import org.apache.seatunnel.web.core.job.model.JobDefinitionAnalysisResult;
 import org.apache.seatunnel.web.spi.bean.dto.BaseJobDefinitionCommand;
 
 public interface JobDefinitionHandler {

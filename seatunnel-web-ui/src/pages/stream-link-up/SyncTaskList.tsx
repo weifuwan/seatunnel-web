@@ -12,13 +12,21 @@ import Footer from "./Footer";
 import "./index.less";
 import TaskStatus from "./TaskStatus";
 import { taskExecutionApi } from "./type";
+import { useIntl } from "@umijs/max";
 
 interface Props {
   goDetail: (value: any, item?: any) => void;
 }
+
+const DEFAULT_TIME_RANGE = [moment().subtract(4, "days"), moment().add(1, "days")];
+
 const App: React.FC<Props> = ({ goDetail }) => {
+  const intl = useIntl();
+
   const [taskList, setTaskList] = useState([]);
-  const [searchParams, setSearchParams] = useState({});
+  const [searchParams, setSearchParams] = useState<any>({
+    createTime: DEFAULT_TIME_RANGE,
+  });
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 10,
@@ -27,89 +35,115 @@ const App: React.FC<Props> = ({ goDetail }) => {
   const [loading, setLoading] = useState(false);
 
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+
   useEffect(() => {
     fetchTaskList();
   }, [searchParams, pagination.current, pagination.pageSize]);
 
   const fetchTaskList = () => {
     setLoading(true);
-    // 在发送请求前转换参数
     const transformedParams = { ...searchParams };
 
     if (transformedParams?.createTime) {
-      transformedParams.startTime = moment(
-        transformedParams.createTime[0]
-      ).format("YYYY-MM-DD HH:mm:ss");
-      transformedParams.endTime = moment(
-        transformedParams.createTime[1]
-      ).format("YYYY-MM-DD HH:mm:ss");
+      transformedParams.createTimeStart = moment(transformedParams.createTime[0]).format(
+        "YYYY-MM-DD HH:mm:ss",
+      );
+      transformedParams.createTimeEnd = moment(transformedParams.createTime[1]).format(
+        "YYYY-MM-DD HH:mm:ss",
+      );
       delete transformedParams.createTime;
     }
 
-    seatunnelStreamJobDefinitionApi
-      .page({ ...transformedParams })
-      .then((data) => {
-        if (data?.code === 0) {
-          console.log(data)
-          setTaskList(data?.data?.bizData);
-          setPagination((prev) => ({
-            ...prev,
-            total: data?.data?.pagination?.total || 0,
-          }));
-          setLoading(false);
-        } else {
-          message.error(data?.message);
-          setLoading(false);
-        }
-      });
+    seatunnelStreamJobDefinitionApi.page({ ...transformedParams }).then((data) => {
+      if (data?.code === 0) {
+        setTaskList(data?.data?.bizData);
+        setPagination((prev) => ({
+          ...prev,
+          total: data?.data?.pagination?.total || 0,
+        }));
+        setLoading(false);
+      } else {
+        message.error(data?.message);
+        setLoading(false);
+      }
+    });
   };
 
   const menuItems = [
-    { key: "view", label: <span style={{ fontWeight: 500 }}>View</span> },
-    { key: "edit", label: <span style={{ fontWeight: 500 }}>Edit</span> },
-    { key: "delete", label: <span style={{ fontWeight: 500 }}>Delete</span> },
+    {
+      key: "view",
+      label: (
+        <span style={{ fontWeight: 500 }}>
+          {intl.formatMessage({ id: "pages.job.menu.view", defaultMessage: "View" })}
+        </span>
+      ),
+    },
+    {
+      key: "edit",
+      label: (
+        <span style={{ fontWeight: 500 }}>
+          {intl.formatMessage({ id: "pages.job.menu.edit", defaultMessage: "Edit" })}
+        </span>
+      ),
+    },
+    {
+      key: "delete",
+      label: (
+        <span style={{ fontWeight: 500 }}>
+          {intl.formatMessage({ id: "pages.job.menu.delete", defaultMessage: "Delete" })}
+        </span>
+      ),
+    },
   ];
 
   const baseColumns = [
     {
-      title: "Name",
+      title: intl.formatMessage({ id: "pages.job.table.col.name", defaultMessage: "Name" }),
       dataIndex: "jobName",
-      width: "15%",
+      width: "12%",
       ellipsis: true,
+      render: (_content: any, record: any) => (
+        <div>
+          <em style={{ fontWeight: 500 }}>
+            {intl.formatMessage({ id: "pages.job.table.label.jobId", defaultMessage: "JobId" })}
+          </em>
+          : <span style={{ fontSize: "12px", color: "gray" }}>{record?.id}</span> <br />
+          <em style={{ fontWeight: 500 }}>
+            {intl.formatMessage({ id: "pages.job.table.label.jobName", defaultMessage: "JobName" })}
+          </em>
+          : {record?.jobName}
+        </div>
+      ),
     },
     {
-      title: "Sync Plan",
+      title: intl.formatMessage({ id: "pages.job.table.col.syncPlan", defaultMessage: "Sync Plan" }),
       dataIndex: "",
-      width: "20%",
-      render: (content: any, record: any) => (
-        <DataSourceSyncPlan record={record} />
-      ),
+      width: "30%",
+      render: (_content: any, record: any) => <DataSourceSyncPlan record={record} />,
     },
     {
-      title: "Status",
+      title: intl.formatMessage({ id: "pages.job.table.col.status", defaultMessage: "Status" }),
       dataIndex: "taskParams",
-      width: "7%",
-      render: (content: any, record: any) => (
-        <TaskStatus status={record?.status} />
+      width: "10%",
+      render: (_content: any, record: any) => (
+        <TaskStatus status={record?.lastJobStatus} errorMessage={record?.errorMessage} />
       ),
     },
     {
-      title: "Execution",
-      dataIndex: "Execution",
-      width: "35%",
-      render: (content: any, record: any) => (
-        <ExecutionStatus record={record} />
-      ),
+      title: intl.formatMessage({ id: "pages.job.table.col.execution", defaultMessage: "Execution" }),
+      dataIndex: "执行概况",
+      width: "25%",
+      render: (_content: any, record: any) => <ExecutionStatus record={record} />,
     },
     {
-      title: "Update Time",
-      dataIndex: "updateTime",
+      title: intl.formatMessage({ id: "pages.job.table.col.createTime", defaultMessage: "CreateTime" }),
+      dataIndex: "createTime",
       width: "10%",
     },
     {
-      title: "Operate",
+      title: intl.formatMessage({ id: "pages.job.table.col.operate", defaultMessage: "Operate" }),
       dataIndex: "",
-      width: "17%",
+      width: "16%",
       fixed: "right",
       render: (record: any) => (
         <ActionColumn
@@ -149,11 +183,15 @@ const App: React.FC<Props> = ({ goDetail }) => {
   const onStartAll = () => {
     taskExecutionApi.batchExecute(selectedRowKeys).then((data) => {
       if (data?.code === 0) {
-        message.success("全部启动成功");
+        message.success(
+          intl.formatMessage({ id: "pages.job.batch.start.success", defaultMessage: "Start all succeeded" }),
+        );
         setSelectedRowKeys([]);
         fetchTaskList();
       } else {
-        message.error("全部启动失败");
+        message.error(
+          intl.formatMessage({ id: "pages.job.batch.start.fail", defaultMessage: "Start all failed" }),
+        );
       }
     });
   };
@@ -161,11 +199,15 @@ const App: React.FC<Props> = ({ goDetail }) => {
   const onStopAll = () => {
     taskExecutionApi.batchCancel(selectedRowKeys).then((data) => {
       if (data?.code === 0) {
-        message.success("全部启动成功");
+        message.success(
+          intl.formatMessage({ id: "pages.job.batch.stop.success", defaultMessage: "Stop all succeeded" }),
+        );
         setSelectedRowKeys([]);
         fetchTaskList();
       } else {
-        message.error("全部启动失败");
+        message.error(
+          intl.formatMessage({ id: "pages.job.batch.stop.fail", defaultMessage: "Stop all failed" }),
+        );
       }
     });
   };
@@ -183,10 +225,7 @@ const App: React.FC<Props> = ({ goDetail }) => {
           <div className="config-manage-page">
             <div className="operate-bar">
               <div className="left">
-                <AdvancedSearchForm
-                  onSearch={handleSearch}
-                  onReset={handleReset}
-                />
+                <AdvancedSearchForm onSearch={handleSearch} onReset={handleReset} />
               </div>
             </div>
             <Divider style={{ margin: "0 0 24px" }} />

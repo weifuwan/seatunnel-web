@@ -6,10 +6,10 @@ import org.apache.seatunnel.web.api.service.StreamingJobDefinitionService;
 
 import org.apache.seatunnel.web.api.service.application.streaming.StreamingJobLifecycleService;
 import org.apache.seatunnel.web.common.utils.ConvertUtil;
-import org.apache.seatunnel.web.core.definition.assembler.StreamingJobDefinitionAssembler;
-import org.apache.seatunnel.web.core.definition.handler.JobDefinitionHandler;
-import org.apache.seatunnel.web.core.definition.model.JobDefinitionAnalysisResult;
-import org.apache.seatunnel.web.core.definition.registry.JobDefinitionHandlerRegistry;
+import org.apache.seatunnel.web.core.job.assembler.StreamingJobDefinitionAssembler;
+import org.apache.seatunnel.web.core.job.handler.JobDefinitionHandler;
+import org.apache.seatunnel.web.core.job.model.JobDefinitionAnalysisResult;
+import org.apache.seatunnel.web.core.job.registry.JobDefinitionHandlerRegistry;
 import org.apache.seatunnel.web.dao.entity.StreamingJobDefinition;
 import org.apache.seatunnel.web.dao.repository.StreamingJobDefinitionDao;
 import org.apache.seatunnel.web.spi.bean.dto.SeatunnelStreamJobDefinitionDTO;

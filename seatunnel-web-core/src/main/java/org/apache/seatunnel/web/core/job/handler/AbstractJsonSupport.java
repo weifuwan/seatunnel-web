@@ -1,4 +1,4 @@
-package org.apache.seatunnel.web.core.definition.handler;
+package org.apache.seatunnel.web.core.job.handler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 

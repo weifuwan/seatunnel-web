@@ -1,4 +1,4 @@
-package org.apache.seatunnel.web.core.definition.model;
+package org.apache.seatunnel.web.core.job.model;
 
 import lombok.Builder;
 import lombok.Data;

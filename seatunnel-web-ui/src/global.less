@@ -687,3 +687,24 @@ ol {
 // .ant-tooltip .ant-tooltip-content {
 //   width: 250px;
 // }
+
+.ant-pro-base-menu-inline-item-title .ant-pro-base-menu-inline-item-text {
+  max-width: 100%;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  word-break: break-all;
+  white-space: nowrap;
+  font-size: 13px !important;
+  display: inline-block;
+  transition: transform 0.2s ease;
+}
+
+/* hover 时右移 4px */
+.ant-menu-item:hover .ant-pro-base-menu-inline-item-text {
+  transform: translateX(4px);
+}
+
+/* 选中后固定停在 4px 位置 */
+.ant-menu-item-selected .ant-pro-base-menu-inline-item-text {
+  transform: translateX(4px);
+}

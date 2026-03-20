@@ -1,4 +1,4 @@
-package org.apache.seatunnel.web.core.definition.parser;
+package org.apache.seatunnel.web.core.job.parser;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 

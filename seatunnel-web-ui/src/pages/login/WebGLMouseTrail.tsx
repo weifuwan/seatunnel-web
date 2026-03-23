@@ -45,7 +45,7 @@ export default function LegendaryCursorEffect({
     if (w.__legendaryCursorInitialized?.[singletonKey]) return;
 
     const defaultOptions: LegendaryCursorOptions = {
-      lineSize: 0.09,
+      lineSize: 0.04,
       opacityDecrement: 0.45,
       speedExpFactor: 0.9,
       lineExpFactor: 0.7,

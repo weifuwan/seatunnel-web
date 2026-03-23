@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { Popover, Table, message } from "antd";
 import { TableOutlined } from "@ant-design/icons";
-import { dataSourceCatalogApi } from "../../data-source/type";
+
 import "../index.less"
+import { dataSourceCatalogApi } from "@/pages/data-source/service";
 
 interface TableColumnsPopoverProps {
   sourceId: string;

@@ -1,10 +1,10 @@
-import { FormField } from "@/pages/data-source/type";
+
 import type { FormInstance } from "antd";
 import { Button, Input, message, Space, Upload } from "antd";
 import { uploadDriverJar } from "../services/pluginConfig";
 
 export default function DriverLocationField(props: {
-  field: FormField;
+  field: any;
   dbType: string;
   configForm: FormInstance;
 }) {

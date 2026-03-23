@@ -1,4 +1,4 @@
-import { dataSourceApi, dataSourceCatalogApi } from "@/pages/data-source/type";
+
 import { message } from "antd";
 import { debounce } from "lodash";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -10,6 +10,7 @@ import {
   isGraphDraft,
   safeParseDraft,
 } from "../utils";
+import { dataSourceCatalogApi, fetchDataSourceOptions } from "@/pages/data-source/service";
 
 interface UseWholeSyncProps {
   baseForm: any;
@@ -37,8 +38,8 @@ export const useWholeSync = ({ baseForm, form }: UseWholeSyncProps) => {
     return safeParseDraft(draftStr);
   }, [baseForm]);
 
-  const fetchDataSourceOptions = useCallback(async (dbType: string) => {
-    const res = await dataSourceApi.option(dbType);
+  const fetchDataSourceOptionsU = useCallback(async (dbType: string) => {
+    const res = await fetchDataSourceOptions(dbType);
     if (res?.code === 0 && res?.data?.length) {
       return buildDataSourceOptions(res.data);
     }
@@ -155,8 +156,8 @@ export const useWholeSync = ({ baseForm, form }: UseWholeSyncProps) => {
     let mounted = true;
 
     const init = async () => {
-      const sourceOptions = await fetchDataSourceOptions(sourceType.dbType);
-      const targetOptions = await fetchDataSourceOptions(targetType.dbType);
+      const sourceOptions = await fetchDataSourceOptionsU(sourceType.dbType);
+      const targetOptions = await fetchDataSourceOptionsU(targetType.dbType);
 
       if (!mounted) return;
 
@@ -187,7 +188,7 @@ export const useWholeSync = ({ baseForm, form }: UseWholeSyncProps) => {
     };
   }, [
     draft,
-    fetchDataSourceOptions,
+    fetchDataSourceOptionsU,
     fetchTables,
     restoreFromDraft,
     form,
@@ -201,7 +202,7 @@ export const useWholeSync = ({ baseForm, form }: UseWholeSyncProps) => {
     const next = { dbType: value, connectorType: option?.connectorType };
     setSourceType(next);
 
-    const options = await fetchDataSourceOptions(value);
+    const options = await fetchDataSourceOptionsU(value);
     setSourceOption(options);
 
     const firstId = options?.[0]?.value;
@@ -223,7 +224,7 @@ export const useWholeSync = ({ baseForm, form }: UseWholeSyncProps) => {
     const next = { dbType: value, connectorType: option?.connectorType };
     setTargetType(next);
 
-    const options = await fetchDataSourceOptions(value);
+    const options = await fetchDataSourceOptionsU(value);
     setTargetOption(options);
 
     const firstId = options?.[0]?.value;

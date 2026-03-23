@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import type { FormInstance } from "antd";
 import { fetchPluginConfig } from "../services/pluginConfig";
 import { getConfigInitialValues, patchEmptyWithDefaults } from "../utils/formUtils";
-import { FormField } from "@/pages/data-source/type";
+
 
 export function usePluginFormConfig(params: {
   dbType: string;
@@ -12,7 +12,7 @@ export function usePluginFormConfig(params: {
 }) {
   const { dbType, configForm, intl } = params;
 
-  const [formConfig, setFormConfig] = useState<FormField[]>([]);
+  const [formConfig, setFormConfig] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {

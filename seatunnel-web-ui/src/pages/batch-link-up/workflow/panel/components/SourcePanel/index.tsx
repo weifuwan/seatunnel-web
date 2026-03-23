@@ -3,12 +3,13 @@ import type { FC } from "react";
 import { memo, useEffect, useRef, useState } from "react";
 
 import QualityDetail from "@/pages/batch-link-up/DataViewSQL";
-import { dataSourceApi, dataSourceCatalogApi } from "@/pages/data-source/type";
+
 import { useIntl } from "@umijs/max";
 import { Form, message, Tabs } from "antd";
 import "./index.less";
 import OutputFieldsTab from "./OutputFieldsTab";
 import SourceConfigTab from "./SourceConfigTab";
+import { dataSourceCatalogApi, fetchDataSourceOptions } from "@/pages/data-source/service";
 
 interface AppProps {
   selectedNode: {
@@ -63,7 +64,7 @@ const App: FC<AppProps> = ({ selectedNode, onNodeDataChange }) => {
     const sourceId = selectedNode?.data?.sourceId;
 
     if (sourceId === undefined || sourceId === "") {
-      dataSourceApi.option(selectedNode?.data?.dbType).then((data) => {
+      fetchDataSourceOptions(selectedNode?.data?.dbType).then((data) => {
         if (data?.code === 0) {
           setSourceOption(data?.data);
 
@@ -89,7 +90,7 @@ const App: FC<AppProps> = ({ selectedNode, onNodeDataChange }) => {
         }
       });
     } else {
-      dataSourceApi.option(selectedNode?.data?.dbType).then((data) => {
+      fetchDataSourceOptions(selectedNode?.data?.dbType).then((data) => {
         if (data?.code === 0) {
           setSourceOption(data?.data);
           if (selectedNode?.data?.sourceId) {

@@ -1,7 +1,8 @@
 import DatabaseIcons from "@/pages/data-source/icon/DatabaseIcons";
-import { dataSourceApi } from "@/pages/data-source/type";
+
 import { useEffect, useState } from "react";
 import { DataSourceOption, DbType } from "../types";
+import { fetchDataSourceOptions } from "@/pages/data-source/service";
 
 export const useDataSource = (form, fetchTables) => {
   const [sourceType, setSourceType] = useState<DbType>({
@@ -25,7 +26,7 @@ export const useDataSource = (form, fetchTables) => {
   }, []);
 
   const fetchSourceOptions = async () => {
-    const res = await dataSourceApi.option(sourceType.dbType);
+    const res = await fetchDataSourceOptions(sourceType.dbType);
     if (res?.code === 0 && res?.data?.length) {
       const options = res.data.map((item) => ({
         label: (
@@ -52,7 +53,7 @@ export const useDataSource = (form, fetchTables) => {
   };
 
   const fetchTargetOptions = async () => {
-    const res = await dataSourceApi.option(targetType.dbType);
+    const res = await fetchDataSourceOptions(targetType.dbType);
     if (res?.code === 0 && res?.data?.length) {
       const options = res.data.map((item) => ({
         label: (

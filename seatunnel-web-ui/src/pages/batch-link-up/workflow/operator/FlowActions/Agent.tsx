@@ -4,8 +4,9 @@ import { Dropdown, Flex, GetRef, MenuProps, message } from "antd";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 
 import { seatunnelCopilotApi } from "@/pages/batch-link-up/api";
-import { dataSourceApi, dataSourceCatalogApi } from "@/pages/data-source/type";
+
 import DeepSeekIcon from "../../icon/DeepSeekIcon";
+import { dataSourceCatalogApi, fetchDataSourceAll, fetchDataSourcePage } from "@/pages/data-source/service";
 
 const Switch = Sender.Switch;
 
@@ -170,8 +171,7 @@ function useDataSources() {
   const [dbNameToId, setDbNameToId] = useState<Record<string, number>>({});
 
   useEffect(() => {
-    dataSourceApi
-      .all()
+    fetchDataSourceAll()
       .then((res: any) => {
         if (res?.code !== 0) {
           message.error(res?.message || "Load data sources failed");

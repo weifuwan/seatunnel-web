@@ -1,8 +1,8 @@
 
-import { FormField, FormRule } from "@/pages/data-source/type";
 
 
-export const transformRules = (rules: FormRule[] | undefined): any[] => {
+
+export const transformRules = (rules: any[] | undefined): any[] => {
   if (!rules) return [];
   return rules.map((rule) => {
     const formRule: any = { message: rule.message };
@@ -11,7 +11,7 @@ export const transformRules = (rules: FormRule[] | undefined): any[] => {
   });
 };
 
-export const getConfigInitialValues = (fields: FormField[]) => {
+export const getConfigInitialValues = (fields: any[]) => {
   const initialValues: Record<string, any> = {};
 
   fields.forEach((field) => {
@@ -21,7 +21,7 @@ export const getConfigInitialValues = (fields: FormField[]) => {
   return initialValues;
 };
 
-const parseDefaultValueByType = (field: FormField) => {
+const parseDefaultValueByType = (field: any) => {
   const value = field.defaultValue;
 
   if (value === undefined || value === null || value === "") {

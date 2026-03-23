@@ -14,7 +14,7 @@ import {
 import TextArea from "antd/es/input/TextArea";
 import { useEffect, useState } from "react";
 import DatabaseIcons from "../../icon/DatabaseIcons";
-import { DynamicDataSourceFormProps, FormField } from "../../type";
+import { DynamicDataSourceFormProps, FormField } from "../../types";
 import CustomKVList from "./components/CustomKVList";
 import DriverLocationField from "./components/DriverLocationField";
 import { getConfigInitialValues, transformRules } from "./utils/formUtils";

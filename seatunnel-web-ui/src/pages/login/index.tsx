@@ -7,8 +7,9 @@ import React, {
   useRef,
   useState,
 } from "react";
+import "./index.less";
 import LoginPanel from "./LoginPanel";
-import WebGLMouseTrail from "./WebGLMouseTrail";
+import SceneCopy from "./SceneCopy";
 
 /** ===================== Base Layout (unscaled design values) ===================== */
 const BASE_LAYOUT = {
@@ -479,7 +480,14 @@ function Character(props: {
 
   /** ===== Idle breathing ===== */
   const idlePhase =
-    ((bootT + (variant === "orange" ? 0 : variant === "blue" ? 280 : variant === "black" ? 540 : 820)) %
+    ((bootT +
+      (variant === "orange"
+        ? 0
+        : variant === "blue"
+        ? 280
+        : variant === "black"
+        ? 540
+        : 820)) %
       2200) /
     2200;
   const breathe = Math.sin(idlePhase * Math.PI * 2);
@@ -833,7 +841,8 @@ const CharactersScene = forwardRef<
   );
 
   const baseLeft = Math.max(0, (stageW - groupW) / 2);
-  const baseBottom = Math.max(0, (stageH - groupH) / 2);
+  // const baseBottom = Math.max(0, (stageH - groupH) / 2);
+  const baseBottom = Math.max(0, (stageH - groupH) / 2 - stageH * 0.1);
 
   const sceneLookMode: "track" | "peekRight" = useMemo(() => {
     const stageRight = stageRect.left + stageRect.width;
@@ -847,8 +856,20 @@ const CharactersScene = forwardRef<
       style={{
         width: "100%",
         height: "100vh",
-        background:
-          "radial-gradient(circle at 30% 20%, #ffffff 0%, #f8f8fb 38%, #f3f4f8 100%)",
+        // background:
+        //   "radial-gradient(circle at 30% 20%, #ffffff 0%, #f8f8fb 38%, #f3f4f8 100%)",
+        background: `
+  radial-gradient(circle at 18% 16%, rgba(90, 151, 200, 0.10) 0%, rgba(90, 151, 200, 0.05) 20%, rgba(90, 151, 200, 0) 42%),
+  radial-gradient(circle at 78% 12%, rgba(87, 169, 200, 0.08) 0%, rgba(87, 169, 200, 0.03) 18%, rgba(87, 169, 200, 0) 36%),
+  linear-gradient(180deg, #F8FAFC 0%, #F2F6FA 100%)
+`,
+        backdropFilter: "blur(24px)",
+        WebkitBackdropFilter: "blur(24px)",
+        border: "1px solid rgba(255,255,255,0.58)",
+        boxShadow: `
+    0 18px 50px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255,255,255,0.6)
+  `,
         position: "relative",
         overflow: "hidden",
       }}
@@ -857,11 +878,43 @@ const CharactersScene = forwardRef<
         style={{
           position: "absolute",
           inset: 0,
-          background:
-            "linear-gradient(180deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0) 28%)",
+          // background:
+          //   "linear-gradient(180deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0) 28%)",
           pointerEvents: "none",
         }}
       />
+
+      {/* 顶部轻雾高光 */}
+      <div className="scene-overlay scene-overlay-top" />
+
+      {/* 底部舞台光 */}
+      <div className="scene-overlay scene-overlay-floor" />
+
+      {/* 左上角柔光团 */}
+      <div className="scene-glow scene-glow-left" />
+
+      {/* 右上角柔光团 */}
+      <div className="scene-glow scene-glow-right" />
+
+      <div className="scene-bubbles">
+        <span className="bubble bubble-1" />
+        <span className="bubble bubble-2" />
+        <span className="bubble bubble-3" />
+        <span className="bubble bubble-4" />
+        <span className="bubble bubble-5" />
+        <span className="bubble bubble-6" />
+        <span className="bubble bubble-7" />
+      </div>
+
+      <div className="scene-sparkles">
+        <span className="spark spark-1" />
+        <span className="spark spark-2" />
+        <span className="spark spark-3" />
+        <span className="spark spark-4" />
+      </div>
+   
+        <SceneCopy />
+     
 
       <Character
         variant="orange"
@@ -1046,45 +1099,45 @@ export default function BlueCrewDemo() {
 
   return (
     <div style={{ position: "relative", height: "100vh" }}>
-      <WebGLMouseTrail />
+      <div style={{ zIndex: 600 }}>
+        <Row gutter={24} style={{ margin: 0, padding: 0, zIndex: 600 }}>
+          <Col
+            xs={24}
+            sm={24}
+            md={14}
+            lg={14}
+            xl={14}
+            style={{ margin: 0, padding: 0 }}
+          >
+            <CharactersScene
+              ref={stageRef}
+              mouse={mouse}
+              action={action}
+              globalTilt={globalTilt}
+              bootT={bootT}
+              stageW={stageRect.width}
+              stageH={stageRect.height}
+              stageRect={stageRect}
+            />
+          </Col>
 
-      <Row gutter={24} style={{ margin: 0, padding: 0 }}>
-        <Col
-          xs={24}
-          sm={24}
-          md={14}
-          lg={16}
-          xl={18}
-          style={{ margin: 0, padding: 0 }}
-        >
-          <CharactersScene
-            ref={stageRef}
-            mouse={mouse}
-            action={action}
-            globalTilt={globalTilt}
-            bootT={bootT}
-            stageW={stageRect.width}
-            stageH={stageRect.height}
-            stageRect={stageRect}
-          />
-        </Col>
-
-        <Col
-          xs={24}
-          sm={24}
-          md={10}
-          lg={8}
-          xl={6}
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            margin: 0,
-            padding: 0,
-          }}
-        >
-          <LoginPanel onFire={fire} />
-        </Col>
-      </Row>
+          <Col
+            xs={24}
+            sm={24}
+            md={10}
+            lg={10}
+            xl={10}
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              margin: 0,
+              padding: 0,
+            }}
+          >
+            <LoginPanel onFire={fire} />
+          </Col>
+        </Row>
+      </div>
     </div>
   );
 }

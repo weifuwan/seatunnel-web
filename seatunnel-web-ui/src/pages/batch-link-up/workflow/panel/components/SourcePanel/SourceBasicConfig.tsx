@@ -1,10 +1,11 @@
 import DatabaseIcons from "@/pages/data-source/icon/DatabaseIcons";
-import { dataSourceCatalogApi } from "@/pages/data-source/type";
+
 import { Button, Col, Form, Popover, Row, Select, message } from "antd";
 import { FC, useCallback, useRef, useState } from "react";
 
 import CustomQuerySource from "./CustomQuerySource";
 import SingleTableSource from "./SingleTableSource";
+import { dataSourceCatalogApi } from "@/pages/data-source/service";
 
 interface SourceBasicConfigProps {
   selectedNode: {

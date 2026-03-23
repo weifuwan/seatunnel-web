@@ -11,14 +11,14 @@ interface DataSourceStatusProps {
   status?: string;
 }
 
-type StatusConfigItem = {
+interface StatusConfigItem {
   color: 'success' | 'error' | 'processing' | 'default' | 'warning';
   icon: React.ReactNode;
   text: string;
   tooltip?: string;
-};
+}
 
-const STATUS_CONFIG: Record<string, StatusConfigItem> = {
+const statusConfigMap: Record<string, StatusConfigItem> = {
   CONNECTED_SUCCESS: {
     color: 'success',
     icon: <CheckCircleFilled />,
@@ -46,13 +46,13 @@ const STATUS_CONFIG: Record<string, StatusConfigItem> = {
 };
 
 const DataSourceStatus: React.FC<DataSourceStatusProps> = ({ status }) => {
-  const config = STATUS_CONFIG[status || 'CONNECTED_NONE'] || STATUS_CONFIG.CONNECTED_NONE;
+  const currentConfig = statusConfigMap[status || 'CONNECTED_NONE'] || statusConfigMap.CONNECTED_NONE;
 
   return (
-    <Tooltip title={config.tooltip}>
+    <Tooltip title={currentConfig.tooltip}>
       <Tag
-        color={config.color}
-        icon={config.icon}
+        color={currentConfig.color}
+        icon={currentConfig.icon}
         style={{
           marginInlineEnd: 0,
           borderRadius: 999,
@@ -61,7 +61,7 @@ const DataSourceStatus: React.FC<DataSourceStatusProps> = ({ status }) => {
           lineHeight: '20px',
         }}
       >
-        {config.text}
+        {currentConfig.text}
       </Tag>
     </Tooltip>
   );

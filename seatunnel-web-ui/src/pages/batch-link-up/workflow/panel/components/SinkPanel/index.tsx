@@ -3,7 +3,7 @@ import type { FC } from "react";
 import { memo, useEffect, useRef, useState } from "react";
 
 import QualityDetail from "@/pages/batch-link-up/DataViewSQL";
-import { dataSourceApi, dataSourceCatalogApi } from "@/pages/data-source/type";
+
 import { useIntl } from "@umijs/max";
 import { Form, message, Tabs } from "antd";
 import { useReactFlow } from "reactflow";
@@ -11,6 +11,7 @@ import "./index.less";
 import OutputFieldsTab from "./OutputFieldsTab";
 import SinkConfigTab from "./SinkConfigTab";
 import UpstreamFieldValidateTab from "./UpstreamFieldValidateTab";
+import { dataSourceCatalogApi, fetchDataSourceOptions } from "@/pages/data-source/service";
 
 interface AppProps {
   selectedNode: {
@@ -81,7 +82,7 @@ const App: FC<AppProps> = ({ selectedNode, onNodeDataChange }) => {
     if (selectedNode) {
       const sinkId = selectedNode?.data?.sinkId;
       if (sinkId === undefined || sinkId === "") {
-        dataSourceApi.option(selectedNode?.data?.dbType).then((data) => {
+        fetchDataSourceOptions(selectedNode?.data?.dbType).then((data) => {
           if (data?.code === 0) {
             setSinkOption(data?.data);
 
@@ -121,7 +122,7 @@ const App: FC<AppProps> = ({ selectedNode, onNodeDataChange }) => {
           lastNode = lastPrevNodes[0];
         }
 
-        dataSourceApi.option(selectedNode?.data?.dbType).then((data) => {
+        fetchDataSourceOptions(selectedNode?.data?.dbType).then((data) => {
           if (data?.code === 0) {
             setSinkOption(data?.data);
             if (data?.data?.length > 0) {

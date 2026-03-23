@@ -1,6 +1,6 @@
 import { MinusCircleOutlined, PlusOutlined } from "@ant-design/icons";
 import { Button, Form, Input, Space } from "antd";
-import { FormField } from "../../../type";
+import { FormField } from "../../../types";
 
 export default function CustomKVList(props: { intl: any; field: FormField }) {
   const { intl, field } = props;

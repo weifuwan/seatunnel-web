@@ -1,19 +1,10 @@
-import { GoogleOutlined, LockOutlined, MailOutlined } from "@ant-design/icons";
+import { ArrowRightOutlined, GoogleOutlined } from "@ant-design/icons";
 import { useIntl, useModel } from "@umijs/max";
-import {
-  App,
-  Button,
-  Checkbox,
-  Divider,
-  Form,
-  Input,
-  Space,
-  Typography,
-} from "antd";
+import { App, Button, Checkbox, Form, Input } from "antd";
+import { useForm } from "antd/es/form/Form";
 import React, { useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import "./index.less";
-import SeaTunnelIcon from "./SeaTunnelIcon";
 import { loginApi } from "./type";
 
 type ActionType =
@@ -41,10 +32,11 @@ export default function LoginPanel({
   const [loading, setLoading] = useState(false);
   const [pwdVisible, setPwdVisible] = useState(false);
   const [type] = useState<string>("account");
+  const [form] = useForm();
 
   const lastFireRef = useRef<Record<string, number>>({});
 
-  const fireThrottled = (key: string, type: ActionType, gapMs = 700) => {
+  const fireThrottled = (key: string, type: ActionType, gapMs = 900) => {
     const now = Date.now();
     const last = lastFireRef.current[key] || 0;
     if (now - last >= gapMs) {
@@ -54,108 +46,151 @@ export default function LoginPanel({
   };
 
   const keyframes = `
-    @keyframes stw-fadeUp {
-      from { opacity: 0; transform: translateY(10px); }
+    @keyframes stw-softFadeUp {
+      from { opacity: 0; transform: translateY(8px); }
       to   { opacity: 1; transform: translateY(0); }
     }
-    @keyframes stw-breath {
-      0%   { transform: scale(1); }
-      50%  { transform: scale(1.06); }
-      100% { transform: scale(1); }
+
+    @keyframes stw-breathe {
+      0%   { transform: scale(1); opacity: 0.9; }
+      50%  { transform: scale(1.03); opacity: 1; }
+      100% { transform: scale(1); opacity: 0.9; }
     }
-    @keyframes stw-gridShift {
-      0%   { background-position: 0px 0px, 0px 0px, 0 0; }
-      100% { background-position: 180px 120px, -120px 160px, 0 0; }
-    }
-    @keyframes stw-shine {
-      0%   { transform: translateX(-120%) skewX(-18deg); opacity: 0; }
-      35%  { opacity: .35; }
-      60%  { opacity: .15; }
-      100% { transform: translateX(140%) skewX(-18deg); opacity: 0; }
+
+    @keyframes stw-floatAura {
+      0%   { transform: translate3d(0, 0, 0); }
+      50%  { transform: translate3d(0, -6px, 0); }
+      100% { transform: translate3d(0, 0, 0); }
     }
   `;
 
-  const animatedBgStyle: React.CSSProperties = {
+  const panelBgStyle: React.CSSProperties = {
     position: "absolute",
-    inset: -1,
+    inset: 0,
     pointerEvents: "none",
-    backgroundImage:
-      "linear-gradient(rgba(17,24,39,0.05) 1px, transparent 1px)," +
-      "linear-gradient(90deg, rgba(17,24,39,0.05) 1px, transparent 1px)," +
-      "radial-gradient(circle at 20% 15%, rgba(99,102,241,0.25), transparent 55%)," +
-      "radial-gradient(circle at 85% 45%, rgba(56,189,248,0.22), transparent 60%)",
-    backgroundSize: "28px 28px, 28px 28px, auto, auto",
-    opacity: 1,
-    animation: "stw-gridShift 12s linear infinite",
-    maskImage:
-      "radial-gradient(closest-side at 50% 45%, rgba(0,0,0,1) 0%, rgba(0,0,0,0.75) 55%, rgba(0,0,0,0) 100%)",
+    background: `
+      radial-gradient(circle at 18% 18%, rgba(120, 162, 201, 0.16), transparent 34%),
+      radial-gradient(circle at 80% 12%, rgba(156, 186, 214, 0.12), transparent 28%),
+      radial-gradient(circle at 72% 78%, rgba(201, 220, 234, 0.18), transparent 32%),
+      linear-gradient(180deg, rgba(248,250,252,0.96) 0%, rgba(243,246,250,0.98) 100%)
+    `,
+  };
+
+  const auraStyle: React.CSSProperties = {
+    position: "absolute",
+    right: "-6%",
+    top: "10%",
+    width: 220,
+    height: 220,
+    borderRadius: "50%",
+    background:
+      "radial-gradient(circle, rgba(136,183,213,0.16) 0%, rgba(136,183,213,0.08) 42%, rgba(136,183,213,0) 72%)",
+    filter: "blur(10px)",
+    animation: "stw-floatAura 10s ease-in-out infinite",
+    pointerEvents: "none",
   };
 
   const cardStyle = useMemo<React.CSSProperties>(
     () => ({
       width: "100%",
       height: "100%",
-      background: "rgba(255,255,255,0.88)",
-      backdropFilter: "blur(10px)",
-      WebkitBackdropFilter: "blur(10px)",
-      border: "1px solid rgba(17,24,39,0.06)",
+      background: "rgba(255,255,255,0.78)",
+      backdropFilter: "blur(14px)",
+      WebkitBackdropFilter: "blur(14px)",
+      border: "1px solid rgba(148, 163, 184, 0.14)",
       boxShadow:
-        "0 20px 60px rgba(17, 24, 39, 0.14), 0 1px 0 rgba(255,255,255,0.6) inset",
-      padding: 24,
+        "0 12px 36px rgba(15, 23, 42, 0.06), inset 0 1px 0 rgba(255,255,255,0.7)",
+      padding: 28,
       display: "flex",
       flexDirection: "column",
       position: "relative",
       zIndex: 1,
-      animation: "stw-fadeUp 520ms ease-out both",
+      animation: "stw-softFadeUp 420ms ease-out both",
     }),
     []
   );
 
+  const brandWrapStyle: React.CSSProperties = {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 22,
+    marginTop: "9vh",
+  };
+
+  const logoShellStyle: React.CSSProperties = {
+    width: 72,
+    height: 72,
+    borderRadius: 22,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    background: "rgba(255,255,255,0.72)",
+    border: "1px solid rgba(148, 163, 184, 0.12)",
+    boxShadow: "0 8px 24px rgba(15, 23, 42, 0.05)",
+    marginBottom: 14,
+  };
+
   const brandTextStyle: React.CSSProperties = {
-    marginLeft: 10,
     fontWeight: 700,
     letterSpacing: 0.2,
-    background:
-      "linear-gradient(90deg, rgba(136,183,213,1), rgba(90,145,191,1), rgba(34,96,163,1))",
-    WebkitBackgroundClip: "text",
-    backgroundClip: "text",
-    color: "transparent",
-    fontSize: "clamp(1.6rem, 3.2vw, 2rem)",
-    lineHeight: 1.1,
-    marginBottom: 12,
+    color: "#355f86",
+    fontSize: "clamp(1.45rem, 2.8vw, 1.9rem)",
+    lineHeight: 1.15,
     textAlign: "center",
+    marginBottom: 6,
+  };
+
+  const subTitleStyle: React.CSSProperties = {
+    margin: 0,
+    fontSize: 13,
+    color: "rgba(71, 85, 105, 0.72)",
+    textAlign: "center",
+  };
+
+  const titleStyle: React.CSSProperties = {
+    margin: "0 0 18px",
+    fontSize: 26,
+    lineHeight: 1.2,
+    fontWeight: 700,
+    color: "#0f172a",
+    textAlign: "center",
+  };
+
+  const descStyle: React.CSSProperties = {
+    margin: "0 0 22px",
+    fontSize: 13,
+    lineHeight: 1.7,
+    color: "rgba(71, 85, 105, 0.72)",
+    textAlign: "center",
+  };
+
+  const inputStyle: React.CSSProperties = {
+    borderRadius: 14,
+    height: 46,
+    background: "rgba(248,250,252,0.92)",
+    border: "1px solid rgba(148, 163, 184, 0.14)",
   };
 
   const primaryBtnStyle: React.CSSProperties = {
     width: "100%",
     borderRadius: 999,
-    height: 44,
+    height: 46,
     fontWeight: 700,
     border: "none",
-    background:
-      "linear-gradient(135deg, rgba(17,24,39,1) 0%, rgba(17,24,39,1) 45%, rgba(99,102,241,0.85) 100%)",
-    boxShadow:
-      "0 12px 30px rgba(17,24,39,0.20), 0 0 0 1px rgba(255,255,255,0.08) inset",
-    position: "relative",
-    overflow: "hidden",
+    // background: "linear-gradient(135deg, #1f2937 0%, #334155 100%)",
+    boxShadow: "0 10px 24px rgba(15, 23, 42, 0.12)",
   };
 
-  const shineLayerStyle: React.CSSProperties = {
-    position: "absolute",
-    inset: 0,
-    pointerEvents: "none",
-  };
-
-  const shineBarStyle: React.CSSProperties = {
-    position: "absolute",
-    top: "-40%",
-    left: 0,
-    width: "40%",
-    height: "180%",
-    background:
-      "linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent)",
-    filter: "blur(0.5px)",
-    animation: "stw-shine 2.8s ease-in-out infinite",
+  const ghostBtnStyle: React.CSSProperties = {
+    width: "100%",
+    borderRadius: 999,
+    height: 46,
+    fontWeight: 600,
+    background: "rgba(255,255,255,0.9)",
+    border: "1px solid rgba(148, 163, 184, 0.16)",
+    boxShadow: "none",
   };
 
   const { initialState, setInitialState } = useModel("@@initialState");
@@ -176,6 +211,9 @@ export default function LoginPanel({
 
   const handleSubmit = async (values: API.LoginParams) => {
     try {
+      console.log("---");
+
+      await form.validateFields();
       setLoading(true);
 
       const data = await loginApi.login({ ...values, type });
@@ -217,8 +255,11 @@ export default function LoginPanel({
       style={{
         width: "100%",
         height: "100vh",
-        position: "relative",
-        overflow: "hidden",
+        background: "white",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "0 64px",
       }}
       onMouseEnter={() => onPanelHoverChange?.(true)}
       onMouseLeave={() => {
@@ -226,97 +267,101 @@ export default function LoginPanel({
         onFieldFocusChange?.(null);
       }}
     >
-      <style>{keyframes}</style>
-      <div style={animatedBgStyle} />
+      <div
+        style={{
+          width: "100%",
+          maxWidth: 380,
+        }}
+      >
+        <div style={{ marginBottom: 32, textAlign: "center" }}>
+          <h1
+            style={{
+              margin: 0,
+              fontSize: 32,
+              lineHeight: 1.15,
+              fontWeight: 700,
+              color: "#0f172a",
+              fontFamily: "Inter, sans-serif",
+            }}
+          >
+            Welcome back!
+          </h1>
+          <p
+            style={{
+              marginTop: 10,
+              marginBottom: 0,
+              fontSize: 14,
+              color: "#647b9a",
+              fontFamily: "Inter, sans-serif",
+            }}
+          >
+            Please enter your details
+          </p>
+        </div>
 
-      <div style={cardStyle}>
-        <div
-          style={{
-            position: "relative",
-            margin: "0 2rem",
-          }}
+        <Form
+          layout="vertical"
+          onFinish={handleSubmit}
+          requiredMark={false}
+          form={form}
         >
-          <div className="header_main">
-            <div className="header_spinner2"></div>
-
-            <div className="header_spinner_closer2">
-              <div className="header_spinner_closer2_inner">
-                <SeaTunnelIcon />
-              </div>
-            </div>
-
-            <div className="header_spinner">
-              <div className="innersphere innersphere1"></div>
-              <div className="innersphere innersphere2"></div>
-              <div className="innersphere innersphere3"></div>
-              <div className="innersphere innersphere4"></div>
-            </div>
-
-            <div className="header_spinner_closer">
-              <div
+          <Form.Item
+            label={
+              <span
                 style={{
-                  display: "flex",
-                  justifyContent: "center",
-                  height: "100%",
+                  fontWeight: 500,
+                  color: "black",
+                  fontSize: "0.875rem",
+                  fontFamily: "Inter, sans-serif",
                 }}
               >
-                <span style={brandTextStyle}>SeaTunnel Web</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="portfolio_text_container">
-          <h1 className="portfolio_text">WelCome Back</h1>
-        </div>
-
-        <Form layout="vertical" onFinish={handleSubmit} requiredMark={false}>
-          <Form.Item
-            label="userName"
+                Email
+              </span>
+            }
             name="userName"
-            style={{ marginBottom: 12 }}
+            style={{ marginBottom: 18 }}
+            rules={[{ required: true, message: "Please enter your Email" }]}
           >
             <Input
+              className="login-input"
               size="large"
-              variant="filled"
-              prefix={<MailOutlined style={{ color: "rgba(17,24,39,0.45)" }} />}
-              placeholder="Enter your email"
+              placeholder="you@example.com"
               onFocus={() => {
                 onFieldFocusChange?.("userName");
-                onFire("SURPRISE");
+                fireThrottled("focus_user", "SURPRISE", 1200);
               }}
               onBlur={() => onFieldFocusChange?.(null)}
-              onChange={() => fireThrottled("email_change", "SURPRISE", 900)}
               autoComplete="email"
             />
           </Form.Item>
 
           <Form.Item
-            label="userPassword"
+            label={
+              <span
+                style={{
+                  fontWeight: 500,
+                  color: "black",
+                  fontSize: "0.875rem",
+                  fontFamily: "Inter, sans-serif",
+                }}
+              >
+                Password
+              </span>
+            }
             name="userPassword"
             rules={[{ required: true, message: "Please enter your password" }]}
-            style={{ marginBottom: 8 }}
+            style={{ marginBottom: 14 }}
           >
             <Input.Password
+              className="login-password-input"
               size="large"
-              variant="filled"
-              prefix={<LockOutlined style={{ color: "rgba(17,24,39,0.45)" }} />}
-              placeholder="Enter your password"
+              placeholder="••••••••"
               onFocus={() => {
                 onFieldFocusChange?.("userPassword");
-                onFire("BLINK");
+                fireThrottled("focus_pwd", "BLINK", 1200);
               }}
               onBlur={() => onFieldFocusChange?.(null)}
-              onChange={() => fireThrottled("pwd_change", "BLINK", 900)}
               autoComplete="current-password"
-              visibilityToggle={{
-                visible: pwdVisible,
-                onVisibleChange: (visible) => {
-                  setPwdVisible(visible);
-                  onPasswordVisibilityChange?.(visible);
-                  onFire(visible ? "SURPRISE" : "BLINK");
-                },
-              }}
             />
           </Form.Item>
 
@@ -325,69 +370,107 @@ export default function LoginPanel({
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
-              marginBottom: 14,
+              marginBottom: 18,
+              fontSize: 14,
             }}
           >
             <Form.Item name="remember" valuePropName="checked" noStyle>
-              <Checkbox
-                style={{ color: "rgba(17,24,39,0.7)" }}
-                onChange={() => fireThrottled("remember", "SMILE", 600)}
-              >
-                Remember for 30 days
-              </Checkbox>
+              <Checkbox>Remember for 30 days</Checkbox>
             </Form.Item>
 
-            <Button
-              type="link"
-              style={{ padding: 0, color: "rgba(17,24,39,0.75)" }}
-              onClick={() => onFire("TILT")}
-            >
-              Forgot password
+            <Button type="link" style={{ padding: 0 }}>
+              Forgot password?
             </Button>
           </div>
-
           <Button
-            htmlType="submit"
-            type="primary"
-            size="large"
+            className="animated-profile-btn-v2"
+            block
+            type="default"
+            onClick={async () => {
+              try {
+                console.log("---");
+
+                await form.validateFields();
+                const values = form.getFieldsValue();
+                setLoading(true);
+
+                const data = await loginApi.login({ ...values, type });
+
+                if (data.code === 0) {
+                  const defaultLoginSuccessMessage = intl.formatMessage({
+                    id: "pages.login.success",
+                    defaultMessage: "登录成功！",
+                  });
+
+                  onFire("THANKS");
+                  message.success(defaultLoginSuccessMessage);
+
+                  await fetchUserInfo();
+
+                  const urlParams = new URL(window.location.href).searchParams;
+                  window.location.href = urlParams.get("redirect") || "/";
+                  return;
+                }
+
+                onFire("TILT");
+                message.error(data?.message || "");
+              } catch (error) {
+                const defaultLoginFailureMessage = intl.formatMessage({
+                  id: "pages.login.failure",
+                  defaultMessage: "登录失败，请重试！",
+                });
+
+                console.log(error);
+                onFire("SHAKE");
+                message.error(defaultLoginFailureMessage);
+              } finally {
+                setLoading(false);
+              }
+            }}
             loading={loading}
-            style={primaryBtnStyle}
-            onMouseEnter={() => fireThrottled("login_hover", "SMILE", 700)}
           >
-            <span style={{ position: "relative", zIndex: 1 }}>Login</span>
-            <span style={shineLayerStyle} aria-hidden>
-              <span style={shineBarStyle} />
+            <span className="default-layer">Log in</span>
+
+            <span className="hover-layer">
+              <span className="hover-label">Log in</span>
+              <span className="hover-icon">
+                <ArrowRightOutlined />
+              </span>
             </span>
           </Button>
 
-          <Divider style={{ margin: "14px 0" }} />
-
           <Button
-            size="large"
+            className="animated-profile-btn-v2"
             style={{
-              width: "100%",
-              borderRadius: 999,
-              height: 44,
-              fontWeight: 600,
-              background: "rgba(255,255,255,0.9)",
-              border: "1px solid rgba(17,24,39,0.10)",
+              marginTop: 14,
             }}
-            icon={<GoogleOutlined />}
-            onClick={() => onFire("SHAKE")}
+            block
+            type="default"
+            loading={loading}
           >
-            Log in with Google
+            <span className="default-layer">Log in with Google</span>
+
+            <span className="hover-layer">
+              <span className="hover-label">Log in with Google</span>
+              <span className="hover-icon">
+                <GoogleOutlined />
+              </span>
+            </span>
           </Button>
 
-          <Space
-            style={{ marginTop: 16, width: "100%", justifyContent: "center" }}
+          <div
+            style={{
+              marginTop: 26,
+              textAlign: "center",
+              color: "rgba(71, 85, 105, 0.72)",
+              fontSize: 14,
+            }}
           >
-            <Typography.Text style={{ color: "rgba(17,24,39,0.55)" }}>
-              Don’t have an account?
-            </Typography.Text>
-            <Button type="link" style={{ padding: 0 }}>
-              Sign up
+            Don&apos;t have an account?{" "}
+            <Button type="link" style={{ padding: 0, fontWeight: 600 }}>
+              Sign Up
             </Button>
-          </Space>
+          </div>
         </Form>
       </div>
     </div>

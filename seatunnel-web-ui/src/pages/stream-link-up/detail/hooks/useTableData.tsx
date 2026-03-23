@@ -1,9 +1,10 @@
-import { dataSourceCatalogApi } from "@/pages/data-source/type";
+
 import { TableOutlined } from "@ant-design/icons";
 import { message } from "antd";
 import { debounce } from "lodash";
 import { useCallback, useState } from "react";
 import { TableItem } from "../types";
+import { dataSourceCatalogApi } from "@/pages/data-source/service";
 
 export const useTableData = () => {
   const [data, setData] = useState<TableItem[]>([]);

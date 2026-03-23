@@ -208,73 +208,73 @@
   --tw-ring-offset-color: green;
 }
 
-.pl-10 {
-  padding-left: 2.5rem;
-}
+// .pl-10 {
+//   padding-left: 2.5rem;
+// }
 
-.py-2 {
-  padding-top: .5rem;
-  padding-bottom: .5rem;
-}
+// .py-2 {
+//   padding-top: .5rem;
+//   padding-bottom: .5rem;
+// }
 
-.px-4 {
-  padding-right: 1rem;
-}
+// .px-4 {
+//   padding-right: 1rem;
+// }
 
-.h-10 {
-  height: 2.5rem;
-}
+// .h-10 {
+//   height: 2.5rem;
+// }
 
 .border-input {
   border-color: hsl(214.3 31.8% 91.4%);
 }
 
-.border {
-  border-width: 1px;
-}
+// .border {
+//   border-width: 1px;
+// }
 
-.rounded-full {
-  border-radius: 9999px;
-}
+// .rounded-full {
+//   border-radius: 9999px;
+// }
 
-.w-full {
-  width: 100%;
-}
+// .w-full {
+//   width: 100%;
+// }
 
-.max-w-md {
-  max-width: 28rem;
-}
+// .max-w-md {
+//   max-width: 28rem;
+// }
 
-.mb-8 {
-  margin-bottom: 2rem;
-}
+// .mb-8 {
+//   margin-bottom: 2rem;
+// }
 
-.relative {
-  position: relative;
-}
+// .relative {
+//   position: relative;
+// }
 
-.w-4 {
-  width: 1rem;
-}
+// .w-4 {
+//   width: 1rem;
+// }
 
-.h-4 {
-  height: 1rem;
-}
+// .h-4 {
+//   height: 1rem;
+// }
 
-.absolute {
-  position: absolute;
-}
+// .absolute {
+//   position: absolute;
+// }
 
-.top-1\/2 {
-    top: 31%;
-}
+// .top-1\/2 {
+//     top: 31%;
+// }
 
-.left-3 {
-    left: .75rem;
-}
-.absolute {
-    position: absolute;
-}
+// .left-3 {
+//     left: .75rem;
+// }
+// .absolute {
+//     position: absolute;
+// }
 
 .text-muted-foreground {
     color: hsl(215.4 16.3% 46.9%);
@@ -297,6 +297,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    font-weight: 700;
     gap: 8px;
     transition: all 0.32s ease;
   }
@@ -415,3 +416,254 @@
     }
   }
 }
+
+.datasource-page-container {
+  height: calc(100vh - 56px);
+  padding: 16px 24px;
+  overflow: auto;
+  background: #fff;
+  border-bottom-left-radius: 24px;
+}
+
+.datasource-page-content {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 32px 0;
+}
+
+.datasource-page-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.datasource-page-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.datasource-page-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  border-radius: 12px;
+  background: hsl(231 48% 48% / 0.1);
+}
+
+.datasource-page-icon {
+  color: hsl(231 48% 48%);
+}
+
+.datasource-page-title {
+  margin: 0;
+  font-size: 30px;
+  line-height: 36px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.datasource-page-description {
+  margin: 8px 0 0;
+  color: hsl(215.4 16.3% 46.9%);
+  font-size: 16px;
+}
+
+.datasource-create-button {
+  height: 42px;
+  padding-inline: 18px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.datasource-search-bar {
+  max-width: 420px;
+  margin-bottom: 12px;
+}
+
+.datasource-search-input {
+  height: 44px;
+  border-radius: 999px;
+  padding-inline: 16px;
+}
+
+.datasource-page-count {
+  margin-bottom: 16px;
+  color: #8c8c8c;
+  font-size: 12px;
+}
+
+.datasource-card {
+  overflow: hidden;
+  border: 1px solid #f0f0f0;
+  border-radius: 24px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+}
+
+.datasource-card-cover {
+  position: relative;
+  height: 88px;
+  background: hsl(210 40% 96.1%);
+}
+
+.datasource-card-logo {
+  position: absolute;
+  left: 24px;
+  bottom: -24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  background: #fff;
+  border: 4px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.datasource-card-env-tag {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+}
+
+.datasource-card-env-tag-inner {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.datasource-card-actions {
+  position: absolute;
+  right: 20px;
+  bottom: 10px;
+  display: flex;
+  gap: 8px;
+}
+
+.datasource-card-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  color: #595959;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.datasource-card-action-btn:hover {
+  color: #1677ff;
+  transform: translateY(-1px);
+}
+
+.datasource-card-action-btn-danger:hover {
+  color: #ff4d4f;
+}
+
+.datasource-card-content {
+  padding: 36px 24px 20px;
+}
+
+.datasource-card-title {
+  margin-bottom: 8px;
+  color: #1f1f1f;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.datasource-card-jdbc-url {
+  margin-bottom: 12px;
+  overflow: hidden;
+  color: #262626;
+  font-size: 13px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.datasource-card-status {
+  margin-bottom: 16px;
+}
+
+.datasource-card-update-time {
+  margin-top: 12px;
+  margin-bottom: 16px;
+  color: #8c8c8c;
+  font-size: 12px;
+}
+
+.datasource-card-update-time-value {
+  color: #595959;
+  font-weight: 500;
+}
+
+.datasource-empty-state {
+  margin-top: 24px;
+  padding: 48px 24px;
+  color: #8c8c8c;
+  text-align: center;
+  background: #fafafa;
+  border: 1px dashed #d9d9d9;
+  border-radius: 24px;
+}
+
+.datasource-modal-title {
+  display: flex;
+  align-items: center;
+  padding: 20px 24px 12px;
+}
+
+.datasource-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.datasource-modal-selector-wrapper {
+  height: 60vh;
+  padding: 0 16px;
+  overflow: auto;
+}
+
+.datasource-selector-common-title {
+  display: flex;
+  align-items: center;
+  height: 30px;
+  font-size: 13px;
+}
+
+.datasource-selector-common-col {
+  padding: 0 3px;
+}
+
+.datasource-selector-group-toolbar {
+  margin-bottom: 8px;
+}
+
+.datasource-selector-group-btn {
+  margin-right: 8px;
+  margin-bottom: 8px;
+  padding: 4px 8px;
+  font-size: 12px;
+  border-radius: 4px;
+}
+
+.datasource-selector-search-input {
+  border-radius: 4px;
+}
+
+.datasource-selector-item-col {
+  padding: 0 4px;
+}
+

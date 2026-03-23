@@ -7,8 +7,9 @@ import {
 import { Button, Divider, Form, Popover, Select, Space, message } from "antd";
 import TextArea from "antd/es/input/TextArea";
 import { FC, useMemo, useState } from "react";
-import { dataSourceCatalogApi } from "@/pages/data-source/type";
+
 import "./index.less";
+import { dataSourceCatalogApi } from "@/pages/data-source/service";
 
 interface OptionItem {
   label: string;

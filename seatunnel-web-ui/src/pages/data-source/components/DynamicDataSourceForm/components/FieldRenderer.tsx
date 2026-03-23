@@ -1,10 +1,10 @@
-import { FormField } from "@/pages/data-source/type";
+
 import type { FormInstance } from "antd";
 import { Input, InputNumber, Select, Switch } from "antd";
-import DriverLocationField from "./DriverLocationField";
+
 
 export default function FieldRenderer(props: {
-  field: FormField;
+  field: any;
   dbType: string;
   configForm: FormInstance;
 }) {

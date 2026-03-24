@@ -6,7 +6,7 @@ server:
 
 seatunnel:
   client:
-    base-url: http://192.168.1.115:8080
+    base-url: http://localhost:8080
     context-path:
     connect-timeout-ms: 2000
     read-timeout-ms: 10000
@@ -27,7 +27,7 @@ spring:
     basename: i18n/messages
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://192.168.1.113:3306/seatunnel_web?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8
+    url: jdbc:mysql://localhost:3306/seatunnel_web?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8
     username: root
     password: 123456
     hikari:

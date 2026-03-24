@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import MysqlIcon from "../data-source/icon/MysqlIcon";
 import OracleIcon from "../data-source/icon/OracleIcon";
 import PostgreSQL from "../data-source/icon/PsSqlIcon";
+import "./index.less";
 // 类型定义
 interface DataSourceType {
   value: string;
@@ -84,12 +85,13 @@ const DataSourceSelect: React.FC<DataSourceSelectProps> = ({
   return (
     <Select
       showSearch
+      className="custom-ant-select-selector"
       placeholder={placeholder}
       value={value?.dbType}
       optionFilterProp="label"
       onChange={onChange}
       suffixIcon={<SendOutlined />}
-      style={{ width: width }}
+      style={{ width: width, borderRadius: 24 }}
       prefix={<span style={{ fontSize: 12,fontWeight: 500 }}>{prefix}</span>}
       filterOption={(input, option) => {
         const labelText =

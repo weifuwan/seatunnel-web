@@ -2,9 +2,9 @@ import { message } from "antd";
 import { useEffect, useState } from "react";
 import { history, useLocation } from "umi";
 import { seatunnelJobDefinitionApi } from "./api";
-import DataSync from "./DataSync";
 import SyncTaskList from "./SyncTaskList";
 import Workflow from "./workflow";
+import DataSyncHeader from "./components/DataSyncHeader";
 
 const App = () => {
   const location = useLocation();
@@ -13,20 +13,6 @@ const App = () => {
 
   const [detail, setDetail] = useState(!!idFromUrl);
   const [params, setParams] = useState<any>({});
-
-  // useEffect(() => {
-  //   if (idFromUrl) {
-  //     console.log(idFromUrl);
-  //     seatunnelJobDefinitionApi.selectById(idFromUrl).then((data) => {
-  //       if (data?.code === 0) {
-  //         console.log(data);
-  //       } else {
-  //         setDetail(false);
-  //         history.push("/sync/batch-link-up");
-  //       }
-  //     });
-  //   }
-  // }, [idFromUrl]);
 
   const [sourceType, setSourceType] = useState<any>({
     dbType: "MYSQL",
@@ -153,7 +139,7 @@ const App = () => {
         />
       ) : (
         <div>
-          <DataSync
+          <DataSyncHeader
             goDetail={goDetail}
             setParams={setParams}
             sourceType={sourceType}

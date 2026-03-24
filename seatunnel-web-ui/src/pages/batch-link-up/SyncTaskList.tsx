@@ -223,9 +223,9 @@ const App: React.FC<Props> = ({ goDetail }) => {
     <>
       <div
         style={{
-          margin: 16,
+          margin: "0px 16px",
           background: "white",
-          padding: 16,
+          padding: "0 16px 0 16px",
         }}
       >
         <div>

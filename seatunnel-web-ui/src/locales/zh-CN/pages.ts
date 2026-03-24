@@ -94,7 +94,7 @@ export default {
   'pages.datasource.filter.inputPlaceholder': '请输入...',
 
   'pages.datasync.header.title': '批量数据同步任务',
-  'pages.datasync.header.subtitle': '完全向导式白屏化配置，轻松上手企业级数据同步任务配置。先选择您要同步的來源和去向类型，系统会自动展示它们支持的所有同步方案，一步即可建立所需同步任务。',
+  'pages.datasync.header.subtitle': '完全向导式白屏配置，帮助您更轻松地创建数据同步任务 🪄',
 
   'pages.datasync.header.source.placeholder': '源端',
   'pages.datasync.header.source.prefix': '来源：',

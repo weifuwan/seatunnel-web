@@ -891,13 +891,15 @@ export default function WorkflowBasic({
   }, [isDagSync, params?.jobDefinitionInfo, goBack]);
 
   return (
-    <Layout className={styles.layout}>
+    <Layout className={styles.layout} >
       <LeftSider params={params} form={form} />
 
       <div
         style={{
           height: "calc(100vh - 56px)",
           width: "calc(100vw - 12px)",
+          backgroundColor: "rgba(0,0,0,0.06)",
+          borderTop: "0.5px solid #e5e7eb"
         }}
       >
         {isWholeSync ? (

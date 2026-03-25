@@ -387,7 +387,7 @@ ol {
 }
 
 .ant-input-sm {
-  padding: 0px 8px !important;
+  padding: 0px 0px 0px 4px !important;
   font-size: 12px;
   border-radius: 4px;
   height: 24px;
@@ -398,7 +398,7 @@ ol {
 }
 
 .ant-input {
-  font-size: 13px !important;
+  font-size: 12px !important;
   font-family: "Inter, sans-serif";
 }
 
@@ -721,6 +721,14 @@ ol {
   margin-inline: 0px !important;
 }
 
+:root {
+  --pro-sider-collapsed-width: 64px;
+  --pro-sider-expanded-width: 256px;
+  --pro-sider-current-width: var(--pro-sider-collapsed-width);
+  --pro-sider-transition-duration: 0.2s;
+  --bottom-action-bar-height: 64px;
+}
+
 /* =========================
    Ant Design Pro / ProLayout
    侧边栏默认收起，hover 自动展开
@@ -742,32 +750,24 @@ ol {
 */
 
 .ant-layout {
-
-  /* =========================
-     1. 默认：占位 div 收起
-     ========================= */
   >div:first-child[style*='width'] {
-    width: @pro-sider-collapsed-width !important;
-    min-width: @pro-sider-collapsed-width !important;
-    max-width: @pro-sider-collapsed-width !important;
-    flex: 0 0 @pro-sider-collapsed-width !important;
+    width: var(--pro-sider-current-width) !important;
+    min-width: var(--pro-sider-current-width) !important;
+    max-width: var(--pro-sider-current-width) !important;
+    flex: 0 0 var(--pro-sider-current-width) !important;
     overflow: hidden;
-    transition: all @pro-sider-transition-duration ease !important;
+    transition: all var(--pro-sider-transition-duration) ease !important;
   }
 
-  /* =========================
-     2. 默认：真正的 sider 收起
-     ========================= */
   >aside.ant-layout-sider.ant-pro-sider {
-    width: @pro-sider-collapsed-width !important;
-    min-width: @pro-sider-collapsed-width !important;
-    max-width: @pro-sider-collapsed-width !important;
-    flex: 0 0 @pro-sider-collapsed-width !important;
+    width: var(--pro-sider-current-width) !important;
+    min-width: var(--pro-sider-current-width) !important;
+    max-width: var(--pro-sider-current-width) !important;
+    flex: 0 0 var(--pro-sider-current-width) !important;
     overflow: hidden;
-    transition: all @pro-sider-transition-duration ease !important;
+    transition: all var(--pro-sider-transition-duration) ease !important;
     z-index: 100;
 
-    /* 菜单内容容器 */
     .ant-menu-title-content {
       display: inline-flex;
       align-items: center;
@@ -775,7 +775,6 @@ ol {
       max-width: 100%;
     }
 
-    /* 菜单项整体布局 */
     .ant-pro-base-menu-inline-item-title {
       display: flex;
       align-items: center;
@@ -783,19 +782,15 @@ ol {
       min-width: 0;
     }
 
-    /* icon 固定显示 */
     .ant-pro-base-menu-inline-item-icon {
-      flex: 0 0 @pro-sider-icon-width;
-      min-width: @pro-sider-icon-width;
-      width: @pro-sider-icon-width;
+      flex: 0 0 16px;
+      width: 24px;
+      min-width: 20px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      min-width: 20px;
-      width: 24px;
     }
 
-    /* 默认彻底隐藏菜单文字 */
     .ant-pro-base-menu-inline-item-text {
       width: 0 !important;
       min-width: 0 !important;
@@ -809,60 +804,39 @@ ol {
       display: inline-block !important;
       transition:
         opacity 0.12s ease,
-        width @pro-sider-transition-duration ease,
-        max-width @pro-sider-transition-duration ease,
-        margin @pro-sider-transition-duration ease !important;
+        width var(--pro-sider-transition-duration) ease,
+        max-width var(--pro-sider-transition-duration) ease,
+        margin var(--pro-sider-transition-duration) ease !important;
     }
 
-    /* 链接型菜单项避免内容撑开 */
     .ant-menu-item a {
       overflow: hidden;
       display: block;
       width: 100%;
     }
 
-    /* 子菜单箭头默认隐藏 */
     .ant-menu-submenu-arrow {
       opacity: 0 !important;
       transition: opacity 0.12s ease !important;
     }
   }
 
-  /* =========================
-     3. hover 到 sider 时：展开
-     ========================= */
   &:has(> aside.ant-layout-sider.ant-pro-sider:hover) {
+    --pro-sider-current-width: var(--pro-sider-expanded-width);
 
-    /* 占位 div 跟着展开 */
-    >div:first-child[style*='width'] {
-      width: @pro-sider-expanded-width !important;
-      min-width: @pro-sider-expanded-width !important;
-      max-width: @pro-sider-expanded-width !important;
-      flex: 0 0 @pro-sider-expanded-width !important;
-    }
-
-    /* 真正 sider 展开 */
     >aside.ant-layout-sider.ant-pro-sider {
-      width: @pro-sider-expanded-width !important;
-      min-width: @pro-sider-expanded-width !important;
-      max-width: @pro-sider-expanded-width !important;
-      flex: 0 0 @pro-sider-expanded-width !important;
-
-      /* 展开后恢复菜单文字 */
       .ant-pro-base-menu-inline-item-text {
         width: auto !important;
         min-width: auto !important;
         max-width: 200px !important;
-        margin-inline-start: @pro-sider-text-gap !important;
+        margin-inline-start: 10px !important;
         opacity: 1 !important;
       }
 
-      /* 展开后显示箭头 */
       .ant-menu-submenu-arrow {
         opacity: 1 !important;
       }
 
-      /* 避免展开后文字被裁剪 */
       .ant-menu-title-content,
       .ant-pro-base-menu-inline-item-title {
         overflow: visible;

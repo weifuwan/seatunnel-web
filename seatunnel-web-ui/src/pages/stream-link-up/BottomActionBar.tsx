@@ -1,5 +1,7 @@
-import { PlayCircleOutlined, StopOutlined } from "@ant-design/icons";
+import React from "react";
 import { Button, Divider } from "antd";
+import { PlayCircleOutlined, StopOutlined } from "@ant-design/icons";
+import { useIntl } from "@umijs/max";
 import CustomPagination from "./CustomPagination";
 
 interface BottomActionBarProps {
@@ -20,19 +22,30 @@ const BottomActionBar: React.FC<BottomActionBarProps> = ({
   pagination,
   disabled = false,
 }) => {
+  const intl = useIntl();
+
   return (
     <div
       style={{
-        width: "calc(100vw - 224px)",
-        padding: "16px 24px",
-        background: "white",
         position: "fixed",
-        border: "1px solid rgba(227,228,230,1)",
+        left: "var(--pro-sider-current-width)",
+        right: 0,
         bottom: 0,
+        padding: "12px 20px",
+        background: "#fff",
+        borderTop: "1px solid rgba(227,228,230,1)",
+        zIndex: 99,
+        transition: "left var(--pro-sider-transition-duration) ease",
       }}
     >
-      <div style={{ display: "flex", justifyContent: "space-between" }}>
-        <div>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center" }}>
           <Button
             size="small"
             style={{ width: 70 }}
@@ -41,9 +54,14 @@ const BottomActionBar: React.FC<BottomActionBarProps> = ({
             disabled={disabled}
             icon={<PlayCircleOutlined />}
           >
-            Run
+            {intl.formatMessage({
+              id: "pages.common.action.run",
+              defaultMessage: "Run",
+            })}
           </Button>
+
           <Divider type="vertical" />
+
           <Button
             style={{ width: 70 }}
             size="small"
@@ -53,10 +71,14 @@ const BottomActionBar: React.FC<BottomActionBarProps> = ({
             disabled={disabled}
             icon={<StopOutlined />}
           >
-            Stop
+            {intl.formatMessage({
+              id: "pages.common.action.stop",
+              defaultMessage: "Stop",
+            })}
           </Button>
         </div>
-        <div style={{ marginRight: 30 }}>
+
+        <div style={{ marginRight: 8 }}>
           <CustomPagination {...pagination} />
         </div>
       </div>

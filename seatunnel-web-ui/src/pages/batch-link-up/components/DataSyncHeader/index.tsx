@@ -121,7 +121,6 @@ const DataSyncHeader: React.FC<DataSyncHeaderProps> = ({
             className="sync-page-header__create-btn"
             disabled={isButtonDisabled}
             onClick={handleCreateClick}
-            icon={<PlusOutlined />}
           >
             {intl.formatMessage({
               id: "pages.datasync.header.button.start",

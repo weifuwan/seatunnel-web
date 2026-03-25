@@ -11,7 +11,7 @@ import "@ant-design/v5-patch-for-react-19";
 import type { RequestConfig, RunTimeLayoutConfig } from "@umijs/max";
 import { history } from "@umijs/max";
 import defaultSettings from "../config/defaultSettings";
-import { Knowledge } from "./components/RightContent";
+import { GlobalSearch, Knowledge } from "./components/RightContent";
 import { errorConfig } from "./requestErrorConfig";
 import HttpUtils from "./utils/HttpUtils";
 
@@ -70,6 +70,7 @@ export const layout: RunTimeLayoutConfig = ({
       defaultOpenKeys: ["/sync"],
     },
     actionsRender: () => [
+      <GlobalSearch key="globalsearch" />,
       <Knowledge key="knowledge" />,
       <Question key="doc" />,
       <SelectLang key="SelectLang" />,

@@ -21,10 +21,10 @@ import { useDataSource } from "./hooks/useDataSource";
 import { useTableData } from "./hooks/useTableData";
 import { useTaskDraft } from "./hooks/useTaskDraft";
 
-import Header from "@/components/Header";
 import ExtraParamsConfig from "./components/ExtraParamsConfig";
 import TaskBasicInfoForm from "./components/TaskBasicInfoForm";
 import SyncTitle from "./SyncTitle";
+import SectionCard from "./components/SectionCard";
 
 interface WholeSyncProps {
   goBack: () => void;
@@ -158,7 +158,7 @@ const WholeSync: React.FC<WholeSyncProps> = ({ goBack, detail, form }) => {
         form.resetFields();
         message.success("Success");
       } else {
-        message.error(res?.message || (isEdit ? "Fail" : "Fail"));
+        message.error(res?.message || "Fail");
       }
     } catch (e) {
       console.error(e);
@@ -170,7 +170,7 @@ const WholeSync: React.FC<WholeSyncProps> = ({ goBack, detail, form }) => {
       await form.validateFields();
 
       if (matchMode === "1" && multiTableList.length === 0) {
-        message.warning("[Table Setting] You didn't select any tables 😊  ");
+        message.warning("[Table Setting] You didn't select any tables 😊");
         return;
       }
 
@@ -203,7 +203,7 @@ const WholeSync: React.FC<WholeSyncProps> = ({ goBack, detail, form }) => {
         setOpen(true);
         setContent(data?.data);
       } else {
-        message.error(data?.message || "生成hcon失败");
+        message.error(data?.message || "生成 hocon 失败");
       }
     } catch (e) {
       console.error(e);
@@ -211,7 +211,7 @@ const WholeSync: React.FC<WholeSyncProps> = ({ goBack, detail, form }) => {
   };
 
   return (
-    <>
+    <div className="min-h-screen bg-slate-50 pb-28 max-h-[calc(100vh-64px)]" style={{backgroundColor: "white",}}>
       <WholeSyncHeader
         goBack={() => {
           form.resetFields();
@@ -222,29 +222,23 @@ const WholeSync: React.FC<WholeSyncProps> = ({ goBack, detail, form }) => {
         onSourceChange={handleSourceChange}
         onTargetChange={handleTargetChange}
       />
-      <div style={{ height: "calc(100vh - 170px)", overflow: "auto" }}>
-        <div
-          style={{
-            margin: "16px 16px 0 16px",
-            overflow: "hidden",
-            backgroundColor: "white",
-            padding: "16px 24px",
-          }}
+
+      <div className="max-h-[calc(100vh-120px)] overflow-auto pb-8">
+        {/* <div className="max-h-[calc(100vh-120px)] overflow-auto pb-8"></div> */}
+        <SectionCard
+          title="基础配置"
+          desc="填写任务名称、运行模式与基础描述信息"
         >
-          <Header title={"Basic Setting"} />
           <TaskBasicInfoForm
             sourceType={sourceType.dbType}
             sinkType={targetType.dbType}
             form={form}
           />
-        </div>
+        </SectionCard>
 
-        <div
-          style={{
-            margin: "16px 16px 0 16px",
-            overflow: "hidden",
-            backgroundColor: "white",
-          }}
+        <SectionCard
+          title="表配置"
+          desc="配置同步数据源、匹配模式与表选择范围"
         >
           <SyncForm
             form={form}
@@ -266,13 +260,7 @@ const WholeSync: React.FC<WholeSyncProps> = ({ goBack, detail, form }) => {
           />
 
           {(matchMode === "1" || matchMode === "4") && (
-            <div
-              style={{
-                padding: "0 7.3%",
-                paddingBottom: 16,
-                backgroundColor: "white",
-              }}
-            >
+            <div className="mt-6 rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
               <TableTransfer
                 data={data}
                 targetKeys={multiTableList}
@@ -284,24 +272,27 @@ const WholeSync: React.FC<WholeSyncProps> = ({ goBack, detail, form }) => {
           )}
 
           {matchMode === "2" && (
-            <RegexMatchTable data={readOnlyTables} loading={loading} />
+            <div className="mt-6 rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
+              <RegexMatchTable data={readOnlyTables} loading={loading} />
+            </div>
           )}
-        </div>
+        </SectionCard>
 
-        <div
-          style={{
-            margin: "16px 16px 0 16px",
-            overflow: "hidden",
-            backgroundColor: "white",
-            padding: "16px 24px",
-            marginBottom: "10vh",
-          }}
+        <SectionCard
+          title="参数"
+          desc="设置启动模式、Schema/Data 保存策略及额外参数"
+          className="mb-6"
         >
-          <Header title={"Params Setting"} />
-          <SyncTitle />
-          <div>
-            <Row gutter={24}>
-              <Col span={12}>
+          <div className="mb-5">
+            <SyncTitle />
+          </div>
+
+          <Row gutter={[24, 24]}>
+            <Col xs={24} xl={12}>
+              <div className="rounded-2xl border border-slate-100 bg-slate-50/60 p-5">
+                <div className="mb-4 text-sm font-semibold text-slate-800">
+                  Source Params
+                </div>
                 <Form
                   form={form}
                   initialValues={{
@@ -319,67 +310,57 @@ const WholeSync: React.FC<WholeSyncProps> = ({ goBack, detail, form }) => {
                   <Form.Item
                     label="Startup Mode"
                     name="startupMode"
-                    labelCol={{ span: 4 }}
-                    wrapperCol={{ span: 19 }}
                     rules={[{ required: true }]}
                   >
                     <Select
-                      size="small"
                       placeholder="Select..."
                       options={[
-                        {
-                          label: "EARLIEST",
-                          value: "EARLIEST",
-                        },
-                        {
-                          label: "LATEST",
-                          value: "LATEST",
-                        },
-                        {
-                          label: "INITIAL",
-                          value: "INITIAL",
-                        },
+                        { label: "EARLIEST", value: "EARLIEST" },
+                        { label: "LATEST", value: "LATEST" },
+                        { label: "INITIAL", value: "INITIAL" },
                       ]}
                     />
                   </Form.Item>
+
                   <Form.Item
                     label="Stoptup Mode"
                     name="stopMode"
-                    labelCol={{ span: 4 }}
-                    wrapperCol={{ span: 19 }}
                     rules={[{ required: true }]}
                   >
                     <Select
                       placeholder="Select..."
-                      size="small"
                       options={[
-                        {
-                          label: "LATEST",
-                          value: "LATEST",
-                        },
-                        {
-                          label: "NEVER",
-                          value: "NEVER",
-                        },
+                        { label: "LATEST", value: "LATEST" },
+                        { label: "NEVER", value: "NEVER" },
                       ]}
                     />
                   </Form.Item>
+
                   <Form.Item
                     label="Schema Change"
                     name="schemaChange"
                     rules={[{ required: true }]}
+                    valuePropName="checked"
                   >
                     <Switch />
                   </Form.Item>
-                  <Divider style={{ padding: 0, margin: "10px 0" }} />
+
+                  <Divider className="my-4" />
+
                   <Form.Item label="Extra Params" name="sourceExtraParams">
                     <ExtraParamsConfig pluginName={sourceType?.pluginName} />
                   </Form.Item>
                 </Form>
-              </Col>
-              <Col span={12}>
-                <Form form={form} initialValues={{}} layout="vertical">
-                  <Row gutter={24}>
+              </div>
+            </Col>
+
+            <Col xs={24} xl={12}>
+              <div className="rounded-2xl border border-slate-100 bg-slate-50/60 p-5">
+                <div className="mb-4 text-sm font-semibold text-slate-800">
+                  Sink Params
+                </div>
+                <Form form={form} layout="vertical">
+                  <Row gutter={[16, 0]}>
                     <Col span={12}>
                       <Form.Item
                         label="Schema Save Mode"
@@ -387,7 +368,6 @@ const WholeSync: React.FC<WholeSyncProps> = ({ goBack, detail, form }) => {
                         rules={[{ required: true }]}
                       >
                         <Select
-                          size="small"
                           showSearch
                           placeholder="Select..."
                           options={[
@@ -405,6 +385,7 @@ const WholeSync: React.FC<WholeSyncProps> = ({ goBack, detail, form }) => {
                         />
                       </Form.Item>
                     </Col>
+
                     <Col span={12}>
                       <Form.Item
                         label="Data Save Mode"
@@ -412,18 +393,11 @@ const WholeSync: React.FC<WholeSyncProps> = ({ goBack, detail, form }) => {
                         rules={[{ required: true }]}
                       >
                         <Select
-                          size="small"
                           showSearch
                           placeholder="Select..."
                           options={[
-                            {
-                              label: "APPEND DATA",
-                              value: "APPEND_DATA",
-                            },
-                            {
-                              label: "DROP DATA",
-                              value: "DROP_DATA",
-                            },
+                            { label: "APPEND DATA", value: "APPEND_DATA" },
+                            { label: "DROP DATA", value: "DROP_DATA" },
                           ]}
                         />
                       </Form.Item>
@@ -433,22 +407,21 @@ const WholeSync: React.FC<WholeSyncProps> = ({ goBack, detail, form }) => {
                   <Form.Item
                     label="Batch Size"
                     name="batchSize"
-                    labelCol={{ span: 4 }}
-                    wrapperCol={{ span: 19 }}
                     rules={[{ required: true }]}
                   >
                     <InputNumber
                       placeholder="Input..."
-                      size="small"
-                      style={{ width: "30%" }}
+                      className="w-full"
                     />
                   </Form.Item>
-                  <Row gutter={24}>
+
+                  <Row gutter={[16, 0]}>
                     <Col span={12}>
                       <Form.Item
                         label="Exactly Once"
                         name="exactlyOnce"
                         rules={[{ required: true }]}
+                        valuePropName="checked"
                       >
                         <Switch />
                       </Form.Item>
@@ -458,23 +431,25 @@ const WholeSync: React.FC<WholeSyncProps> = ({ goBack, detail, form }) => {
                         label="Upsert"
                         name="enableUpsert"
                         rules={[{ required: true }]}
+                        valuePropName="checked"
                       >
                         <Switch />
                       </Form.Item>
                     </Col>
                   </Row>
 
-                  <Divider style={{ padding: 0, margin: "6px 0" }} />
+                  <Divider className="my-4" />
 
                   <Form.Item label="Extra Params" name="sinkExtraParams">
                     <ExtraParamsConfig pluginName={targetType?.pluginName} />
                   </Form.Item>
                 </Form>
-              </Col>
-            </Row>
-          </div>
-        </div>
+              </div>
+            </Col>
+          </Row>
+        </SectionCard>
       </div>
+
       <ActionFooter
         form={form}
         matchMode={matchMode}
@@ -488,10 +463,9 @@ const WholeSync: React.FC<WholeSyncProps> = ({ goBack, detail, form }) => {
         onOpenChange={setOpen}
         goBack={() => {
           goBack();
-
         }}
       />
-    </>
+    </div>
   );
 };
 

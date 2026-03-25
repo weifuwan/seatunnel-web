@@ -21,7 +21,7 @@ const Node: FC<NodeProps<any>> = ({ id, data, selected }) => {
       case "pending":
         return "#296dff"; // Orange for pending
       default:
-        return selected ? "#296dff" : "transparent";
+       return selected ? "#296dff" : "#DCE3EC";
     }
   };
 
@@ -65,10 +65,14 @@ const Node: FC<NodeProps<any>> = ({ id, data, selected }) => {
       <div
         className={`start-node-container ${selected ? "selected" : ""}`}
         style={{
-          backgroundColor: "#fcfcfd",
+          backgroundColor: "#fff",
           borderColor: getBorderColor(),
           borderWidth: "1px",
           borderStyle: "solid",
+          borderRadius: "12px",
+          boxShadow: selected
+            ? "0 0 0 2px rgba(41, 109, 255, 0.12)"
+            : "0 1px 2px rgba(16, 24, 40, 0.04)",
         }}
         onMouseEnter={() => setShowRightHandle(true)}
         onMouseLeave={() => setShowRightHandle(false)}

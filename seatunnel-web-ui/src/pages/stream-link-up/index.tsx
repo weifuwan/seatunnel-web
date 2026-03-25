@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { history, useLocation } from "umi"; // Umi 提供的 history 和 location
-import DataSync from "./DataSync";
+import DataSyncHeader from "./components/DataSyncHeader";
 import SyncTaskList from "./SyncTaskList";
 
 import { Form } from "antd";
@@ -54,7 +54,7 @@ const App = () => {
         <WholeSync goBack={goBack} detail={detail} form={form} />
       ) : (
         <div>
-          <DataSync
+          <DataSyncHeader
             goDetail={goDetail}
             sourceType={sourceType}
             setSourceType={setSourceType}

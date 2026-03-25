@@ -1,7 +1,9 @@
-import DataSourceSelect, { generateCDCDataSourceOptions, generateDataSourceOptions } from "@/pages/batch-link-up/DataSourceSelect";
-import { Breadcrumb } from "antd";
-
+import DataSourceSelect, {
+  generateCDCDataSourceOptions,
+  generateDataSourceOptions,
+} from "@/pages/batch-link-up/DataSourceSelect";
 import IconRightArrow from "@/pages/batch-link-up/IconRightArrow";
+import { ProductOutlined, WifiOutlined } from "@ant-design/icons";
 import { DbType } from "../types";
 
 interface WholeSyncHeaderProps {
@@ -20,53 +22,65 @@ const WholeSyncHeader: React.FC<WholeSyncHeaderProps> = ({
   onTargetChange,
 }) => {
   return (
-    <>
-      <div className="jy-dc-ui-pro-header">
-        <div style={{ padding: "8px 16px 0 16px" }}>
-          <Breadcrumb
-            items={[
-              {
-                title: (
-                  <a style={{ fontSize: 12 }} onClick={goBack}>
-                    Task List
-                  </a>
-                ),
-              },
-              { title: <span style={{ fontSize: 12 }}>Streaming Sync</span> },
-            ]}
-          />
-        </div>
+    <div>
 
-        <div
-          className="jy-dc-ui-pro-header-footer"
-          style={{ padding: "12px 16px 16px" }}
-        >
-          <div style={{ display: "flex", alignItems: "center" }}>
+      <div className="rounded-2xl bg-white p-6">
+        <div className="flex items-center justify-between gap-4 max-[1200px]:flex-col max-[1200px]:items-stretch">
+          <div className="flex min-w-0 items-center gap-3.5">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-indigo-50 text-[20px] text-[#4a5bd0]">
+              <ProductOutlined />
+            </div>
+
+            <div className="min-w-0">
+              <div className="text-[18px] font-bold leading-[26px] text-[#101828]">
+                创建实时同步任务
+              </div>
+
+              <div className="mt-1 text-[13px] leading-5 text-[#667085]">
+                选好同步方向，几步就能完成实时任务配置 ✨
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        className="rounded-[24px] bg-gradient-to-r from-slate-50 to-slate-100/80 p-4 ring-1 ring-slate-200/70"
+        style={{ margin: "0 16px", marginTop: 3 }}
+      >
+        <div className="mb-3 text-sm font-medium text-slate-700">同步方向</div>
+
+        <div className="grid grid-cols-1 items-center gap-3 xl:grid-cols-[1fr_56px_1fr]">
+          <div className="rounded-[18px] border border-white/80 bg-white px-3 py-3 shadow-sm transition-all hover:shadow-md">
             <DataSourceSelect
               value={sourceType}
               onChange={onSourceChange}
               placeholder="SOURCE"
-              prefix="SOURCE："
+              prefix="来源："
               dataSourceOptions={generateCDCDataSourceOptions()}
-              width="48%"
+              width="100%"
             />
-            <div
-              style={{ display: "flex", alignItems: "center", margin: "0 8px" }}
-            >
+          </div>
+
+          <div className="flex items-center justify-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm">
               <IconRightArrow />
             </div>
+          </div>
+
+          <div className="rounded-[18px] border border-white/80 bg-white px-3 py-3 shadow-sm transition-all hover:shadow-md">
             <DataSourceSelect
               value={targetType}
               onChange={onTargetChange}
               placeholder="SINK"
-               dataSourceOptions={generateDataSourceOptions()}
-              prefix="SINK："
-              width="48%"
+              prefix="去向："
+              dataSourceOptions={generateDataSourceOptions()}
+              width="100%"
             />
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 

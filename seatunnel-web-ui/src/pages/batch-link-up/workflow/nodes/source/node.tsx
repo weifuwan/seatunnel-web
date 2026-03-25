@@ -1,7 +1,7 @@
 import DatabaseIcons from "@/pages/data-source/icon/DatabaseIcons";
 import type { FC } from "react";
 import React, { useState } from "react";
-import { Handle, Node, NodeProps, useReactFlow } from "reactflow";
+import { Handle, NodeProps, useReactFlow } from "reactflow";
 import SuccessIcon from "../../icon/SuccessIcon";
 import "./index.less";
 
@@ -9,20 +9,18 @@ const StartNode: FC<NodeProps<any>> = ({ id, data, selected }) => {
   const { addNodes, addEdges, getNode, getNodes } = useReactFlow();
   const [showRightHandle, setShowRightHandle] = useState(false);
 
-
-
   const getBorderColor = () => {
     switch (data?.executionStatus) {
       case "running":
-        return "#faad14"; // Blue for running
+        return "#faad14";
       case "succeeded":
-        return "#17b26a"; // Green for success
+        return "#17b26a";
       case "failed":
-        return "#ff4d4f"; // Red for failed
+        return "#ff4d4f";
       case "pending":
-        return "#296dff"; // Orange for pending
+        return "#296dff";
       default:
-        return selected ? "#296dff" : "transparent";
+        return selected ? "#296dff" : "#DCE3EC";
     }
   };
 
@@ -42,7 +40,13 @@ const StartNode: FC<NodeProps<any>> = ({ id, data, selected }) => {
   };
 
   return (
-    <div style={{backgroundColor: "#e9ebf0", borderRadius: "0.7rem", cursor: "pointer"}}>
+    <div
+      style={{
+        backgroundColor: "#e9ebf0",
+        borderRadius: "0.7rem",
+        cursor: "pointer",
+      }}
+    >
       <div
         style={{
           paddingTop: ".125rem",
@@ -67,10 +71,14 @@ const StartNode: FC<NodeProps<any>> = ({ id, data, selected }) => {
       <div
         className={`start-node-container ${selected ? "selected" : ""}`}
         style={{
-          backgroundColor: "#fcfcfd",
+          backgroundColor: "#fff",
           borderColor: getBorderColor(),
           borderWidth: "1px",
           borderStyle: "solid",
+          borderRadius: "12px",
+          boxShadow: selected
+            ? "0 0 0 2px rgba(41, 109, 255, 0.12)"
+            : "0 1px 2px rgba(16, 24, 40, 0.04)",
         }}
         onMouseEnter={() => setShowRightHandle(true)}
         onMouseLeave={() => setShowRightHandle(false)}

@@ -898,8 +898,8 @@ export default function WorkflowBasic({
         style={{
           height: "calc(100vh - 56px)",
           width: "calc(100vw - 12px)",
-          backgroundColor: "rgba(0,0,0,0.06)",
-          borderTop: "0.5px solid #e5e7eb"
+          backgroundColor: "rgba(0,0,0,0.02)",
+          // borderTop: "0.5px solid #e5e7eb"
         }}
       >
         {isWholeSync ? (

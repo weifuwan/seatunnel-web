@@ -1,12 +1,12 @@
 // components/ControlButtons.tsx
+import { Popover, Tooltip } from "antd";
 import React from "react";
-import { Tooltip, Popover } from "antd";
 import { ControlMode } from "../config";
-import { NodeListPopover } from "./NodeListPopover";
-import PlusNodeIcon from "../icon/PlusNodeIcon";
 import HandIcon from "../icon/HandIcon";
+import PlusNodeIcon from "../icon/PlusNodeIcon";
 import PointerIcon from "../icon/PointerIcon";
-import "./index.less"
+import "./index.less";
+import { NodeListPopover } from "./NodeListPopover";
 
 interface ControlButtonsProps {
   controlMode: string;
@@ -39,7 +39,11 @@ export const ControlButtons: React.FC<ControlButtonsProps> = ({
         backgroundColor: "white",
         display: "flex",
         justifyContent: "center",
+        // borderWidth: "1px",
+        borderStyle: "solid",
+        borderColor: "#DCE3EC",
         padding: "4px 0 4px 0",
+        boxShadow: "0 0 0 2px rgba(41, 109, 255, 0.12)",
       }}
       className="shadow-lg"
     >
@@ -98,7 +102,7 @@ export const ControlButtons: React.FC<ControlButtonsProps> = ({
             </div>
           </div>
         </Tooltip>
-        
+
         <Divider />
 
         <Tooltip title="Hand Mode">

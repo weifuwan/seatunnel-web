@@ -1,16 +1,15 @@
-import { DatabaseOutlined, PlusOutlined, SunOutlined } from "@ant-design/icons";
+import { DatabaseOutlined, PlusOutlined, WifiOutlined } from "@ant-design/icons";
 import { useIntl } from "@umijs/max";
 import { Button } from "antd";
 import React from "react";
-import DataSourceSelect, {
-  generateDataSourceOptions,
-} from "../../DataSourceSelect";
+
 import IconRightArrow from "../../IconRightArrow";
 import "./index.less";
+import DataSourceSelect from "../../DataSourceSelect";
+import { generateCDCDataSourceOptions, generateDataSourceOptions } from "@/pages/batch-link-up/DataSourceSelect";
 
 interface DataSyncHeaderProps {
   goDetail: (value: any) => void;
-  setParams: (value: SyncParams) => void;
   sourceType: any;
   targetType: any;
   setSourceType: (value: any) => void;
@@ -24,7 +23,6 @@ export interface SyncParams {
 
 const DataSyncHeader: React.FC<DataSyncHeaderProps> = ({
   goDetail,
-  setParams,
   sourceType,
   setSourceType,
   targetType,
@@ -48,10 +46,7 @@ const DataSyncHeader: React.FC<DataSyncHeaderProps> = ({
 
   const handleCreateClick = () => {
     goDetail(undefined);
-    setParams({
-      sourceType,
-      targetType,
-    });
+  
   };
 
   const isButtonDisabled = !sourceType || !targetType;
@@ -61,20 +56,20 @@ const DataSyncHeader: React.FC<DataSyncHeaderProps> = ({
       <div className="sync-page-header__top">
         <div className="sync-page-header__meta">
           <div className="sync-page-header__icon">
-            <SunOutlined />
+            <WifiOutlined />
           </div>
 
           <div className="sync-page-header__text">
             <div className="sync-page-header__title">
               {intl.formatMessage({
-                id: "pages.datasync.header.title",
-                defaultMessage: "批量数据同步任务",
+                id: "pages.datasync.header.title1",
+                defaultMessage: "实时数据同步任务",
               })}
             </div>
             <div className="sync-page-header__subtitle">
               {intl.formatMessage({
-                id: "pages.datasync.header.subtitle",
-                defaultMessage: "选择同步方向，快速创建新的离线同步任务",
+                id: "pages.datasync.header.subtitle1",
+                defaultMessage: "选择同步方向，快速创建新的实时同步任务",
               })}
             </div>
           </div>
@@ -88,7 +83,7 @@ const DataSyncHeader: React.FC<DataSyncHeaderProps> = ({
           <DataSourceSelect
             value={sourceType}
             onChange={handleSourceChange}
-            dataSourceOptions={generateDataSourceOptions()}
+            dataSourceOptions={generateCDCDataSourceOptions()}
             placeholder={intl.formatMessage({
               id: "pages.datasync.header.source.placeholder",
               defaultMessage: "请选择来源",

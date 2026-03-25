@@ -12,7 +12,7 @@ const TaskHeader: React.FC<TaskDetailPanelProps> = ({ item }) => {
           <ProductOutlined
             style={{
               fontSize: 16,
-              color: '#5664ff',
+              color: 'hsl(231 48% 48%)',
               marginRight: 8,
               fontWeight: 600,
             }}

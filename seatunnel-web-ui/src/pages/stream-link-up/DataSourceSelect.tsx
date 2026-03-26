@@ -67,6 +67,7 @@ const DataSourceSelect: React.FC<DataSourceSelectProps> = ({
     <Select
       showSearch
       placeholder={placeholder}
+      className="custom-ant-select-selector"
       value={value?.dbType}
       optionFilterProp="label"
       onChange={onChange}

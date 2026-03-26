@@ -22,9 +22,9 @@ import { useTableData } from "./hooks/useTableData";
 import { useTaskDraft } from "./hooks/useTaskDraft";
 
 import ExtraParamsConfig from "./components/ExtraParamsConfig";
+import SectionCard from "./components/SectionCard";
 import TaskBasicInfoForm from "./components/TaskBasicInfoForm";
 import SyncTitle from "./SyncTitle";
-import SectionCard from "./components/SectionCard";
 
 interface WholeSyncProps {
   goBack: () => void;
@@ -65,7 +65,7 @@ const WholeSync: React.FC<WholeSyncProps> = ({ goBack, detail, form }) => {
   } = useDataSource(form, fetchTables);
 
   const { buildTaskDraft, restoreFromDraft } = useTaskDraft();
-
+  const [showTopShadow, setShowTopShadow] = useState(false);
   useEffect(() => {
     if (form?.getFieldValue("id")) {
       try {
@@ -82,7 +82,7 @@ const WholeSync: React.FC<WholeSyncProps> = ({ goBack, detail, form }) => {
           fetchReferenceTables,
         });
       } catch (error) {
-        console.error("Failed to restore draft:", error);
+        console.error("恢复草稿失败：", error);
       }
     }
   }, [form]);
@@ -156,9 +156,9 @@ const WholeSync: React.FC<WholeSyncProps> = ({ goBack, detail, form }) => {
       if (res?.code === 0) {
         goBack();
         form.resetFields();
-        message.success("Success");
+        message.success("保存成功");
       } else {
-        message.error(res?.message || "Fail");
+        message.error(res?.message || "保存失败");
       }
     } catch (e) {
       console.error(e);
@@ -170,16 +170,14 @@ const WholeSync: React.FC<WholeSyncProps> = ({ goBack, detail, form }) => {
       await form.validateFields();
 
       if (matchMode === "1" && multiTableList.length === 0) {
-        message.warning("[Table Setting] You didn't select any tables 😊");
+        message.warning("[表配置] 你还没有选择需要同步的表哦 😊");
         return;
       }
 
       const sourceId = form?.getFieldValue("sourceId");
       const sinkId = form?.getFieldValue("sinkId");
       if (sourceId === sinkId) {
-        message.warning(
-          "[Table Setting] The data source for 'Source' and 'Sink' cannot be the same! 😊"
-        );
+        message.warning("[表配置] 来源和去向的数据源不能相同哦 😊");
         return;
       }
 
@@ -203,7 +201,7 @@ const WholeSync: React.FC<WholeSyncProps> = ({ goBack, detail, form }) => {
         setOpen(true);
         setContent(data?.data);
       } else {
-        message.error(data?.message || "生成 hocon 失败");
+        message.error(data?.message || "生成 HOCON 失败");
       }
     } catch (e) {
       console.error(e);
@@ -211,7 +209,10 @@ const WholeSync: React.FC<WholeSyncProps> = ({ goBack, detail, form }) => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-28 max-h-[calc(100vh-64px)]" style={{backgroundColor: "white",}}>
+    <div
+      className="min-h-screen bg-slate-50 pb-28 max-h-[calc(100vh-64px)]"
+      style={{ backgroundColor: "white" }}
+    >
       <WholeSyncHeader
         goBack={() => {
           form.resetFields();
@@ -223,8 +224,22 @@ const WholeSync: React.FC<WholeSyncProps> = ({ goBack, detail, form }) => {
         onTargetChange={handleTargetChange}
       />
 
-      <div className="max-h-[calc(100vh-120px)] overflow-auto pb-8">
-        {/* <div className="max-h-[calc(100vh-120px)] overflow-auto pb-8"></div> */}
+      <div
+        className="max-h-[calc(100vh-120px)] overflow-auto pb-8"
+        onScroll={(e) => {
+          setShowTopShadow(e.currentTarget.scrollTop > 4);
+        }}
+      >
+        <div
+          className={`pointer-events-none sticky top-0 z-10 h-4 transition-all duration-200 ${
+            showTopShadow ? "opacity-100" : "opacity-0"
+          }`}
+          style={{
+            background:
+              "linear-gradient(to bottom, rgba(15,23,42,0.08), rgba(15,23,42,0.04), transparent)",
+          }}
+        />
+
         <SectionCard
           title="基础配置"
           desc="填写任务名称、运行模式与基础描述信息"
@@ -236,10 +251,7 @@ const WholeSync: React.FC<WholeSyncProps> = ({ goBack, detail, form }) => {
           />
         </SectionCard>
 
-        <SectionCard
-          title="表配置"
-          desc="配置同步数据源、匹配模式与表选择范围"
-        >
+        <SectionCard title="表配置" desc="配置同步数据源、匹配模式与表选择范围">
           <SyncForm
             form={form}
             sourceType={sourceType}
@@ -279,7 +291,7 @@ const WholeSync: React.FC<WholeSyncProps> = ({ goBack, detail, form }) => {
         </SectionCard>
 
         <SectionCard
-          title="参数"
+          title="参数配置"
           desc="设置启动模式、Schema/Data 保存策略及额外参数"
           className="mb-6"
         >
@@ -291,7 +303,7 @@ const WholeSync: React.FC<WholeSyncProps> = ({ goBack, detail, form }) => {
             <Col xs={24} xl={12}>
               <div className="rounded-2xl border border-slate-100 bg-slate-50/60 p-5">
                 <div className="mb-4 text-sm font-semibold text-slate-800">
-                  Source Params
+                  来源参数
                 </div>
                 <Form
                   form={form}
@@ -308,36 +320,38 @@ const WholeSync: React.FC<WholeSyncProps> = ({ goBack, detail, form }) => {
                   layout="vertical"
                 >
                   <Form.Item
-                    label="Startup Mode"
+                    label="启动模式"
                     name="startupMode"
                     rules={[{ required: true }]}
                   >
                     <Select
-                      placeholder="Select..."
+                      placeholder="请选择"
+                      size="small"
                       options={[
-                        { label: "EARLIEST", value: "EARLIEST" },
-                        { label: "LATEST", value: "LATEST" },
-                        { label: "INITIAL", value: "INITIAL" },
+                        { label: "最早位置（EARLIEST）", value: "EARLIEST" },
+                        { label: "最新位置（LATEST）", value: "LATEST" },
+                        { label: "初始位置（INITIAL）", value: "INITIAL" },
                       ]}
                     />
                   </Form.Item>
 
                   <Form.Item
-                    label="Stoptup Mode"
+                    label="停止模式"
                     name="stopMode"
                     rules={[{ required: true }]}
                   >
                     <Select
-                      placeholder="Select..."
+                      placeholder="请选择"
+                      size="small"
                       options={[
-                        { label: "LATEST", value: "LATEST" },
-                        { label: "NEVER", value: "NEVER" },
+                        { label: "最新位置（LATEST）", value: "LATEST" },
+                        { label: "永不停止（NEVER）", value: "NEVER" },
                       ]}
                     />
                   </Form.Item>
 
                   <Form.Item
-                    label="Schema Change"
+                    label="Schema 变更同步"
                     name="schemaChange"
                     rules={[{ required: true }]}
                     valuePropName="checked"
@@ -347,7 +361,7 @@ const WholeSync: React.FC<WholeSyncProps> = ({ goBack, detail, form }) => {
 
                   <Divider className="my-4" />
 
-                  <Form.Item label="Extra Params" name="sourceExtraParams">
+                  <Form.Item label="额外参数" name="sourceExtraParams">
                     <ExtraParamsConfig pluginName={sourceType?.pluginName} />
                   </Form.Item>
                 </Form>
@@ -357,30 +371,31 @@ const WholeSync: React.FC<WholeSyncProps> = ({ goBack, detail, form }) => {
             <Col xs={24} xl={12}>
               <div className="rounded-2xl border border-slate-100 bg-slate-50/60 p-5">
                 <div className="mb-4 text-sm font-semibold text-slate-800">
-                  Sink Params
+                  去向参数
                 </div>
                 <Form form={form} layout="vertical">
                   <Row gutter={[16, 0]}>
                     <Col span={12}>
                       <Form.Item
-                        label="Schema Save Mode"
+                        label="Schema 保存策略"
                         name="schemaSaveMode"
                         rules={[{ required: true }]}
                       >
                         <Select
                           showSearch
-                          placeholder="Select..."
+                          placeholder="请选择"
+                          size="small"
                           options={[
                             {
-                              label: "CREATE IF MISSING",
+                              label: "不存在时创建",
                               value: "CREATE_SCHEMA_WHEN_NOT_EXIST",
                             },
-                            { label: "RECREATE", value: "RECREATE_SCHEMA" },
+                            { label: "重建 Schema", value: "RECREATE_SCHEMA" },
                             {
-                              label: "ERROR IF MISSING",
+                              label: "不存在时报错",
                               value: "ERROR_WHEN_SCHEMA_NOT_EXIST",
                             },
-                            { label: "IGNORE", value: "IGNORE" },
+                            { label: "忽略", value: "IGNORE" },
                           ]}
                         />
                       </Form.Item>
@@ -388,47 +403,40 @@ const WholeSync: React.FC<WholeSyncProps> = ({ goBack, detail, form }) => {
 
                     <Col span={12}>
                       <Form.Item
-                        label="Data Save Mode"
+                        label="数据保存策略"
                         name="dataSaveMode"
                         rules={[{ required: true }]}
                       >
                         <Select
                           showSearch
-                          placeholder="Select..."
+                          placeholder="请选择"
+                          size="small"
                           options={[
-                            { label: "APPEND DATA", value: "APPEND_DATA" },
-                            { label: "DROP DATA", value: "DROP_DATA" },
+                            { label: "追加数据", value: "APPEND_DATA" },
+                            { label: "清空后写入", value: "DROP_DATA" },
                           ]}
                         />
                       </Form.Item>
                     </Col>
                   </Row>
 
-                  <Form.Item
-                    label="Batch Size"
-                    name="batchSize"
-                    rules={[{ required: true }]}
-                  >
-                    <InputNumber
-                      placeholder="Input..."
-                      className="w-full"
-                    />
-                  </Form.Item>
-
                   <Row gutter={[16, 0]}>
                     <Col span={12}>
                       <Form.Item
-                        label="Exactly Once"
-                        name="exactlyOnce"
+                        label="批大小"
+                        name="batchSize"
                         rules={[{ required: true }]}
-                        valuePropName="checked"
                       >
-                        <Switch />
+                        <InputNumber
+                          placeholder="请输入"
+                          style={{ width: "40%" }}
+                          size="small"
+                        />
                       </Form.Item>
                     </Col>
                     <Col span={12}>
                       <Form.Item
-                        label="Upsert"
+                        label="启用 Upsert"
                         name="enableUpsert"
                         rules={[{ required: true }]}
                         valuePropName="checked"
@@ -440,7 +448,7 @@ const WholeSync: React.FC<WholeSyncProps> = ({ goBack, detail, form }) => {
 
                   <Divider className="my-4" />
 
-                  <Form.Item label="Extra Params" name="sinkExtraParams">
+                  <Form.Item label="额外参数" name="sinkExtraParams">
                     <ExtraParamsConfig pluginName={targetType?.pluginName} />
                   </Form.Item>
                 </Form>
@@ -448,6 +456,7 @@ const WholeSync: React.FC<WholeSyncProps> = ({ goBack, detail, form }) => {
             </Col>
           </Row>
         </SectionCard>
+        <div style={{height: "100px"}}></div>
       </div>
 
       <ActionFooter

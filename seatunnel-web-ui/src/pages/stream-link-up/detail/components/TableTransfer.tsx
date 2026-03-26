@@ -20,18 +20,20 @@ const TableTransfer: React.FC<TableTransferProps> = ({
   const renderFooter: TransferProps["footer"] = (_, info) => {
     const totalTables = data.length;
     const selectedTables = targetKeys.length;
+
     if (info?.direction === "left") {
       return (
-        <div
-          style={{ fontSize: 12, padding: "8px 12px" }}
-        >{`Total: ${totalTables} tables`}</div>
+        <div style={{ fontSize: 12, padding: "8px 12px" }}>
+          {`共 ${totalTables} 张表`}
+        </div>
       );
     }
+
     return (
       <div style={{ display: "flex", fontSize: 12, padding: "8px 12px" }}>
-        <span>{`Selected: ${selectedTables} tables`}</span>
+        <span>{`已选择 ${selectedTables} 张表`}</span>
         <span style={{ color: "red", marginLeft: 16 }}>
-          Supports up to 100 tables
+          最多支持 100 张表
         </span>
       </div>
     );
@@ -51,6 +53,12 @@ const TableTransfer: React.FC<TableTransferProps> = ({
         render={(item) => item.title}
         footer={renderFooter}
         showSearch
+        locale={{
+          itemUnit: "张表",
+          itemsUnit: "张表",
+          searchPlaceholder: "搜索表名",
+          notFoundContent: "暂无数据",
+        }}
         filterOption={(inputValue, item) =>
           item.value?.toLowerCase().includes(inputValue.toLowerCase())
         }

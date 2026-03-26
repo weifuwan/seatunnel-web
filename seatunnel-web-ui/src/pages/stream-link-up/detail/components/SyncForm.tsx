@@ -42,15 +42,15 @@ const SyncForm: React.FC<SyncFormProps> = ({
 }) => {
   return (
     <div style={{ backgroundColor: "white", padding: "16px 24px 0 24px" }}>
-      <Header title={"Table Setting"} />
+      <Header title={"表配置"} />
       <SyncTitle />
       <Form form={form} initialValues={{ matchMode: "1" }}>
         <Row gutter={24} style={{ marginBottom: 4 }}>
           <Col span={12}>
             <Form.Item
-              label="DataSource"
+              label="来源数据源"
               name="sourceId"
-              rules={[{ required: true }]}
+              rules={[{ required: true, message: "请选择来源数据源" }]}
               labelCol={{ span: 3 }}
               wrapperCol={{ span: 21 }}
               className="custom-form-item"
@@ -58,7 +58,7 @@ const SyncForm: React.FC<SyncFormProps> = ({
               <Select
                 size="small"
                 style={{ width: "99%" }}
-                placeholder="请选择库名"
+                placeholder="请选择来源数据源"
                 showSearch
                 options={sourceOption}
                 onChange={onSourceIdChange}
@@ -67,7 +67,7 @@ const SyncForm: React.FC<SyncFormProps> = ({
 
             <Form.Item
               name="matchMode"
-              label="Match table"
+              label="匹配方式"
               labelCol={{ span: 3 }}
               wrapperCol={{ span: 21 }}
               className="custom-form-item"
@@ -77,9 +77,9 @@ const SyncForm: React.FC<SyncFormProps> = ({
                 value={matchMode}
                 onChange={(e) => onMatchModeChange(e.target.value)}
               >
-                <Radio value="1">Custom</Radio>
-                <Radio value="2">Regex </Radio>
-                <Radio value="4">Entire DB</Radio>
+                <Radio value="1">自定义选择</Radio>
+                <Radio value="2">正则匹配</Radio>
+                <Radio value="4">整库同步</Radio>
               </Radio.Group>
             </Form.Item>
 
@@ -92,7 +92,7 @@ const SyncForm: React.FC<SyncFormProps> = ({
                 className="custom-form-item"
               >
                 <TextArea
-                  placeholder="Input..."
+                  placeholder="请输入表名匹配规则"
                   rows={4}
                   style={{
                     width: "99%",
@@ -116,9 +116,9 @@ const SyncForm: React.FC<SyncFormProps> = ({
 
           <Col span={12}>
             <Form.Item
-              label="DataSource"
+              label="目标数据源"
               name="sinkId"
-              rules={[{ required: true }]}
+              rules={[{ required: true, message: "请选择目标数据源" }]}
               labelCol={{ span: 3 }}
               wrapperCol={{ span: 18 }}
               className="custom-form-item"
@@ -126,7 +126,7 @@ const SyncForm: React.FC<SyncFormProps> = ({
               <Select
                 size="small"
                 style={{ width: "99%" }}
-                placeholder="Select..."
+                placeholder="请选择目标数据源"
                 showSearch
                 options={targetOption}
               />

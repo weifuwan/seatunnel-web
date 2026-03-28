@@ -36,12 +36,16 @@ export default [
     component: './batch-link-up',
   },
   {
+    path: '/sync/batch-link-up/:id/detail',
+    component: './batch-link-up/detail',
+    hideInMenu: true,
+  },
+  {
     icon: 'wifi',
     name: 'data-sync.stream',
     path: '/sync/stream-link-up',
     component: './stream-link-up',
   },
-
   {
     icon: 'read',
     name: 'knowledge-management',

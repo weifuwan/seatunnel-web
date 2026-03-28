@@ -10,7 +10,6 @@ import "./index.less";
 
 interface DataSyncHeaderProps {
   goDetail: (value: any) => void;
-  setParams: (value: SyncParams) => void;
   sourceType: any;
   targetType: any;
   setSourceType: (value: any) => void;
@@ -24,7 +23,6 @@ export interface SyncParams {
 
 const DataSyncHeader: React.FC<DataSyncHeaderProps> = ({
   goDetail,
-  setParams,
   sourceType,
   setSourceType,
   targetType,
@@ -48,10 +46,6 @@ const DataSyncHeader: React.FC<DataSyncHeaderProps> = ({
 
   const handleCreateClick = () => {
     goDetail(undefined);
-    setParams({
-      sourceType,
-      targetType,
-    });
   };
 
   const isButtonDisabled = !sourceType || !targetType;

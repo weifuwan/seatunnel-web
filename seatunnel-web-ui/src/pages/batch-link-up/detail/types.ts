@@ -1,0 +1,57 @@
+import type { FormInstance } from "antd";
+
+export type SyncMode = "GUIDE_SINGLE" | "GUIDE_MULTI" | "SCRIPT";
+export type StepKey = "base" | "client";
+
+export type ClientItem = {
+  id: string;
+  name: string;
+  type: string;
+  status?: "online" | "offline" | "untested";
+};
+
+export type SourceTargetType = {
+  dbType: string;
+  connectorType?: string;
+  pluginName?: string;
+};
+
+export type DetailFormValues = {
+  jobName?: string;
+  description?: string;
+  mode?: SyncMode;
+};
+
+export type DetailPageState = {
+  params: any;
+  sourceType: SourceTargetType;
+  targetType: SourceTargetType;
+  activeStep: StepKey;
+  sourceClientId?: string;
+  targetClientId?: string;
+  bridgeClientIds: string[];
+};
+
+export type UseDetailPageReturn = {
+  form: FormInstance<DetailFormValues>;
+  params: any;
+  sourceType: SourceTargetType;
+  targetType: SourceTargetType;
+  activeStep: StepKey;
+  sourceClientId?: string;
+  targetClientId?: string;
+  bridgeClientIds: string[];
+  sourceLabel: string;
+  targetLabel: string;
+  mode?: SyncMode;
+  scrollRef: React.RefObject<HTMLDivElement | null>;
+  baseSectionRef: React.RefObject<HTMLDivElement | null>;
+  clientSectionRef: React.RefObject<HTMLDivElement | null>;
+  setSourceClientId: (id?: string) => void;
+  setTargetClientId: (id?: string) => void;
+  setBridgeClientIds: (ids: string[]) => void;
+  handleSourceChange: (value: string, option: any) => void;
+  handleTargetChange: (value: string, option: any) => void;
+  goBack: () => void;
+  handleNext: () => Promise<void>;
+};

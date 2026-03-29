@@ -102,30 +102,44 @@ export default function useDetailPage() {
     });
   };
 
-  const handleNext = async () => {
-    try {
-      const values = await form.validateFields();
+const handleNext = async () => {
+  try {
+    const values = await form.validateFields();
 
-      const merged = {
-        ...params,
-        ...values,
-        sourceType,
-        targetType,
-        sourceClientId,
-        targetClientId,
-        bridgeClientIds,
-      };
+    const merged = {
+      ...params,
+      ...values,
+      sourceType,
+      targetType,
+      sourceClientId,
+      targetClientId,
+      bridgeClientIds,
+    };
 
-      if (id) {
-        sessionStorage.setItem(`batch-link-up-detail-${id}`, JSON.stringify(merged));
+    if (id) {
+      sessionStorage.setItem(`batch-link-up-detail-${id}`, JSON.stringify(merged));
+
+      if (values.mode === "GUIDE_SINGLE") {
+        history.push(`/sync/batch-link-up/${id}/config/single`);
+        return;
       }
 
-      message.success("基础配置已保存");
-    } catch (error) {
-      console.log(error);
-    }
-  };
+      if (values.mode === "GUIDE_MULTI") {
+        history.push(`/sync/batch-link-up/${id}/config/multi`);
+        return;
+      }
 
+      if (values.mode === "SCRIPT") {
+        history.push(`/sync/batch-link-up/${id}/config/script`);
+        return;
+      }
+    }
+
+    message.success("基础配置已保存");
+  } catch (error) {
+    console.log(error);
+  }
+};
   return {
     form,
     params,

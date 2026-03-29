@@ -33,7 +33,8 @@ export default function LeftSider({ params, form }) {
 
   return (
     <>
-      <Sider
+    123
+      {/* <Sider
         width={280}
         className={styles.sider}
         style={{
@@ -72,7 +73,7 @@ export default function LeftSider({ params, form }) {
           }}
           onClose={() => setShowEmojiPicker(false)}
         />
-      )}
+      )} */}
     </>
   );
 }

@@ -27,9 +27,6 @@ const BaseInfoSection: React.FC<Props> = ({
     <div ref={sectionRef} className="px-8 py-7">
       <div className="mb-6">
         <div className="text-[18px] font-semibold text-[#101828]">基础信息</div>
-        <div className="mt-1 text-[14px] leading-6 text-[#667085]">
-          先确定同步方向，并填写任务名称与用途说明。
-        </div>
       </div>
 
       <Form.Item label="数据同步方式" required className="mb-6">
@@ -41,6 +38,7 @@ const BaseInfoSection: React.FC<Props> = ({
               dataSourceOptions={generateDataSourceOptions()}
               placeholder="请选择来源"
               prefix="来源："
+              width="48%"
             />
 
             <div className="flex items-center justify-center text-[#98A2B3]">
@@ -53,14 +51,8 @@ const BaseInfoSection: React.FC<Props> = ({
               dataSourceOptions={generateDataSourceOptions()}
               placeholder="请选择去向"
               prefix="去向："
+              width="48%"
             />
-          </div>
-
-          <div className="mt-4 rounded-xl bg-white px-4 py-3 text-[13px] text-[#475467]">
-            当前同步方向：
-            <span className="ml-1 font-medium text-[#101828]">{sourceLabel}</span>
-            <span className="mx-2 text-[#98A2B3]">→</span>
-            <span className="font-medium text-[#101828]">{targetLabel}</span>
           </div>
         </div>
       </Form.Item>
@@ -74,7 +66,7 @@ const BaseInfoSection: React.FC<Props> = ({
         >
           <Input
             placeholder="比如：MySQL 到 Doris 用户表同步"
-            className="!h-11 !rounded-xl"
+            className="!h-7 !rounded-xl"
           />
         </Form.Item>
 

@@ -9,24 +9,14 @@ export default [
     redirect: '/data-source',
   },
 
-  {
-    icon: 'monitor',
-    name: 'metrics',
-    path: '/metrics',
-    component: './metrics',
-  },
+
   {
     icon: 'database',
     name: 'datasource',
     path: '/data-source',
     component: './data-source',
   },
-  {
-    icon: 'bulb',
-    name: 'client',
-    path: '/client',
-    component: './client',
-  },
+
 
   {
     path: '/sync/batch-link-up',
@@ -61,7 +51,18 @@ export default [
     path: '/sync/stream-link-up',
     component: './stream-link-up',
   },
-
+  {
+    icon: 'bulb',
+    name: 'client',
+    path: '/client',
+    component: './client',
+  },
+  {
+    icon: 'monitor',
+    name: 'metrics',
+    path: '/metrics',
+    component: './metrics',
+  },
   {
     icon: 'read',
     name: 'knowledge-management',
@@ -69,6 +70,7 @@ export default [
     component: './knowledge-management',
     hideInMenu: true,
   },
+
 
   {
     name: 'Login',

@@ -116,10 +116,7 @@ const DataSyncHeader: React.FC<DataSyncHeaderProps> = ({
             disabled={isButtonDisabled}
             onClick={handleCreateClick}
           >
-            {intl.formatMessage({
-              id: "pages.datasync.header.button.start",
-              defaultMessage: "开始创建",
-            })}
+            创建同步任务
           </Button>
         </div>
       </div>

@@ -1,268 +1,454 @@
-// SimpleWebSocketTest.tsx
-import React, { useState, useEffect, useRef } from 'react';
-import { Client } from '@stomp/stompjs';
-import SockJS from 'sockjs-client';
-import { message } from 'antd';
+import React, { useMemo, useState } from "react";
 
-interface Message {
-  id: number;
-  content: string;
-  timestamp: string;
-}
+type MenuItem = {
+  key: string;
+  icon: string;
+  label: string;
+};
 
-const SimpleWebSocketTest: React.FC = () => {
-  const [isConnected, setIsConnected] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [inputMessage, setInputMessage] = useState('');
-  const [status, setStatus] = useState('未连接');
+const items: MenuItem[] = [
+  { key: "1", icon: "🏠", label: "Dashboard" },
+  { key: "2", icon: "📦", label: "Batch Jobs" },
+  { key: "3", icon: "⚡", label: "Streaming Jobs" },
+  { key: "4", icon: "🧩", label: "Connectors" },
+  { key: "5", icon: "📊", label: "Monitoring" },
+  { key: "6", icon: "⚙️", label: "Settings" },
+];
 
-  const stompClientRef = useRef<Client | null>(null);
+const App: React.FC = () => {
+  const [collapsed, setCollapsed] = useState(true);
+  const [activeKey, setActiveKey] = useState("1");
 
-  // 连接 WebSocket
-  const connect = () => {
-    setStatus('连接中...');
-
-    const socket = new SockJS('http://localhost:9527/ws');
-    const stompClient = new Client({
-      webSocketFactory: () => socket,
-      onConnect: () => {
-        setIsConnected(true);
-        setStatus('已连接');
-        message.info('WebSocket 连接成功');
-
-        // 订阅测试频道
-        stompClient.subscribe('/topic/log/test', (message) => {
-
-          const data = JSON.parse(message.body);
-          const newMsg: Message = {
-            id: Date.now(),
-            content: JSON.stringify(data, null, 2),
-            timestamp: new Date().toLocaleTimeString()
-          };
-          setMessages(prev => [newMsg, ...prev.slice(0, 9)]);
-        });
-      },
-      onDisconnect: () => {
-        setIsConnected(false);
-        setStatus('已断开');
-      },
-      onStompError: (error) => {
-        setStatus(`连接错误: ${error.headers.message}`);
-      }
-    });
-
-    stompClient.activate();
-    stompClientRef.current = stompClient;
-  };
-
-  // 断开连接
-  const disconnect = () => {
-    if (stompClientRef.current) {
-      stompClientRef.current.deactivate();
-      stompClientRef.current = null;
-      setIsConnected(false);
-      setStatus('已断开');
-    }
-  };
-
-  // 发送测试消息
-  const sendMessage = async () => {
-    if (!inputMessage.trim()) return;
-
-    try {
-      const response = await fetch('http://localhost:9527/api/websocket/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          channel: 'test',
-          content: inputMessage,
-          type: 'test'
-        })
-      });
-
-      if (response.ok) {
-        setInputMessage('');
-      }
-    } catch (error) {
-      console.error('发送失败:', error);
-    }
-  };
-
-  // 发送测试日志
-  const sendTestLog = async () => {
-    try {
-      await fetch('http://localhost:8080/api/websocket/log?workflowId=test&level=INFO&content=这是一条测试日志');
-    } catch (error) {
-      console.error('发送日志失败:', error);
-    }
-  };
-
-  // 清理消息
-  const clearMessages = () => {
-    setMessages([]);
-  };
-
-  // 组件卸载时断开连接
-  useEffect(() => {
-    return () => {
-      disconnect();
-    };
-  }, []);
+  const activeItem = useMemo(
+    () => items.find((item) => item.key === activeKey),
+    [activeKey]
+  );
 
   return (
-    <div style={{ padding: 20, fontFamily: 'Arial, sans-serif' }}>
-      <h2>WebSocket 连接测试</h2>
+    <>
+      <style>
+        {`
+          * {
+            box-sizing: border-box;
+          }
 
-      <div style={{ marginBottom: 20 }}>
-        <div style={{ marginBottom: 10 }}>
-          状态: <span style={{
-            color: isConnected ? 'green' : status.includes('错误') ? 'red' : 'black',
-            fontWeight: 'bold'
-          }}>{status}</span>
-        </div>
+          body {
+            margin: 0;
+            font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: #f5f7fb;
+          }
 
-        <div style={{ marginBottom: 10 }}>
-          <button
-            onClick={connect}
-            disabled={isConnected}
-            style={{
-              marginRight: 10,
-              padding: '8px 16px',
-              backgroundColor: isConnected ? '#ccc' : '#007bff',
-              color: 'white',
-              border: 'none',
-              borderRadius: 4,
-              cursor: isConnected ? 'not-allowed' : 'pointer'
-            }}
-          >
-            连接
-          </button>
+          .demo-page {
+            display: flex;
+            min-height: 100vh;
+            background:
+              radial-gradient(circle at top left, rgba(80, 120, 255, 0.08), transparent 30%),
+              linear-gradient(180deg, #f8faff 0%, #f3f6fb 100%);
+          }
 
-          <button
-            onClick={disconnect}
-            disabled={!isConnected}
-            style={{
-              marginRight: 10,
-              padding: '8px 16px',
-              backgroundColor: !isConnected ? '#ccc' : '#dc3545',
-              color: 'white',
-              border: 'none',
-              borderRadius: 4,
-              cursor: !isConnected ? 'not-allowed' : 'pointer'
-            }}
-          >
-            断开
-          </button>
+          .demo-sider {
+            position: relative;
+            width: 70px;
+            min-width: 70px;
+            max-width: 70px;
+            height: 100vh;
+            padding: 14px 10px;
+            background: rgba(255, 255, 255, 0.82);
+            backdrop-filter: blur(16px);
+            border-right: 1px solid rgba(15, 23, 42, 0.06);
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
+            overflow: hidden;
+            transition:
+              width 320ms cubic-bezier(0.22, 1, 0.36, 1),
+              min-width 320ms cubic-bezier(0.22, 1, 0.36, 1),
+              max-width 320ms cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 220ms ease,
+              background 220ms ease;
+          }
 
-          <button
-            onClick={clearMessages}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: '#6c757d',
-              color: 'white',
-              border: 'none',
-              borderRadius: 4,
-              cursor: 'pointer'
-            }}
-          >
-            清空消息
-          </button>
-        </div>
-      </div>
+          .demo-sider.expanded {
+            width: 250px;
+            min-width: 250px;
+            max-width: 250px;
+            box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
+            background: rgba(255, 255, 255, 0.92);
+          }
 
-      <div style={{ marginBottom: 20 }}>
-        <div style={{ marginBottom: 10 }}>
-          <input
-            type="text"
-            value={inputMessage}
-            onChange={(e) => setInputMessage(e.target.value)}
-            placeholder="输入要发送的消息..."
-            style={{
-              padding: '8px',
-              width: '300px',
-              marginRight: '10px',
-              borderRadius: 4,
-              border: '1px solid #ccc'
-            }}
-            onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-          />
+          .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            height: 52px;
+            padding: 0 10px;
+            border-radius: 16px;
+            overflow: hidden;
+          }
 
-          <button
-            onClick={sendMessage}
-            disabled={!isConnected}
-            style={{
-              marginRight: 10,
-              padding: '8px 16px',
-              backgroundColor: !isConnected ? '#ccc' : '#28a745',
-              color: 'white',
-              border: 'none',
-              borderRadius: 4,
-              cursor: !isConnected ? 'not-allowed' : 'pointer'
-            }}
-          >
-            发送消息
-          </button>
+          .brand-icon {
+            width: 32px;
+            height: 32px;
+            min-width: 32px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #3b82f6, #6366f1);
+            color: white;
+            font-size: 16px;
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.22);
+          }
 
-          <button
-            onClick={sendTestLog}
-            disabled={!isConnected}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: !isConnected ? '#ccc' : '#17a2b8',
-              color: 'white',
-              border: 'none',
-              borderRadius: 4,
-              cursor: !isConnected ? 'not-allowed' : 'pointer'
-            }}
-          >
-            发送测试日志
-          </button>
-        </div>
-      </div>
+          .brand-text-wrap {
+            overflow: hidden;
+            white-space: nowrap;
+          }
 
-      <div>
-        <h3>接收到的消息 ({messages.length} 条):</h3>
-        <div style={{
-          border: '1px solid #ddd',
-          borderRadius: 4,
-          height: '300px',
-          overflowY: 'auto',
-          padding: '10px',
-          backgroundColor: '#f8f9fa'
-        }}>
-          {messages.length === 0 ? (
-            <div style={{ color: '#6c757d', textAlign: 'center', marginTop: '20px' }}>
-              暂无消息，请先连接并发送消息
+          .brand-title,
+          .brand-subtitle {
+            opacity: 0;
+            transform: translateX(-10px);
+            transition:
+              opacity 180ms ease,
+              transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+          }
+
+          .demo-sider.expanded .brand-title,
+          .demo-sider.expanded .brand-subtitle {
+            opacity: 1;
+            transform: translateX(0);
+          }
+
+          .brand-title {
+            font-size: 14px;
+            line-height: 20px;
+            font-weight: 700;
+            color: #0f172a;
+          }
+
+          .brand-subtitle {
+            font-size: 12px;
+            line-height: 16px;
+            color: #64748b;
+          }
+
+          .menu {
+            margin-top: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+          }
+
+          .menu-item {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+            height: 46px;
+            padding: 0 12px;
+            border: 0;
+            outline: none;
+            background: transparent;
+            border-radius: 14px;
+            cursor: pointer;
+            transition:
+              background 180ms ease,
+              transform 180ms ease,
+              box-shadow 180ms ease;
+          }
+
+          .menu-item:hover {
+            background: rgba(59, 130, 246, 0.08);
+          }
+
+          .menu-item.active {
+            background: linear-gradient(
+              135deg,
+              rgba(59, 130, 246, 0.14),
+              rgba(99, 102, 241, 0.1)
+            );
+            box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.1);
+          }
+
+          .menu-icon {
+            width: 22px;
+            min-width: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+          }
+
+          .menu-label-wrap {
+            overflow: hidden;
+            white-space: nowrap;
+            flex: 1;
+          }
+
+          .menu-label {
+            display: inline-block;
+            color: #0f172a;
+            font-size: 14px;
+            font-weight: 500;
+            opacity: 0;
+            transform: translateX(-10px);
+            transition:
+              opacity 180ms ease,
+              transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+          }
+
+          .demo-sider.expanded .menu-label {
+            opacity: 1;
+            transform: translateX(0);
+          }
+
+          .menu-badge {
+            min-width: 20px;
+            height: 20px;
+            padding: 0 6px;
+            border-radius: 999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #eef2ff;
+            color: #4f46e5;
+            font-size: 11px;
+            font-weight: 600;
+            opacity: 0;
+            transform: translateX(8px);
+            transition:
+              opacity 180ms ease,
+              transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+          }
+
+          .demo-sider.expanded .menu-badge {
+            opacity: 1;
+            transform: translateX(0);
+          }
+
+          .bottom-tools {
+            position: absolute;
+            left: 10px;
+            right: 10px;
+            bottom: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+          }
+
+          .tool-btn {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            height: 44px;
+            padding: 0 12px;
+            border-radius: 14px;
+            background: rgba(15, 23, 42, 0.04);
+            color: #0f172a;
+            border: none;
+            cursor: pointer;
+            overflow: hidden;
+            transition: background 180ms ease;
+          }
+
+          .tool-btn:hover {
+            background: rgba(15, 23, 42, 0.08);
+          }
+
+          .tool-text-wrap {
+            overflow: hidden;
+            white-space: nowrap;
+          }
+
+          .tool-text {
+            opacity: 0;
+            transform: translateX(-10px);
+            transition:
+              opacity 180ms ease,
+              transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+          }
+
+          .demo-sider.expanded .tool-text {
+            opacity: 1;
+            transform: translateX(0);
+          }
+
+          .content {
+            flex: 1;
+            padding: 24px;
+          }
+
+          .topbar {
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 18px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.82);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(15, 23, 42, 0.06);
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
+          }
+
+          .toggle-btn {
+            border: none;
+            background: #0f172a;
+            color: #fff;
+            height: 40px;
+            padding: 0 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+          }
+
+          .hero {
+            margin-top: 20px;
+            padding: 28px;
+            border-radius: 28px;
+            background: linear-gradient(135deg, #ffffff, #f8fbff);
+            border: 1px solid rgba(15, 23, 42, 0.06);
+            box-shadow: 0 14px 40px rgba(15, 23, 42, 0.05);
+          }
+
+          .hero-title {
+            margin: 0;
+            font-size: 28px;
+            line-height: 1.2;
+            color: #0f172a;
+          }
+
+          .hero-desc {
+            margin-top: 10px;
+            color: #475569;
+            font-size: 14px;
+            line-height: 1.8;
+            max-width: 760px;
+          }
+
+          .card-grid {
+            margin-top: 18px;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+          }
+
+          .card {
+            min-height: 120px;
+            padding: 18px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.92);
+            border: 1px solid rgba(15, 23, 42, 0.06);
+          }
+
+          .card-title {
+            font-size: 13px;
+            color: #64748b;
+          }
+
+          .card-value {
+            margin-top: 10px;
+            font-size: 26px;
+            font-weight: 700;
+            color: #0f172a;
+          }
+        `}
+      </style>
+
+      <div className="demo-page">
+        <aside
+          className={`demo-sider ${collapsed ? "" : "expanded"}`}
+          onMouseEnter={() => setCollapsed(false)}
+          onMouseLeave={() => setCollapsed(true)}
+        >
+          <div className="brand">
+            <div className="brand-icon">S</div>
+            <div className="brand-text-wrap">
+              <div className="brand-title">SeaTunnel Web</div>
+              <div className="brand-subtitle">Smooth Sider Demo</div>
             </div>
-          ) : (
-            messages.map((msg) => (
-              <div
-                key={msg.id}
-                style={{
-                  padding: '8px',
-                  marginBottom: '8px',
-                  borderBottom: '1px solid #eee',
-                  backgroundColor: 'white',
-                  borderRadius: 4
-                }}
-              >
-                <div style={{ fontSize: '12px', color: '#6c757d' }}>
-                  [{msg.timestamp}]
-                </div>
-                <div style={{ marginTop: '4px', fontFamily: 'monospace', fontSize: '14px' }}>
-                  {msg.content}
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
+          </div>
 
-      <div style={{ marginTop: 20, fontSize: '12px', color: '#6c757d' }}>
-        提示: 确保后端运行在 http://localhost:8080，点击"连接"按钮建立 WebSocket 连接
+          <div className="menu">
+            {items.map((item, index) => (
+              <button
+                key={item.key}
+                className={`menu-item ${activeKey === item.key ? "active" : ""}`}
+                onClick={() => setActiveKey(item.key)}
+              >
+                <span className="menu-icon">{item.icon}</span>
+
+                <span className="menu-label-wrap">
+                  <span className="menu-label">{item.label}</span>
+                </span>
+
+                <span className="menu-badge">{index + 1}</span>
+              </button>
+            ))}
+          </div>
+
+          <div className="bottom-tools">
+            <button className="tool-btn">
+              <span className="menu-icon">🔍</span>
+              <span className="tool-text-wrap">
+                <span className="tool-text">Global Search</span>
+              </span>
+            </button>
+
+            <button className="tool-btn">
+              <span className="menu-icon">👤</span>
+              <span className="tool-text-wrap">
+                <span className="tool-text">Profile Center</span>
+              </span>
+            </button>
+          </div>
+        </aside>
+
+        <main className="content">
+          <div className="topbar">
+            <div>
+              <div style={{ fontSize: 14, color: "#64748b" }}>Current Page</div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: "#0f172a" }}>
+                {activeItem?.label}
+              </div>
+            </div>
+
+            <button
+              className="toggle-btn"
+              onClick={() => setCollapsed((prev) => !prev)}
+            >
+              {collapsed ? "Expand" : "Collapse"}
+            </button>
+          </div>
+
+          <section className="hero">
+            <h1 className="hero-title">70px → 250px 的丝滑侧边栏验证</h1>
+            <div className="hero-desc">
+              这个 demo 的关键不是只给 sider 做 width 动画，而是同时给文字做
+              opacity + translateX，并且配合 overflow: hidden。
+              这样展开时不会有“内容突然跳出来”的感觉。
+            </div>
+
+            <div className="card-grid">
+              <div className="card">
+                <div className="card-title">Collapsed Width</div>
+                <div className="card-value">70px</div>
+              </div>
+              <div className="card">
+                <div className="card-title">Expanded Width</div>
+                <div className="card-value">250px</div>
+              </div>
+              <div className="card">
+                <div className="card-title">Timing</div>
+                <div className="card-value">320ms</div>
+              </div>
+            </div>
+          </section>
+        </main>
       </div>
-    </div>
+    </>
   );
 };
 
-export default SimpleWebSocketTest;
+export default App;

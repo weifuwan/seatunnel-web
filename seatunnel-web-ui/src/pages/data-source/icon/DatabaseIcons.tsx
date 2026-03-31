@@ -1,3 +1,6 @@
+import { DatabaseOutlined } from '@ant-design/icons';
+import type { CSSProperties } from 'react';
+
 import CacheIcon from './CacheIcon';
 import ClickhouseIcon from './ClickhouseIcon';
 import DaMengIcon from './DamengIcon';
@@ -17,13 +20,28 @@ import StarRocksIcon from './StarRocksIcon';
 import TiDBIcon from './TiDBIcon';
 
 interface DatabaseIconsProps {
-  dbType: string;
-  width: string;
-  height: string;
+  dbType?: string;
+  width?: string;
+  height?: string;
 }
 
-const DatabaseIcons = ({ dbType, width, height }: DatabaseIconsProps) => {
-  switch (dbType.toLowerCase()) {
+const DatabaseIcons = ({
+  dbType,
+  width = '20px',
+  height = '20px',
+}: DatabaseIconsProps) => {
+  const normalizedType = dbType?.toLowerCase?.();
+
+  const fallbackStyle: CSSProperties = {
+    fontSize: width,
+    width,
+    height,
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  };
+
+  switch (normalizedType) {
     case 'mysql':
       return <MysqlIcon width={width} height={height} />;
     case 'oracle':
@@ -56,12 +74,10 @@ const DatabaseIcons = ({ dbType, width, height }: DatabaseIconsProps) => {
       return <StarRocksIcon width={width} height={height} />;
     case 'clickhouse':
       return <ClickhouseIcon width={width} height={height} />;
-    case 'dameng':
-      return <DaMengIcon width={width} height={height} />;
     case 'tidb':
       return <TiDBIcon width={width} height={height} />;
     default:
-      return <MysqlIcon width={width} height={height} />;
+      return <DatabaseOutlined style={fallbackStyle} />;
   }
 };
 

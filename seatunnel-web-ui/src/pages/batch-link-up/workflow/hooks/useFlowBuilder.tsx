@@ -16,7 +16,7 @@ interface Props {
 }
 
 export default function useFlowBuilder({ form, params }: Props) {
-  const { getNodes, getEdges, fitView } = useReactFlow();
+  const { getNodes, getEdges, fitView, screenToFlowPosition } = useReactFlow();
 
   const [nodes, setNodes] = useNodesState([]);
   const [edges, setEdges] = useEdgesState([]);
@@ -87,6 +87,33 @@ export default function useFlowBuilder({ form, params }: Props) {
     };
   }, [controlMode]);
 
+  const addNode = useCallback(
+    ({
+      position,
+      nodeType,
+      label,
+    }: {
+      position: { x: number; y: number };
+      nodeType: string;
+      label: string;
+    }) => {
+      const id = `${nodeType}-${Date.now()}`;
+
+      const newNode = {
+        id,
+        type: "custom",
+        position,
+        data: {
+          label,
+          nodeType,
+        },
+      };
+
+      setNodes((nds) => nds.concat(newNode));
+    },
+    [setNodes]
+  );
+
   const onNodesChange = useCallback(
     (changes: any) => setNodes((nds) => applyNodeChanges(changes, nds)),
     [setNodes]
@@ -116,48 +143,54 @@ export default function useFlowBuilder({ form, params }: Props) {
     }
   };
 
-  const onNodeMouseEnter = useCallback((_: any, node: any) => {
-    setEdges((eds) =>
-      eds.map((edge) => {
-        if (edge.source === node.id || edge.target === node.id) {
-          if (!edge.data?.originalStroke) {
-            edge.data = {
-              ...edge.data,
-              originalStroke:
-                edge.style?.stroke ||
-                getStatusColor(edge.data?.executionStatus) ||
-                "#d0d5dc",
+  const onNodeMouseEnter = useCallback(
+    (_: any, node: any) => {
+      setEdges((eds) =>
+        eds.map((edge) => {
+          if (edge.source === node.id || edge.target === node.id) {
+            if (!edge.data?.originalStroke) {
+              edge.data = {
+                ...edge.data,
+                originalStroke:
+                  edge.style?.stroke ||
+                  getStatusColor(edge.data?.executionStatus) ||
+                  "#d0d5dc",
+              };
+            }
+            return {
+              ...edge,
+              style: { ...edge.style, stroke: "hsl(231 48% 48%)" },
             };
           }
-          return {
-            ...edge,
-            style: { ...edge.style, stroke: "hsl(231 48% 48%)" },
-          };
-        }
-        return edge;
-      })
-    );
-  }, [setEdges]);
+          return edge;
+        })
+      );
+    },
+    [setEdges]
+  );
 
-  const onNodeMouseLeave = useCallback((_: any, node: any) => {
-    setEdges((eds) =>
-      eds.map((edge) => {
-        if (edge.source === node.id || edge.target === node.id) {
-          return {
-            ...edge,
-            style: {
-              ...edge.style,
-              stroke:
-                edge.data?.originalStroke ||
-                getStatusColor(edge.data?.executionStatus) ||
-                "#d0d5dc",
-            },
-          };
-        }
-        return edge;
-      })
-    );
-  }, [setEdges]);
+  const onNodeMouseLeave = useCallback(
+    (_: any, node: any) => {
+      setEdges((eds) =>
+        eds.map((edge) => {
+          if (edge.source === node.id || edge.target === node.id) {
+            return {
+              ...edge,
+              style: {
+                ...edge.style,
+                stroke:
+                  edge.data?.originalStroke ||
+                  getStatusColor(edge.data?.executionStatus) ||
+                  "#d0d5dc",
+              },
+            };
+          }
+          return edge;
+        })
+      );
+    },
+    [setEdges]
+  );
 
   const onPaneContextMenu = useCallback((event: any) => {
     event.preventDefault();
@@ -165,37 +198,40 @@ export default function useFlowBuilder({ form, params }: Props) {
 
   const isValidConnection = useCallback(() => true, []);
 
-  const onConnect = useCallback((connection: any) => {
-    const nodes = getNodes();
-    const edges = getEdges();
+  const onConnect = useCallback(
+    (connection: any) => {
+      const nodes = getNodes();
+      const edges = getEdges();
 
-    const sourceNode = nodes.find((n) => n.id === connection.source);
-    const targetNode = nodes.find((n) => n.id === connection.target);
+      const sourceNode = nodes.find((n) => n.id === connection.source);
+      const targetNode = nodes.find((n) => n.id === connection.target);
 
-    const isTransform =
-      (sourceNode && sourceNode.data.nodeType === "transform") ||
-      (targetNode && targetNode.data.nodeType === "transform");
+      const isTransform =
+        (sourceNode && sourceNode.data.nodeType === "transform") ||
+        (targetNode && targetNode.data.nodeType === "transform");
 
-    if (!sourceNode || !targetNode) return;
+      if (!sourceNode || !targetNode) return;
 
-    if (isTransform) {
-      const hasIncoming = edges.some((e) => e.target === targetNode.id);
-      if (hasIncoming) {
-        message.warning("Transform 节点只能有一个上游节点");
-        return;
+      if (isTransform) {
+        const hasIncoming = edges.some((e) => e.target === targetNode.id);
+        if (hasIncoming) {
+          message.warning("Transform 节点只能有一个上游节点");
+          return;
+        }
+
+        const hasOutgoing = edges.some((e) => e.source === sourceNode.id);
+        if (hasOutgoing) {
+          message.warning("Transform 节点只能有一个下游节点");
+          return;
+        }
       }
 
-      const hasOutgoing = edges.some((e) => e.source === sourceNode.id);
-      if (hasOutgoing) {
-        message.warning("Transform 节点只能有一个下游节点");
-        return;
+      if (isValidConnection()) {
+        setEdges((eds) => addEdge(connection, eds));
       }
-    }
-
-    if (isValidConnection()) {
-      setEdges((eds) => addEdge(connection, eds));
-    }
-  }, [getNodes, getEdges, isValidConnection, setEdges]);
+    },
+    [getNodes, getEdges, isValidConnection, setEdges]
+  );
 
   const onNodeClick = useCallback((_: any, node: any) => {
     setSelectedNode(node);
@@ -246,7 +282,8 @@ export default function useFlowBuilder({ form, params }: Props) {
 
   const deleteConnections = useCallback(
     (direction: string, nodesArg?: any[]) => {
-      const nodesToProcess = nodesArg || (selectedNode ? [selectedNode] : selectedNodes);
+      const nodesToProcess =
+        nodesArg || (selectedNode ? [selectedNode] : selectedNodes);
 
       if (!nodesToProcess || nodesToProcess.length === 0) {
         message.warning("请先选择节点");
@@ -264,7 +301,8 @@ export default function useFlowBuilder({ form, params }: Props) {
           edgesToDelete = eds.filter((edge) => nodeIds.includes(edge.source));
         } else if (direction === "both") {
           edgesToDelete = eds.filter(
-            (edge) => nodeIds.includes(edge.source) || nodeIds.includes(edge.target)
+            (edge) =>
+              nodeIds.includes(edge.source) || nodeIds.includes(edge.target)
           );
         }
 
@@ -273,7 +311,9 @@ export default function useFlowBuilder({ form, params }: Props) {
           return eds;
         }
 
-        message.success(`已删除 ${edgesToDelete.length} 条${getDirectionText(direction)}边`);
+        message.success(
+          `已删除 ${edgesToDelete.length} 条${getDirectionText(direction)}边`
+        );
         return eds.filter((edge) => !edgesToDelete.includes(edge));
       });
 
@@ -293,7 +333,9 @@ export default function useFlowBuilder({ form, params }: Props) {
         setEdges((eds) =>
           eds.filter(
             (e) =>
-              !nodesToDelete.some((n: any) => e.source === n.id || e.target === n.id)
+              !nodesToDelete.some(
+                (n: any) => e.source === n.id || e.target === n.id
+              )
           )
         );
         message.success(`已删除 ${nodesToDelete.length} 个节点`);
@@ -358,21 +400,27 @@ export default function useFlowBuilder({ form, params }: Props) {
     if (hasLeftConnections) {
       items.push({
         key: "delete_left_connections",
-        label: `删除入边${targetNodes.length > 1 ? `(${targetNodes.length})` : ""}`,
+        label: `删除入边${
+          targetNodes.length > 1 ? `(${targetNodes.length})` : ""
+        }`,
       });
     }
 
     if (hasRightConnections) {
       items.push({
         key: "delete_right_connections",
-        label: `删除出边${targetNodes.length > 1 ? `(${targetNodes.length})` : ""}`,
+        label: `删除出边${
+          targetNodes.length > 1 ? `(${targetNodes.length})` : ""
+        }`,
       });
     }
 
     if (hasAnyConnections) {
       items.push({
         key: "delete_all_connections",
-        label: `删除所有连接${targetNodes.length > 1 ? `(${targetNodes.length})` : ""}`,
+        label: `删除所有连接${
+          targetNodes.length > 1 ? `(${targetNodes.length})` : ""
+        }`,
         danger: true,
       });
     }
@@ -380,7 +428,9 @@ export default function useFlowBuilder({ form, params }: Props) {
     items.push({ type: "divider" });
     items.push({
       key: "delete",
-      label: `删除节点${targetNodes.length > 1 ? `(${targetNodes.length})` : ""}`,
+      label: `删除节点${
+        targetNodes.length > 1 ? `(${targetNodes.length})` : ""
+      }`,
       danger: true,
     });
 
@@ -445,5 +495,7 @@ export default function useFlowBuilder({ form, params }: Props) {
     renderContextMenu,
     onCloseDrawer,
     handleNodeDataChange,
+    screenToFlowPosition,
+    addNode,
   };
 }

@@ -1,11 +1,10 @@
-import { Form } from "antd";
-import { useState } from "react";
+import { ArrowLeftOutlined } from "@ant-design/icons";
+import { Button, Col, Form, Row, Space } from "antd";
+import { Blocks, Braces, Database } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { ReactFlowProvider } from "reactflow";
 import FlowCanvas from "./FlowCanvas";
-import { SyncOutlined } from "@ant-design/icons";
-import CloseIcon from "./icon/CloseIcon";
-
-type RightPanelTab = "attribute" | "runtime" | "schedule" | "version";
+import styles from "./index.less";
 
 interface WorkflowProps {
   params: any;
@@ -17,138 +16,233 @@ interface WorkflowProps {
   setParams: React.Dispatch<React.SetStateAction<any>>;
 }
 
-const PANEL_TABS: Array<{ key: RightPanelTab; label: string }> = [
-  { key: "attribute", label: "属性" },
-  { key: "runtime", label: "运行配置" },
-  { key: "schedule", label: "调度配置" },
-  { key: "version", label: "版本" },
-];
+const tabs = ["基础", "调度", "映射", "高级"];
+const formItems = ["任务名称", "数据源", "目标源", "运行参数", "高级设置"];
 
 export default function Workflow({ params, goBack }: WorkflowProps) {
   const [form] = Form.useForm();
-  const [panelOpen, setPanelOpen] = useState(true);
-  const [activeTab, setActiveTab] = useState<RightPanelTab>("attribute");
 
-  const activeTabLabel =
-    PANEL_TABS.find((item) => item.key === activeTab)?.label || "属性";
+  const [rightWidth, setRightWidth] = useState(380);
+  const draggingRef = useRef(false);
+
+  useEffect(() => {
+    const handleMouseMove = (event: MouseEvent) => {
+      if (!draggingRef.current) return;
+
+      const viewportWidth = window.innerWidth;
+      const nextWidth = viewportWidth - event.clientX - 18;
+      const clampedWidth = Math.max(320, Math.min(520, nextWidth));
+
+      setRightWidth(clampedWidth);
+    };
+
+    const handleMouseUp = () => {
+      draggingRef.current = false;
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, []);
+
+  const handleResizeStart = () => {
+    draggingRef.current = true;
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+  };
 
   return (
-    <div className="h-[calc(100vh-12px)] bg-[#FFFFFF] p-5">
-      <div className="flex h-full overflow-hidden rounded-[8px] border border-[#E4E7EC] bg-white shadow-[0_1px_3px_rgba(16,24,40,0.02)]">
-        {/* 左侧主工作区 */}
-        <main className="min-w-0 flex-1 bg-[#FCFCFD]">
-          <ReactFlowProvider>
-            <FlowCanvas form={form} params={params} goBack={goBack} />
-          </ReactFlowProvider>
-        </main>
+    <div className={styles.workflow}>
+      <div className={styles.header}>
+        <div className={styles.headerInner}>
+          <div className={styles.titleWrap}>
+            <div className={styles.titleIcon}>
+              <Blocks size={18} />
+            </div>
 
-        {/* 右侧面板区 */}
-        <aside className="flex h-full shrink-0 border-l border-[#F2F4F7] bg-white">
-          {/* 内容面板 */}
-          <div
-            className={`overflow-hidden transition-all duration-300 ease-out ${
-              panelOpen ? "w-[360px] opacity-100" : "w-0 opacity-0"
-            }`}
-          >
-            <div className="flex h-full w-[360px] flex-col bg-[#FFFFFF]">
-              <div className="flex h-[46px] items-center justify-between border-b border-[#F2F4F7] px-5">
-                <div className="min-w-0">
-                  <div className="text-[16px] font-semibold text-[#101828]">
-                    {activeTabLabel}
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 text-[13px] text-[#667085]">
-                  <button
-                    type="button"
-                    className="transition hover:text-[#344054]"
-                  >
-                   <SyncOutlined /> 刷新
-                  </button>
-
-                  <div className="h-4 w-px bg-[#E4E7EC]" />
-
-                  <button
-                    type="button"
-                    className="transition hover:text-[#344054]"
-                    onClick={() => setPanelOpen(false)}
-                  >
-                    <CloseIcon />
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex-1 overflow-y-auto bg-[#FCFCFD] p-4">
-                {activeTab === "attribute" && (
-                  <div className="rounded-[10px] border border-dashed border-[#D0D5DD] bg-white p-5 text-sm text-[#667085]">
-                    属性区域占位
-                  </div>
-                )}
-
-                {activeTab === "runtime" && (
-                  <div className="rounded-[10px] border border-dashed border-[#D0D5DD] bg-white p-5 text-sm text-[#667085]">
-                    运行配置区域占位
-                  </div>
-                )}
-
-                {activeTab === "schedule" && (
-                  <div className="rounded-[10px] border border-dashed border-[#D0D5DD] bg-white p-5 text-sm text-[#667085]">
-                    调度配置区域占位
-                  </div>
-                )}
-
-                {activeTab === "version" && (
-                  <div className="rounded-[10px] border border-dashed border-[#D0D5DD] bg-white p-5 text-sm text-[#667085]">
-                    版本区域占位
-                  </div>
-                )}
+            <div>
+              <div className={styles.title}>单表离线任务</div>
+              <div className={styles.subtitle}>
+                配置同步链路、字段映射与运行参数，在一个页面完成创建与调试。
               </div>
             </div>
           </div>
 
-          {/* 右侧竖向 tabs */}
-          <div className="flex h-full w-[38px] flex-col border-l border-[#F2F4F7] bg-[#FCFCFD]">
-            <div className="flex-1">
-              {PANEL_TABS.map((item) => {
-                const active = activeTab === item.key;
+          <div>
+            <Button
+              type="text"
+              icon={<ArrowLeftOutlined />}
+              className={styles.backButton}
+            >
+              返回上一步
+            </Button>
+          </div>
+        </div>
+      </div>
 
-                return (
-                  <button
-                    key={item.key}
-                    type="button"
-                    onClick={() => {
-                      setActiveTab(item.key);
-                      setPanelOpen(true);
-                    }}
-                    className={`group relative flex h-[96px] w-full items-center justify-center border-b border-[#F2F4F7] px-1 transition ${
-                      active
-                        ? "bg-[#EEF4FF] text-[#3559E0]"
-                        : "bg-transparent text-[#667085] hover:bg-[#F9FAFB] hover:text-[#344054]"
-                    }`}
-                  >
-                    {active && (
-                      <span className="absolute left-0 top-0 h-full w-[2px] bg-[#3559E0]" />
-                    )}
+      <div className={styles.workspace}>
+        <div className={styles.workspaceCard}>
+          <div className={styles.resizeLayout}>
+            {/* left main stage */}
+            <div className={styles.leftPane}>
+              <div className={styles.mainPanel}>
+                <div className={styles.mainPanelHeader}>
+                  <div className={styles.mainPanelTitle}>左侧主区域</div>
 
-                    <span className="text-[13px] leading-5 [writing-mode:vertical-rl] [text-orientation:mixed]">
-                      {item.label}
-                    </span>
-                  </button>
-                );
-              })}
+                  <Space size={10}>
+                    <div className={styles.actionChip}>保存</div>
+                    <div className={styles.actionChip}>预览</div>
+                    <div className={styles.actionChip}>运行</div>
+                  </Space>
+                </div>
+
+                <div className={styles.mainPanelContent}>
+                  <Row gutter={24} style={{ height: "100%" }}>
+                    <Col span={4}>
+                      <div className={styles.nodePalette}>
+                        <div className={styles.paletteTitle}>节点组件</div>
+
+                        <div
+                          className={styles.paletteNode}
+                          draggable
+                          onDragStart={(event) => {
+                            event.dataTransfer.setData(
+                              "application/reactflow",
+                              JSON.stringify({
+                                nodeType: "source",
+                                label: "字段映射",
+                              })
+                            );
+                            event.dataTransfer.effectAllowed = "move";
+                          }}
+                        >
+                          <div
+                            className={`${styles.paletteIcon} ${styles.mappingIcon}`}
+                          >
+                            <Braces size={16} />
+                          </div>
+
+                          <div className={styles.paletteContent}>
+                            <div className={styles.paletteName}>字段映射</div>
+                            <div className={styles.paletteDesc}>
+                              配置字段对应关系
+                            </div>
+                          </div>
+                        </div>
+
+                        <div
+                          className={styles.paletteNode}
+                          draggable
+                          onDragStart={(event) => {
+                            event.dataTransfer.setData(
+                              "application/reactflow",
+                              JSON.stringify({
+                                nodeType: "target",
+                                label: "SQL",
+                              })
+                            );
+                            event.dataTransfer.effectAllowed = "move";
+                          }}
+                        >
+                          <div
+                            className={`${styles.paletteIcon} ${styles.sqlIcon}`}
+                          >
+                            <Database size={16} />
+                          </div>
+
+                          <div className={styles.paletteContent}>
+                            <div className={styles.paletteName}>SQL</div>
+                            <div className={styles.paletteDesc}>
+                              支持自定义查询
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </Col>
+
+                    <Col span={20}>
+                      <div className={styles.canvasShell}>
+                        <ReactFlowProvider>
+                          <FlowCanvas
+                            form={form}
+                            params={params}
+                            goBack={goBack}
+                          />
+                        </ReactFlowProvider>
+                      </div>
+                    </Col>
+                  </Row>
+                </div>
+              </div>
             </div>
 
-            {!panelOpen && (
-              <button
-                type="button"
-                onClick={() => setPanelOpen(true)}
-                className="flex h-[56px] items-center justify-center border-t border-[#F2F4F7] text-[12px] text-[#667085] transition hover:bg-white hover:text-[#344054]"
-              >
-                展开
-              </button>
-            )}
+            {/* middle resizer */}
+            <div
+              className={styles.resizeBar}
+              onMouseDown={handleResizeStart}
+              role="separator"
+              aria-orientation="vertical"
+              aria-label="调整左右面板宽度"
+            >
+              <div className={styles.resizeBarLine} />
+              <div className={styles.resizeBarHandle}>
+                <span />
+                <span />
+              </div>
+            </div>
+
+            {/* right config panel */}
+            <div className={styles.rightPane} style={{ width: rightWidth }}>
+              <div className={styles.sidePanel}>
+                <div className={styles.sidePanelHeader}>
+                  <div className={styles.sidePanelTitle}>配置面板</div>
+                </div>
+
+                <div className={styles.tabs}>
+                  {tabs.map((item, index) => (
+                    <div
+                      key={item}
+                      className={`${styles.tab} ${
+                        index === 0 ? styles.tabActive : ""
+                      }`}
+                    >
+                      {item}
+                    </div>
+                  ))}
+                </div>
+
+                <div className={styles.formArea}>
+                  <div className={styles.formGrid}>
+                    {formItems.map((item) => (
+                      <div key={item} className={styles.formCard}>
+                        <div className={styles.formCardTitle}>{item}</div>
+                        <div className={styles.formPlaceholder} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className={styles.sidePanelFooter}>
+                  <Space className={styles.footerActions}>
+                    <Button className={styles.footerButton}>重置</Button>
+                    <Button
+                      type="primary"
+                      className={styles.footerPrimaryButton}
+                    >
+                      应用配置
+                    </Button>
+                  </Space>
+                </div>
+              </div>
+            </div>
           </div>
-        </aside>
+        </div>
       </div>
     </div>
   );

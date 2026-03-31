@@ -15,7 +15,6 @@ import { ControlPanel } from "./operator/ControlPanel";
 import useFlowBuilder from "./hooks/useFlowBuilder";
 import useNodePlacement from "./hooks/useNodePlacement";
 
-
 const nodeTypesConfig = {
   custom: CustomNode,
 };
@@ -38,12 +37,39 @@ export default function FlowCanvas({
   params,
   goBack,
 }: FlowCanvasProps) {
-    
   const flow = useFlowBuilder({ form, params });
   const placement = useNodePlacement({
     setNodes: flow.setNodes,
     setControlMode: flow.setControlMode,
   });
+
+  const onDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+  };
+
+  const onDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+
+    const raw = event.dataTransfer.getData("application/reactflow");
+    if (!raw) return;
+
+    const data = JSON.parse(raw);
+
+    const bounds = placement.reactFlowWrapper.current?.getBoundingClientRect();
+    if (!bounds) return;
+
+    const position = flow.screenToFlowPosition({
+      x: event.clientX - bounds.left,
+      y: event.clientY - bounds.top,
+    });
+
+    flow.addNode({
+      position,
+      nodeType: data.nodeType,
+      label: data.label,
+    });
+  };
 
   return (
     <div
@@ -54,6 +80,8 @@ export default function FlowCanvas({
         cursor: flow.controlMode === ControlMode.Hand ? "grab" : "default",
       }}
       ref={placement.reactFlowWrapper}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
     >
       <ReactFlow
         nodes={flow.nodes}
@@ -77,7 +105,10 @@ export default function FlowCanvas({
         deleteKeyCode={null}
         minZoom={MIN_ZOOM}
         maxZoom={MAX_ZOOM}
-        nodesDraggable={!flow.nodesReadOnly && flow.interactionMode === ControlMode.Pointer}
+        nodesDraggable={
+          !flow.nodesReadOnly &&
+          flow.interactionMode === ControlMode.Pointer
+        }
         nodesConnectable={!flow.nodesReadOnly}
         nodesFocusable={!flow.nodesReadOnly}
         edgesFocusable={!flow.nodesReadOnly}
@@ -86,7 +117,8 @@ export default function FlowCanvas({
         zoomOnScroll={!flow.workflowReadOnly}
         zoomOnDoubleClick={!flow.workflowReadOnly}
         selectionOnDrag={
-          flow.interactionMode === ControlMode.Pointer && !flow.workflowReadOnly
+          flow.interactionMode === ControlMode.Pointer &&
+          !flow.workflowReadOnly
         }
         fitView
         fitViewOptions={{
@@ -106,17 +138,7 @@ export default function FlowCanvas({
           maskColor="#E9EBF0"
         />
 
-        <ControlPanel
-          controlMode={flow.controlMode}
-          onControlModeChange={flow.toggleControlMode}
-          onNodeDragStart={placement.handleNodeDragStart}
-          nodes={flow.nodes}
-          edges={flow.edges}
-          baseForm={form}
-          goBack={goBack}
-          setRunVisible={flow.setRunVisible}
-          runVisible={flow.runVisible}
-        />
+        {/* <ControlPanel ... /> */}
       </ReactFlow>
 
       <Dropdown
@@ -144,15 +166,7 @@ export default function FlowCanvas({
         />
       )}
 
-      {flow.runVisible && (
-        <RunLog
-          setRunVisible={flow.setRunVisible}
-          runVisible={flow.runVisible}
-          nodes={flow.nodes}
-          edges={flow.edges}
-          baseForm={form}
-        />
-      )}
+      {/* {flow.runVisible && ... } */}
     </div>
   );
 }

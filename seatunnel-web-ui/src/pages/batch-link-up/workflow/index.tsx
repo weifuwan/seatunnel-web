@@ -4,6 +4,7 @@ import { Blocks, Braces, Database } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { ReactFlowProvider } from "reactflow";
 import FlowCanvas from "./FlowCanvas";
+import RightConfigPanel from "./RightConfigPanel";
 import styles from "./index.less";
 
 interface WorkflowProps {
@@ -16,13 +17,12 @@ interface WorkflowProps {
   setParams: React.Dispatch<React.SetStateAction<any>>;
 }
 
-const tabs = ["基础", "调度", "映射", "高级"];
-const formItems = ["任务名称", "数据源", "目标源", "运行参数", "高级设置"];
-
 export default function Workflow({ params, goBack }: WorkflowProps) {
   const [form] = Form.useForm();
-
   const [rightWidth, setRightWidth] = useState(380);
+  const [activeTab, setActiveTab] = useState<
+    "basic" | "schedule" | "mapping" | "advanced"
+  >("basic");
   const draggingRef = useRef(false);
 
   useEffect(() => {
@@ -89,11 +89,10 @@ export default function Workflow({ params, goBack }: WorkflowProps) {
       <div className={styles.workspace}>
         <div className={styles.workspaceCard}>
           <div className={styles.resizeLayout}>
-            {/* left main stage */}
             <div className={styles.leftPane}>
               <div className={styles.mainPanel}>
                 <div className={styles.mainPanelHeader}>
-                  <div className={styles.mainPanelTitle}>左侧主区域</div>
+                  <div className={styles.mainPanelTitle}>同步编排</div>
 
                   <Space size={10}>
                     <div className={styles.actionChip}>保存</div>
@@ -182,7 +181,6 @@ export default function Workflow({ params, goBack }: WorkflowProps) {
               </div>
             </div>
 
-            {/* middle resizer */}
             <div
               className={styles.resizeBar}
               onMouseDown={handleResizeStart}
@@ -197,49 +195,11 @@ export default function Workflow({ params, goBack }: WorkflowProps) {
               </div>
             </div>
 
-            {/* right config panel */}
             <div className={styles.rightPane} style={{ width: rightWidth }}>
-              <div className={styles.sidePanel}>
-                <div className={styles.sidePanelHeader}>
-                  <div className={styles.sidePanelTitle}>配置面板</div>
-                </div>
-
-                <div className={styles.tabs}>
-                  {tabs.map((item, index) => (
-                    <div
-                      key={item}
-                      className={`${styles.tab} ${
-                        index === 0 ? styles.tabActive : ""
-                      }`}
-                    >
-                      {item}
-                    </div>
-                  ))}
-                </div>
-
-                <div className={styles.formArea}>
-                  <div className={styles.formGrid}>
-                    {formItems.map((item) => (
-                      <div key={item} className={styles.formCard}>
-                        <div className={styles.formCardTitle}>{item}</div>
-                        <div className={styles.formPlaceholder} />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className={styles.sidePanelFooter}>
-                  <Space className={styles.footerActions}>
-                    <Button className={styles.footerButton}>重置</Button>
-                    <Button
-                      type="primary"
-                      className={styles.footerPrimaryButton}
-                    >
-                      应用配置
-                    </Button>
-                  </Space>
-                </div>
-              </div>
+              <RightConfigPanel
+                activeTab={activeTab}
+                onTabChange={setActiveTab}
+              />
             </div>
           </div>
         </div>

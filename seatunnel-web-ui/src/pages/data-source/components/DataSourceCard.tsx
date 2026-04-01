@@ -94,10 +94,10 @@ const DataSourceCard: React.FC<DataSourceCardProps> = ({
           type="default"
           onClick={() => onEdit(record)}
         >
-          <span className="default-layer">Edit DataSource</span>
+          <span className="default-layer">查看详情</span>
 
           <span className="hover-layer">
-            <span className="hover-label">Edit DataSource</span>
+            <span className="hover-label">查看详情</span>
             <span className="hover-icon">
               <ArrowRightOutlined />
             </span>

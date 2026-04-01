@@ -19,18 +19,41 @@ import CustomKVList from "./components/CustomKVList";
 import DriverLocationField from "./components/DriverLocationField";
 import { getConfigInitialValues, transformRules } from "./utils/formUtils";
 
+import { Code2, FlaskConical, ShieldCheck } from "lucide-react";
+
 const ENV_OPTIONS = [
   {
     value: "DEVELOP",
-    label: <div>🟢 开发环境</div>,
+    label: (
+      <div className="flex items-center gap-2">
+        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+          <Code2 size={15} />
+        </span>
+        <span className="text-[13px] font-medium text-slate-700">开发环境</span>
+      </div>
+    ),
   },
   {
     value: "TEST",
-    label: <div>🟡 测试环境</div>,
+    label: (
+      <div className="flex items-center gap-2">
+        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
+          <FlaskConical size={15} />
+        </span>
+        <span className="text-[13px] font-medium text-slate-700">测试环境</span>
+      </div>
+    ),
   },
   {
     value: "PROD",
-    label: <div>🔴 生产环境</div>,
+    label: (
+      <div className="flex items-center gap-2">
+        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-rose-50 text-rose-600">
+          <ShieldCheck size={15} />
+        </span>
+        <span className="text-[13px] font-medium text-slate-700">生产环境</span>
+      </div>
+    ),
   },
 ];
 
@@ -289,7 +312,7 @@ const DynamicDataSourceForm: React.FC<DynamicDataSourceFormProps> = ({
                 id: "pages.datasource.form.selectPlaceholder",
                 defaultMessage: "Select...",
               })}
-              showSearch
+              // showSearch
               options={ENV_OPTIONS}
             />
           </Form.Item>

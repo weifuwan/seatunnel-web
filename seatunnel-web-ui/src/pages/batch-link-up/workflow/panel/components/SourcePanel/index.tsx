@@ -39,16 +39,6 @@ const App: FC<AppProps> = ({ selectedNode, onNodeDataChange }) => {
     });
   };
 
-  // useEffect(() => {
-  //   if (sourceColumns && sourceColumns?.length > 0) {
-  //     onNodeDataChange(selectedNode?.id, {
-  //       ...selectedNode?.data,
-  //       sourceColumns,
-  //     });
-  //   }
-  //   // eslint-disable-next-line react-hooks/exhaustive-deps
-  // }, [sourceColumns]);
-
   const prevNodeIdRef = useRef<string>();
 
   useEffect(() => {

@@ -1,10 +1,9 @@
-// components/SourceConfigTab/index.tsx
 import { FC } from "react";
 
 import Header from "@/components/Header";
 import { InfoCircleOutlined } from "@ant-design/icons";
 import { useIntl } from "@umijs/max";
-import { Divider } from "antd";
+import { Divider, Tooltip } from "antd";
 import ExtraParamsConfig from "./ExtraParamsConfig";
 import SourceBasicConfig from "./SourceBasicConfig";
 
@@ -53,55 +52,62 @@ const SourceConfigTab: FC<SourceConfigTabProps> = ({
   };
 
   return (
-    <div style={{ marginTop: 8 }}>
-      <Header
-        title={
-          <span style={{ fontSize: 13, fontWeight: 500 }}>
-            {intl.formatMessage({
-              id: "pages.job.config.source.basicSetting",
-              defaultMessage: "Basic Setting",
-            })}
-          </span>
-        }
-      />
-
-      <SourceBasicConfig
-        selectedNode={selectedNode}
-        sourceOption={sourceOption}
-        qualityDetailRef={qualityDetailRef}
-        onNodeDataChange={onNodeDataChange}
-        setSourceColumns={setSourceColumns}
-        sourceForm={sourceForm}
-        sourceTableOption={sourceTableOption}
-        getSourceTableList={getSourceTableList}
-      />
-
-      <Divider style={{ padding: 0, margin: "12px 0" }} />
-
-      <Header
-        title={
-          <span style={{ fontSize: 13, fontWeight: 400 }}>
-            {intl.formatMessage({
-              id: "pages.job.config.source.extraParams",
-              defaultMessage: "Extra Custom Parameters",
-            })}{" "}
-            <a
-              title={intl.formatMessage({
-                id: "pages.job.config.source.extraParams.tip",
-                defaultMessage: "Configure extra custom parameters",
+    <div className="mt-2">
+      <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
+        <Header
+          title={
+            <span style={{ fontSize: 13, fontWeight: 600 }}>
+              {intl.formatMessage({
+                id: "pages.job.config.source.basicSetting",
+                defaultMessage: "Basic Setting",
               })}
-            >
-              <InfoCircleOutlined />
-            </a>
-          </span>
-        }
-      />
+            </span>
+          }
+        />
 
-      <ExtraParamsConfig
-        selectedNode={selectedNode}
-        params={params}
-        onParamsChange={handleParamsChange}
-      />
+        <div className="mt-3">
+          <SourceBasicConfig
+            selectedNode={selectedNode}
+            sourceOption={sourceOption}
+            qualityDetailRef={qualityDetailRef}
+            onNodeDataChange={onNodeDataChange}
+            setSourceColumns={setSourceColumns}
+            sourceForm={sourceForm}
+            sourceTableOption={sourceTableOption}
+            getSourceTableList={getSourceTableList}
+          />
+        </div>
+
+        <Divider style={{ margin: "20px 0 16px", borderColor: "#E2E8F0" }} />
+
+        <Header
+          title={
+            <div className="flex items-center gap-2">
+              <span style={{ fontSize: 13, fontWeight: 600 }}>
+                {intl.formatMessage({
+                  id: "pages.job.config.source.extraParams",
+                  defaultMessage: "Extra Parameters",
+                })}
+              </span>
+
+              <Tooltip
+                title={intl.formatMessage({
+                  id: "pages.job.config.source.extraParams.tip",
+                  defaultMessage: "Configure extra custom parameters",
+                })}
+              >
+                <InfoCircleOutlined style={{ color: "#94A3B8", fontSize: 14 }} />
+              </Tooltip>
+            </div>
+          }
+        />
+
+        <ExtraParamsConfig
+          selectedNode={selectedNode}
+          params={params}
+          onParamsChange={handleParamsChange}
+        />
+      </div>
     </div>
   );
 };

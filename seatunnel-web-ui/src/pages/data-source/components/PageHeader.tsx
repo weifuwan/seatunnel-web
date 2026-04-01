@@ -61,10 +61,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({ onCreate }) => {
         onClick={onCreate}
         className="datasource-create-button"
       >
-        {intl.formatMessage({
-          id: 'pages.datasource.create.button',
-          defaultMessage: 'Add Data Source',
-        })}
+        新建数据源
       </Button>
     </div>
   );

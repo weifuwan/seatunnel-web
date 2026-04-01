@@ -1,13 +1,13 @@
-import { CheckCircleOutlined, CloseCircleOutlined, LoadingOutlined, PlusOutlined } from "@ant-design/icons";
-import { Button, Select, Tag } from "antd";
-import React, { useMemo, useState } from "react";
 import {
-  getStatusTag,
-  mockBridgeClients,
-  mockSourceClients,
-  mockTargetClients,
-} from "../constants";
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  LoadingOutlined,
+} from "@ant-design/icons";
+import { Button, Form, Select } from "antd";
+import React, { useMemo, useState } from "react";
 import { generateDataSourceOptions } from "../../DataSourceSelect";
+import { mockBridgeClients } from "../constants";
+import "./client-link.less";
 
 interface Props {
   activeStep: "base" | "client";
@@ -40,583 +40,349 @@ const mockTargetDataSources = [
   { id: "tar-3", name: "clickhouse_archive", status: "offline" },
 ];
 
-const statusConfig: Record<
+const statusMap: Record<
   ConnectivityStatus,
   {
     text: string;
-    wrapper: string;
+    dot: string;
     textClass: string;
-    icon: React.ReactNode;
+    bgClass: string;
+    icon?: React.ReactNode;
   }
 > = {
   idle: {
     text: "未测试",
-    wrapper: "border border-dashed border-[#D0D5DD] bg-[#FCFCFD]",
-    textClass: "text-[#667085]",
-    icon: <div className="h-2.5 w-2.5 rounded-full bg-[#D0D5DD]" />,
+    dot: "bg-slate-300",
+    textClass: "text-slate-500",
+    bgClass: "bg-slate-50",
   },
   loading: {
     text: "测试中",
-    wrapper: "border border-[#B2DDFF] bg-[#F8FBFF]",
-    textClass: "text-[#175CD3]",
-    icon: <LoadingOutlined className="text-[#175CD3]" />,
+    dot: "bg-blue-500",
+    textClass: "text-blue-600",
+    bgClass: "bg-blue-50",
+    icon: <LoadingOutlined spin />,
   },
   success: {
-    text: "测试通过",
-    wrapper: "border border-[#ABEFC6] bg-[#ECFDF3]",
-    textClass: "text-[#067647]",
-    icon: <CheckCircleOutlined className="text-[#17B26A]" />,
+    text: "已通过",
+    dot: "bg-emerald-500",
+    textClass: "text-emerald-600",
+    bgClass: "bg-emerald-50",
+    icon: <CheckCircleOutlined />,
   },
   error: {
-    text: "测试失败",
-    wrapper: "border border-[#FECDCA] bg-[#FEF3F2]",
-    textClass: "text-[#B42318]",
-    icon: <CloseCircleOutlined className="text-[#F04438]" />,
+    text: "失败",
+    dot: "bg-rose-500",
+    textClass: "text-rose-600",
+    bgClass: "bg-rose-50",
+    icon: <CloseCircleOutlined />,
   },
 };
 
-const StatusPill: React.FC<{
-  label: string;
-  status: ConnectivityStatus;
-}> = ({ label, status }) => {
-  const config = statusConfig[status];
+const SimpleStatus: React.FC<{ status: ConnectivityStatus }> = ({ status }) => {
+  const config = statusMap[status];
   return (
     <div
       className={[
-        "inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[12px] font-medium",
-        config.wrapper,
+        "inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium",
+        config.bgClass,
+        config.textClass,
       ].join(" ")}
     >
-      {config.icon}
-      <span className={config.textClass}>
-        {label}：{config.text}
-      </span>
+      <span className={["h-2 w-2 rounded-full", config.dot].join(" ")} />
+      <span>{config.text}</span>
     </div>
   );
 };
 
-const SectionTitle: React.FC<{
-  color: string;
-  title: string;
-  extra?: React.ReactNode;
-}> = ({ color, title, extra }) => {
+const LinkStatusAction: React.FC<{
+  status: ConnectivityStatus;
+  onTest?: () => void;
+  reverse?: boolean;
+}> = ({ status, onTest, reverse = false }) => {
+  const config = statusMap[status];
+
   return (
-    <div className="flex items-center justify-between border-b border-[#F2F4F7] px-5 py-4">
-      <div className="flex items-center gap-2">
-        <div className="h-5 w-1 rounded-full" style={{ backgroundColor: color }} />
-        <div className="text-[15px] font-semibold text-[#101828]">{title}</div>
+    <div
+      className={[
+        "flex items-center gap-2 rounded-full border border-slate-200 bg-white px-2 py-1 shadow-sm",
+        reverse ? "flex-row-reverse" : "",
+      ].join(" ")}
+    >
+      <Button
+        type="text"
+        size="small"
+        className="!h-7 !rounded-full !px-3 !text-slate-700 hover:!bg-slate-100"
+        onClick={onTest}
+        loading={status === "loading"}
+      >
+        测试
+      </Button>
+
+      <div
+        className={[
+          "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium",
+          config.bgClass,
+          config.textClass,
+        ].join(" ")}
+      >
+        <span className={["h-2 w-2 rounded-full", config.dot].join(" ")} />
+        <span>{config.text}</span>
       </div>
-      {extra}
     </div>
   );
 };
 
-const InfoRow: React.FC<{
-  label: string;
-  value?: React.ReactNode;
-}> = ({ label, value }) => {
+const SectionCard: React.FC<{
+  title: string;
+  status?: ConnectivityStatus;
+  headerExtra?: React.ReactNode;
+  children: React.ReactNode;
+  footer?: React.ReactNode;
+}> = ({ title, status, headerExtra, children, footer }) => {
   return (
-    <div className="rounded-xl bg-[#F9FAFB] px-4 py-3">
-      <div className="text-[12px] text-[#667085]">{label}</div>
-      <div className="mt-1 text-[14px] font-medium text-[#101828]">{value || "--"}</div>
-    </div>
+    <section className="min-w-0 flex-1 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
+      <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+        <div className="flex items-center gap-3">
+          <div className="text-sm font-semibold text-slate-800">{title}</div>
+          {status ? <SimpleStatus status={status} /> : null}
+        </div>
+        {headerExtra}
+      </div>
+
+      <div
+        className="flex flex-col px-4 py-4"
+        style={{ minHeight: 320, height: 320 }}
+      >
+        <div className="flex-1">{children}</div>
+        {footer ? <div className="pt-4">{footer}</div> : null}
+      </div>
+    </section>
   );
 };
 
 const ClientLinkSection: React.FC<Props> = ({
-  activeStep,
-  sourceType,
-  targetType,
   sourceLabel,
   targetLabel,
-  sourceClientId,
-  targetClientId,
   bridgeClientIds,
-  setSourceClientId,
-  setTargetClientId,
   setBridgeClientIds,
-  handleSourceChange,
-  handleTargetChange,
   sectionRef,
 }) => {
+  const [form] = Form.useForm();
+
+  const [sourceDataSourceType, setSourceDataSourceType] = useState<string>();
   const [sourceDataSourceId, setSourceDataSourceId] = useState<string>();
+
+  const [targetDataSourceType, setTargetDataSourceType] = useState<string>();
   const [targetDataSourceId, setTargetDataSourceId] = useState<string>();
 
-  const [sourceTestStatus, setSourceTestStatus] = useState<ConnectivityStatus>("idle");
-  const [targetTestStatus, setTargetTestStatus] = useState<ConnectivityStatus>("idle");
-  const [sourceTestMessage, setSourceTestMessage] = useState("请选择来源数据源与 Zeta 执行引擎后发起测试");
-  const [targetTestMessage, setTargetTestMessage] = useState("请选择目标数据源与 Zeta 执行引擎后发起测试");
-  const [sourceTestDuration, setSourceTestDuration] = useState<number | null>(null);
-  const [targetTestDuration, setTargetTestDuration] = useState<number | null>(null);
+  const [sourceTestStatus, setSourceTestStatus] =
+    useState<ConnectivityStatus>("idle");
+  const [targetTestStatus, setTargetTestStatus] =
+    useState<ConnectivityStatus>("idle");
 
-  const selectedSourceClient = useMemo(
-    () => mockSourceClients.find((item) => item.id === sourceClientId),
-    [sourceClientId]
-  );
-
-  const selectedTargetClient = useMemo(
-    () => mockTargetClients.find((item) => item.id === targetClientId),
-    [targetClientId]
-  );
-
-  const selectedSourceDataSource = useMemo(
-    () => mockSourceDataSources.find((item) => item.id === sourceDataSourceId),
-    [sourceDataSourceId]
-  );
-
-  const selectedTargetDataSource = useMemo(
-    () => mockTargetDataSources.find((item) => item.id === targetDataSourceId),
-    [targetDataSourceId]
-  );
-
-  const selectedZetaClients = useMemo(
+  const sourceOptions = useMemo(
     () =>
-      bridgeClientIds
-        .map((id) => mockBridgeClients.find((item) => item.id === id))
-        .filter(Boolean),
-    [bridgeClientIds]
+      mockSourceDataSources.map((item) => ({
+        label: item.name,
+        value: item.id,
+      })),
+    [],
   );
 
-  const zetaPrimary = selectedZetaClients[0];
-  const zetaReady = selectedZetaClients.length > 0;
-  const zetaAllHealthy = selectedZetaClients.every((item: any) => item?.status !== "offline");
+  const targetOptions = useMemo(
+    () =>
+      mockTargetDataSources.map((item) => ({
+        label: item.name,
+        value: item.id,
+      })),
+    [],
+  );
 
-  const runSourceConnectivityTest = () => {
-    if (!sourceDataSourceId) {
-      setSourceTestStatus("error");
-      setSourceTestDuration(null);
-      setSourceTestMessage("请先选择来源数据源");
-      return;
+  const runMockTest = async (
+    type: "source" | "target",
+    selectedId?: string,
+  ) => {
+    if (!selectedId) return;
+
+    if (type === "source") {
+      setSourceTestStatus("loading");
+    } else {
+      setTargetTestStatus("loading");
     }
-
-    if (!zetaReady) {
-      setSourceTestStatus("error");
-      setSourceTestDuration(null);
-      setSourceTestMessage("请先选择 Zeta 执行引擎");
-      return;
-    }
-
-    setSourceTestStatus("loading");
-    setSourceTestDuration(null);
-    setSourceTestMessage("Zeta 正在验证对来源端数据源的访问能力...");
-
-    const start = Date.now();
 
     setTimeout(() => {
-      const duration = Date.now() - start;
-
-      if (!zetaAllHealthy) {
-        setSourceTestStatus("error");
-        setSourceTestDuration(duration);
-        setSourceTestMessage("测试失败：当前 Zeta 执行引擎不在线，无法探测来源端");
-        return;
+      const success = !selectedId.endsWith("3");
+      if (type === "source") {
+        setSourceTestStatus(success ? "success" : "error");
+      } else {
+        setTargetTestStatus(success ? "success" : "error");
       }
-
-      if (selectedSourceDataSource?.status === "offline") {
-        setSourceTestStatus("error");
-        setSourceTestDuration(duration);
-        setSourceTestMessage("测试失败：来源数据源当前不可达或未响应");
-        return;
-      }
-
-      setSourceTestStatus("success");
-      setSourceTestDuration(duration);
-      setSourceTestMessage("测试通过：Zeta 可以正常访问来源数据源");
-    }, 900);
+    }, 1000);
   };
-
-  const runTargetConnectivityTest = () => {
-    if (!targetDataSourceId) {
-      setTargetTestStatus("error");
-      setTargetTestDuration(null);
-      setTargetTestMessage("请先选择目标数据源");
-      return;
-    }
-
-    if (!zetaReady) {
-      setTargetTestStatus("error");
-      setTargetTestDuration(null);
-      setTargetTestMessage("请先选择 Zeta 执行引擎");
-      return;
-    }
-
-    setTargetTestStatus("loading");
-    setTargetTestDuration(null);
-    setTargetTestMessage("Zeta 正在验证对目标端数据源的访问能力...");
-
-    const start = Date.now();
-
-    setTimeout(() => {
-      const duration = Date.now() - start;
-
-      if (!zetaAllHealthy) {
-        setTargetTestStatus("error");
-        setTargetTestDuration(duration);
-        setTargetTestMessage("测试失败：当前 Zeta 执行引擎不在线，无法探测目标端");
-        return;
-      }
-
-      if (selectedTargetDataSource?.status === "offline") {
-        setTargetTestStatus("error");
-        setTargetTestDuration(duration);
-        setTargetTestMessage("测试失败：目标数据源当前不可达或未响应");
-        return;
-      }
-
-      setTargetTestStatus("success");
-      setTargetTestDuration(duration);
-      setTargetTestMessage("测试通过：Zeta 可以正常访问目标数据源");
-    }, 900);
-  };
-
-  const runAllTests = () => {
-    runSourceConnectivityTest();
-    runTargetConnectivityTest();
-  };
-
-  const canSubmit =
-    sourceTestStatus === "success" &&
-    targetTestStatus === "success" &&
-    zetaReady &&
-    zetaAllHealthy;
 
   return (
-    <div ref={sectionRef} className="px-8 py-7">
-      <div className="mb-6 rounded-[28px] border border-[#E4E7EC] bg-[linear-gradient(135deg,#F8FAFC_0%,#FFFFFF_45%,#F5F8FF_100%)] px-6 py-6">
-        <div className="text-[20px] font-semibold text-[#101828]">
-          执行环境连通性校验
-        </div>
-        <div className="mt-2 max-w-4xl text-[14px] leading-6 text-[#667085]">
-          在提交任务到 Zeta 执行引擎前，先验证它是否能够正常访问来源端与目标端数据源。
-          只有双端测试都通过，任务才建议继续提交。
-        </div>
+    <div ref={sectionRef} className="bg-white px-8 py-8">
+      <div className="mx-auto space-y-6">
+        {/* 顶部链路 */}
+        <div className="rounded-[28px] border border-slate-200 bg-gradient-to-b from-slate-50 to-white px-6 py-5 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
+          <div className="flex items-center justify-between gap-4 text-sm text-slate-700">
+            <div className="flex min-w-0 flex-1 items-center justify-center gap-4">
+              <span className="shrink-0 font-medium text-slate-900">
+                {sourceLabel || "数据来源"}
+              </span>
 
-        <div className="mt-4 flex flex-wrap gap-3">
-          <StatusPill label="来源访问" status={sourceTestStatus} />
-          <StatusPill label="目标访问" status={targetTestStatus} />
-          <StatusPill
-            label="任务提交"
-            status={canSubmit ? "success" : activeStep === "client" ? "idle" : "idle"}
-          />
-        </div>
-      </div>
+              <div className="flex items-center gap-3">
+                <div className="h-px w-10 bg-slate-300" />
+                <LinkStatusAction
+                  status={sourceTestStatus}
+                  onTest={() => runMockTest("source", sourceDataSourceId)}
+                />
+                <div className="h-px w-10 bg-slate-300" />
+              </div>
 
-      <div
-        className={[
-          "mb-6 flex items-center justify-center gap-3 overflow-x-auto rounded-2xl border px-6 py-4 text-sm transition-all duration-200",
-          activeStep === "client"
-            ? "border-[#B2DDFF] bg-[#F8FBFF]"
-            : "border-[#EAECF0] bg-[#FCFCFD]",
-        ].join(" ")}
-      >
-        <div className="whitespace-nowrap font-medium text-[#101828]">来源数据源</div>
-        <div className="text-[#98A2B3]">○ - - - - -</div>
+              <span className="shrink-0 font-medium text-slate-900">
+                我的客户端
+              </span>
 
-        <div className="whitespace-nowrap rounded-full bg-white px-3 py-1 text-[#667085] ring-1 ring-[#EAECF0]">
-          {sourceTestStatus === "success"
-            ? "已通过"
-            : sourceTestStatus === "error"
-            ? "失败"
-            : sourceTestStatus === "loading"
-            ? "测试中"
-            : "未测试"}
-        </div>
+              <div className="flex items-center gap-3">
+                <div className="h-px w-10 bg-slate-300" />
+                <LinkStatusAction
+                  status={targetTestStatus}
+                  onTest={() => runMockTest("target", targetDataSourceId)}
+                  reverse
+                />
+                <div className="h-px w-10 bg-slate-300" />
+              </div>
 
-        <div className="text-[#98A2B3]">→</div>
-
-        <div className="whitespace-nowrap font-medium text-[#101828]">Zeta 执行引擎</div>
-        <div className="text-[#98A2B3]">○ - - - - -</div>
-
-        <div className="whitespace-nowrap rounded-full bg-white px-3 py-1 text-[#667085] ring-1 ring-[#EAECF0]">
-          {zetaReady ? `${bridgeClientIds.length} 个引擎节点` : "未选择"}
-        </div>
-
-        <div className="text-[#98A2B3]">→</div>
-
-        <div className="whitespace-nowrap font-medium text-[#101828]">目标数据源</div>
-
-        <div className="ml-3 whitespace-nowrap rounded-full bg-white px-3 py-1 text-[#667085] ring-1 ring-[#EAECF0]">
-          {targetTestStatus === "success"
-            ? "已通过"
-            : targetTestStatus === "error"
-            ? "失败"
-            : targetTestStatus === "loading"
-            ? "测试中"
-            : "未测试"}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
-        {/* 左：来源数据源 */}
-        <div className="rounded-2xl border border-[#E4E7EC] bg-white">
-          <SectionTitle
-            color="#1570EF"
-            title="来源数据源"
-            extra={<div className="text-xs text-[#667085]">{sourceLabel}</div>}
-          />
-
-          <div className="space-y-4 p-5">
-            <div>
-              <div className="mb-2 text-[13px] text-[#344054]">数据源类型</div>
-              <Select
-                value={sourceType?.dbType}
-                onChange={handleSourceChange}
-                options={generateDataSourceOptions()}
-                className="w-full"
-              />
+              <span className="shrink-0 font-medium text-slate-900">
+                {targetLabel || "数据去向"}
+              </span>
             </div>
-
-            <div>
-              <div className="mb-2 text-[13px] text-[#344054]">数据源名称</div>
-              <Select
-                value={sourceDataSourceId}
-                onChange={setSourceDataSourceId}
-                className="w-full"
-                placeholder="请选择来源数据源"
-                options={mockSourceDataSources.map((item) => ({
-                  label: item.name,
-                  value: item.id,
-                }))}
-              />
-            </div>
-
-            <InfoRow label="当前来源客户端" value={selectedSourceClient?.name || "未选择"} />
-
-            {sourceDataSourceId ? (
-              <div className="rounded-xl bg-[#F9FAFB] px-4 py-3 text-[13px] text-[#475467]">
-                当前来源数据源：
-                <span className="ml-1 font-medium text-[#101828]">
-                  {selectedSourceDataSource?.name}
-                </span>
-                <span className="ml-2">
-                  {selectedSourceDataSource?.status === "offline" ? (
-                    <Tag color="error" className="!m-0">离线</Tag>
-                  ) : (
-                    <Tag color="success" className="!m-0">可用</Tag>
-                  )}
-                </span>
-              </div>
-            ) : (
-              <div className="rounded-xl border border-dashed border-[#D0D5DD] bg-[#FCFCFD] px-4 py-3 text-[13px] text-[#667085]">
-                请选择一个需要被 Zeta 访问的来源数据源。
-              </div>
-            )}
-
-            <div className={`rounded-xl px-4 py-3 text-[13px] ${statusConfig[sourceTestStatus].wrapper}`}>
-              <div className={`font-medium ${statusConfig[sourceTestStatus].textClass}`}>
-                来源访问结果
-                {sourceTestDuration !== null ? ` · ${sourceTestDuration} ms` : ""}
-              </div>
-              <div className={`mt-1 leading-6 ${statusConfig[sourceTestStatus].textClass}`}>
-                {sourceTestMessage}
-              </div>
-            </div>
-
-            <Button
-              block
-              type="primary"
-              className="!h-10 !rounded-xl"
-              loading={sourceTestStatus === "loading"}
-              onClick={runSourceConnectivityTest}
-            >
-              测试 Zeta 到来源端
-            </Button>
           </div>
         </div>
 
-        {/* 中：Zeta 执行引擎 */}
-        <div className="rounded-2xl border border-[#E4E7EC] bg-white">
-          <SectionTitle
-            color="#7F56D9"
-            title="Zeta 执行引擎"
-            extra={<div className="text-xs text-[#667085]">任务执行主体</div>}
-          />
-
-          <div className="space-y-4 p-5">
-            <div>
-              <div className="mb-2 text-[13px] text-[#344054]">执行引擎 / 资源组</div>
-              <Select
-                mode="multiple"
-                value={bridgeClientIds}
-                onChange={setBridgeClientIds}
-                className="w-full"
-                placeholder="请选择一个或多个 Zeta 节点"
-                options={mockBridgeClients.map((item) => ({
-                  label: item.name,
-                  value: item.id,
-                }))}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 gap-3">
-              <InfoRow
-                label="主执行节点"
-                value={
-                  zetaPrimary ? (
-                    <div className="flex items-center gap-2">
-                      <span>{zetaPrimary.name}</span>
-                      <span>{getStatusTag(zetaPrimary.status)}</span>
-                    </div>
-                  ) : (
-                    "未选择"
-                  )
-                }
-              />
-              <InfoRow label="已选节点数" value={zetaReady ? `${bridgeClientIds.length} 个` : "0 个"} />
-            </div>
-
-            <div className="min-h-[172px] rounded-xl border border-[#E4E7EC] bg-[#FCFCFD] p-4">
-              {selectedZetaClients.length > 0 ? (
-                <div className="space-y-3">
-                  {selectedZetaClients.map((client: any) => (
-                    <div
-                      key={client.id}
-                      className="flex items-center justify-between rounded-xl border border-[#EAECF0] bg-white px-4 py-3"
-                    >
-                      <div>
-                        <div className="text-[14px] font-medium text-[#101828]">
-                          {client.name}
-                        </div>
-                        <div className="mt-1 text-xs text-[#667085]">{client.type}</div>
-                      </div>
-                      <div>{getStatusTag(client.status)}</div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex h-full min-h-[140px] items-center justify-center text-sm text-[#98A2B3]">
-                  暂未选择 Zeta 执行引擎
-                </div>
-              )}
-            </div>
-
-            <div className="rounded-xl bg-[#F9FAFB] px-4 py-3 text-[13px] text-[#475467]">
-              <div className="font-medium text-[#101828]">执行结果判断</div>
-              <div className="mt-1 leading-6">
-                Zeta 是本页的执行主体。它需要分别验证自己对来源端和目标端的数据访问能力，双端通过后才建议提交任务。
-              </div>
-            </div>
-
-            <div className="flex gap-3">
+        {/* 三列内容 */}
+        <div className="flex gap-6">
+          {/* 来源 */}
+          <SectionCard
+            title="来源"
+            status={sourceTestStatus}
+            footer={
               <Button
-                type="primary"
-                block
-                className="!h-10 !rounded-xl"
-                onClick={runAllTests}
-                loading={
-                  sourceTestStatus === "loading" || targetTestStatus === "loading"
-                }
+                className="w-full !rounded-full"
+                onClick={() => runMockTest("source", sourceDataSourceId)}
+                loading={sourceTestStatus === "loading"}
               >
-                一键测试双端
+                测试连通性
               </Button>
-
-              <Button
-                icon={<PlusOutlined />}
-                className="!h-10 !rounded-xl"
-              >
-                新增节点
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {/* 右：目标数据源 */}
-        <div className="rounded-2xl border border-[#E4E7EC] bg-white">
-          <SectionTitle
-            color="#F79009"
-            title="目标数据源"
-            extra={<div className="text-xs text-[#667085]">{targetLabel}</div>}
-          />
-
-          <div className="space-y-4 p-5">
-            <div>
-              <div className="mb-2 text-[13px] text-[#344054]">数据源类型</div>
-              <Select
-                value={targetType?.dbType}
-                onChange={handleTargetChange}
-                options={generateDataSourceOptions()}
-                className="w-full"
-              />
-            </div>
-
-            <div>
-              <div className="mb-2 text-[13px] text-[#344054]">数据源名称</div>
-              <Select
-                value={targetDataSourceId}
-                onChange={setTargetDataSourceId}
-                className="w-full"
-                placeholder="请选择目标数据源"
-                options={mockTargetDataSources.map((item) => ({
-                  label: item.name,
-                  value: item.id,
-                }))}
-              />
-            </div>
-
-            <InfoRow label="当前目标客户端" value={selectedTargetClient?.name || "未选择"} />
-
-            {targetDataSourceId ? (
-              <div className="rounded-xl bg-[#F9FAFB] px-4 py-3 text-[13px] text-[#475467]">
-                当前目标数据源：
-                <span className="ml-1 font-medium text-[#101828]">
-                  {selectedTargetDataSource?.name}
-                </span>
-                <span className="ml-2">
-                  {selectedTargetDataSource?.status === "offline" ? (
-                    <Tag color="error" className="!m-0">离线</Tag>
-                  ) : (
-                    <Tag color="success" className="!m-0">可用</Tag>
-                  )}
-                </span>
-              </div>
-            ) : (
-              <div className="rounded-xl border border-dashed border-[#D0D5DD] bg-[#FCFCFD] px-4 py-3 text-[13px] text-[#667085]">
-                请选择一个需要被 Zeta 写入的目标数据源。
-              </div>
-            )}
-
-            <div className={`rounded-xl px-4 py-3 text-[13px] ${statusConfig[targetTestStatus].wrapper}`}>
-              <div className={`font-medium ${statusConfig[targetTestStatus].textClass}`}>
-                目标访问结果
-                {targetTestDuration !== null ? ` · ${targetTestDuration} ms` : ""}
-              </div>
-              <div className={`mt-1 leading-6 ${statusConfig[targetTestStatus].textClass}`}>
-                {targetTestMessage}
-              </div>
-            </div>
-
-            <Button
-              block
-              type="primary"
-              className="!h-10 !rounded-xl"
-              loading={targetTestStatus === "loading"}
-              onClick={runTargetConnectivityTest}
-            >
-              测试 Zeta 到目标端
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-6 rounded-2xl border border-[#E4E7EC] bg-white px-5 py-4">
-        <div className="flex items-center justify-between gap-4 max-[1100px]:flex-col max-[1100px]:items-start">
-          <div>
-            <div className="text-[15px] font-semibold text-[#101828]">提交前校验结果</div>
-            <div className="mt-1 text-[13px] leading-6 text-[#667085]">
-              当 Zeta 对来源端和目标端的访问都测试通过后，说明当前执行环境具备提交任务的基本条件。
-            </div>
-          </div>
-
-          <div
-            className={[
-              "rounded-full px-4 py-2 text-[13px] font-medium",
-              canSubmit
-                ? "bg-[#ECFDF3] text-[#067647] ring-1 ring-[#ABEFC6]"
-                : "bg-[#F9FAFB] text-[#667085] ring-1 ring-[#EAECF0]",
-            ].join(" ")}
+            }
           >
-            {canSubmit ? "可以提交任务" : "暂不可提交"}
-          </div>
+            <Form form={form} layout="vertical">
+              <div className="space-y-4">
+                <Form.Item name="sourceType" label="数据源类型" required>
+                  <Select
+                    value={sourceDataSourceType}
+                    onChange={setSourceDataSourceType}
+                    className="w-full"
+                    showSearch
+                    placeholder="请选择来源类型"
+                    options={generateDataSourceOptions()}
+                  />
+                </Form.Item>
+
+                <Form.Item name="sourceId" label="数据源名称" required>
+                  <Select
+                    value={sourceDataSourceId}
+                    onChange={(value) => {
+                      setSourceDataSourceId(value);
+                      setSourceTestStatus("idle");
+                    }}
+                    className="w-full"
+                    placeholder="请选择来源数据源"
+                    options={sourceOptions}
+                  />
+                </Form.Item>
+              </div>
+            </Form>
+          </SectionCard>
+
+          {/* 客户端 / 客户端 */}
+          <SectionCard
+            title="客户端"
+            footer={<Button className="w-full !rounded-full">新建客户端</Button>}
+          >
+            <div className="space-y-4">
+              <div>
+                <div className="mb-2 text-sm font-medium text-slate-700">
+                  客户端节点
+                </div>
+                <Select
+                  value={bridgeClientIds}
+                  onChange={setBridgeClientIds}
+                  className="w-full"
+                  showSearch
+                  placeholder="请选择客户端节点"
+                  options={mockBridgeClients.map((item) => ({
+                    label: item.name,
+                    value: item.id,
+                  }))}
+                />
+              </div>
+
+              <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-4">
+                <div className="text-sm font-medium text-slate-800">
+                  当前已选择 {bridgeClientIds.length} 个节点
+                </div>
+                <div className="mt-1 text-xs text-slate-500">
+                  任务会提交到所选客户端节点执行，用于连通性验证与实际运行。
+                </div>
+              </div>
+            </div>
+          </SectionCard>
+
+          {/* 去向 */}
+          <SectionCard
+            title="去向"
+            status={targetTestStatus}
+            footer={
+              <Button
+                className="w-full !rounded-full"
+                onClick={() => runMockTest("target", targetDataSourceId)}
+                loading={targetTestStatus === "loading"}
+              >
+                测试连通性
+              </Button>
+            }
+          >
+            <Form form={form} layout="vertical">
+              <div className="space-y-4">
+                <Form.Item name="targetType" label="数据去向类型" required>
+                  <Select
+                    value={targetDataSourceType}
+                    onChange={setTargetDataSourceType}
+                    className="w-full"
+                    showSearch
+                    placeholder="请选择去向类型"
+                    options={generateDataSourceOptions()}
+                  />
+                </Form.Item>
+
+                <Form.Item name="targetId" label="数据源名称" required>
+                  <Select
+                    value={targetDataSourceId}
+                    onChange={(value) => {
+                      setTargetDataSourceId(value);
+                      setTargetTestStatus("idle");
+                    }}
+                    className="w-full"
+                    placeholder="请选择目标数据源"
+                    options={targetOptions}
+                  />
+                </Form.Item>
+              </div>
+            </Form>
+          </SectionCard>
         </div>
       </div>
     </div>

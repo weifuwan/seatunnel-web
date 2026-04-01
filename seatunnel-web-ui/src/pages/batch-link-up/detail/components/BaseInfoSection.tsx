@@ -24,10 +24,7 @@ const BaseInfoSection: React.FC<Props> = ({
   sectionRef,
 }) => {
   return (
-    <div ref={sectionRef} className="px-8 py-7">
-      <div className="mb-6">
-        <div className="text-[18px] font-semibold text-[#101828]">基础信息</div>
-      </div>
+    <div ref={sectionRef} style={{padding: "12px 24px 24px"}}>
 
       <Form.Item label="数据同步方式" required className="mb-6">
         <div className="rounded-2xl border border-[#E4E7EC] bg-[#FCFCFD] p-5">
@@ -66,7 +63,7 @@ const BaseInfoSection: React.FC<Props> = ({
         >
           <Input
             placeholder="比如：MySQL 到 Doris 用户表同步"
-            className="!h-7 !rounded-xl"
+            className="!h-11 !rounded-xl"
           />
         </Form.Item>
 

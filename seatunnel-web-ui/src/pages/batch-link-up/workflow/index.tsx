@@ -79,6 +79,9 @@ export default function Workflow({ params, goBack }: WorkflowProps) {
               type="text"
               icon={<ArrowLeftOutlined />}
               className={styles.backButton}
+              onClick={() => {
+                goBack();
+              }}
             >
               返回上一步
             </Button>

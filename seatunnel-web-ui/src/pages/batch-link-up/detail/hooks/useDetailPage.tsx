@@ -21,13 +21,17 @@ export default function useDetailPage() {
   const [form] = Form.useForm<DetailFormValues>();
 
   const [params, setParams] = useState<any>(null);
-  const [sourceType, setSourceType] = useState<SourceTargetType>(defaultSourceType);
-  const [targetType, setTargetType] = useState<SourceTargetType>(defaultTargetType);
+  const [sourceType, setSourceType] =
+    useState<SourceTargetType>(defaultSourceType);
+  const [targetType, setTargetType] =
+    useState<SourceTargetType>(defaultTargetType);
   const [activeStep, setActiveStep] = useState<StepKey>("base");
 
   const [sourceClientId, setSourceClientId] = useState<string>();
   const [targetClientId, setTargetClientId] = useState<string>();
   const [bridgeClientIds, setBridgeClientIds] = useState<string[]>([]);
+
+  const [mode, setMode] = useState<string>("GUIDE_SINGLE");
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const baseSectionRef = useRef<HTMLDivElement>(null);
@@ -45,39 +49,20 @@ export default function useDetailPage() {
     if (data?.sourceType) setSourceType(data.sourceType);
     if (data?.targetType) setTargetType(data.targetType);
 
+    const currentMode = data?.mode || "GUIDE_SINGLE";
+
     form.setFieldsValue({
-      jobName: data?.jobName || "",
+      jobName: data?.jobName || `${data?.sourceType?.dbType?.toLowerCase()}2${data?.targetType?.dbType?.toLowerCase()}`,
       description: data?.description || "",
-      mode: data?.mode || "GUIDE_SINGLE",
+      mode: currentMode,
     });
+
+    setMode(currentMode);
 
     setSourceClientId(data?.sourceClientId);
     setTargetClientId(data?.targetClientId);
     setBridgeClientIds(data?.bridgeClientIds || []);
   }, [id, form]);
-
-  useEffect(() => {
-    const container = scrollRef.current;
-    if (!container) return;
-
-    const handleScroll = () => {
-      const baseTop = baseSectionRef.current?.offsetTop ?? 0;
-      const clientTop = clientSectionRef.current?.offsetTop ?? 0;
-      const scrollTop = container.scrollTop + 80;
-
-      if (scrollTop >= clientTop) {
-        setActiveStep("client");
-      } else if (scrollTop >= baseTop) {
-        setActiveStep("base");
-      }
-    };
-
-    handleScroll();
-    container.addEventListener("scroll", handleScroll);
-    return () => container.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  const mode = Form.useWatch("mode", form);
 
   const sourceLabel = useMemo(() => getDbLabel(sourceType), [sourceType]);
   const targetLabel = useMemo(() => getDbLabel(targetType), [targetType]);
@@ -102,44 +87,95 @@ export default function useDetailPage() {
     });
   };
 
-const handleNext = async () => {
-  try {
-    const values = await form.validateFields();
+  const handleModeChange = (value: string) => {
+    setMode(value);
+    form.setFieldValue("mode", value);
+  };
 
-    const merged = {
-      ...params,
-      ...values,
-      sourceType,
-      targetType,
-      sourceClientId,
-      targetClientId,
-      bridgeClientIds,
-    };
-
-    if (id) {
-      sessionStorage.setItem(`batch-link-up-detail-${id}`, JSON.stringify(merged));
-
-      if (values.mode === "GUIDE_SINGLE") {
-        history.push(`/sync/batch-link-up/${id}/config/single`);
-        return;
-      }
-
-      if (values.mode === "GUIDE_MULTI") {
-        history.push(`/sync/batch-link-up/${id}/config/multi`);
-        return;
-      }
-
-      if (values.mode === "SCRIPT") {
-        history.push(`/sync/batch-link-up/${id}/config/script`);
-        return;
-      }
+  const goStep = async (step: StepKey) => {
+    if (step === "base") {
+      setActiveStep("base");
+      scrollRef.current?.scrollTo?.({ top: 0, behavior: "smooth" });
+      return;
     }
 
-    message.success("基础配置已保存");
-  } catch (error) {
-    console.log(error);
-  }
-};
+    try {
+      await form.validateFields(["jobName", "mode"]);
+      const currentMode = form.getFieldValue("mode");
+      if (currentMode) {
+        setMode(currentMode);
+      }
+
+      setActiveStep("client");
+      scrollRef.current?.scrollTo?.({ top: 0, behavior: "smooth" });
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const handleNext = async () => {
+    if (activeStep === "base") {
+      try {
+        await form.validateFields(["jobName", "mode"]);
+
+        const currentMode = form.getFieldValue("mode");
+        if (currentMode) {
+          setMode(currentMode);
+        }
+
+        setActiveStep("client");
+        scrollRef.current?.scrollTo?.({ top: 0, behavior: "smooth" });
+      } catch (error) {
+        console.log(error);
+      }
+      return;
+    }
+
+    try {
+      await form.validateFields();
+
+      const currentMode = form.getFieldValue("mode") || mode;
+      const values = form.getFieldsValue(true);
+
+      const merged = {
+        ...params,
+        ...values,
+        mode: currentMode,
+        sourceType,
+        targetType,
+        sourceClientId,
+        targetClientId,
+        bridgeClientIds,
+      };
+
+      if (id) {
+        sessionStorage.setItem(
+          `batch-link-up-detail-${id}`,
+          JSON.stringify(merged),
+        );
+
+        if (currentMode === "GUIDE_SINGLE") {
+          history.push(`/sync/batch-link-up/${id}/config/single`);
+          return;
+        }
+
+        if (currentMode === "GUIDE_MULTI") {
+          history.push(`/sync/batch-link-up/${id}/config/multi`);
+          return;
+        }
+
+        if (currentMode === "SCRIPT") {
+          history.push(`/sync/batch-link-up/${id}/config/script`);
+          return;
+        }
+      }
+
+      message.success("配置已保存");
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   return {
     form,
     params,
@@ -155,12 +191,15 @@ const handleNext = async () => {
     scrollRef,
     baseSectionRef,
     clientSectionRef,
+    setActiveStep,
     setSourceClientId,
     setTargetClientId,
     setBridgeClientIds,
     handleSourceChange,
     handleTargetChange,
+    handleModeChange,
     goBack,
+    goStep,
     handleNext,
   };
 }

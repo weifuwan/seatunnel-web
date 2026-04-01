@@ -4,7 +4,7 @@ import {
   LoadingOutlined,
 } from "@ant-design/icons";
 import { Button, Form, Select } from "antd";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { generateDataSourceOptions } from "../../DataSourceSelect";
 import { mockBridgeClients } from "../constants";
 import "./client-link.less";
@@ -81,6 +81,7 @@ const statusMap: Record<
 
 const SimpleStatus: React.FC<{ status: ConnectivityStatus }> = ({ status }) => {
   const config = statusMap[status];
+
   return (
     <div
       className={[
@@ -126,7 +127,7 @@ const LinkStatusAction: React.FC<{
           config.textClass,
         ].join(" ")}
       >
-        <span className={["h-2 w-2 rounded-full", config.dot].join(" ")} />
+        {config.icon ? <span className="text-[12px]">{config.icon}</span> : null}
         <span>{config.text}</span>
       </div>
     </div>
@@ -150,10 +151,7 @@ const SectionCard: React.FC<{
         {headerExtra}
       </div>
 
-      <div
-        className="flex flex-col px-4 py-4"
-        style={{ minHeight: 320, height: 320 }}
-      >
+      <div className="flex h-[320px] flex-col px-4 py-4">
         <div className="flex-1">{children}</div>
         {footer ? <div className="pt-4">{footer}</div> : null}
       </div>
@@ -162,24 +160,27 @@ const SectionCard: React.FC<{
 };
 
 const ClientLinkSection: React.FC<Props> = ({
+  sourceType,
+  targetType,
   sourceLabel,
   targetLabel,
   bridgeClientIds,
   setBridgeClientIds,
+  handleSourceChange,
+  handleTargetChange,
   sectionRef,
 }) => {
   const [form] = Form.useForm();
 
-  const [sourceDataSourceType, setSourceDataSourceType] = useState<string>();
   const [sourceDataSourceId, setSourceDataSourceId] = useState<string>();
-
-  const [targetDataSourceType, setTargetDataSourceType] = useState<string>();
   const [targetDataSourceId, setTargetDataSourceId] = useState<string>();
 
   const [sourceTestStatus, setSourceTestStatus] =
     useState<ConnectivityStatus>("idle");
   const [targetTestStatus, setTargetTestStatus] =
     useState<ConnectivityStatus>("idle");
+
+  const dataSourceTypeOptions = useMemo(() => generateDataSourceOptions(), []);
 
   const sourceOptions = useMemo(
     () =>
@@ -199,10 +200,32 @@ const ClientLinkSection: React.FC<Props> = ({
     [],
   );
 
-  const runMockTest = async (
-    type: "source" | "target",
-    selectedId?: string,
-  ) => {
+  useEffect(() => {
+    form.setFieldsValue({
+      sourceType: sourceType?.dbType,
+      targetType: targetType?.dbType,
+      sourceId: sourceDataSourceId,
+      targetId: targetDataSourceId,
+      bridgeClientIds,
+    });
+  }, [
+    form,
+    sourceType,
+    targetType,
+    sourceDataSourceId,
+    targetDataSourceId,
+    bridgeClientIds,
+  ]);
+
+  const resetSourceTestStatus = () => {
+    setSourceTestStatus("idle");
+  };
+
+  const resetTargetTestStatus = () => {
+    setTargetTestStatus("idle");
+  };
+
+  const runMockTest = (type: "source" | "target", selectedId?: string) => {
     if (!selectedId) return;
 
     if (type === "source") {
@@ -211,8 +234,9 @@ const ClientLinkSection: React.FC<Props> = ({
       setTargetTestStatus("loading");
     }
 
-    setTimeout(() => {
+    window.setTimeout(() => {
       const success = !selectedId.endsWith("3");
+
       if (type === "source") {
         setSourceTestStatus(success ? "success" : "error");
       } else {
@@ -224,7 +248,6 @@ const ClientLinkSection: React.FC<Props> = ({
   return (
     <div ref={sectionRef} className="bg-white px-8 py-8">
       <div className="mx-auto space-y-6">
-        {/* 顶部链路 */}
         <div className="rounded-[28px] border border-slate-200 bg-gradient-to-b from-slate-50 to-white px-6 py-5 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
           <div className="flex items-center justify-between gap-4 text-sm text-slate-700">
             <div className="flex min-w-0 flex-1 items-center justify-center gap-4">
@@ -262,9 +285,7 @@ const ClientLinkSection: React.FC<Props> = ({
           </div>
         </div>
 
-        {/* 三列内容 */}
         <div className="flex gap-6">
-          {/* 来源 */}
           <SectionCard
             title="来源"
             status={sourceTestStatus}
@@ -273,6 +294,7 @@ const ClientLinkSection: React.FC<Props> = ({
                 className="w-full !rounded-full"
                 onClick={() => runMockTest("source", sourceDataSourceId)}
                 loading={sourceTestStatus === "loading"}
+                disabled={!sourceDataSourceId}
               >
                 测试连通性
               </Button>
@@ -282,12 +304,15 @@ const ClientLinkSection: React.FC<Props> = ({
               <div className="space-y-4">
                 <Form.Item name="sourceType" label="数据源类型" required>
                   <Select
-                    value={sourceDataSourceType}
-                    onChange={setSourceDataSourceType}
+                    value={sourceType?.dbType}
+                    onChange={(value, option) => {
+                      handleSourceChange(value, option);
+                      resetSourceTestStatus();
+                    }}
                     className="w-full"
                     showSearch
                     placeholder="请选择来源类型"
-                    options={generateDataSourceOptions()}
+                    options={dataSourceTypeOptions}
                   />
                 </Form.Item>
 
@@ -296,7 +321,7 @@ const ClientLinkSection: React.FC<Props> = ({
                     value={sourceDataSourceId}
                     onChange={(value) => {
                       setSourceDataSourceId(value);
-                      setSourceTestStatus("idle");
+                      resetSourceTestStatus();
                     }}
                     className="w-full"
                     placeholder="请选择来源数据源"
@@ -307,7 +332,6 @@ const ClientLinkSection: React.FC<Props> = ({
             </Form>
           </SectionCard>
 
-          {/* 客户端 / 客户端 */}
           <SectionCard
             title="客户端"
             footer={<Button className="w-full !rounded-full">新建客户端</Button>}
@@ -318,6 +342,7 @@ const ClientLinkSection: React.FC<Props> = ({
                   客户端节点
                 </div>
                 <Select
+                  mode="multiple"
                   value={bridgeClientIds}
                   onChange={setBridgeClientIds}
                   className="w-full"
@@ -341,7 +366,6 @@ const ClientLinkSection: React.FC<Props> = ({
             </div>
           </SectionCard>
 
-          {/* 去向 */}
           <SectionCard
             title="去向"
             status={targetTestStatus}
@@ -350,6 +374,7 @@ const ClientLinkSection: React.FC<Props> = ({
                 className="w-full !rounded-full"
                 onClick={() => runMockTest("target", targetDataSourceId)}
                 loading={targetTestStatus === "loading"}
+                disabled={!targetDataSourceId}
               >
                 测试连通性
               </Button>
@@ -359,12 +384,15 @@ const ClientLinkSection: React.FC<Props> = ({
               <div className="space-y-4">
                 <Form.Item name="targetType" label="数据去向类型" required>
                   <Select
-                    value={targetDataSourceType}
-                    onChange={setTargetDataSourceType}
+                    value={targetType?.dbType}
+                    onChange={(value, option) => {
+                      handleTargetChange(value, option);
+                      resetTargetTestStatus();
+                    }}
                     className="w-full"
                     showSearch
                     placeholder="请选择去向类型"
-                    options={generateDataSourceOptions()}
+                    options={dataSourceTypeOptions}
                   />
                 </Form.Item>
 
@@ -373,7 +401,7 @@ const ClientLinkSection: React.FC<Props> = ({
                     value={targetDataSourceId}
                     onChange={(value) => {
                       setTargetDataSourceId(value);
-                      setTargetTestStatus("idle");
+                      resetTargetTestStatus();
                     }}
                     className="w-full"
                     placeholder="请选择目标数据源"

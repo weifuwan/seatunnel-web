@@ -121,7 +121,7 @@ const AdvancedSearchForm: React.FC<AdvancedSearchFormProps> = ({
           </Form.Item>
         </Col>
 
-        <Col span={8} style={{ paddingTop: 4, paddingLeft: 42 }}>
+        <Col span={8} style={{ paddingLeft: 42 }}>
           <Space size="small">
             <Button
               type="primary"

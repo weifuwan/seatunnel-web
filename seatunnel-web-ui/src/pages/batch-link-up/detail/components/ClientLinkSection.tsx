@@ -115,7 +115,7 @@ const LinkStatusAction: React.FC<{
         size="small"
         className="!h-7 !rounded-full !px-3 !text-slate-700 hover:!bg-slate-100"
         onClick={onTest}
-        loading={status === "loading"}
+        // loading={status === "loading"}
       >
         测试
       </Button>
@@ -295,6 +295,7 @@ const ClientLinkSection: React.FC<Props> = ({
                 onClick={() => runMockTest("source", sourceDataSourceId)}
                 loading={sourceTestStatus === "loading"}
                 disabled={!sourceDataSourceId}
+                type="primary"
               >
                 测试连通性
               </Button>
@@ -342,7 +343,6 @@ const ClientLinkSection: React.FC<Props> = ({
                   客户端节点
                 </div>
                 <Select
-                  mode="multiple"
                   value={bridgeClientIds}
                   onChange={setBridgeClientIds}
                   className="w-full"
@@ -375,6 +375,7 @@ const ClientLinkSection: React.FC<Props> = ({
                 onClick={() => runMockTest("target", targetDataSourceId)}
                 loading={targetTestStatus === "loading"}
                 disabled={!targetDataSourceId}
+                type="primary"
               >
                 测试连通性
               </Button>

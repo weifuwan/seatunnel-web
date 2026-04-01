@@ -27,7 +27,7 @@ const BaseInfoSection: React.FC<Props> = ({
     <div ref={sectionRef} style={{padding: "12px 24px 24px"}}>
 
       <Form.Item label="数据同步方式" required className="mb-6">
-        <div className="rounded-2xl border border-[#E4E7EC] bg-[#FCFCFD] p-5">
+        <div className="rounded-2xl border border-[#E4E7EC] bg-[#FAFBFC] p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
           <div className="flex flex-wrap items-center gap-3">
             <DataSourceSelect
               value={sourceType}
@@ -63,7 +63,7 @@ const BaseInfoSection: React.FC<Props> = ({
         >
           <Input
             placeholder="比如：MySQL 到 Doris 用户表同步"
-            className="!h-11 !rounded-xl"
+            className="!h-[33px] !rounded-[12px]"
           />
         </Form.Item>
 

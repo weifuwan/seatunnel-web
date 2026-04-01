@@ -9,9 +9,9 @@ interface Props {
 
 const ModeSection: React.FC<Props> = ({ mode, setMode }) => {
   return (
-    <div className="px-8 py-6">
+    <div className="px-6 py-6">
       <div className="mb-5">
-        <div className="text-[17px] font-semibold text-[#101828]">配置模式</div>
+        <div className="text-[18px] font-semibold text-[#101828]">配置模式</div>
         <div className="mt-1 text-[13px] leading-6 text-[#667085]">
           支持向导式快速创建，也支持脚本方式进行更灵活的任务编排。
         </div>
@@ -19,7 +19,7 @@ const ModeSection: React.FC<Props> = ({ mode, setMode }) => {
 
       <Form.Item name="mode" initialValue="GUIDE_SINGLE" className="mb-0">
         <Radio.Group className="w-full">
-          <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
             <ModeCard
               value="GUIDE_SINGLE"
               current={mode}

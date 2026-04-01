@@ -97,7 +97,7 @@ const AdvancedSearchForm: React.FC<AdvancedSearchFormProps> = ({
             wrapperCol={{ span: 19 }}
           >
             <Input
-              size="small"
+              
               placeholder={intl.formatMessage({
                 id: "pages.job.search.jobName.placeholder",
                 defaultMessage: "Enter job name",
@@ -117,17 +117,17 @@ const AdvancedSearchForm: React.FC<AdvancedSearchFormProps> = ({
             labelCol={{ span: 5 }}
             wrapperCol={{ span: 19 }}
           >
-            <RangePicker size="small" style={{ width: "100%" }} />
+            <RangePicker  style={{ width: "100%" }} />
           </Form.Item>
         </Col>
 
         <Col span={8} style={{ paddingTop: 4, paddingLeft: 42 }}>
-          <Space size="small">
+          <Space >
             <Button
               type="primary"
               htmlType="submit"
-              size="small"
-              style={{ width: 70 }}
+              
+              style={{ width: 70,borderRadius: 24 }}
             >
               {intl.formatMessage({
                 id: "pages.job.search.button.search",
@@ -135,7 +135,7 @@ const AdvancedSearchForm: React.FC<AdvancedSearchFormProps> = ({
               })}
             </Button>
 
-            <Button onClick={handleReset} size="small" style={{ width: 70 }}>
+            <Button onClick={handleReset}  style={{ width: 70,borderRadius: 24 }}>
               {intl.formatMessage({
                 id: "pages.job.search.button.reset",
                 defaultMessage: "Reset",
@@ -199,7 +199,7 @@ const AdvancedSearchForm: React.FC<AdvancedSearchFormProps> = ({
               wrapperCol={{ span: 19 }}
             >
               <Input
-                size="small"
+                
                 placeholder={intl.formatMessage({
                   id: "pages.job.search.jobId.placeholder",
                   defaultMessage: "Enter job id",
@@ -224,7 +224,7 @@ const AdvancedSearchForm: React.FC<AdvancedSearchFormProps> = ({
                   id: "pages.job.search.selectPlaceholder",
                   defaultMessage: "Select...",
                 })}
-                size="small"
+                
                 showSearch
                 allowClear
                 options={[
@@ -287,7 +287,7 @@ const AdvancedSearchForm: React.FC<AdvancedSearchFormProps> = ({
                   id: "pages.job.search.selectPlaceholder",
                   defaultMessage: "Select...",
                 })}
-                size="small"
+                
                 options={dataSourceOption}
                 allowClear
                 showSearch
@@ -310,7 +310,7 @@ const AdvancedSearchForm: React.FC<AdvancedSearchFormProps> = ({
                   id: "pages.job.search.selectPlaceholder",
                   defaultMessage: "Select...",
                 })}
-                size="small"
+                
                 options={dataSourceOption}
                 allowClear
                 showSearch
@@ -329,7 +329,7 @@ const AdvancedSearchForm: React.FC<AdvancedSearchFormProps> = ({
               wrapperCol={{ span: 19 }}
             >
               <Input
-                size="small"
+                
                 placeholder={intl.formatMessage({
                   id: "pages.job.search.fuzzyPlaceholder",
                   defaultMessage: "Fuzzy match...",
@@ -350,7 +350,7 @@ const AdvancedSearchForm: React.FC<AdvancedSearchFormProps> = ({
               wrapperCol={{ span: 19 }}
             >
               <Input
-                size="small"
+                
                 placeholder={intl.formatMessage({
                   id: "pages.job.search.fuzzyPlaceholder",
                   defaultMessage: "Fuzzy match...",

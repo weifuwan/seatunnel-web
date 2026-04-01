@@ -14,7 +14,7 @@ import {
 import TextArea from "antd/es/input/TextArea";
 import { useEffect, useState } from "react";
 import DatabaseIcons from "../../icon/DatabaseIcons";
-import { DynamicDataSourceFormProps, FormField } from "../../types";
+import { DynamicDataSourceFormProps } from "../../types";
 import CustomKVList from "./components/CustomKVList";
 import DriverLocationField from "./components/DriverLocationField";
 import { getConfigInitialValues, transformRules } from "./utils/formUtils";
@@ -34,6 +34,29 @@ const ENV_OPTIONS = [
   },
 ];
 
+const cardStyle: React.CSSProperties = {
+  padding: 20,
+  border: "1px solid #E8EDF3",
+  borderRadius: 16,
+  background: "#FCFDFE",
+  boxShadow: "0 1px 2px rgba(16, 24, 40, 0.04)",
+};
+
+const sectionTitleStyle: React.CSSProperties = {
+  margin: 0,
+  fontSize: 15,
+  fontWeight: 600,
+  color: "#1F2937",
+};
+
+const sectionDescStyle: React.CSSProperties = {
+  marginTop: 4,
+  marginBottom: 0,
+  fontSize: 13,
+  color: "#667085",
+  lineHeight: "22px",
+};
+
 const DynamicDataSourceForm: React.FC<DynamicDataSourceFormProps> = ({
   dbType,
   form,
@@ -42,7 +65,7 @@ const DynamicDataSourceForm: React.FC<DynamicDataSourceFormProps> = ({
 }) => {
   const intl = useIntl();
 
-  const [formConfig, setFormConfig] = useState<FormField[]>([]);
+  const [formConfig, setFormConfig] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
 
   const [needInstall, setNeedInstall] = useState(false);
@@ -78,9 +101,10 @@ const DynamicDataSourceForm: React.FC<DynamicDataSourceFormProps> = ({
           }
         });
 
-        if (Object.keys(patch).length) configForm.setFieldsValue(patch);
+        if (Object.keys(patch).length) {
+          configForm.setFieldsValue(patch);
+        }
       } else {
-        // 这里识别“未安装/未初始化”，你也可以根据 message 关键字更精确判断
         setNeedInstall(true);
         setLoadErrMsg(response?.message || "Plugin config not available");
         setFormConfig([]);
@@ -121,7 +145,7 @@ const DynamicDataSourceForm: React.FC<DynamicDataSourceFormProps> = ({
     }
   };
 
-  const renderFormItem = (field: FormField): React.ReactNode => {
+  const renderFormItem = (field: any): React.ReactNode => {
     const commonProps = {
       placeholder: field.placeholder,
       onChange: () => {
@@ -143,13 +167,13 @@ const DynamicDataSourceForm: React.FC<DynamicDataSourceFormProps> = ({
 
     switch (field.type) {
       case "INPUT":
-        return <Input {...commonProps} size="small" />;
+        return <Input {...commonProps} />;
       case "PASSWORD":
-        return <Input.Password {...commonProps} size="small" />;
+        return <Input.Password {...commonProps} />;
       case "SELECT":
         return (
-          <Select {...commonProps} size="small">
-            {field.options?.map((option) => (
+          <Select {...commonProps}>
+            {field.options?.map((option: any) => (
               <Select.Option key={option.value} value={option.value}>
                 {option.label}
               </Select.Option>
@@ -157,13 +181,13 @@ const DynamicDataSourceForm: React.FC<DynamicDataSourceFormProps> = ({
           </Select>
         );
       case "NUMBER":
-        return <InputNumber {...commonProps} size="small" />;
+        return <InputNumber {...commonProps} style={{ width: "100%" }} />;
       case "SWITCH":
-        return <Switch {...commonProps} size="small" />;
+        return <Switch {...commonProps} />;
       case "TEXTAREA":
-        return <Input.TextArea rows={4} {...commonProps} size="small" />;
+        return <Input.TextArea rows={4} {...commonProps} />;
       default:
-        return <Input {...commonProps} size="small" />;
+        return <Input {...commonProps} />;
     }
   };
 
@@ -171,93 +195,111 @@ const DynamicDataSourceForm: React.FC<DynamicDataSourceFormProps> = ({
     return (
       <div
         style={{
+          ...cardStyle,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          padding: "24px ",
+          minHeight: 220,
         }}
       >
-        <LoadingOutlined />
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            color: "#667085",
+            fontSize: 14,
+          }}
+        >
+          <LoadingOutlined />
+          <span>正在加载数据源配置...</span>
+        </div>
       </div>
     );
   }
 
   return (
-    <div style={{ padding: "0 16px" }}>
-      <Form form={form} labelCol={{ span: 3 }} wrapperCol={{ span: 19 }}>
-        <Form.Item
-          label={
-            <div style={{ height: 32, lineHeight: "33px" }}>
-              {intl.formatMessage({
-                id: "pages.datasource.form.dsName",
-                defaultMessage: "DS Name",
-              })}
-            </div>
-          }
-          name="name"
-          rules={[
-            {
-              required: true,
-              message: intl.formatMessage({
-                id: "pages.datasource.form.dsNameRequired",
-                defaultMessage: "DS Name is required",
-              }),
-            },
-          ]}
+    <div style={cardStyle}>
+      <div style={{ marginBottom: 20 }}>
+        <h3 style={sectionTitleStyle}>数据源信息</h3>
+        <p style={sectionDescStyle}>
+          先填写基础信息，再补充当前数据源类型对应的连接参数。
+        </p>
+      </div>
+
+      <Form form={form} layout="vertical">
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+            gap: 16,
+          }}
         >
-          <Input
-            placeholder={intl.formatMessage({
-              id: "pages.datasource.form.inputPlaceholder",
-              defaultMessage: "Input...",
+          <Form.Item
+            label={intl.formatMessage({
+              id: "pages.datasource.form.dsName",
+              defaultMessage: "DS Name",
             })}
-            maxLength={100}
-            size="small"
-          />
-        </Form.Item>
+            name="name"
+            rules={[
+              {
+                required: true,
+                message: intl.formatMessage({
+                  id: "pages.datasource.form.dsNameRequired",
+                  defaultMessage: "DS Name is required",
+                }),
+              },
+            ]}
+          >
+            <Input
+              placeholder={intl.formatMessage({
+                id: "pages.datasource.form.inputPlaceholder",
+                defaultMessage: "Input...",
+              })}
+              maxLength={100}
+            />
+          </Form.Item>
+
+          <Form.Item
+            label={
+              <span>
+                {intl.formatMessage({
+                  id: "pages.datasource.form.env",
+                  defaultMessage: "Env",
+                })}
+                &nbsp;
+                <Tooltip title="Deployment environment of the datasource">
+                  <InfoCircleOutlined style={{ color: "#98A2B3" }} />
+                </Tooltip>
+              </span>
+            }
+            name="environment"
+            rules={[
+              {
+                required: true,
+                message: intl.formatMessage({
+                  id: "pages.datasource.form.envRequired",
+                  defaultMessage: "Env is required",
+                }),
+              },
+            ]}
+          >
+            <Select
+              placeholder={intl.formatMessage({
+                id: "pages.datasource.form.selectPlaceholder",
+                defaultMessage: "Select...",
+              })}
+              showSearch
+              options={ENV_OPTIONS}
+            />
+          </Form.Item>
+        </div>
 
         <Form.Item
-          label={
-            <span>
-              {intl.formatMessage({
-                id: "pages.datasource.form.env",
-                defaultMessage: "Env",
-              })}
-              &nbsp;
-              <Tooltip title="Deployment environment of the datasource">
-                <InfoCircleOutlined style={{ color: "#999" }} />
-              </Tooltip>
-            </span>
-          }
-          name="environment"
-          rules={[
-            {
-              required: true,
-              message: intl.formatMessage({
-                id: "pages.datasource.form.envRequired",
-                defaultMessage: "Env is required",
-              }),
-            },
-          ]}
-        >
-          <Select
-            size="small"
-            placeholder={intl.formatMessage({
-              id: "pages.datasource.form.selectPlaceholder",
-              defaultMessage: "Select...",
-            })}
-            showSearch
-            options={ENV_OPTIONS}
-          />
-        </Form.Item>
-        <Form.Item
-          label={
-            <div style={{ height: 32, lineHeight: "33px" }}>
-              {intl.formatMessage({
-                id: "pages.datasource.form.description",
-                defaultMessage: "Description",
-              })}
-            </div>
-          }
+          label={intl.formatMessage({
+            id: "pages.datasource.form.description",
+            defaultMessage: "Description",
+          })}
           name="remark"
         >
           <TextArea
@@ -265,7 +307,6 @@ const DynamicDataSourceForm: React.FC<DynamicDataSourceFormProps> = ({
               id: "pages.datasource.form.inputPlaceholder",
               defaultMessage: "Input...",
             })}
-            size="small"
             rows={4}
           />
         </Form.Item>
@@ -274,59 +315,118 @@ const DynamicDataSourceForm: React.FC<DynamicDataSourceFormProps> = ({
           <Input type="hidden" />
         </Form.Item>
 
-        {/* 👇 这里新增 */}
         {needInstall && (
           <div
-            style={{ margin: "-8px 0 16px 0", paddingLeft: 110, marginTop: 20 }}
+            style={{
+              marginBottom: 20,
+              padding: "14px 16px",
+              border: "1px dashed #D6E4FF",
+              background: "#F7FAFF",
+              borderRadius: 12,
+            }}
           >
-            {/* <div style={{ marginBottom: 8, color: "rgba(0,0,0,0.65)" }}>
-              {loadErrMsg || "Plugin not installed."}
-            </div> */}
+            <div
+              style={{
+                marginBottom: 10,
+                color: "#526071",
+                fontSize: 13,
+                lineHeight: "22px",
+              }}
+            >
+              当前插件配置暂不可用，可能尚未安装。请先安装对应插件后，再继续填写连接参数。
+            </div>
+
+            {loadErrMsg ? (
+              <div
+                style={{
+                  marginBottom: 12,
+                  fontSize: 12,
+                  color: "#98A2B3",
+                  lineHeight: "20px",
+                }}
+              >
+                {loadErrMsg}
+              </div>
+            ) : null}
+
             <Button
-              type="dashed"
+              type="default"
               loading={installing}
               onClick={installPlugin}
-              style={{ width: "70%" }}
+              style={{
+                borderRadius: 10,
+                height: 38,
+                paddingInline: 16,
+              }}
             >
-              {intl.formatMessage({
-                id: "pages.datasource.form.installPlugin",
-                defaultMessage: "Install Plugin",
-              })}{" "}
-              ({dbType}
-              <DatabaseIcons dbType={dbType} height="18" width="18" />)
+              <span
+                style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
+              >
+                <span>
+                  {intl.formatMessage({
+                    id: "pages.datasource.form.installPlugin",
+                    defaultMessage: "Install Plugin",
+                  })}
+                </span>
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                  }}
+                >
+                  <span>({dbType})</span>
+                  <DatabaseIcons dbType={dbType} height="18" width="18" />
+                </span>
+              </span>
             </Button>
           </div>
         )}
 
-        <Form
-          form={configForm}
-          initialValues={getConfigInitialValues(formConfig)}
-          component={false}
+        <div
+          style={{
+            marginTop: 8,
+            paddingTop: 18,
+            borderTop: "1px solid #EEF2F6",
+          }}
         >
-          {formConfig.map((field) => {
-            if (field.type === "CUSTOM_SELECT") {
-              return <CustomKVList key={field.key} intl={intl} field={field} />;
-            }
+          <div style={{ marginBottom: 16 }}>
+            <h3 style={sectionTitleStyle}>连接参数</h3>
+            <p style={sectionDescStyle}>
+              根据当前数据源类型自动渲染配置项，建议优先填写必填字段。
+            </p>
+          </div>
 
-            return (
-              <Form.Item
-                labelCol={{ span: 3 }}
-                wrapperCol={{ span: 19 }}
-                key={field.key}
-                label={
-                  <div style={{ height: 32, lineHeight: "33px" }}>
-                    {field.label}
-                  </div>
-                }
-                name={field.key}
-                rules={transformRules(field?.rules)}
-                validateTrigger={["onChange", "onBlur"]}
-              >
-                {renderFormItem(field)}
-              </Form.Item>
-            );
-          })}
-        </Form>
+          <Form
+            form={configForm}
+            initialValues={getConfigInitialValues(formConfig)}
+            component={false}
+            labelCol={{ flex: "110px" }}
+            wrapperCol={{ flex: "1" }}
+            labelAlign="left"
+          >
+            {formConfig.map((field) => {
+              if (field.type === "CUSTOM_SELECT") {
+                return (
+                  <CustomKVList key={field.key} intl={intl} field={field} />
+                );
+              }
+
+              return (
+                <Form.Item
+                  key={field.key}
+                  label={field.label}
+                  name={field.key}
+                  rules={transformRules(field?.rules)}
+                  validateTrigger={["onChange", "onBlur"]}
+                  style={{ marginBottom: 18 }}
+                >
+                  {renderFormItem(field)}
+                </Form.Item>
+              );
+            })}
+          </Form>
+        </div>
       </Form>
     </div>
   );

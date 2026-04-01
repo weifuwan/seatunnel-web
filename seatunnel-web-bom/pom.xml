@@ -32,7 +32,7 @@
         <slf4j.version>1.7.36</slf4j.version>
         <guava.version>31.1-jre</guava.version>
         <janino.version>3.0.16</janino.version>
-        <snakeyaml.version>1.33</snakeyaml.version>
+        <snakeyaml.version>2.2</snakeyaml.version>
         <mysql-connector.version>8.0.33</mysql-connector.version>
         <h2.version>2.2.220</h2.version>
         <postgresql.version>42.4.4</postgresql.version>

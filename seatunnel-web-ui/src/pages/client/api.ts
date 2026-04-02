@@ -22,7 +22,8 @@ export interface SeatunnelClient {
 export interface SeatunnelClientMetrics {
   cpuUsage?: number;
   memoryUsage?: number;
-  heartbeatTime?: string;
+  threadCount?: number;
+  runningOps?: number;
 }
 
 export interface SeatunnelClientPageRequest {

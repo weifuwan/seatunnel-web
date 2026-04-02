@@ -12,5 +12,7 @@ public class SeaTunnelClientMetricsVO {
 
     private Double memoryUsage;
 
-    private String heartbeatTime;
+    private Integer threadCount;
+
+    private Integer runningOps;
 }

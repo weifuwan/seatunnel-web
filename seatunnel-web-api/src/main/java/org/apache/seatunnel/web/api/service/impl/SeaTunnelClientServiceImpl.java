@@ -54,7 +54,7 @@ public class SeaTunnelClientServiceImpl implements SeaTunnelClientService {
 
             fillVersionFromOverview(baseUrl, entity);
 
-            entity.setHealthStatus(SeaTunnelClientHealthStatusEnum.DOWN.getCode());
+            entity.setHealthStatus(SeaTunnelClientHealthStatusEnum.LIVE.getCode());
             entity.setCreateTime(now);
             entity.setUpdateTime(now);
             seaTunnelClientDao.insert(entity);
@@ -216,7 +216,9 @@ public class SeaTunnelClientServiceImpl implements SeaTunnelClientService {
     @Override
     public SeaTunnelClientMetricsVO metrics(Long id) {
         SeaTunnelClient entity = getEntity(id);
-
+        if (entity == null) {
+            throw new RuntimeException("entity is null");
+        }
         List<Map<String, Object>> metricsList =
                 seaTunnelRestClient.systemMonitoringInformation(id);
 
@@ -225,12 +227,26 @@ public class SeaTunnelClientServiceImpl implements SeaTunnelClientService {
 
         Double cpuUsage = parsePercent(metricMap == null ? null : metricMap.get("load.system"));
         Double memoryUsage = parsePercent(metricMap == null ? null : metricMap.get("heap.memory.used/total"));
+        Integer threadCount = parseInteger(metricMap == null ? null : metricMap.get("thread.count"));
+        Integer runningOps = parseInteger(metricMap == null ? null : metricMap.get("operations.running.count"));
 
         return new SeaTunnelClientMetricsVO(
                 cpuUsage,
                 memoryUsage,
-                formatDate(entity.getHeartbeatTime())
+                threadCount,
+                runningOps
         );
+    }
+
+    private Integer parseInteger(Object value) {
+        if (value == null) {
+            return 0;
+        }
+        try {
+            return Integer.parseInt(String.valueOf(value).trim());
+        } catch (Exception e) {
+            return 0;
+        }
     }
 
     private Double parsePercent(Object value) {

@@ -17,7 +17,12 @@ interface WorkflowProps {
   setParams: React.Dispatch<React.SetStateAction<any>>;
 }
 
-export default function Workflow({ params, goBack }: WorkflowProps) {
+export default function Workflow({
+  params,
+  goBack,
+  sourceType,
+  targetType,
+}: WorkflowProps) {
   const [form] = Form.useForm();
   const [rightWidth, setRightWidth] = useState(380);
   const [activeTab, setActiveTab] = useState<
@@ -79,9 +84,7 @@ export default function Workflow({ params, goBack }: WorkflowProps) {
               type="text"
               icon={<ArrowLeftOutlined />}
               className={styles.backButton}
-              onClick={() => {
-                goBack();
-              }}
+              onClick={goBack}
             >
               返回上一步
             </Button>
@@ -117,7 +120,9 @@ export default function Workflow({ params, goBack }: WorkflowProps) {
                             event.dataTransfer.setData(
                               "application/reactflow",
                               JSON.stringify({
-                                nodeType: "source",
+                                nodeType: "transform",
+                                componentType: "FIELDMAPPER",
+                                iconType: "braces",
                                 label: "字段映射",
                               })
                             );
@@ -145,8 +150,10 @@ export default function Workflow({ params, goBack }: WorkflowProps) {
                             event.dataTransfer.setData(
                               "application/reactflow",
                               JSON.stringify({
-                                nodeType: "target",
-                                label: "SQL",
+                                nodeType: "transform",
+                                componentType: "SQL",
+                                iconType: "database",
+                                label: "SQL 脚本",
                               })
                             );
                             event.dataTransfer.effectAllowed = "move";
@@ -175,6 +182,8 @@ export default function Workflow({ params, goBack }: WorkflowProps) {
                             form={form}
                             params={params}
                             goBack={goBack}
+                            sourceType={sourceType}
+                            targetType={targetType}
                           />
                         </ReactFlowProvider>
                       </div>

@@ -1,124 +1,218 @@
 import type { FC } from "react";
-import React, { useState } from "react";
-import { Handle, NodeProps } from "reactflow";
-import ProcessIcon from "../../icon/ProcessIcon";
-import SuccessIcon from "../../icon/SuccessIcon";
+import React, { useMemo, useState } from "react";
+import { Handle, Position, NodeProps } from "reactflow";
+import { Braces, Database } from "lucide-react";
 
-const Node: FC<NodeProps<any>> = ({ id, data, selected }) => {
-  const [showRightHandle, setShowRightHandle] = useState(false);
+interface TransformNodeData {
+  title?: string;
+  label?: string;
+  nodeType?: string;
+  componentType?: string;
+  iconType?: string;
+  description?: string;
+}
 
-  const getBorderColor = () => {
-    switch (data?.executionStatus) {
-      case "running":
-        return "#faad14"; // Blue for running
-      case "succeeded":
-        return "#17b26a"; // Green for success
-      case "failed":
-        return "#ff4d4f"; // Red for failed
-      case "pending":
-        return "#296dff"; // Orange for pending
+const componentTypeTextMap: Record<string, string> = {
+  FIELDMAPPER: "字段映射",
+  SQL: "SQL 脚本",
+};
+
+const componentDescMap: Record<string, string> = {
+  FIELDMAPPER: "配置字段对应关系",
+  SQL: "支持自定义查询逻辑",
+};
+
+const themeMap: Record<
+  string,
+  {
+    dot: string;
+    dotShadow: string;
+    iconColor: string;
+    iconBg: string;
+    selectedBorder: string;
+    selectedGlow: string;
+    labelColor: string;
+  }
+> = {
+  FIELDMAPPER: {
+    dot: "#315EFB",
+    dotShadow: "rgba(49, 94, 251, 0.16)",
+    iconColor: "#315EFB",
+    iconBg: "linear-gradient(180deg, #EEF3FF 0%, #E3EBFF 100%)",
+    selectedBorder: "#C7D7FE",
+    selectedGlow: "rgba(49, 94, 251, 0.10)",
+    labelColor: "#6B7FD7",
+  },
+  SQL: {
+    dot: "#7C3AED",
+    dotShadow: "rgba(124, 58, 237, 0.16)",
+    iconColor: "#7C3AED",
+    iconBg: "linear-gradient(180deg, #F3E8FF 0%, #EDE0FF 100%)",
+    selectedBorder: "#D9C2FF",
+    selectedGlow: "rgba(124, 58, 237, 0.10)",
+    labelColor: "#8A63D2",
+  },
+  DEFAULT: {
+    dot: "#98A2B3",
+    dotShadow: "rgba(152, 162, 179, 0.14)",
+    iconColor: "#5B6B8A",
+    iconBg: "#EEF2FF",
+    selectedBorder: "#C7D7FE",
+    selectedGlow: "rgba(80, 112, 255, 0.10)",
+    labelColor: "#7B8AAA",
+  },
+};
+
+const TransformNode: FC<NodeProps<TransformNodeData>> = ({ data, selected }) => {
+  const [hovered, setHovered] = useState(false);
+
+  const componentType = data?.componentType || "UNKNOWN";
+  const iconType = data?.iconType || "braces";
+  const theme = themeMap[componentType] || themeMap.DEFAULT;
+
+  const displayTitle = useMemo(() => {
+    return (
+      data?.title ||
+      data?.label ||
+      componentTypeTextMap[componentType] ||
+      "转换节点"
+    );
+  }, [data?.title, data?.label, componentType]);
+
+  const displayDesc = useMemo(() => {
+    return data?.description || componentDescMap[componentType] || "转换处理节点";
+  }, [data?.description, componentType]);
+
+  const iconNode = useMemo(() => {
+    switch (iconType) {
+      case "database":
+        return <Database size={16} color={theme.iconColor} strokeWidth={2.2} />;
+      case "braces":
       default:
-        return selected ? "#296dff" : "#DCE3EC";
+        return <Braces size={16} color={theme.iconColor} strokeWidth={2.2} />;
     }
+  }, [iconType, theme.iconColor]);
+
+  const handleStyle = (side: "left" | "right") => {
+    const size = hovered ? 16 : 10;
+    const offset = hovered ? -10 : -6;
+
+    return {
+      width: size,
+      height: size,
+      top: "50%",
+      transform: "translateY(-50%)",
+      background: theme.dot,
+      border: "3px solid #fff",
+      boxShadow: hovered ? `0 0 0 4px ${theme.dotShadow}` : "none",
+      transition: "all 0.18s cubic-bezier(0.22, 1, 0.36, 1)",
+      opacity: hovered ? 1 : 0.92,
+      [side]: offset,
+    } as React.CSSProperties;
   };
 
-  const getPointColor = () => {
-    switch (data?.executionStatus) {
-      case "running":
-        return "#faad14"; // Blue for running
-      case "succeeded":
-        return "#17b26a"; // Green for success
-      case "failed":
-        return "#ff4d4f"; // Red for failed
-      case "pending":
-        return "#296dff"; // Orange for pending
-      default:
-        return "#296dff";
-    }
-  };
   return (
     <div
       style={{
-        backgroundColor: "#e9ebf0",
-        borderRadius: "0.7rem",
-        cursor: "pointer",
+        position: "relative",
+        minWidth: 220,
+        padding: "2px 0",
       }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
     >
       <div
         style={{
-          paddingTop: ".125rem",
-          paddingLeft: ".625rem",
-          paddingRight: ".625rem",
-          display: "flex",
-          alignItems: "center",
-          marginBottom: "0.125rem",
+          marginBottom: 6,
+          paddingLeft: 4,
+          fontSize: 11,
+          fontWeight: 700,
+          letterSpacing: 0.8,
+          textTransform: "uppercase",
+          color: theme.labelColor,
         }}
       >
-        <span
-          style={{
-            color: "#676f83",
-            fontWeight: 600,
-            fontSize: "0.625rem",
-          }}
-        >
-          transform
-        </span>
+        Transform
       </div>
-      <div
-        className={`start-node-container ${selected ? "selected" : ""}`}
-        style={{
-          backgroundColor: "#fff",
-          borderColor: getBorderColor(),
-          borderWidth: "1px",
-          borderStyle: "solid",
-          borderRadius: "12px",
-          boxShadow: selected
-            ? "0 0 0 2px rgba(41, 109, 255, 0.12)"
-            : "0 1px 2px rgba(16, 24, 40, 0.04)",
-        }}
-        onMouseEnter={() => setShowRightHandle(true)}
-        onMouseLeave={() => setShowRightHandle(false)}
-      >
-        <Handle
-          type="target"
-          position="left"
-          style={{
-            backgroundColor: getPointColor(),
-          }}
-          className="right-handle"
-        />
 
+      <Handle
+        type="target"
+        position={Position.Left}
+        style={handleStyle("left")}
+      />
+
+      <div
+        style={{
+          background: "#FFFFFF",
+          borderRadius: 18,
+          border: selected
+            ? `1px solid ${theme.selectedBorder}`
+            : "1px solid #D8DEE8",
+          boxShadow: selected
+            ? `0 10px 24px ${theme.selectedGlow}, 0 0 0 4px ${theme.selectedGlow}`
+            : "0 6px 16px rgba(15, 23, 42, 0.06)",
+          padding: "14px 16px",
+          transition: "all 0.2s ease",
+        }}
+      >
         <div
-          className="node-header"
           style={{
-            justifyContent: "space-between",
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
           }}
         >
-          <div style={{ display: "flex", alignItems: "center" }}>
-            <div
-              className="icon-wrapper"
-              style={{ backgroundColor: "#6172f3" }}
-            >
-              <ProcessIcon  />
-            </div>
-            <div className="node-title">{data.title || "转换端"}</div>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 14,
+              background: theme.iconBg,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            {iconNode}
           </div>
 
-          <div style={{ display: "flex", alignItems: "center" }}>
-            {data?.executionStatus === "succeeded" ? <SuccessIcon /> : <></>}
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div
+              style={{
+                fontSize: 16,
+                fontWeight: 700,
+                lineHeight: "22px",
+                color: "#182230",
+                marginBottom: 2,
+              }}
+            >
+              {displayTitle}
+            </div>
+
+            <div
+              style={{
+                fontSize: 13,
+                lineHeight: "18px",
+                color: "#8A94A6",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
+              {displayDesc}
+            </div>
           </div>
         </div>
-        <Handle
-          type="source"
-          position="right"
-          style={{
-            backgroundColor: getPointColor(),
-          }}
-          className="right-handle"
-        />
       </div>
+
+      <Handle
+        type="source"
+        position={Position.Right}
+        style={handleStyle("right")}
+      />
     </div>
   );
 };
 
-export default React.memo(Node);
+export default React.memo(TransformNode);

@@ -1,19 +1,20 @@
 import { Dropdown } from "antd";
+import { useEffect, useRef } from "react";
 import ReactFlow, {
   Background,
   MiniMap,
   SelectionMode,
+  type Edge,
+  type Node,
 } from "reactflow";
 import "reactflow/dist/style.css";
 
-import CustomEdge from "./edge";
-import CustomNode from "./nodes";
-import WorkflowPanel from "./panel";
-import RunLog from "./run";
 import { ControlMode } from "./config";
-import { ControlPanel } from "./operator/ControlPanel";
+import CustomEdge from "./edge";
 import useFlowBuilder from "./hooks/useFlowBuilder";
 import useNodePlacement from "./hooks/useNodePlacement";
+import CustomNode from "./nodes";
+import WorkflowPanel from "./panel";
 
 const nodeTypesConfig = {
   custom: CustomNode,
@@ -30,18 +31,106 @@ interface FlowCanvasProps {
   form: any;
   params: any;
   goBack: () => void;
+  sourceType?: any;
+  targetType?: any;
+}
+
+function buildInitialGraph(sourceType?: any, targetType?: any): {
+  nodes: Node[];
+  edges: Edge[];
+} {
+  const sourceId = "source-node";
+  const sinkId = "sink-node";
+
+  const sourceDbType = sourceType?.dbType || "MYSQL";
+  const targetDbType = targetType?.dbType || "MYSQL";
+
+  const sourceTitle =
+    sourceType?.dbType ||
+    sourceType?.pluginName ||
+    sourceType?.connectorType ||
+    "输入端";
+
+  const sinkTitle =
+    targetType?.dbType ||
+    targetType?.pluginName ||
+    targetType?.connectorType ||
+    "输出端";
+
+  const nodes: Node[] = [
+    {
+      id: sourceId,
+      type: "custom",
+      position: { x: 100, y: 180 },
+      data: {
+        nodeType: "source",
+        title: sourceTitle,
+        description: "读取源端数据",
+        dbType: sourceDbType,
+      },
+    },
+    {
+      id: sinkId,
+      type: "custom",
+      position: { x: 460, y: 180 },
+      data: {
+        nodeType: "sink",
+        title: sinkTitle,
+        description: "写入目标端数据",
+        dbType: targetDbType,
+      },
+    },
+  ];
+
+  const edges: Edge[] = [
+    {
+      id: `${sourceId}-${sinkId}`,
+      source: sourceId,
+      target: sinkId,
+      type: "custom",
+      data: {},
+    },
+  ];
+
+  return { nodes, edges };
 }
 
 export default function FlowCanvas({
   form,
   params,
   goBack,
+  sourceType,
+  targetType,
 }: FlowCanvasProps) {
   const flow = useFlowBuilder({ form, params });
   const placement = useNodePlacement({
     setNodes: flow.setNodes,
     setControlMode: flow.setControlMode,
   });
+  const initializedRef = useRef(false);
+
+  useEffect(() => {
+    if (!params || initializedRef.current) return;
+
+    const hasNodes = Array.isArray(flow.nodes) && flow.nodes.length > 0;
+    if (hasNodes) {
+      initializedRef.current = true;
+      return;
+    }
+
+    const { nodes, edges } = buildInitialGraph(sourceType, targetType);
+
+    flow.setNodes(nodes);
+    flow.setEdges(edges);
+    initializedRef.current = true;
+  }, [
+    params,
+    sourceType,
+    targetType,
+    flow.nodes,
+    flow.setNodes,
+    flow.setEdges,
+  ]);
 
   const onDragOver = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
@@ -67,6 +156,7 @@ export default function FlowCanvas({
     flow.addNode({
       position,
       nodeType: data.nodeType,
+      componentType: data.componentType,
       label: data.label,
     });
   };
@@ -106,8 +196,7 @@ export default function FlowCanvas({
         minZoom={MIN_ZOOM}
         maxZoom={MAX_ZOOM}
         nodesDraggable={
-          !flow.nodesReadOnly &&
-          flow.interactionMode === ControlMode.Pointer
+          !flow.nodesReadOnly && flow.interactionMode === ControlMode.Pointer
         }
         nodesConnectable={!flow.nodesReadOnly}
         nodesFocusable={!flow.nodesReadOnly}
@@ -117,8 +206,7 @@ export default function FlowCanvas({
         zoomOnScroll={!flow.workflowReadOnly}
         zoomOnDoubleClick={!flow.workflowReadOnly}
         selectionOnDrag={
-          flow.interactionMode === ControlMode.Pointer &&
-          !flow.workflowReadOnly
+          flow.interactionMode === ControlMode.Pointer && !flow.workflowReadOnly
         }
         fitView
         fitViewOptions={{
@@ -137,8 +225,6 @@ export default function FlowCanvas({
           style={{ width: 102, height: 72 }}
           maskColor="#E9EBF0"
         />
-
-        {/* <ControlPanel ... /> */}
       </ReactFlow>
 
       <Dropdown
@@ -165,8 +251,6 @@ export default function FlowCanvas({
           onNodeDataChange={flow.handleNodeDataChange}
         />
       )}
-
-      {/* {flow.runVisible && ... } */}
     </div>
   );
 }

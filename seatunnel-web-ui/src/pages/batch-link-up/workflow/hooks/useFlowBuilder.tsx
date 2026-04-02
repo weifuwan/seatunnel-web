@@ -92,10 +92,12 @@ export default function useFlowBuilder({ form, params }: Props) {
       position,
       nodeType,
       label,
+      componentType,
     }: {
       position: { x: number; y: number };
       nodeType: string;
       label: string;
+      componentType: string;
     }) => {
       const id = `${nodeType}-${Date.now()}`;
 
@@ -106,6 +108,7 @@ export default function useFlowBuilder({ form, params }: Props) {
         data: {
           label,
           nodeType,
+          componentType,
         },
       };
 

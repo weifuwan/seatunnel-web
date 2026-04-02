@@ -16,6 +16,14 @@ export type SourceTargetType = {
   pluginName?: string;
 };
 
+interface DataSourceOptionItem {
+  id?: string;
+  name?: string;
+  label?: string;
+  value?: string;
+  [key: string]: any;
+}
+
 export type DetailFormValues = {
   jobName?: string;
   description?: string;

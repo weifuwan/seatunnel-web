@@ -1,9 +1,10 @@
+import { fetchDataSourceOptions } from "@/pages/data-source/service";
 import {
   CheckCircleOutlined,
   CloseCircleOutlined,
   LoadingOutlined,
 } from "@ant-design/icons";
-import { Button, Form, Select } from "antd";
+import { Button, Form, message, Select } from "antd";
 import React, { useEffect, useMemo, useState } from "react";
 import { generateDataSourceOptions } from "../../DataSourceSelect";
 import { mockBridgeClients } from "../constants";
@@ -127,7 +128,9 @@ const LinkStatusAction: React.FC<{
           config.textClass,
         ].join(" ")}
       >
-        {config.icon ? <span className="text-[12px]">{config.icon}</span> : null}
+        {config.icon ? (
+          <span className="text-[12px]">{config.icon}</span>
+        ) : null}
         <span>{config.text}</span>
       </div>
     </div>
@@ -181,24 +184,113 @@ const ClientLinkSection: React.FC<Props> = ({
     useState<ConnectivityStatus>("idle");
 
   const dataSourceTypeOptions = useMemo(() => generateDataSourceOptions(), []);
+  const [sourceDataSources, setSourceDataSources] = useState<any[]>([]);
+  const [targetDataSources, setTargetDataSources] = useState<any[]>([]);
+  const [sourceLoading, setSourceLoading] = useState(false);
+  const [targetLoading, setTargetLoading] = useState(false);
+  useEffect(() => {
+    const loadSourceOptions = async () => {
+      const dbType = sourceType?.dbType;
+      if (!dbType) {
+        setSourceDataSources([]);
+        return;
+      }
+
+      try {
+        setSourceLoading(true);
+        const res = await fetchDataSourceOptions(dbType);
+        setSourceDataSources(Array.isArray(res?.data) ? res.data : []);
+      } catch (error) {
+        console.error("加载来源数据源失败:", error);
+        setSourceDataSources([]);
+        message.error("加载来源数据源失败");
+      } finally {
+        setSourceLoading(false);
+      }
+    };
+
+    loadSourceOptions();
+  }, [sourceType?.dbType]);
+
+  useEffect(() => {
+    const loadTargetOptions = async () => {
+      const dbType = targetType?.dbType;
+      if (!dbType) {
+        setTargetDataSources([]);
+        return;
+      }
+
+      try {
+        setTargetLoading(true);
+        const res = await fetchDataSourceOptions(targetType.dbType);
+        setTargetDataSources(Array.isArray(res?.data) ? res.data : []);
+      } catch (error) {
+        console.error("加载目标数据源失败:", error);
+        setTargetDataSources([]);
+        message.error("加载目标数据源失败");
+      } finally {
+        setTargetLoading(false);
+      }
+    };
+
+    loadTargetOptions();
+  }, [targetType?.dbType]);
 
   const sourceOptions = useMemo(
     () =>
-      mockSourceDataSources.map((item) => ({
-        label: item.name,
-        value: item.id,
+      sourceDataSources.map((item) => ({
+        label: item.name ?? item.label ?? "",
+        value: item.id ?? item.value ?? "",
       })),
-    [],
+    [sourceDataSources]
   );
+
+  useEffect(() => {
+    if (!sourceOptions.length) {
+      setSourceDataSourceId(undefined);
+      form.setFieldValue("sourceId", undefined);
+      return;
+    }
+
+    const hasCurrentValue = sourceOptions.some(
+      (item) => item.value === sourceDataSourceId
+    );
+
+    if (!sourceDataSourceId || !hasCurrentValue) {
+      const firstValue = sourceOptions[0]?.value;
+      setSourceDataSourceId(firstValue);
+      form.setFieldValue("sourceId", firstValue);
+      resetSourceTestStatus();
+    }
+  }, [sourceOptions, sourceDataSourceId, form]);
 
   const targetOptions = useMemo(
     () =>
-      mockTargetDataSources.map((item) => ({
-        label: item.name,
-        value: item.id,
+      targetDataSources.map((item) => ({
+        label: item.name ?? item.label ?? "",
+        value: item.id ?? item.value ?? "",
       })),
-    [],
+    [targetDataSources]
   );
+
+  useEffect(() => {
+    if (!targetOptions.length) {
+      setTargetDataSourceId(undefined);
+      form.setFieldValue("targetId", undefined);
+      return;
+    }
+
+    const hasCurrentValue = targetOptions.some(
+      (item) => item.value === targetDataSourceId
+    );
+
+    if (!targetDataSourceId || !hasCurrentValue) {
+      const firstValue = targetOptions[0]?.value;
+      setTargetDataSourceId(firstValue);
+      form.setFieldValue("targetId", firstValue);
+      resetTargetTestStatus();
+    }
+  }, [targetOptions, targetDataSourceId, form]);
 
   useEffect(() => {
     form.setFieldsValue({
@@ -225,8 +317,11 @@ const ClientLinkSection: React.FC<Props> = ({
     setTargetTestStatus("idle");
   };
 
-  const runMockTest = (type: "source" | "target", selectedId?: string) => {
-    if (!selectedId) return;
+  const runMockTest = (
+    type: "source" | "target",
+    selectedId?: string | number
+  ) => {
+    if (selectedId === undefined || selectedId === null) return;
 
     if (type === "source") {
       setSourceTestStatus("loading");
@@ -235,16 +330,26 @@ const ClientLinkSection: React.FC<Props> = ({
     }
 
     window.setTimeout(() => {
-      const success = !selectedId.endsWith("3");
+      try {
+        const idStr = String(selectedId);
+        const success = !idStr.endsWith("3");
 
-      if (type === "source") {
-        setSourceTestStatus(success ? "success" : "error");
-      } else {
-        setTargetTestStatus(success ? "success" : "error");
+        if (type === "source") {
+          setSourceTestStatus(success ? "success" : "error");
+        } else {
+          setTargetTestStatus(success ? "success" : "error");
+        }
+      } catch (error) {
+        console.error("连通性测试状态更新失败:", error);
+
+        if (type === "source") {
+          setSourceTestStatus("error");
+        } else {
+          setTargetTestStatus("error");
+        }
       }
     }, 1000);
   };
-
   return (
     <div ref={sectionRef} className="bg-white px-8 py-8">
       <div className="mx-auto space-y-6">
@@ -326,6 +431,8 @@ const ClientLinkSection: React.FC<Props> = ({
                     }}
                     className="w-full"
                     placeholder="请选择来源数据源"
+                    loading={sourceLoading}
+                    showSearch
                     options={sourceOptions}
                   />
                 </Form.Item>
@@ -335,7 +442,9 @@ const ClientLinkSection: React.FC<Props> = ({
 
           <SectionCard
             title="客户端"
-            footer={<Button className="w-full !rounded-full">新建客户端</Button>}
+            footer={
+              <Button className="w-full !rounded-full">新建客户端</Button>
+            }
           >
             <div className="space-y-4">
               <div>
@@ -404,7 +513,9 @@ const ClientLinkSection: React.FC<Props> = ({
                       setTargetDataSourceId(value);
                       resetTargetTestStatus();
                     }}
+                    showSearch
                     className="w-full"
+                    loading={targetLoading}
                     placeholder="请选择目标数据源"
                     options={targetOptions}
                   />

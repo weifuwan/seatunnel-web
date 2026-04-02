@@ -224,7 +224,7 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
             >
               <Input
                 placeholder="例如：192.168.1.10"
-                style={{ height: 40, borderRadius: 10 }}
+                style={{ height: 34, borderRadius: 16 }}
               />
             </Form.Item>
 
@@ -241,7 +241,7 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
             >
               <Input
                 placeholder="例如：8080"
-                style={{ height: 40, borderRadius: 10 }}
+                style={{ height: 34, borderRadius: 16 }}
               />
             </Form.Item>
           </div>

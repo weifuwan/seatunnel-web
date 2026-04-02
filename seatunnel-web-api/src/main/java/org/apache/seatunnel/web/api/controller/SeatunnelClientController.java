@@ -6,6 +6,7 @@ import org.apache.seatunnel.web.spi.bean.dto.SeaTunnelClientDTO;
 import org.apache.seatunnel.web.spi.bean.dto.SeaTunnelClientPageDTO;
 import org.apache.seatunnel.web.spi.bean.entity.Result;
 import org.apache.seatunnel.web.spi.bean.vo.SeaTunnelClientLogVO;
+import org.apache.seatunnel.web.spi.bean.vo.SeaTunnelClientMetricsVO;
 import org.apache.seatunnel.web.spi.bean.vo.SeaTunnelClientStatisticsVO;
 import org.springframework.web.bind.annotation.*;
 
@@ -71,5 +72,10 @@ public class SeatunnelClientController {
     public Result<Void> reportHeartbeat(@RequestBody SeaTunnelClientDTO dto) {
         seatunnelClientService.reportHeartbeat(dto);
         return Result.buildSuc();
+    }
+
+    @GetMapping("/{id}/metrics")
+    public Result<SeaTunnelClientMetricsVO> metrics(@PathVariable("id") Long clientId) {
+        return Result.buildSuc(seatunnelClientService.metrics(clientId));
     }
 }

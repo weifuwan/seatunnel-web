@@ -19,6 +19,12 @@ export interface SeatunnelClient {
   updateTime?: string;
 }
 
+export interface SeatunnelClientMetrics {
+  cpuUsage?: number;
+  memoryUsage?: number;
+  heartbeatTime?: string;
+}
+
 export interface SeatunnelClientPageRequest {
   pageNo?: number;
   pageSize?: number;
@@ -60,6 +66,19 @@ export const seatunnelClientApi = {
     data: SeatunnelClientPageRequest
   ): Promise<{ code: number; data: any; message?: string }> => {
     return HttpUtils.post(`${apiPrefix}/page`, data);
+  },
+
+
+
+  metrics: (
+    id: number
+  ): Promise<{
+    code: number;
+    data: SeatunnelClientMetrics;
+    msg?: string;
+    message?: string;
+  }> => {
+    return HttpUtils.get(`${apiPrefix}/${id}/metrics`);
   },
 
   statistics: (): Promise<{

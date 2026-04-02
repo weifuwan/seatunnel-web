@@ -14,7 +14,7 @@ export const useClientMonitoring = () => {
 
       const res = await seatunnelClientApi.page({
         pageNo: 1,
-        pageSize: 100,
+        pageSize: 10,
       });
 
       if (res.code !== 0) {
@@ -46,21 +46,6 @@ export const useClientMonitoring = () => {
     () => clients.find((item) => item.id === selectedClientId) || clients[0],
     [clients, selectedClientId]
   );
-
-  // const health = useMemo(() => getHealthInfo(selectedClient), [selectedClient]);
-  // const trendBars = useMemo(() => buildTrendBars(selectedClient), [selectedClient]);
-  // const resourceUsageData = useMemo(
-  //   () => buildResourceUsageData(selectedClient),
-  //   [selectedClient]
-  // );
-  // const recentEvents = useMemo(
-  //   () => buildRecentEvents(selectedClient, health),
-  //   [selectedClient, health]
-  // );
-  // const criticalAlerts = useMemo(
-  //   () => buildCriticalAlerts(selectedClient),
-  //   [selectedClient]
-  // );
 
   return {
     clients,

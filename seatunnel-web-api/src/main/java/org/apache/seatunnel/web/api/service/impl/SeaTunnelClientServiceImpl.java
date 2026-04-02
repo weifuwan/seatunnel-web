@@ -14,12 +14,14 @@ import org.apache.seatunnel.web.engine.client.rest.SeaTunnelRestClient;
 import org.apache.seatunnel.web.spi.bean.dto.SeaTunnelClientDTO;
 import org.apache.seatunnel.web.spi.bean.dto.SeaTunnelClientPageDTO;
 import org.apache.seatunnel.web.spi.bean.vo.SeaTunnelClientLogVO;
+import org.apache.seatunnel.web.spi.bean.vo.SeaTunnelClientMetricsVO;
 import org.apache.seatunnel.web.spi.bean.vo.SeaTunnelClientStatisticsVO;
 import org.apache.seatunnel.web.spi.bean.vo.SeaTunnelClientVO;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -209,6 +211,54 @@ public class SeaTunnelClientServiceImpl implements SeaTunnelClientService {
 
         entity.setUpdateTime(new Date());
         seaTunnelClientDao.updateById(entity);
+    }
+
+    @Override
+    public SeaTunnelClientMetricsVO metrics(Long id) {
+        SeaTunnelClient entity = getEntity(id);
+
+        List<Map<String, Object>> metricsList =
+                seaTunnelRestClient.systemMonitoringInformation(id);
+
+        Map<String, Object> metricMap =
+                (metricsList == null || metricsList.isEmpty()) ? null : metricsList.get(0);
+
+        Double cpuUsage = parsePercent(metricMap == null ? null : metricMap.get("load.system"));
+        Double memoryUsage = parsePercent(metricMap == null ? null : metricMap.get("heap.memory.used/total"));
+
+        return new SeaTunnelClientMetricsVO(
+                cpuUsage,
+                memoryUsage,
+                formatDate(entity.getHeartbeatTime())
+        );
+    }
+
+    private Double parsePercent(Object value) {
+        if (value == null) {
+            return null;
+        }
+
+        String str = String.valueOf(value).trim();
+        if (str.isEmpty()) {
+            return null;
+        }
+
+        if (str.endsWith("%")) {
+            str = str.substring(0, str.length() - 1);
+        }
+
+        try {
+            return Double.parseDouble(str);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private String formatDate(java.util.Date date) {
+        if (date == null) {
+            return null;
+        }
+        return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(date);
     }
 
     /**

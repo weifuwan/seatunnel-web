@@ -1,19 +1,19 @@
 import {
+  ClockCircleOutlined,
   CloudServerOutlined,
-  EnvironmentOutlined,
   HddOutlined,
   LinkOutlined,
   PlusOutlined,
   RadarChartOutlined,
+  ReloadOutlined,
 } from "@ant-design/icons";
-import { Form, Input, message, Progress } from "antd";
+import { Button, Form, message, Progress } from "antd";
 import { AnimatePresence, motion } from "framer-motion";
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { seatunnelClientApi } from "./api";
 import AddClientModal from "./components/AddClientModal";
 import { useClientMonitoring } from "./hooks/useClientMonitoring";
 
-const { TextArea } = Input;
 const MotionDiv = motion.div;
 
 const contentSwapVariants = {
@@ -36,6 +36,13 @@ const contentSwapVariants = {
   },
 };
 
+type ClientMetrics = {
+  cpuUsage?: number;
+  memoryUsage?: number;
+  heartbeatTime?: string;
+  processors?: number | string;
+};
+
 const formatPercent = (value?: number | string) => {
   if (value === undefined || value === null || value === "") return "--";
   const n = Number(value);
@@ -48,27 +55,34 @@ const getSafeNumber = (value?: number | string) => {
   return Number.isNaN(n) ? 0 : n;
 };
 
-const getHealthMeta = (health?: { level?: string; label?: string }) => {
-  switch (health?.level) {
-    case "healthy":
-      return {
-        dot: "bg-emerald-500",
-        badge: "border-emerald-200 bg-emerald-50 text-emerald-700",
-        label: health?.label || "Healthy",
-      };
-    case "warning":
-      return {
-        dot: "bg-amber-500",
-        badge: "border-amber-200 bg-amber-50 text-amber-700",
-        label: health?.label || "Warning",
-      };
-    default:
-      return {
-        dot: "bg-rose-500",
-        badge: "border-rose-200 bg-rose-50 text-rose-700",
-        label: health?.label || "Critical",
-      };
+const formatText = (value?: string | number | null) => {
+  if (value === undefined || value === null || value === "") return "--";
+  return String(value);
+};
+
+const getHealthMeta = (healthStatus?: number) => {
+  // 你可以按自己的枚举再微调
+  if (healthStatus === 1) {
+    return {
+      dot: "bg-emerald-500",
+      badge: "border-emerald-200 bg-emerald-50 text-emerald-700",
+      label: "Healthy",
+    };
   }
+
+  if (healthStatus === 2) {
+    return {
+      dot: "bg-amber-500",
+      badge: "border-amber-200 bg-amber-50 text-amber-700",
+      label: "Warning",
+    };
+  }
+
+  return {
+    dot: "bg-rose-500",
+    badge: "border-rose-200 bg-rose-50 text-rose-700",
+    label: "Down",
+  };
 };
 
 const ClientPageTailwind: React.FC = () => {
@@ -79,20 +93,26 @@ const ClientPageTailwind: React.FC = () => {
     selectedClient,
     reloadClients,
   } = useClientMonitoring();
+
   const [confirmLoading, setConfirmLoading] = useState(false);
+  const [metricsLoading, setMetricsLoading] = useState(false);
   const [openAddModal, setOpenAddModal] = useState(false);
   const [form] = Form.useForm();
+  const [metrics, setMetrics] = useState<ClientMetrics>({});
 
-  // const healthMeta = useMemo(() => getHealthMeta(health), [health]);
+  const healthMeta = useMemo(
+    () => getHealthMeta(selectedClient?.healthStatus),
+    [selectedClient?.healthStatus]
+  );
 
   const handleCreateClient = async () => {
     try {
       const values = await form.validateFields();
       setConfirmLoading(true);
-      const res = await seatunnelClientApi.saveOrUpdate(values);
 
+      const res = await seatunnelClientApi.saveOrUpdate(values);
       if (res.code !== 0) {
-        message.error(res.msg || "创建 Client 失败");
+        message.error(res.msg || res.message || "创建 Client 失败");
         return;
       }
 
@@ -108,39 +128,94 @@ const ClientPageTailwind: React.FC = () => {
     }
   };
 
+  const loadClientMetrics = async (clientId?: number) => {
+    if (!clientId) {
+      setMetrics({});
+      return;
+    }
+
+    try {
+      setMetricsLoading(true);
+
+      const res = await seatunnelClientApi.metrics(clientId);
+      if (res.code !== 0) {
+        message.error(res.msg || res.message || "获取指标失败");
+        return;
+      }
+
+      setMetrics({
+        cpuUsage: res.data?.cpuUsage,
+        memoryUsage: res.data?.memoryUsage,
+        heartbeatTime: res.data?.heartbeatTime,
+        processors: res.data?.processors,
+      });
+    } catch (error: any) {
+      message.error(error?.message || "获取指标失败");
+      setMetrics({});
+    } finally {
+      setMetricsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadClientMetrics(selectedClientId);
+  }, [selectedClientId]);
+
   const quickStats = [
     {
-      key: "memoryUsage",
-      label: "Memory Usage",
-      value: 45.7,
+      key: "cpuUsage",
+      label: "CPU Usage",
+      value: metrics?.cpuUsage,
       type: "progress",
-      desc: "节点整体内存使用情况",
-      icon: <HddOutlined />,
-    },
-    {
-      key: "heapUsage",
-      label: "Heap Usage",
-      value: 12,
-
-      type: "progress",
-      desc: "JVM Heap 当前使用比例",
+      desc: "当前节点 CPU 使用率",
       icon: <RadarChartOutlined />,
     },
     {
-      key: "version",
-      label: "Version",
-      value: "2.3.12",
-      type: "text",
-      desc: "当前接入 Client 版本",
-      icon: <CloudServerOutlined />,
+      key: "memoryUsage",
+      label: "Memory Usage",
+      value: metrics?.memoryUsage,
+      type: "progress",
+      desc: "当前节点内存使用率",
+      icon: <HddOutlined />,
     },
     {
-      key: "region",
-      label: "Region",
-      value: "cn-hangzhou",
+      key: "heartbeatTime",
+      label: "Heartbeat",
+      value: metrics?.heartbeatTime || selectedClient?.heartbeatTime,
       type: "text",
-      desc: "当前节点所在区域",
-      icon: <EnvironmentOutlined />,
+      desc: "最近一次心跳时间",
+      icon: <ClockCircleOutlined />,
+    },
+    {
+      key: "processors",
+      label: "Processors",
+      value: metrics?.processors,
+      type: "text",
+      desc: "当前节点可用处理器数量",
+      icon: <CloudServerOutlined />,
+    },
+  ];
+
+  const overviewItems = [
+    {
+      key: "version",
+      label: "Version",
+      value: selectedClient?.clientVersion,
+    },
+    {
+      key: "baseUrl",
+      label: "Base URL",
+      value: selectedClient?.baseUrl,
+    },
+    {
+      key: "engineType",
+      label: "Engine Type",
+      value: selectedClient?.engineType,
+    },
+    {
+      key: "status",
+      label: "Status",
+      value: healthMeta.label,
     },
   ];
 
@@ -158,8 +233,8 @@ const ClientPageTailwind: React.FC = () => {
                   Client
                 </h1>
                 <p className="mt-1 text-[14px] leading-7 text-[#667085]">
-                  连接 Zeta
-                  集群，查看当前节点的基础状态，不把辅助能力做成另一个监控系统。
+                  连接 SeaTunnel / Zeta
+                  集群，查看节点的基础可用性与核心资源状态。
                 </p>
               </div>
             </div>
@@ -170,7 +245,7 @@ const ClientPageTailwind: React.FC = () => {
             className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full bg-[#4f5bd5] px-5 text-[14px] font-semibold text-white shadow-[0_8px_20px_rgba(79,91,213,0.22)] transition hover:opacity-95"
           >
             <PlusOutlined />
-            新建Client
+            新建 Client
           </button>
         </div>
 
@@ -178,16 +253,14 @@ const ClientPageTailwind: React.FC = () => {
           <div className="flex gap-3 overflow-x-auto">
             {(clients || []).map((client: any) => {
               const active = client.id === selectedClientId;
-              const itemHealth = getHealthMeta(
-                client.health || { level: "healthy" }
-              );
+              const itemHealth = getHealthMeta(client.healthStatus);
 
               return (
                 <button
                   key={client.id}
                   onClick={() => setSelectedClientId(client.id)}
                   className={[
-                    "group inline-flex min-w-[220px] items-center gap-3 rounded-2xl border px-4 py-3 text-left transition-all",
+                    "group inline-flex min-w-[240px] items-center gap-3 rounded-2xl border px-4 py-3 text-left transition-all",
                     active
                       ? "border-[#dbe4ff] bg-[#f6f8ff] shadow-[0_6px_16px_rgba(46,91,255,0.08)]"
                       : "border-[#edf1f5] bg-white hover:border-[#d9e1ea] hover:bg-[#fafcff]",
@@ -206,14 +279,18 @@ const ClientPageTailwind: React.FC = () => {
 
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-[14px] font-semibold text-[#172033]">
-                      {client.name}
+                      {client.clientName || "--"}
                     </div>
 
                     <div className="mt-1 flex items-center gap-2 text-[12px] text-[#8a94a6]">
                       <span
                         className={`inline-block h-2 w-2 rounded-full ${itemHealth.dot}`}
                       />
-                      <span>{client.region || "Unknown region"}</span>
+                      <span className="truncate">
+                        {[client.engineType, client.baseUrl]
+                          .filter(Boolean)
+                          .join(" · ") || "--"}
+                      </span>
                     </div>
                   </div>
                 </button>
@@ -222,7 +299,7 @@ const ClientPageTailwind: React.FC = () => {
 
             {!clients?.length ? (
               <div className="flex min-w-[280px] items-center rounded-2xl border border-dashed border-[#d8dee6] bg-[#fbfcfe] px-4 py-3 text-[13px] text-[#6b7280]">
-                还没有 Client，先新增一个 URL。
+                还没有 Client，先新增一个地址。
               </div>
             ) : null}
           </div>
@@ -236,7 +313,7 @@ const ClientPageTailwind: React.FC = () => {
                   选择一个 Client
                 </div>
                 <div className="mt-3 text-[14px] leading-8 text-[#667085]">
-                  这里展示与同步可用性相关的基础状态，不做成复杂的监控大盘。
+                  这里只保留简单但重要的基础状态，不把它做成复杂监控大盘。
                 </div>
               </div>
             </div>
@@ -261,41 +338,62 @@ const ClientPageTailwind: React.FC = () => {
 
                           <div className="min-w-0">
                             <h2 className="text-[22px] font-bold tracking-[-0.03em] text-[#172033]">
-                              {selectedClient?.name || "Prod Cluster A"}
+                              {selectedClient?.clientName || "--"}
                             </h2>
                             <p className="mt-2 max-w-[840px] text-[14px] leading-7 text-[#667085]">
-                              当前节点运行概览。这里仅保留与同步可用性最相关的基础状态，避免让辅助模块抢走主流程的注意力。
+                              当前节点运行概览。这里仅展示最重要的连通信息、版本和
+                              CPU / 内存使用率。
                             </p>
                           </div>
                         </div>
 
-                        <div className="mt-5 flex flex-wrap gap-3">
+                        {/* <div className="mt-5 flex flex-wrap gap-3">
                           <div className="inline-flex items-center gap-2 rounded-full border border-[#e9edf3] bg-white px-4 py-2 text-[13px] text-[#475467]">
                             <LinkOutlined />
-                            <span>
-                              {selectedClient?.url ||
-                                "https://zeta.cluster.local"}
-                            </span>
+                            <span>{selectedClient?.baseUrl || "--"}</span>
                           </div>
 
                           <div className="inline-flex items-center gap-2 rounded-full border border-[#e9edf3] bg-white px-4 py-2 text-[13px] text-[#475467]">
-                            <EnvironmentOutlined />
+                            <ClockCircleOutlined />
                             <span>
-                              {selectedClient?.region || "cn-hangzhou"}
+                              {formatText(
+                                metrics?.heartbeatTime ||
+                                  selectedClient?.heartbeatTime
+                              )}
                             </span>
                           </div>
-                        </div>
+                        </div> */}
                       </div>
 
-                      {/* <div
+                      <div
                         className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-[13px] font-semibold ${healthMeta.badge}`}
-                      > */}
-                      {/* <span
+                      >
+                        <span
                           className={`inline-block h-2 w-2 rounded-full ${healthMeta.dot}`}
-                        /> */}
-                      {/* {selectedClient?.statusText || healthMeta.label} */}
-                      {/* </div> */}
+                        />
+                        {healthMeta.label}
+                      </div>
                     </div>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-[16px] font-semibold text-[#172033]">
+                        核心指标
+                      </div>
+                      <div className="mt-1 text-[13px] text-[#8a94a6]">
+                        当前只展示 CPU 和内存两个最关键指标
+                      </div>
+                    </div>
+
+                    <Button
+                      icon={<ReloadOutlined />}
+                      loading={metricsLoading}
+                      onClick={() => loadClientMetrics(selectedClientId)}
+                      className="h-10 rounded-xl border-[#E4E7EC] text-[#475467]"
+                    >
+                      刷新指标
+                    </Button>
                   </div>
 
                   <div className="grid grid-cols-1 gap-4 xl:grid-cols-4">
@@ -322,11 +420,13 @@ const ClientPageTailwind: React.FC = () => {
                           {item.type === "progress" ? (
                             <>
                               <div className="mb-3 text-[28px] font-bold tracking-[-0.03em] text-[#172033]">
-                                {formatPercent(item.value)}
+                                {metricsLoading
+                                  ? "--"
+                                  : formatPercent(item.value)}
                               </div>
 
                               <Progress
-                                percent={progressValue}
+                                percent={metricsLoading ? 0 : progressValue}
                                 showInfo={false}
                                 strokeColor="#4f5bd5"
                                 trailColor="#eef2f7"
@@ -340,7 +440,7 @@ const ClientPageTailwind: React.FC = () => {
                           ) : (
                             <>
                               <div className="mb-3 break-words text-[28px] font-bold tracking-[-0.03em] text-[#172033]">
-                                {item.value || "--"}
+                                {formatText(item.value)}
                               </div>
 
                               <div className="text-[12px] leading-6 text-[#8a94a6]">

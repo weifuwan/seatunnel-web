@@ -13,9 +13,6 @@ public class SeaTunnelClientResolver {
 
     public String resolveBaseApiUrl(Long clientId) {
         SeaTunnelClient entity = seatunnelClientDao.queryById(clientId);
-        if (entity == null || Integer.valueOf(1).equals(entity.getIsDeleted())) {
-            throw new IllegalArgumentException("客户端不存在");
-        }
-        return entity.buildBaseApiUrl();
+        return entity.getBaseUrl();
     }
 }

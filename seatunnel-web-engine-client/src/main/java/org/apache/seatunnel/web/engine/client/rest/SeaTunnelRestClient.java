@@ -73,8 +73,13 @@ public class SeaTunnelRestClient {
     /* ===================== GET ===================== */
 
     public Map overview(Long clientId, Map<String, String> tags) {
+        String baseUrl = url(clientId, "/overview");
+        return overview(baseUrl, tags);
+    }
+
+    public Map overview(String baseUrl, Map<String, String> tags) {
         try {
-            UriComponentsBuilder b = UriComponentsBuilder.fromHttpUrl(url(clientId, "/overview"));
+            UriComponentsBuilder b = UriComponentsBuilder.fromHttpUrl(baseUrl);
             if (tags != null) {
                 for (Map.Entry<String, String> e : tags.entrySet()) {
                     b.queryParam(e.getKey(), e.getValue());

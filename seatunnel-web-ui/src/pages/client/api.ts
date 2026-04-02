@@ -7,11 +7,9 @@ export interface SeatunnelClient {
   clientName: string;
   engineType: "FLINK" | "SPARK" | "ZETA";
   baseUrl: string;
-  contextPath?: string;
-  clientStatus?: number;
-  clientStatusName?: string;
   healthStatus?: number;
   healthStatusName?: string;
+  clientVersion?: string;
   heartbeatTime?: string;
   version?: string;
   containerId?: string;

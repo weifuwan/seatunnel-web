@@ -21,39 +21,19 @@ public class SeaTunnelClient {
 
     private String baseUrl;
 
-    private String contextPath;
-
-    private Integer clientStatus;
-
     private Integer healthStatus;
 
     private Date heartbeatTime;
 
-    private String version;
-
-    private String containerId;
+    private String clientVersion;
 
     private String clientAddress;
+
+    private String clientPort;
 
     private String remark;
 
     private Date createTime;
 
     private Date updateTime;
-
-    private Integer isDeleted;
-
-    public String buildBaseApiUrl() {
-        String b = baseUrl == null ? "" : baseUrl.trim();
-        String c = contextPath == null ? "" : contextPath.trim();
-        if (c.isEmpty() || "/".equals(c)) {
-            return b;
-        }
-        if (!c.startsWith("/")) {
-            c = "/" + c;
-        }
-        return b + c;
-    }
-
-
 }

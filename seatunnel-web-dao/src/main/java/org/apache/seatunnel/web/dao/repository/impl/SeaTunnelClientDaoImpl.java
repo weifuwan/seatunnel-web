@@ -38,7 +38,6 @@ public class SeaTunnelClientDaoImpl
     @Override
     public List<SeaTunnelClient> listActiveClients() {
         LambdaQueryWrapper<SeaTunnelClient> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(SeaTunnelClient::getIsDeleted, 0);
         return this.selectList(wrapper);
     }
 
@@ -67,7 +66,6 @@ public class SeaTunnelClientDaoImpl
 
     private LambdaQueryWrapper<SeaTunnelClient> buildPageWrapper(SeaTunnelClientPageDTO dto) {
         LambdaQueryWrapper<SeaTunnelClient> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(SeaTunnelClient::getIsDeleted, 0);
 
         if (StringUtils.isNotBlank(dto.getKeywords())) {
             wrapper.and(w -> w.like(SeaTunnelClient::getClientName, dto.getKeywords())

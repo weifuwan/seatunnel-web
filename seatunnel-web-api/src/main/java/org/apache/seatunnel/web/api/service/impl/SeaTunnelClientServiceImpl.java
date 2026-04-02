@@ -3,12 +3,14 @@ package org.apache.seatunnel.web.api.service.impl;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.seatunnel.web.api.service.SeaTunnelClientService;
 import org.apache.seatunnel.web.common.enums.SeaTunnelClientHealthStatusEnum;
 import org.apache.seatunnel.web.common.enums.SeaTunnelClientStatusEnum;
 import org.apache.seatunnel.web.dao.entity.SeaTunnelClient;
 import org.apache.seatunnel.web.dao.repository.SeaTunnelClientDao;
+import org.apache.seatunnel.web.engine.client.rest.SeaTunnelRestClient;
 import org.apache.seatunnel.web.spi.bean.dto.SeaTunnelClientDTO;
 import org.apache.seatunnel.web.spi.bean.dto.SeaTunnelClientPageDTO;
 import org.apache.seatunnel.web.spi.bean.vo.SeaTunnelClientLogVO;
@@ -21,15 +23,20 @@ import org.springframework.web.client.RestTemplate;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 @Service
+@Slf4j
 public class SeaTunnelClientServiceImpl implements SeaTunnelClientService {
 
     @Resource
-    private SeaTunnelClientDao SeaTunnelClientDao;
+    private SeaTunnelClientDao seaTunnelClientDao;
 
     @Resource
     private RestTemplate restTemplate;
+
+    @Resource
+    private SeaTunnelRestClient seaTunnelRestClient;
 
     @Override
     public void saveOrUpdate(SeaTunnelClientDTO dto) {
@@ -39,23 +46,68 @@ public class SeaTunnelClientServiceImpl implements SeaTunnelClientService {
         if (dto.getId() == null) {
             SeaTunnelClient entity = new SeaTunnelClient();
             BeanUtils.copyProperties(dto, entity);
+
+            String baseUrl = buildBaseUrl(dto);
+            entity.setBaseUrl(baseUrl);
+
+            fillVersionFromOverview(baseUrl, entity);
+
             entity.setHealthStatus(SeaTunnelClientHealthStatusEnum.DOWN.getCode());
-            entity.setClientStatus(
-                    dto.getClientStatus() == null
-                            ? SeaTunnelClientStatusEnum.ENABLED.getCode()
-                            : dto.getClientStatus()
-            );
             entity.setCreateTime(now);
             entity.setUpdateTime(now);
-            entity.setIsDeleted(0);
-            SeaTunnelClientDao.insert(entity);
+            seaTunnelClientDao.insert(entity);
             return;
         }
 
         SeaTunnelClient entity = getEntity(dto.getId());
         BeanUtils.copyProperties(dto, entity);
+
+        String baseUrl = buildBaseUrl(dto);
+        entity.setBaseUrl(baseUrl);
+
         entity.setUpdateTime(now);
-        SeaTunnelClientDao.updateById(entity);
+        seaTunnelClientDao.updateById(entity);
+    }
+
+    private void fillVersionFromOverview(String baseUrl, SeaTunnelClient entity) {
+        try {
+            Map overview = seaTunnelRestClient.overview(baseUrl + "/overview", null);
+            Object projectVersion = overview == null ? null : overview.get("projectVersion");
+            if (projectVersion != null) {
+                entity.setClientVersion(String.valueOf(projectVersion));
+            }
+        } catch (Exception e) {
+            log.warn("Fetch seatunnel client overview failed, baseUrl={}", baseUrl, e);
+        }
+    }
+
+    private String buildBaseUrl(SeaTunnelClientDTO dto) {
+        String address = dto.getClientAddress();
+        String port = dto.getClientPort();
+
+        if (port == null) {
+            throw new IllegalArgumentException("clientPort不能为空");
+        }
+
+        if (address == null || address.trim().isEmpty()) {
+            throw new IllegalArgumentException("clientAddress不能为空");
+        }
+
+        address = address.trim();
+
+        if (!address.startsWith("http://") && !address.startsWith("https://")) {
+            address = "http://" + address;
+        }
+
+        if (address.endsWith("/")) {
+            address = address.substring(0, address.length() - 1);
+        }
+
+        if (port != null && !port.trim().isEmpty()) {
+            return address + ":" + port.trim();
+        }
+
+        return address;
     }
 
     @Override
@@ -67,14 +119,13 @@ public class SeaTunnelClientServiceImpl implements SeaTunnelClientService {
     @Override
     public void delete(Long id) {
         SeaTunnelClient entity = getEntity(id);
-        entity.setIsDeleted(1);
         entity.setUpdateTime(new Date());
-        SeaTunnelClientDao.updateById(entity);
+        seaTunnelClientDao.updateById(entity);
     }
 
     @Override
     public IPage<SeaTunnelClientVO> page(SeaTunnelClientPageDTO dto) {
-        IPage<SeaTunnelClient> entityPage = SeaTunnelClientDao.pageClients(dto);
+        IPage<SeaTunnelClient> entityPage = seaTunnelClientDao.pageClients(dto);
 
         Page<SeaTunnelClientVO> result = new Page<>();
         BeanUtils.copyProperties(entityPage, result, "records");
@@ -89,7 +140,7 @@ public class SeaTunnelClientServiceImpl implements SeaTunnelClientService {
 
     @Override
     public SeaTunnelClientStatisticsVO statistics() {
-        return SeaTunnelClientDao.statistics();
+        return seaTunnelClientDao.statistics();
     }
 
     @Override
@@ -105,19 +156,19 @@ public class SeaTunnelClientServiceImpl implements SeaTunnelClientService {
     @Override
     public boolean testConnection(Long id) {
         SeaTunnelClient entity = getEntity(id);
-        String url = entity.buildBaseApiUrl() + "/health";
+        String url = entity.getBaseUrl() + "/health";
 
         try {
             String result = restTemplate.getForObject(url, String.class);
             entity.setHealthStatus(SeaTunnelClientHealthStatusEnum.LIVE.getCode());
             entity.setHeartbeatTime(new Date());
             entity.setUpdateTime(new Date());
-            SeaTunnelClientDao.updateById(entity);
+            seaTunnelClientDao.updateById(entity);
             return result != null;
         } catch (Exception e) {
             entity.setHealthStatus(SeaTunnelClientHealthStatusEnum.DOWN.getCode());
             entity.setUpdateTime(new Date());
-            SeaTunnelClientDao.updateById(entity);
+            seaTunnelClientDao.updateById(entity);
             return false;
         }
     }
@@ -131,7 +182,7 @@ public class SeaTunnelClientServiceImpl implements SeaTunnelClientService {
         vo.setClientName(entity.getClientName());
 
         try {
-            String url = entity.buildBaseApiUrl() + "/logs";
+            String url = entity.getBaseUrl() + "/logs";
             String content = restTemplate.getForObject(url, String.class);
             vo.setContent(content);
         } catch (Exception e) {
@@ -151,18 +202,13 @@ public class SeaTunnelClientServiceImpl implements SeaTunnelClientService {
         entity.setHeartbeatTime(new Date());
         entity.setHealthStatus(SeaTunnelClientHealthStatusEnum.LIVE.getCode());
 
-        if (StringUtils.isNotBlank(dto.getVersion())) {
-            entity.setVersion(dto.getVersion());
-        }
-        if (StringUtils.isNotBlank(dto.getContainerId())) {
-            entity.setContainerId(dto.getContainerId());
-        }
+
         if (StringUtils.isNotBlank(dto.getClientAddress())) {
             entity.setClientAddress(dto.getClientAddress());
         }
 
         entity.setUpdateTime(new Date());
-        SeaTunnelClientDao.updateById(entity);
+        seaTunnelClientDao.updateById(entity);
     }
 
     /**
@@ -178,9 +224,6 @@ public class SeaTunnelClientServiceImpl implements SeaTunnelClientService {
         if (StringUtils.isBlank(dto.getEngineType())) {
             throw new IllegalArgumentException("引擎类型不能为空");
         }
-        if (StringUtils.isBlank(dto.getBaseUrl())) {
-            throw new IllegalArgumentException("基础地址不能为空");
-        }
     }
 
     /**
@@ -188,19 +231,15 @@ public class SeaTunnelClientServiceImpl implements SeaTunnelClientService {
      */
     private void updateClientStatus(Long id, Integer status) {
         SeaTunnelClient entity = getEntity(id);
-        entity.setClientStatus(status);
         entity.setUpdateTime(new Date());
-        SeaTunnelClientDao.updateById(entity);
+        seaTunnelClientDao.updateById(entity);
     }
 
     /**
      * 查询客户端实体，不存在则抛异常
      */
     private SeaTunnelClient getEntity(Long id) {
-        SeaTunnelClient entity = SeaTunnelClientDao.queryById(id);
-        if (entity == null || Integer.valueOf(1).equals(entity.getIsDeleted())) {
-            throw new IllegalArgumentException("客户端不存在");
-        }
+        SeaTunnelClient entity = seaTunnelClientDao.queryById(id);
         return entity;
     }
 
@@ -210,12 +249,6 @@ public class SeaTunnelClientServiceImpl implements SeaTunnelClientService {
     private SeaTunnelClientVO toVO(SeaTunnelClient entity) {
         SeaTunnelClientVO vo = new SeaTunnelClientVO();
         BeanUtils.copyProperties(entity, vo);
-
-        vo.setClientStatusName(
-                Integer.valueOf(SeaTunnelClientStatusEnum.ENABLED.getCode()).equals(entity.getClientStatus())
-                        ? SeaTunnelClientStatusEnum.ENABLED.getDesc()
-                        : SeaTunnelClientStatusEnum.DISABLED.getDesc()
-        );
 
         vo.setHealthStatusName(
                 Integer.valueOf(SeaTunnelClientHealthStatusEnum.LIVE.getCode()).equals(entity.getHealthStatus())

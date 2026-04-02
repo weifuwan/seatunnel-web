@@ -6,11 +6,14 @@ import {
   PlusOutlined,
   RadarChartOutlined,
 } from "@ant-design/icons";
+import { Form, Input, message, Progress } from "antd";
 import { AnimatePresence, motion } from "framer-motion";
-import { Form, Input, Modal, Progress } from "antd";
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
+import { seatunnelClientApi } from "./api";
+import AddClientModal from "./components/AddClientModal";
 import { useClientMonitoring } from "./hooks/useClientMonitoring";
 
+const { TextArea } = Input;
 const MotionDiv = motion.div;
 
 const contentSwapVariants = {
@@ -38,11 +41,6 @@ const formatPercent = (value?: number | string) => {
   const n = Number(value);
   if (Number.isNaN(n)) return String(value);
   return `${Math.round(n)}%`;
-};
-
-const formatValue = (value?: number | string, suffix = "") => {
-  if (value === undefined || value === null || value === "") return "--";
-  return `${value}${suffix}`;
 };
 
 const getSafeNumber = (value?: number | string) => {
@@ -79,29 +77,34 @@ const ClientPageTailwind: React.FC = () => {
     selectedClientId,
     setSelectedClientId,
     selectedClient,
-    health,
-    resourceUsageData,
-    addClient,
-  } = useClientMonitoring() as any;
-
+    reloadClients,
+  } = useClientMonitoring();
+  const [confirmLoading, setConfirmLoading] = useState(false);
   const [openAddModal, setOpenAddModal] = useState(false);
   const [form] = Form.useForm();
 
-  const healthMeta = useMemo(() => getHealthMeta(health), [health]);
+  // const healthMeta = useMemo(() => getHealthMeta(health), [health]);
 
   const handleCreateClient = async () => {
-    const values = await form.validateFields();
-
     try {
-      if (addClient) {
-        await addClient(values);
-      } else {
-        console.log("新增 client:", values);
+      const values = await form.validateFields();
+      setConfirmLoading(true);
+      const res = await seatunnelClientApi.saveOrUpdate(values);
+
+      if (res.code !== 0) {
+        message.error(res.msg || "创建 Client 失败");
+        return;
       }
+
+      message.success("Client 创建成功");
       setOpenAddModal(false);
       form.resetFields();
-    } catch (error) {
-      console.error("create client failed", error);
+      await reloadClients();
+    } catch (error: any) {
+      if (error?.errorFields) return;
+      message.error(error?.message || "创建 Client 失败");
+    } finally {
+      setConfirmLoading(false);
     }
   };
 
@@ -109,11 +112,7 @@ const ClientPageTailwind: React.FC = () => {
     {
       key: "memoryUsage",
       label: "Memory Usage",
-      value:
-        resourceUsageData?.find((item: any) => item.label === "Memory")?.value ??
-        selectedClient?.monitoring?.heapMemoryUsedTotalPercent ??
-        selectedClient?.overview?.memoryUsage ??
-        45.7,
+      value: 45.7,
       type: "progress",
       desc: "节点整体内存使用情况",
       icon: <HddOutlined />,
@@ -121,10 +120,8 @@ const ClientPageTailwind: React.FC = () => {
     {
       key: "heapUsage",
       label: "Heap Usage",
-      value:
-        resourceUsageData?.find((item: any) => item.label === "Heap")?.value ??
-        selectedClient?.monitoring?.heapMemoryUsedMaxPercent ??
-        40,
+      value: 12,
+
       type: "progress",
       desc: "JVM Heap 当前使用比例",
       icon: <RadarChartOutlined />,
@@ -132,10 +129,7 @@ const ClientPageTailwind: React.FC = () => {
     {
       key: "version",
       label: "Version",
-      value:
-        selectedClient?.overview?.projectVersion ||
-        selectedClient?.version ||
-        "2.3.1",
+      value: "2.3.12",
       type: "text",
       desc: "当前接入 Client 版本",
       icon: <CloudServerOutlined />,
@@ -143,13 +137,12 @@ const ClientPageTailwind: React.FC = () => {
     {
       key: "region",
       label: "Region",
-      value: selectedClient?.region || "cn-hangzhou",
+      value: "cn-hangzhou",
       type: "text",
       desc: "当前节点所在区域",
       icon: <EnvironmentOutlined />,
     },
   ];
-
 
   return (
     <div className="h-full bg-[#FFFFFF] px-6 py-6">
@@ -165,7 +158,8 @@ const ClientPageTailwind: React.FC = () => {
                   Client
                 </h1>
                 <p className="mt-1 text-[14px] leading-7 text-[#667085]">
-                  连接 Zeta 集群，查看当前节点的基础状态，不把辅助能力做成另一个监控系统。
+                  连接 Zeta
+                  集群，查看当前节点的基础状态，不把辅助能力做成另一个监控系统。
                 </p>
               </div>
             </div>
@@ -176,7 +170,7 @@ const ClientPageTailwind: React.FC = () => {
             className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full bg-[#4f5bd5] px-5 text-[14px] font-semibold text-white shadow-[0_8px_20px_rgba(79,91,213,0.22)] transition hover:opacity-95"
           >
             <PlusOutlined />
-            Add Client
+            新建Client
           </button>
         </div>
 
@@ -185,7 +179,7 @@ const ClientPageTailwind: React.FC = () => {
             {(clients || []).map((client: any) => {
               const active = client.id === selectedClientId;
               const itemHealth = getHealthMeta(
-                client.health || { level: "healthy" },
+                client.health || { level: "healthy" }
               );
 
               return (
@@ -267,7 +261,7 @@ const ClientPageTailwind: React.FC = () => {
 
                           <div className="min-w-0">
                             <h2 className="text-[22px] font-bold tracking-[-0.03em] text-[#172033]">
-                              {selectedClient.name || "Prod Cluster A"}
+                              {selectedClient?.name || "Prod Cluster A"}
                             </h2>
                             <p className="mt-2 max-w-[840px] text-[14px] leading-7 text-[#667085]">
                               当前节点运行概览。这里仅保留与同步可用性最相关的基础状态，避免让辅助模块抢走主流程的注意力。
@@ -279,23 +273,28 @@ const ClientPageTailwind: React.FC = () => {
                           <div className="inline-flex items-center gap-2 rounded-full border border-[#e9edf3] bg-white px-4 py-2 text-[13px] text-[#475467]">
                             <LinkOutlined />
                             <span>
-                              {selectedClient.url || "https://zeta.cluster.local"}
+                              {selectedClient?.url ||
+                                "https://zeta.cluster.local"}
                             </span>
                           </div>
 
                           <div className="inline-flex items-center gap-2 rounded-full border border-[#e9edf3] bg-white px-4 py-2 text-[13px] text-[#475467]">
                             <EnvironmentOutlined />
-                            <span>{selectedClient.region || "cn-hangzhou"}</span>
+                            <span>
+                              {selectedClient?.region || "cn-hangzhou"}
+                            </span>
                           </div>
                         </div>
                       </div>
 
-                      <div
+                      {/* <div
                         className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-[13px] font-semibold ${healthMeta.badge}`}
-                      >
-                        <span className={`inline-block h-2 w-2 rounded-full ${healthMeta.dot}`} />
-                        {selectedClient.statusText || healthMeta.label}
-                      </div>
+                      > */}
+                      {/* <span
+                          className={`inline-block h-2 w-2 rounded-full ${healthMeta.dot}`}
+                        /> */}
+                      {/* {selectedClient?.statusText || healthMeta.label} */}
+                      {/* </div> */}
                     </div>
                   </div>
 
@@ -303,7 +302,7 @@ const ClientPageTailwind: React.FC = () => {
                     {quickStats.map((item) => {
                       const progressValue = Math.max(
                         0,
-                        Math.min(100, getSafeNumber(item.value)),
+                        Math.min(100, getSafeNumber(item.value))
                       );
 
                       return (
@@ -360,36 +359,16 @@ const ClientPageTailwind: React.FC = () => {
         </div>
       </div>
 
-      <Modal
+      <AddClientModal
         open={openAddModal}
-        title="新增 Client"
-        onCancel={() => setOpenAddModal(false)}
-        onOk={handleCreateClient}
-        okText="连接并拉取"
-        cancelText="取消"
-        destroyOnClose
-      >
-        <div className="mb-4 text-[13px] leading-7 text-[#6b7280]">
-          输入 Zeta 集群地址即可，系统会自动拉取基础信息，不在这里堆叠复杂配置。
-        </div>
-
-        <Form form={form} layout="vertical">
-          <Form.Item name="name" label="Client Name（可选）">
-            <Input placeholder="例如：Prod Cluster A" />
-          </Form.Item>
-
-          <Form.Item
-            name="url"
-            label="Client URL"
-            rules={[
-              { required: true, message: "请输入 Client URL" },
-              { type: "url", message: "请输入合法的 URL" },
-            ]}
-          >
-            <Input placeholder="https://zeta.example.com" />
-          </Form.Item>
-        </Form>
-      </Modal>
+        form={form}
+        confirmLoading={confirmLoading}
+        onCancel={() => {
+          setOpenAddModal(false);
+          form.resetFields();
+        }}
+        onSubmit={handleCreateClient}
+      />
     </div>
   );
 };

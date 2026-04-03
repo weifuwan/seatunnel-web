@@ -3,6 +3,7 @@ import { Button, Input, Segmented, Select, Tooltip } from "antd";
 import { memo, useMemo } from "react";
 import PanelShell from "../PanelShell";
 import ExtraParamsConfig from "./ExtraParamsConfig";
+import "./index.less";
 
 const { TextArea } = Input;
 
@@ -31,7 +32,7 @@ function SourcePanel({ selectedNode, onClose, onNodeDataChange }: Props) {
 
   const currentDataSource = useMemo(() => {
     return sourceDataSourceOptions.find(
-      (item: any) => item.value === sourceDataSourceId
+      (item: any) => item.value === sourceDataSourceId,
     );
   }, [sourceDataSourceId, sourceDataSourceOptions]);
 
@@ -89,36 +90,41 @@ function SourcePanel({ selectedNode, onClose, onNodeDataChange }: Props) {
       eyebrow="Source Config"
       title="来源配置"
       badge="输入节点"
-      desc="配置来源数据源、读取方式、预览能力与额外参数。所有修改直接写回当前节点数据。"
+      desc="修改后会实时同步到当前画布节点"
       heroTitle={title}
       heroDesc={description}
       heroTag="SOURCE"
       dbType={dbType}
       onClose={onClose}
+      footer={
+        <button
+          type="button"
+          className="workflow-panel__btn workflow-panel__btn--ghost"
+          onClick={onClose}
+        >
+          关闭
+        </button>
+      }
     >
       <section className="workflow-panel__section">
         <div className="workflow-panel__section-head">
           <div className="workflow-panel__section-title">数据源</div>
-          <div className="workflow-panel__section-tip">Source</div>
         </div>
 
         <div className="workflow-panel__stack">
           <div className="workflow-panel__field workflow-panel__field--full">
-            <div className="workflow-panel__label">来源数据源</div>
+            {/* <div className="workflow-panel__label">来源数据源</div> */}
             <Select
               value={sourceDataSourceId}
               onChange={handleDataSourceChange}
               options={sourceDataSourceOptions}
               placeholder="请选择来源数据源"
-              className="workflow-panel__antd-select"
-              popupClassName="workflow-panel__dropdown"
               showSearch
               optionFilterProp="label"
-              size="large"
             />
           </div>
 
-          <div className="workflow-panel__meta-card">
+          <div className="workflow-panel__meta-card workflow-panel__meta-card--compact">
             <div className="workflow-panel__meta-icon">
               <Database size={16} />
             </div>
@@ -137,13 +143,11 @@ function SourcePanel({ selectedNode, onClose, onNodeDataChange }: Props) {
       <section className="workflow-panel__section">
         <div className="workflow-panel__section-head">
           <div className="workflow-panel__section-title">读取方式</div>
-          <div className="workflow-panel__section-tip">Table / SQL</div>
         </div>
 
         <div className="workflow-panel__stack">
           <Segmented
             block
-            size="large"
             value={readMode}
             onChange={(value) => handleReadModeChange(String(value))}
             options={[
@@ -190,7 +194,7 @@ function SourcePanel({ selectedNode, onClose, onNodeDataChange }: Props) {
                 value={sql}
                 onChange={(e) => updateNode({ sql: e.target.value })}
                 placeholder="请输入自定义 SQL，例如：SELECT * FROM user_info"
-                autoSize={{ minRows: 6, maxRows: 10 }}
+                autoSize={{ minRows: 7, maxRows: 12 }}
                 className="workflow-panel__antd-textarea"
               />
             </div>
@@ -200,8 +204,19 @@ function SourcePanel({ selectedNode, onClose, onNodeDataChange }: Props) {
 
       <section className="workflow-panel__section">
         <div className="workflow-panel__section-head">
-          <div className="workflow-panel__section-title">数据操作</div>
-          <div className="workflow-panel__section-tip">Preview</div>
+          <div className="workflow-panel__section-title">额外参数</div>
+        </div>
+
+        <ExtraParamsConfig
+          params={extraParams}
+          onParamsChange={(params) => updateNode({ extraParams: params })}
+          selectedNode={selectedNode}
+        />
+      </section>
+
+      <section className="workflow-panel__section workflow-panel__section--subtle">
+        <div className="workflow-panel__section-head">
+          <div className="workflow-panel__section-title">辅助操作</div>
         </div>
 
         <div className="workflow-panel__action-grid">
@@ -227,19 +242,6 @@ function SourcePanel({ selectedNode, onClose, onNodeDataChange }: Props) {
             </Button>
           </Tooltip>
         </div>
-      </section>
-
-      <section className="workflow-panel__section">
-        <div className="workflow-panel__section-head">
-          <div className="workflow-panel__section-title">额外参数</div>
-          <div className="workflow-panel__section-tip">Params</div>
-        </div>
-
-        <ExtraParamsConfig
-          params={extraParams}
-          onParamsChange={(params) => updateNode({ extraParams: params })}
-          selectedNode={selectedNode}
-        />
       </section>
     </PanelShell>
   );

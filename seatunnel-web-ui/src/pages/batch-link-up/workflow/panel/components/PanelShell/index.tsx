@@ -1,18 +1,19 @@
 import DatabaseIcons from "@/pages/data-source/icon/DatabaseIcons";
 import type { PropsWithChildren, ReactNode } from "react";
 import CloseIcon from "../../../icon/CloseIcon";
-
+import "./index.less";
 
 interface PanelShellProps extends PropsWithChildren {
-  eyebrow: string;
+  eyebrow?: string;
   title: string;
-  badge: string;
-  desc: string;
-  heroTitle: string;
-  heroDesc: string;
-  heroTag: string;
+  badge?: string;
+  desc?: string;
+  heroTitle?: string;
+  heroDesc?: string;
+  heroTag?: string;
   dbType?: string;
   icon?: ReactNode;
+  footer?: ReactNode;
   onClose: () => void;
 }
 
@@ -26,22 +27,41 @@ export default function PanelShell({
   heroTag,
   dbType,
   icon,
+  footer,
   onClose,
   children,
 }: PanelShellProps) {
+  const showMiniMeta = Boolean(heroTitle || heroDesc || heroTag || dbType || icon);
+
   return (
     <div className="workflow-panel">
-      <aside className="workflow-panel__drawer workflow-panel__drawer--open">
+      <aside className="workflow-panel__drawer">
         <div className="workflow-panel__header">
-          <div className="workflow-panel__header-left">
-            <div className="workflow-panel__eyebrow">{eyebrow}</div>
+          <div className="workflow-panel__header-main">
+           
+            {showMiniMeta ? (
+              <div className="workflow-panel__mini-meta">
+                <div className="workflow-panel__mini-meta-icon">
+                  {icon || (
+                    <DatabaseIcons dbType={dbType || "mysql"} width="16" height="16" />
+                  )}
+                </div>
 
-            <div className="workflow-panel__title-row">
-              <h3 className="workflow-panel__title">{title}</h3>
-              <span className="workflow-panel__badge">{badge}</span>
-            </div>
+                <div className="workflow-panel__mini-meta-content">
+                  <div className="workflow-panel__mini-meta-title">
+                    {heroTitle || dbType || "未命名节点"}
+                  </div>
 
-            <div className="workflow-panel__desc">{desc}</div>
+                  {heroDesc ? (
+                    <div className="workflow-panel__mini-meta-desc">{heroDesc}</div>
+                  ) : null}
+                </div>
+
+                {heroTag ? (
+                  <div className="workflow-panel__mini-meta-tag">{heroTag}</div>
+                ) : null}
+              </div>
+            ) : null}
           </div>
 
           <button
@@ -54,41 +74,9 @@ export default function PanelShell({
           </button>
         </div>
 
-        <div className="workflow-panel__body">
-          <section className="workflow-panel__hero-card">
-            <div className="workflow-panel__hero-icon">
-              {icon || (
-                <DatabaseIcons dbType={dbType || "mysql"} width="20" height="20" />
-              )}
-            </div>
+        <div className="workflow-panel__body">{children}</div>
 
-            <div className="workflow-panel__hero-content">
-              <div className="workflow-panel__hero-name">{heroTitle}</div>
-              <div className="workflow-panel__hero-text">{heroDesc}</div>
-            </div>
-
-            <div className="workflow-panel__hero-tag">{heroTag}</div>
-          </section>
-
-          {children}
-        </div>
-
-        <div className="workflow-panel__footer">
-          <button
-            type="button"
-            className="workflow-panel__btn workflow-panel__btn--ghost"
-            onClick={onClose}
-          >
-            关闭
-          </button>
-
-          <button
-            type="button"
-            className="workflow-panel__btn workflow-panel__btn--primary"
-          >
-            保存配置
-          </button>
-        </div>
+        {footer ? <div className="workflow-panel__footer">{footer}</div> : null}
       </aside>
     </div>
   );

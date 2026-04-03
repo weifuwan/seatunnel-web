@@ -123,18 +123,13 @@ const DetailPage = () => {
               {isBaseStep && (
                 <>
                   <BaseInfoSection
-                    sectionRef={baseSectionRef}
                     sourceType={sourceType}
                     targetType={targetType}
-                    sourceLabel={sourceLabel}
-                    targetLabel={targetLabel}
                     handleSourceChange={handleSourceChange}
                     handleTargetChange={handleTargetChange}
+                    mode={mode}
+                    setMode={handleModeChange}
                   />
-
-                  <div className="h-px bg-[#F2F4F7]" />
-
-                  <ModeSection mode={mode} setMode={handleModeChange} />
                 </>
               )}
 

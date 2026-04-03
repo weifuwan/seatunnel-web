@@ -31,7 +31,7 @@ export default function useDetailPage() {
   const [targetClientId, setTargetClientId] = useState<string>();
   const [bridgeClientIds, setBridgeClientIds] = useState<string[]>([]);
 
-  const [mode, setMode] = useState<string>("GUIDE_SINGLE");
+  const [mode, setMode] = useState<any>("GUIDE_SINGLE");
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const baseSectionRef = useRef<HTMLDivElement>(null);

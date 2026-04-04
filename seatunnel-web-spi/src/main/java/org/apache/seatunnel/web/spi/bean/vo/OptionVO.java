@@ -8,7 +8,7 @@ import lombok.Data;
 public class OptionVO {
 
     @Schema(description = "Option value", example = "users", requiredMode = Schema.RequiredMode.REQUIRED)
-    private String value;
+    private Object value;
 
     @Schema(description = "Option label", example = "Users Table")
     private String label;

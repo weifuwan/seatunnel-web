@@ -1,7 +1,9 @@
 import { QuestionCircleOutlined, ReadOutlined } from "@ant-design/icons";
 import { SelectLang as UmiSelectLang } from "@umijs/max";
 import { history } from "umi";
-import "./index.less"
+import "./index.less";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import moment from "moment";
 
 export type SiderTheme = "light" | "dark";
 
@@ -41,6 +43,7 @@ export const Knowledge: React.FC = () => {
         padding: "4px",
         fontSize: "18px",
         color: "inherit",
+        cursor: "pointer",
       }}
       onClick={() => {
         history.push("/knowledge-management");
@@ -51,7 +54,10 @@ export const Knowledge: React.FC = () => {
   );
 };
 
-import React, { useEffect, useRef, useState } from "react";
+type SearchTarget = {
+  pathname: string;
+  query?: Record<string, string>;
+};
 
 type SearchItem = {
   id: string;
@@ -59,7 +65,45 @@ type SearchItem = {
   desc: string;
   tag: string;
   icon: React.ReactNode;
+  target?: SearchTarget;
 };
+
+const buildQueryString = (query?: Record<string, string>) => {
+  if (!query) return "";
+  const params = new URLSearchParams();
+
+  Object.entries(query).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") {
+      params.set(key, value);
+    }
+  });
+
+  const queryString = params.toString();
+  return queryString ? `?${queryString}` : "";
+};
+
+const formatDateTime = (value: moment.Moment) => value.format("YYYY-MM-DD HH:mm:ss");
+
+const getTodayRange = () => ({
+  createTimeStart: formatDateTime(moment().startOf("day")),
+  createTimeEnd: formatDateTime(moment().endOf("day")),
+  current: "1",
+  pageSize: "10",
+});
+
+const getRecentOneDayRange = () => ({
+  createTimeStart: formatDateTime(moment().subtract(1, "day")),
+  createTimeEnd: formatDateTime(moment()),
+  current: "1",
+  pageSize: "10",
+});
+
+const getRecentWeekRange = () => ({
+  createTimeStart: formatDateTime(moment().subtract(7, "days")),
+  createTimeEnd: formatDateTime(moment()),
+  current: "1",
+  pageSize: "10",
+});
 
 const searchList: SearchItem[] = [
   {
@@ -67,6 +111,12 @@ const searchList: SearchItem[] = [
     title: "查一下最近一天的任务",
     desc: "查看最近 24 小时内创建或执行的任务",
     tag: "Batch",
+    target: {
+      pathname: "/sync/batch-link-up",
+      query: {
+        ...getRecentOneDayRange(),
+      },
+    },
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -91,6 +141,14 @@ const searchList: SearchItem[] = [
     title: "看看运行中的任务",
     desc: "快速筛选当前正在执行中的 Batch 任务",
     tag: "Batch",
+    target: {
+      pathname: "/sync/batch-link-up",
+      query: {
+        status: "RUNNING",
+        current: "1",
+        pageSize: "10",
+      },
+    },
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -114,6 +172,14 @@ const searchList: SearchItem[] = [
     title: "看看失败的任务",
     desc: "查看执行失败的离线任务，便于排查问题",
     tag: "Batch",
+    target: {
+      pathname: "/sync/batch-link-up",
+      query: {
+        status: "FAILED",
+        current: "1",
+        pageSize: "10",
+      },
+    },
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -136,6 +202,13 @@ const searchList: SearchItem[] = [
     title: "看看最近执行过的任务",
     desc: "按最近执行时间排序查看离线任务",
     tag: "Batch",
+    target: {
+      pathname: "/sync/batch-link-up",
+      query: {
+        current: "1",
+        pageSize: "10",
+      },
+    },
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -162,6 +235,12 @@ const searchList: SearchItem[] = [
     title: "看看今天创建的任务",
     desc: "快速查看今天新建的离线任务",
     tag: "Batch",
+    target: {
+      pathname: "/sync/batch-link-up",
+      query: {
+        ...getTodayRange(),
+      },
+    },
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -186,6 +265,12 @@ const searchList: SearchItem[] = [
     title: "查一下最近一周的任务",
     desc: "快速查看最近 7 天内的任务",
     tag: "Batch",
+    target: {
+      pathname: "/sync/batch-link-up",
+      query: {
+        ...getRecentWeekRange(),
+      },
+    },
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -209,6 +294,7 @@ const searchList: SearchItem[] = [
 export const GlobalSearch: React.FC = () => {
   const [open, setOpen] = useState(false);
   const [keyword, setKeyword] = useState("");
+  const [activeIndex, setActiveIndex] = useState(0);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -225,12 +311,60 @@ export const GlobalSearch: React.FC = () => {
     };
   }, []);
 
-  const filteredList = searchList.filter(
-    (item) =>
-      item.title.toLowerCase().includes(keyword.toLowerCase()) ||
-      item.desc.toLowerCase().includes(keyword.toLowerCase()) ||
-      item.tag.toLowerCase().includes(keyword.toLowerCase()),
-  );
+  const filteredList = useMemo(() => {
+    return searchList.filter(
+      (item) =>
+        item.title.toLowerCase().includes(keyword.toLowerCase()) ||
+        item.desc.toLowerCase().includes(keyword.toLowerCase()) ||
+        item.tag.toLowerCase().includes(keyword.toLowerCase()),
+    );
+  }, [keyword]);
+
+  useEffect(() => {
+    setActiveIndex(0);
+  }, [keyword, open]);
+
+  const handleSelect = (item: SearchItem) => {
+    if (!item.target) return;
+
+    const search = buildQueryString(item.target.query);
+
+    history.push({
+      pathname: item.target.pathname,
+      search,
+    });
+
+    setOpen(false);
+    setKeyword("");
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!open && (e.key === "ArrowDown" || e.key === "Enter")) {
+      setOpen(true);
+      return;
+    }
+
+    if (!filteredList.length) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setActiveIndex((prev) => (prev + 1) % filteredList.length);
+    }
+
+    if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActiveIndex((prev) => (prev - 1 + filteredList.length) % filteredList.length);
+    }
+
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleSelect(filteredList[activeIndex]);
+    }
+
+    if (e.key === "Escape") {
+      setOpen(false);
+    }
+  };
 
   return (
     <div style={{ marginRight: "27vw" }}>
@@ -257,6 +391,7 @@ export const GlobalSearch: React.FC = () => {
                 type="text"
                 value={keyword}
                 onFocus={() => setOpen(true)}
+                onKeyDown={handleKeyDown}
                 onChange={(e) => {
                   setKeyword(e.target.value);
                   if (!open) setOpen(true);
@@ -313,31 +448,41 @@ export const GlobalSearch: React.FC = () => {
           >
             <ul className="py-1">
               {filteredList.length > 0 ? (
-                filteredList.map((item, index) => (
-                  <li
-                    key={item.id}
-                    className="cursor-pointer px-3 py-2 flex items-center justify-between transition-all duration-200 custom-hover"
-                    style={{
-                      opacity: open ? 1 : 0,
-                      transform: open ? "translateY(0)" : "translateY(-6px)",
-                      transitionDelay: `${index * 35}ms`,
-                    }}
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="text-muted-foreground">{item.icon}</span>
-                      <div className="flex flex-col">
-                        <span className="text-sm font-medium" style={{color: "black", fontFamily: "Inter, sans-serif"}}>{item.title}</span>
-                        <span className="text-xs text-muted-foreground">
-                          {item.desc}
-                        </span>
-                      </div>
-                    </div>
+                filteredList.map((item, index) => {
+                  const isActive = index === activeIndex;
 
-                    <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
-                      {item.tag}
-                    </span>
-                  </li>
-                ))
+                  return (
+                    <li
+                      key={item.id}
+                      className="cursor-pointer px-3 py-2 flex items-center justify-between transition-all duration-200 custom-hover"
+                      style={{
+                        opacity: open ? 1 : 0,
+                        transform: open ? "translateY(0)" : "translateY(-6px)",
+                        transitionDelay: `${index * 35}ms`,
+                        background: isActive ? "#F8FAFC" : "transparent",
+                      }}
+                      onMouseEnter={() => setActiveIndex(index)}
+                      onClick={() => handleSelect(item)}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-muted-foreground">{item.icon}</span>
+                        <div className="flex flex-col">
+                          <span
+                            className="text-sm font-medium"
+                            style={{ color: "black", fontFamily: "Inter, sans-serif" }}
+                          >
+                            {item.title}
+                          </span>
+                          <span className="text-xs text-muted-foreground">{item.desc}</span>
+                        </div>
+                      </div>
+
+                      <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
+                        {item.tag}
+                      </span>
+                    </li>
+                  );
+                })
               ) : (
                 <li className="px-3 py-8 text-center text-sm text-muted-foreground">
                   No results found

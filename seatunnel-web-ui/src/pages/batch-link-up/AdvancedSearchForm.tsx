@@ -17,12 +17,13 @@ import {
   theme,
 } from "antd";
 import moment from "moment";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import DatabaseIcons from "../data-source/icon/DatabaseIcons";
 
 interface AdvancedSearchFormProps {
   onSearch: (values: any) => void;
   onReset: () => void;
+  initialValues?: any;
 }
 
 const { RangePicker } = DatePicker;
@@ -30,6 +31,7 @@ const { RangePicker } = DatePicker;
 const AdvancedSearchForm: React.FC<AdvancedSearchFormProps> = ({
   onSearch,
   onReset,
+  initialValues,
 }) => {
   const intl = useIntl();
   const { token } = theme.useToken();
@@ -43,23 +45,66 @@ const AdvancedSearchForm: React.FC<AdvancedSearchFormProps> = ({
     padding: 24,
   };
 
+  const defaultTimeRange = useMemo(
+    () => [moment().subtract(4, "days"), moment().add(1, "days")],
+    [],
+  );
+
+  const mergedInitialValues = useMemo(
+    () => ({
+      createTime: defaultTimeRange,
+      ...initialValues,
+    }),
+    [defaultTimeRange, initialValues],
+  );
+
+  useEffect(() => {
+    form.setFieldsValue(mergedInitialValues);
+  }, [form, mergedInitialValues]);
+
+  useEffect(() => {
+    const hasAdvancedValue = Boolean(
+      initialValues?.id ||
+        initialValues?.status ||
+        initialValues?.sourceType ||
+        initialValues?.sinkType ||
+        initialValues?.sourceTable ||
+        initialValues?.sinkTable,
+    );
+
+    if (hasAdvancedValue) {
+      setExpand(true);
+    }
+  }, [initialValues]);
+
   const handleFinish = (values: any) => {
     onSearch(values);
   };
 
   const handleReset = () => {
-    form.resetFields();
+    const resetValues = {
+      createTime: defaultTimeRange,
+      jobName: undefined,
+      id: undefined,
+      status: undefined,
+      sourceType: undefined,
+      sinkType: undefined,
+      sourceTable: undefined,
+      sinkTable: undefined,
+    };
+
+    form.setFieldsValue(resetValues);
     onReset();
   };
 
-  const createDataSourceOption = (dbType: any, value: any) => ({
+  const createDataSourceOption = (dbType: string, value: string) => ({
     label: (
       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
         <DatabaseIcons dbType={dbType} width={"14"} height={"14"} />
         {dbType}
       </div>
     ),
-    value: value || dbType.toUpperCase(),
+    value,
   });
 
   const dataSourceOption = [
@@ -68,22 +113,13 @@ const AdvancedSearchForm: React.FC<AdvancedSearchFormProps> = ({
     createDataSourceOption("PgSQL", "PGSQL"),
   ];
 
-  const defaultTimeRange = [
-    moment().subtract(4, "days"),
-    moment().add(1, "days"),
-  ];
-
-  const initialValues = {
-    createTime: defaultTimeRange,
-  };
-
   return (
     <Form
       form={form}
       name="advanced_search"
       style={formStyle}
       onFinish={handleFinish}
-      initialValues={initialValues}
+      initialValues={mergedInitialValues}
     >
       <Row gutter={24}>
         <Col span={8}>
@@ -97,7 +133,6 @@ const AdvancedSearchForm: React.FC<AdvancedSearchFormProps> = ({
             wrapperCol={{ span: 19 }}
           >
             <Input
-              
               placeholder={intl.formatMessage({
                 id: "pages.job.search.jobName.placeholder",
                 defaultMessage: "Enter job name",
@@ -117,17 +152,16 @@ const AdvancedSearchForm: React.FC<AdvancedSearchFormProps> = ({
             labelCol={{ span: 5 }}
             wrapperCol={{ span: 19 }}
           >
-            <RangePicker  style={{ width: "100%" }} />
+            <RangePicker style={{ width: "100%" }} />
           </Form.Item>
         </Col>
 
         <Col span={8} style={{ paddingTop: 4, paddingLeft: 42 }}>
-          <Space >
+          <Space>
             <Button
               type="primary"
               htmlType="submit"
-              
-              style={{ width: 70,borderRadius: 24 }}
+              style={{ width: 70, borderRadius: 24 }}
             >
               {intl.formatMessage({
                 id: "pages.job.search.button.search",
@@ -135,7 +169,7 @@ const AdvancedSearchForm: React.FC<AdvancedSearchFormProps> = ({
               })}
             </Button>
 
-            <Button onClick={handleReset}  style={{ width: 70,borderRadius: 24 }}>
+            <Button onClick={handleReset} style={{ width: 70, borderRadius: 24 }}>
               {intl.formatMessage({
                 id: "pages.job.search.button.reset",
                 defaultMessage: "Reset",
@@ -168,7 +202,7 @@ const AdvancedSearchForm: React.FC<AdvancedSearchFormProps> = ({
                 style={{
                   transition: "opacity 0.2s ease, transform 0.25s ease",
                   opacity: 1,
-                  transform: expand ? "translateY(0)" : "translateY(0)",
+                  transform: "translateY(0)",
                 }}
               >
                 {expand
@@ -199,7 +233,6 @@ const AdvancedSearchForm: React.FC<AdvancedSearchFormProps> = ({
               wrapperCol={{ span: 19 }}
             >
               <Input
-                
                 placeholder={intl.formatMessage({
                   id: "pages.job.search.jobId.placeholder",
                   defaultMessage: "Enter job id",
@@ -224,7 +257,6 @@ const AdvancedSearchForm: React.FC<AdvancedSearchFormProps> = ({
                   id: "pages.job.search.selectPlaceholder",
                   defaultMessage: "Select...",
                 })}
-                
                 showSearch
                 allowClear
                 options={[
@@ -287,7 +319,6 @@ const AdvancedSearchForm: React.FC<AdvancedSearchFormProps> = ({
                   id: "pages.job.search.selectPlaceholder",
                   defaultMessage: "Select...",
                 })}
-                
                 options={dataSourceOption}
                 allowClear
                 showSearch
@@ -310,7 +341,6 @@ const AdvancedSearchForm: React.FC<AdvancedSearchFormProps> = ({
                   id: "pages.job.search.selectPlaceholder",
                   defaultMessage: "Select...",
                 })}
-                
                 options={dataSourceOption}
                 allowClear
                 showSearch
@@ -329,7 +359,6 @@ const AdvancedSearchForm: React.FC<AdvancedSearchFormProps> = ({
               wrapperCol={{ span: 19 }}
             >
               <Input
-                
                 placeholder={intl.formatMessage({
                   id: "pages.job.search.fuzzyPlaceholder",
                   defaultMessage: "Fuzzy match...",
@@ -350,7 +379,6 @@ const AdvancedSearchForm: React.FC<AdvancedSearchFormProps> = ({
               wrapperCol={{ span: 19 }}
             >
               <Input
-                
                 placeholder={intl.formatMessage({
                   id: "pages.job.search.fuzzyPlaceholder",
                   defaultMessage: "Fuzzy match...",

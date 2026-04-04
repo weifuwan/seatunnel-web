@@ -1,31 +1,26 @@
 package org.apache.seatunnel.web.api.service.impl;
 
-import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.seatunnel.web.api.exceptions.ServiceException;
 import org.apache.seatunnel.web.api.service.SeaTunnelClientService;
 import org.apache.seatunnel.web.common.enums.SeaTunnelClientHealthStatusEnum;
-import org.apache.seatunnel.web.common.enums.SeaTunnelClientStatusEnum;
 import org.apache.seatunnel.web.dao.entity.SeaTunnelClient;
 import org.apache.seatunnel.web.dao.repository.SeaTunnelClientDao;
 import org.apache.seatunnel.web.engine.client.rest.SeaTunnelRestClient;
 import org.apache.seatunnel.web.spi.bean.dto.SeaTunnelClientDTO;
-import org.apache.seatunnel.web.spi.bean.dto.SeaTunnelClientPageDTO;
-import org.apache.seatunnel.web.spi.bean.vo.SeaTunnelClientLogVO;
+import org.apache.seatunnel.web.spi.bean.vo.OptionVO;
 import org.apache.seatunnel.web.spi.bean.vo.SeaTunnelClientMetricsVO;
-import org.apache.seatunnel.web.spi.bean.vo.SeaTunnelClientStatisticsVO;
-import org.apache.seatunnel.web.spi.bean.vo.SeaTunnelClientVO;
+import org.apache.seatunnel.web.spi.enums.Status;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -33,9 +28,6 @@ public class SeaTunnelClientServiceImpl implements SeaTunnelClientService {
 
     @Resource
     private SeaTunnelClientDao seaTunnelClientDao;
-
-    @Resource
-    private RestTemplate restTemplate;
 
     @Resource
     private SeaTunnelRestClient seaTunnelRestClient;
@@ -113,107 +105,6 @@ public class SeaTunnelClientServiceImpl implements SeaTunnelClientService {
     }
 
     @Override
-    public SeaTunnelClientVO selectById(Long id) {
-        SeaTunnelClient entity = getEntity(id);
-        return toVO(entity);
-    }
-
-    @Override
-    public void delete(Long id) {
-        SeaTunnelClient entity = getEntity(id);
-        entity.setUpdateTime(new Date());
-        seaTunnelClientDao.updateById(entity);
-    }
-
-    @Override
-    public IPage<SeaTunnelClientVO> page(SeaTunnelClientPageDTO dto) {
-        IPage<SeaTunnelClient> entityPage = seaTunnelClientDao.pageClients(dto);
-
-        Page<SeaTunnelClientVO> result = new Page<>();
-        BeanUtils.copyProperties(entityPage, result, "records");
-
-        List<SeaTunnelClientVO> voList = new ArrayList<>();
-        for (SeaTunnelClient entity : entityPage.getRecords()) {
-            voList.add(toVO(entity));
-        }
-        result.setRecords(voList);
-        return result;
-    }
-
-    @Override
-    public SeaTunnelClientStatisticsVO statistics() {
-        return seaTunnelClientDao.statistics();
-    }
-
-    @Override
-    public void enable(Long id) {
-        updateClientStatus(id, SeaTunnelClientStatusEnum.ENABLED.getCode());
-    }
-
-    @Override
-    public void disable(Long id) {
-        updateClientStatus(id, SeaTunnelClientStatusEnum.DISABLED.getCode());
-    }
-
-    @Override
-    public boolean testConnection(Long id) {
-        SeaTunnelClient entity = getEntity(id);
-        String url = entity.getBaseUrl() + "/health";
-
-        try {
-            String result = restTemplate.getForObject(url, String.class);
-            entity.setHealthStatus(SeaTunnelClientHealthStatusEnum.LIVE.getCode());
-            entity.setHeartbeatTime(new Date());
-            entity.setUpdateTime(new Date());
-            seaTunnelClientDao.updateById(entity);
-            return result != null;
-        } catch (Exception e) {
-            entity.setHealthStatus(SeaTunnelClientHealthStatusEnum.DOWN.getCode());
-            entity.setUpdateTime(new Date());
-            seaTunnelClientDao.updateById(entity);
-            return false;
-        }
-    }
-
-    @Override
-    public SeaTunnelClientLogVO logs(Long id) {
-        SeaTunnelClient entity = getEntity(id);
-
-        SeaTunnelClientLogVO vo = new SeaTunnelClientLogVO();
-        vo.setClientId(entity.getId());
-        vo.setClientName(entity.getClientName());
-
-        try {
-            String url = entity.getBaseUrl() + "/logs";
-            String content = restTemplate.getForObject(url, String.class);
-            vo.setContent(content);
-        } catch (Exception e) {
-            vo.setContent("获取日志失败：" + e.getMessage());
-        }
-
-        return vo;
-    }
-
-    @Override
-    public void reportHeartbeat(SeaTunnelClientDTO dto) {
-        if (dto == null || dto.getId() == null) {
-            return;
-        }
-
-        SeaTunnelClient entity = getEntity(dto.getId());
-        entity.setHeartbeatTime(new Date());
-        entity.setHealthStatus(SeaTunnelClientHealthStatusEnum.LIVE.getCode());
-
-
-        if (StringUtils.isNotBlank(dto.getClientAddress())) {
-            entity.setClientAddress(dto.getClientAddress());
-        }
-
-        entity.setUpdateTime(new Date());
-        seaTunnelClientDao.updateById(entity);
-    }
-
-    @Override
     public SeaTunnelClientMetricsVO metrics(Long id) {
         SeaTunnelClient entity = getEntity(id);
         if (entity == null) {
@@ -236,6 +127,24 @@ public class SeaTunnelClientServiceImpl implements SeaTunnelClientService {
                 threadCount,
                 runningOps
         );
+    }
+
+    @Override
+    public List<OptionVO> option() {
+        try {
+            List<SeaTunnelClient> entities = seaTunnelClientDao.selectList(new LambdaQueryWrapper<>());
+            return entities.stream()
+                    .map(item -> {
+                        OptionVO optionVO = new OptionVO();
+                        optionVO.setValue(item.getId());
+                        optionVO.setLabel(item.getClientName());
+                        optionVO.setDescription(item.getClientVersion());
+                        return optionVO;
+                    })
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            throw new ServiceException(Status.INTERNAL_SERVER_ERROR_ARGS, e.getMessage());
+        }
     }
 
     private Integer parseInteger(Object value) {
@@ -270,13 +179,6 @@ public class SeaTunnelClientServiceImpl implements SeaTunnelClientService {
         }
     }
 
-    private String formatDate(java.util.Date date) {
-        if (date == null) {
-            return null;
-        }
-        return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(date);
-    }
-
     /**
      * 校验客户端保存参数
      */
@@ -307,21 +209,5 @@ public class SeaTunnelClientServiceImpl implements SeaTunnelClientService {
     private SeaTunnelClient getEntity(Long id) {
         SeaTunnelClient entity = seaTunnelClientDao.queryById(id);
         return entity;
-    }
-
-    /**
-     * Entity 转 VO
-     */
-    private SeaTunnelClientVO toVO(SeaTunnelClient entity) {
-        SeaTunnelClientVO vo = new SeaTunnelClientVO();
-        BeanUtils.copyProperties(entity, vo);
-
-        vo.setHealthStatusName(
-                Integer.valueOf(SeaTunnelClientHealthStatusEnum.LIVE.getCode()).equals(entity.getHealthStatus())
-                        ? SeaTunnelClientHealthStatusEnum.LIVE.getDesc()
-                        : SeaTunnelClientHealthStatusEnum.DOWN.getDesc()
-        );
-
-        return vo;
     }
 }

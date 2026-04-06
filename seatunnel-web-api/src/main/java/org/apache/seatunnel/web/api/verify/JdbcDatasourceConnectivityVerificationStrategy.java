@@ -11,12 +11,7 @@ import org.apache.seatunnel.web.spi.enums.DbType;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 @Slf4j
 @Component
@@ -24,7 +19,7 @@ public class JdbcDatasourceConnectivityVerificationStrategy
         implements DatasourceConnectivityVerificationStrategy {
 
     private static final Set<DbType> SUPPORTED = Collections.unmodifiableSet(
-            new HashSet<DbType>(Arrays.asList(
+            new HashSet<>(Arrays.asList(
                     DbType.MYSQL,
                     DbType.POSTGRE_SQL,
                     DbType.ORACLE
@@ -38,7 +33,7 @@ public class JdbcDatasourceConnectivityVerificationStrategy
      * SAVEPOINT_DONE is treated as a successful terminal fallback.
      */
     private static final Set<JobStatus> VERIFY_SUCCESS_STATUSES = Collections.unmodifiableSet(
-            new HashSet<JobStatus>(Arrays.asList(
+            new HashSet<>(Arrays.asList(
                     JobStatus.RUNNING,
                     JobStatus.FINISHED,
                     JobStatus.SAVEPOINT_DONE
@@ -49,7 +44,7 @@ public class JdbcDatasourceConnectivityVerificationStrategy
      * Phase 1 failure states.
      */
     private static final Set<JobStatus> VERIFY_FAIL_STATUSES = Collections.unmodifiableSet(
-            new HashSet<JobStatus>(Arrays.asList(
+            new HashSet<>(Arrays.asList(
                     JobStatus.FAILED,
                     JobStatus.CANCELED,
                     JobStatus.UNKNOWABLE
@@ -60,7 +55,7 @@ public class JdbcDatasourceConnectivityVerificationStrategy
      * Active states that may still need explicit stop/cleanup.
      */
     private static final Set<JobStatus> ACTIVE_STATUSES = Collections.unmodifiableSet(
-            new HashSet<JobStatus>(Arrays.asList(
+            new HashSet<>(Arrays.asList(
                     JobStatus.INITIALIZING,
                     JobStatus.CREATED,
                     JobStatus.PENDING,

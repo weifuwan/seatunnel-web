@@ -191,7 +191,7 @@ public class SeaTunnelRestClient {
             HttpEntity<String> entity = new HttpEntity<>(configText == null ? "" : configText, textHeaders());
             return restTemplate.postForObject(b.build(true).toUri(), entity, Map.class);
         } catch (Exception e) {
-            throw wrap(e, "POST /submit-job failed");
+            throw wrap(e, e.getMessage());
         }
     }
 

@@ -1,6 +1,7 @@
 package org.apache.seatunnel.web.api.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import org.apache.seatunnel.web.spi.bean.dto.ClientDatasourceVerifyDTO;
 import org.apache.seatunnel.web.spi.bean.dto.SeaTunnelClientDTO;
 import org.apache.seatunnel.web.spi.bean.dto.SeaTunnelClientPageDTO;
 import org.apache.seatunnel.web.spi.bean.vo.*;
@@ -14,4 +15,6 @@ public interface SeaTunnelClientService {
     SeaTunnelClientMetricsVO metrics(Long id);
 
      List<OptionVO> option();
+
+    ClientDatasourceVerifyVO verifyDatasource(Long clientId, ClientDatasourceVerifyDTO dto);
 }

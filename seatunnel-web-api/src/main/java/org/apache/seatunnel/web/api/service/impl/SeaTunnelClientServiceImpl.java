@@ -5,14 +5,21 @@ import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.seatunnel.web.api.exceptions.ServiceException;
+import org.apache.seatunnel.web.api.service.DataSourceService;
 import org.apache.seatunnel.web.api.service.SeaTunnelClientService;
+import org.apache.seatunnel.web.api.verify.DatasourceConnectivityVerificationStrategy;
+import org.apache.seatunnel.web.api.verify.DatasourceConnectivityVerificationStrategyFactory;
 import org.apache.seatunnel.web.common.enums.SeaTunnelClientHealthStatusEnum;
+import org.apache.seatunnel.web.dao.entity.DataSource;
 import org.apache.seatunnel.web.dao.entity.SeaTunnelClient;
 import org.apache.seatunnel.web.dao.repository.SeaTunnelClientDao;
 import org.apache.seatunnel.web.engine.client.rest.SeaTunnelRestClient;
+import org.apache.seatunnel.web.spi.bean.dto.ClientDatasourceVerifyDTO;
 import org.apache.seatunnel.web.spi.bean.dto.SeaTunnelClientDTO;
+import org.apache.seatunnel.web.spi.bean.vo.ClientDatasourceVerifyVO;
 import org.apache.seatunnel.web.spi.bean.vo.OptionVO;
 import org.apache.seatunnel.web.spi.bean.vo.SeaTunnelClientMetricsVO;
+import org.apache.seatunnel.web.spi.enums.DbType;
 import org.apache.seatunnel.web.spi.enums.Status;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
@@ -31,6 +38,13 @@ public class SeaTunnelClientServiceImpl implements SeaTunnelClientService {
 
     @Resource
     private SeaTunnelRestClient seaTunnelRestClient;
+
+    @Resource
+    private DataSourceService dataSourceService;
+
+
+    @Resource
+    private DatasourceConnectivityVerificationStrategyFactory strategyFactory;
 
     @Override
     public void saveOrUpdate(SeaTunnelClientDTO dto) {
@@ -145,6 +159,37 @@ public class SeaTunnelClientServiceImpl implements SeaTunnelClientService {
         } catch (Exception e) {
             throw new ServiceException(Status.INTERNAL_SERVER_ERROR_ARGS, e.getMessage());
         }
+    }
+
+    @Override
+    public ClientDatasourceVerifyVO verifyDatasource(Long clientId, ClientDatasourceVerifyDTO dto) {
+        if (clientId == null) {
+            throw new IllegalArgumentException("clientId 不能为空");
+        }
+        if (dto == null || dto.getDatasourceId() == null) {
+            throw new IllegalArgumentException("datasourceId 不能为空");
+        }
+
+        SeaTunnelClient client = seaTunnelClientDao.selectById(clientId);
+        if (client == null) {
+            throw new IllegalArgumentException("客户端不存在, clientId=" + clientId);
+        }
+        if (StringUtils.isBlank(client.getBaseUrl())) {
+            throw new IllegalArgumentException("客户端 baseUrl 不能为空, clientId=" + clientId);
+        }
+
+        DataSource datasource = dataSourceService.selectById(dto.getDatasourceId());
+        if (datasource == null) {
+            throw new IllegalArgumentException("数据源不存在, datasourceId=" + dto.getDatasourceId());
+        }
+
+        DbType dbType = datasource.getDbType();
+        DatasourceConnectivityVerificationStrategy strategy = strategyFactory.getStrategy(dbType);
+
+        long timeoutMs = dto.getTimeoutMs() == null || dto.getTimeoutMs() <= 0 ? 15000L : dto.getTimeoutMs();
+        long pollIntervalMs = dto.getPollIntervalMs() == null || dto.getPollIntervalMs() <= 0 ? 1000L : dto.getPollIntervalMs();
+
+        return strategy.verify(client, datasource, timeoutMs, pollIntervalMs);
     }
 
     private Integer parseInteger(Object value) {

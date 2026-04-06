@@ -3,8 +3,10 @@ package org.apache.seatunnel.web.api.controller;
 
 import jakarta.annotation.Resource;
 import org.apache.seatunnel.web.api.service.SeaTunnelClientService;
+import org.apache.seatunnel.web.spi.bean.dto.ClientDatasourceVerifyDTO;
 import org.apache.seatunnel.web.spi.bean.dto.SeaTunnelClientDTO;
 import org.apache.seatunnel.web.spi.bean.entity.Result;
+import org.apache.seatunnel.web.spi.bean.vo.ClientDatasourceVerifyVO;
 import org.apache.seatunnel.web.spi.bean.vo.OptionVO;
 import org.apache.seatunnel.web.spi.bean.vo.SeaTunnelClientMetricsVO;
 import org.springframework.web.bind.annotation.*;
@@ -13,7 +15,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/devops/client")
-public class SeatunnelClientController {
+public class SeaTunnelClientController {
 
     @Resource
     private SeaTunnelClientService seatunnelClientService;
@@ -32,5 +34,12 @@ public class SeatunnelClientController {
     @GetMapping("/option")
     public Result<List<OptionVO>> option() {
         return Result.buildSuc(seatunnelClientService.option());
+    }
+
+    @PostMapping("/{clientId}/verify-datasource")
+    public Result<ClientDatasourceVerifyVO> verifyDatasource(
+            @PathVariable("clientId") Long clientId,
+            @RequestBody ClientDatasourceVerifyDTO dto) {
+        return Result.buildSuc(seatunnelClientService.verifyDatasource(clientId, dto));
     }
 }

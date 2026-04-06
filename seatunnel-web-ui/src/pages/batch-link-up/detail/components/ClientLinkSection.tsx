@@ -1,3 +1,4 @@
+import { seatunnelClientApi } from "@/pages/client/api";
 import { fetchDataSourceOptions } from "@/pages/data-source/service";
 import {
   CheckCircleOutlined,
@@ -7,7 +8,6 @@ import {
 import { Button, Form, message, Select } from "antd";
 import React, { useEffect, useMemo, useState } from "react";
 import { generateDataSourceOptions } from "../../DataSourceSelect";
-import { mockBridgeClients } from "../constants";
 import "./client-link.less";
 
 interface Props {
@@ -188,6 +188,10 @@ const ClientLinkSection: React.FC<Props> = ({
   const [targetDataSources, setTargetDataSources] = useState<any[]>([]);
   const [sourceLoading, setSourceLoading] = useState(false);
   const [targetLoading, setTargetLoading] = useState(false);
+  const [bridgeClientOptions, setBridgeClientOptions] = useState<
+    { label: string; value: string }[]
+  >([]);
+  const [bridgeClientLoading, setBridgeClientLoading] = useState(false);
   useEffect(() => {
     const loadSourceOptions = async () => {
       const dbType = sourceType?.dbType;
@@ -235,6 +239,42 @@ const ClientLinkSection: React.FC<Props> = ({
 
     loadTargetOptions();
   }, [targetType?.dbType]);
+
+  useEffect(() => {
+    if (!bridgeClientOptions.length) {
+      return;
+    }
+
+    if (!bridgeClientIds || bridgeClientIds.length === 0) {
+      setBridgeClientIds([bridgeClientOptions[0].value]);
+    }
+  }, [bridgeClientOptions, bridgeClientIds, setBridgeClientIds]);
+
+  useEffect(() => {
+    const loadBridgeClientOptions = async () => {
+      try {
+        setBridgeClientLoading(true);
+        const res = await seatunnelClientApi.option();
+
+        const options = Array.isArray(res?.data)
+          ? res.data.map((item) => ({
+              label: item.label,
+              value: String(item.value),
+            }))
+          : [];
+
+        setBridgeClientOptions(options);
+      } catch (error) {
+        console.error("加载客户端节点失败:", error);
+        setBridgeClientOptions([]);
+        message.error("加载客户端节点失败");
+      } finally {
+        setBridgeClientLoading(false);
+      }
+    };
+
+    loadBridgeClientOptions();
+  }, []);
 
   const sourceOptions = useMemo(
     () =>
@@ -317,11 +357,27 @@ const ClientLinkSection: React.FC<Props> = ({
     setTargetTestStatus("idle");
   };
 
-  const runMockTest = (
+  const runConnectivityTest = async (
     type: "source" | "target",
-    selectedId?: string | number
+    datasourceId?: string | number
   ) => {
-    if (selectedId === undefined || selectedId === null) return;
+    const clientId = bridgeClientIds?.[0];
+
+    if (!clientId) {
+      message.warning("请先选择客户端节点");
+      return;
+    }
+
+    if (
+      datasourceId === undefined ||
+      datasourceId === null ||
+      datasourceId === ""
+    ) {
+      message.warning(
+        type === "source" ? "请先选择来源数据源" : "请先选择目标数据源"
+      );
+      return;
+    }
 
     if (type === "source") {
       setSourceTestStatus("loading");
@@ -329,27 +385,39 @@ const ClientLinkSection: React.FC<Props> = ({
       setTargetTestStatus("loading");
     }
 
-    window.setTimeout(() => {
-      try {
-        const idStr = String(selectedId);
-        const success = !idStr.endsWith("3");
+    try {
+      const res = await seatunnelClientApi.verifyDatasource(
+        clientId,
+        datasourceId
+      );
+      const success = !!res?.data?.success;
 
-        if (type === "source") {
-          setSourceTestStatus(success ? "success" : "error");
-        } else {
-          setTargetTestStatus(success ? "success" : "error");
-        }
-      } catch (error) {
-        console.error("连通性测试状态更新失败:", error);
-
-        if (type === "source") {
-          setSourceTestStatus("error");
-        } else {
-          setTargetTestStatus("error");
-        }
+      if (type === "source") {
+        setSourceTestStatus(success ? "success" : "error");
+      } else {
+        setTargetTestStatus(success ? "success" : "error");
       }
-    }, 1000);
+
+      if (success) {
+        message.success(res?.data?.message || "连通性测试通过");
+      } else {
+        message.error(
+          res?.data?.errorMessage || res?.data?.message || "连通性测试失败"
+        );
+      }
+    } catch (error) {
+      console.error("连通性测试失败:", error);
+
+      if (type === "source") {
+        setSourceTestStatus("error");
+      } else {
+        setTargetTestStatus("error");
+      }
+
+      message.error("连通性测试失败，请稍后重试");
+    }
   };
+
   return (
     <div ref={sectionRef} className="bg-white px-8 py-8">
       <div className="mx-auto space-y-6">
@@ -364,7 +432,9 @@ const ClientLinkSection: React.FC<Props> = ({
                 <div className="h-px w-10 bg-slate-300" />
                 <LinkStatusAction
                   status={sourceTestStatus}
-                  onTest={() => runMockTest("source", sourceDataSourceId)}
+                  onTest={() =>
+                    runConnectivityTest("source", sourceDataSourceId)
+                  }
                 />
                 <div className="h-px w-10 bg-slate-300" />
               </div>
@@ -377,7 +447,9 @@ const ClientLinkSection: React.FC<Props> = ({
                 <div className="h-px w-10 bg-slate-300" />
                 <LinkStatusAction
                   status={targetTestStatus}
-                  onTest={() => runMockTest("target", targetDataSourceId)}
+                  onTest={() =>
+                    runConnectivityTest("target", targetDataSourceId)
+                  }
                   reverse
                 />
                 <div className="h-px w-10 bg-slate-300" />
@@ -397,9 +469,11 @@ const ClientLinkSection: React.FC<Props> = ({
             footer={
               <Button
                 className="w-full !rounded-full"
-                onClick={() => runMockTest("source", sourceDataSourceId)}
+                onClick={() =>
+                  runConnectivityTest("source", sourceDataSourceId)
+                }
                 loading={sourceTestStatus === "loading"}
-                disabled={!sourceDataSourceId}
+                disabled={!sourceDataSourceId || !bridgeClientIds?.length}
                 type="primary"
               >
                 测试连通性
@@ -453,14 +527,16 @@ const ClientLinkSection: React.FC<Props> = ({
                 </div>
                 <Select
                   value={bridgeClientIds}
-                  onChange={setBridgeClientIds}
+                  onChange={(values) => {
+                    setBridgeClientIds(values);
+                    resetSourceTestStatus();
+                    resetTargetTestStatus();
+                  }}
                   className="w-full"
                   showSearch
-                  placeholder="请选择客户端节点"
-                  options={mockBridgeClients.map((item) => ({
-                    label: item.name,
-                    value: item.id,
-                  }))}
+                  placeholder="请选择Zeta客户端节点"
+                  loading={bridgeClientLoading}
+                  options={bridgeClientOptions}
                 />
               </div>
 
@@ -469,7 +545,7 @@ const ClientLinkSection: React.FC<Props> = ({
                   当前已选择 {bridgeClientIds.length} 个节点
                 </div>
                 <div className="mt-1 text-xs text-slate-500">
-                  任务会提交到所选客户端节点执行，用于连通性验证与实际运行。
+                  任务会在你选中的客户端节点上运行，我们会用它来做连接测试和正式执行。
                 </div>
               </div>
             </div>
@@ -481,9 +557,11 @@ const ClientLinkSection: React.FC<Props> = ({
             footer={
               <Button
                 className="w-full !rounded-full"
-                onClick={() => runMockTest("target", targetDataSourceId)}
+                onClick={() =>
+                  runConnectivityTest("target", targetDataSourceId)
+                }
                 loading={targetTestStatus === "loading"}
-                disabled={!targetDataSourceId}
+                disabled={!targetDataSourceId || !bridgeClientIds?.length}
                 type="primary"
               >
                 测试连通性

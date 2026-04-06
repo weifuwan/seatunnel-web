@@ -42,6 +42,12 @@ export interface SeatunnelClientStatistics {
   downCount: number;
 }
 
+export interface SeatunnelClientOption {
+  value: string | number;
+  label: string;
+  description?: string;
+}
+
 export interface SeatunnelClientLog {
   clientId: number;
   clientName: string;
@@ -69,7 +75,37 @@ export const seatunnelClientApi = {
     return HttpUtils.post(`${apiPrefix}/page`, data);
   },
 
+  option: (): Promise<{
+    code: number;
+    data: SeatunnelClientOption[];
+    msg?: string;
+    message?: string;
+  }> => {
+    return HttpUtils.get(`${apiPrefix}/option`);
+  },
 
+  verifyDatasource: (
+    clientId: number | string,
+    datasourceId: number | string
+  ): Promise<{
+    code: number;
+    data?: {
+      success?: boolean;
+      message?: string;
+      errorMessage?: string;
+      finalJobStatus?: string;
+      durationMs?: number;
+      testJobId?: string;
+    };
+    msg?: string;
+    message?: string;
+  }> => {
+    return HttpUtils.post(`/api/v1/devops/client/${clientId}/verify-datasource`, {
+      datasourceId,
+      timeoutMs: 15000,
+      pollIntervalMs: 1000,
+    });
+  },
 
   metrics: (
     id: number
@@ -82,31 +118,5 @@ export const seatunnelClientApi = {
     return HttpUtils.get(`${apiPrefix}/${id}/metrics`);
   },
 
-  statistics: (): Promise<{
-    code: number;
-    data: SeatunnelClientStatistics;
-    message?: string;
-  }> => {
-    return HttpUtils.get(`${apiPrefix}/statistics`);
-  },
 
-  enable: (id: number) => {
-    return HttpUtils.post(`${apiPrefix}/${id}/enable`);
-  },
-
-  disable: (id: number) => {
-    return HttpUtils.post(`${apiPrefix}/${id}/disable`);
-  },
-
-  testConnection: (
-    id: number
-  ): Promise<{ code: number; data: boolean; message?: string }> => {
-    return HttpUtils.post(`${apiPrefix}/${id}/test-connection`);
-  },
-
-  logs: (
-    id: number
-  ): Promise<{ code: number; data: SeatunnelClientLog; message?: string }> => {
-    return HttpUtils.get(`${apiPrefix}/${id}/logs`);
-  },
 };

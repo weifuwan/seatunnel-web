@@ -1,17 +1,14 @@
-
-import { ApiResponse } from "./d";
-import request from "@/utils/request";
+import request, { ApiResponse } from "@/utils/request";
 
 class HttpUtils {
   public static async post<T>(
     url: string,
     body?: Record<string, any>,
     options?: RequestInit
-    // headers?: Record<string, any>,
   ): Promise<ApiResponse<T>> {
     return request<ApiResponse<T>>(url, {
       method: "POST",
-      body: JSON.stringify(body),
+      data: body,
       headers: {
         "Content-Type": "application/json",
       },
@@ -20,16 +17,16 @@ class HttpUtils {
   }
 
   public static async postForm<T>(
-  url: string,
-  formData: FormData,
-  options?: RequestInit
-): Promise<ApiResponse<T>> {
-  return request<ApiResponse<T>>(url, {
-    method: "POST",
-    body: formData as any,
-    ...options,
-  });
-}
+    url: string,
+    formData: FormData,
+    options?: RequestInit
+  ): Promise<ApiResponse<T>> {
+    return request<ApiResponse<T>>(url, {
+      method: "POST",
+      data: formData,
+      ...options,
+    });
+  }
 
   public static async request<T>(
     url: string,
@@ -37,11 +34,11 @@ class HttpUtils {
     body?: Record<string, any>
   ): Promise<ApiResponse<T>> {
     return request<ApiResponse<T>>(url, {
-      method: method,
+      method,
+      data: body,
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(body),
     });
   }
 
@@ -65,7 +62,7 @@ class HttpUtils {
   ): Promise<ApiResponse<T>> {
     return request<ApiResponse<T>>(url, {
       method: "PUT",
-      body: JSON.stringify(body),
+      data: body,
       headers: {
         "Content-Type": "application/json",
       },
@@ -80,7 +77,7 @@ class HttpUtils {
   ): Promise<ApiResponse<T>> {
     return request<ApiResponse<T>>(url, {
       method: "DELETE",
-      data: data,
+      data,
       headers: {
         "Content-Type": "application/json",
       },
@@ -91,15 +88,15 @@ class HttpUtils {
   public static async download(
     url: string,
     options?: Record<string, any>
-  ): Promise<{ data: string }> {
+  ): Promise<any> {
     return request(url, {
-      method: "GET", // 请求方式
-      responseType: 'blob',
-      getResponse: true, // 确保获取完整的响应，包括 headers
-      // data: body,
+      method: "GET",
+      responseType: "blob",
+      getResponse: true,
       ...(options || {}),
     });
   }
 }
 
 export default HttpUtils;
+export type { ApiResponse };

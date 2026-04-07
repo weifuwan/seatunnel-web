@@ -1,5 +1,6 @@
 import { seatunnelClientApi } from "@/pages/client/api";
 import { fetchDataSourceOptions } from "@/pages/data-source/service";
+import { openPrettyNotification } from "@/utils/prettyNotification";
 import {
   CheckCircleOutlined,
   CloseCircleOutlined,
@@ -9,6 +10,8 @@ import { Button, Form, message, Select } from "antd";
 import React, { useEffect, useMemo, useState } from "react";
 import { generateDataSourceOptions } from "../../DataSourceSelect";
 import "./client-link.less";
+
+export type ConnectivityStatus = "idle" | "loading" | "success" | "error";
 
 interface Props {
   activeStep: "base" | "client";
@@ -24,22 +27,19 @@ interface Props {
   setBridgeClientIds: (ids: string[]) => void;
   handleSourceChange: (value: string, option: any) => void;
   handleTargetChange: (value: string, option: any) => void;
+
+  sourceDataSourceId?: string;
+  targetDataSourceId?: string;
+  setSourceDataSourceId: (id?: string) => void;
+  setTargetDataSourceId: (id?: string) => void;
+
+  sourceTestStatus: ConnectivityStatus;
+  targetTestStatus: ConnectivityStatus;
+  setSourceTestStatus: (status: ConnectivityStatus) => void;
+  setTargetTestStatus: (status: ConnectivityStatus) => void;
+
   sectionRef?: React.RefObject<HTMLDivElement>;
 }
-
-type ConnectivityStatus = "idle" | "loading" | "success" | "error";
-
-const mockSourceDataSources = [
-  { id: "src-1", name: "influxdb_prod_east", status: "ready" },
-  { id: "src-2", name: "influxdb_metrics_cn", status: "ready" },
-  { id: "src-3", name: "influxdb_backup_old", status: "offline" },
-];
-
-const mockTargetDataSources = [
-  { id: "tar-1", name: "clickhouse_dw_prod", status: "ready" },
-  { id: "tar-2", name: "clickhouse_ods_dev", status: "ready" },
-  { id: "tar-3", name: "clickhouse_archive", status: "offline" },
-];
 
 const statusMap: Record<
   ConnectivityStatus,
@@ -116,7 +116,6 @@ const LinkStatusAction: React.FC<{
         size="small"
         className="!h-7 !rounded-full !px-3 !text-slate-700 hover:!bg-slate-100"
         onClick={onTest}
-        // loading={status === "loading"}
       >
         测试
       </Button>
@@ -172,16 +171,18 @@ const ClientLinkSection: React.FC<Props> = ({
   handleSourceChange,
   handleTargetChange,
   sectionRef,
+
+  sourceDataSourceId,
+  targetDataSourceId,
+  setSourceDataSourceId,
+  setTargetDataSourceId,
+
+  sourceTestStatus,
+  targetTestStatus,
+  setSourceTestStatus,
+  setTargetTestStatus,
 }) => {
   const [form] = Form.useForm();
-
-  const [sourceDataSourceId, setSourceDataSourceId] = useState<string>();
-  const [targetDataSourceId, setTargetDataSourceId] = useState<string>();
-
-  const [sourceTestStatus, setSourceTestStatus] =
-    useState<ConnectivityStatus>("idle");
-  const [targetTestStatus, setTargetTestStatus] =
-    useState<ConnectivityStatus>("idle");
 
   const dataSourceTypeOptions = useMemo(() => generateDataSourceOptions(), []);
   const [sourceDataSources, setSourceDataSources] = useState<any[]>([]);
@@ -192,11 +193,23 @@ const ClientLinkSection: React.FC<Props> = ({
     { label: string; value: string }[]
   >([]);
   const [bridgeClientLoading, setBridgeClientLoading] = useState(false);
+
+  const resetSourceTestStatus = () => {
+    setSourceTestStatus("idle");
+  };
+
+  const resetTargetTestStatus = () => {
+    setTargetTestStatus("idle");
+  };
+
   useEffect(() => {
     const loadSourceOptions = async () => {
       const dbType = sourceType?.dbType;
+
       if (!dbType) {
         setSourceDataSources([]);
+        setSourceDataSourceId(undefined);
+        form.setFieldValue("sourceId", undefined);
         return;
       }
 
@@ -214,19 +227,22 @@ const ClientLinkSection: React.FC<Props> = ({
     };
 
     loadSourceOptions();
-  }, [sourceType?.dbType]);
+  }, [sourceType?.dbType, form, setSourceDataSourceId]);
 
   useEffect(() => {
     const loadTargetOptions = async () => {
       const dbType = targetType?.dbType;
+
       if (!dbType) {
         setTargetDataSources([]);
+        setTargetDataSourceId(undefined);
+        form.setFieldValue("targetId", undefined);
         return;
       }
 
       try {
         setTargetLoading(true);
-        const res = await fetchDataSourceOptions(targetType.dbType);
+        const res = await fetchDataSourceOptions(dbType);
         setTargetDataSources(Array.isArray(res?.data) ? res.data : []);
       } catch (error) {
         console.error("加载目标数据源失败:", error);
@@ -238,17 +254,7 @@ const ClientLinkSection: React.FC<Props> = ({
     };
 
     loadTargetOptions();
-  }, [targetType?.dbType]);
-
-  useEffect(() => {
-    if (!bridgeClientOptions.length) {
-      return;
-    }
-
-    if (!bridgeClientIds || bridgeClientIds.length === 0) {
-      setBridgeClientIds([bridgeClientOptions[0].value]);
-    }
-  }, [bridgeClientOptions, bridgeClientIds, setBridgeClientIds]);
+  }, [targetType?.dbType, form, setTargetDataSourceId]);
 
   useEffect(() => {
     const loadBridgeClientOptions = async () => {
@@ -257,7 +263,7 @@ const ClientLinkSection: React.FC<Props> = ({
         const res = await seatunnelClientApi.option();
 
         const options = Array.isArray(res?.data)
-          ? res.data.map((item) => ({
+          ? res.data.map((item: any) => ({
               label: item.label,
               value: String(item.value),
             }))
@@ -276,13 +282,31 @@ const ClientLinkSection: React.FC<Props> = ({
     loadBridgeClientOptions();
   }, []);
 
+  useEffect(() => {
+    if (!bridgeClientOptions.length) return;
+
+    if (!bridgeClientIds || bridgeClientIds.length === 0) {
+      setBridgeClientIds([bridgeClientOptions[0].value]);
+      // 初始化默认值时，不重置状态
+    }
+  }, [bridgeClientOptions, bridgeClientIds, setBridgeClientIds]);
+
   const sourceOptions = useMemo(
     () =>
       sourceDataSources.map((item) => ({
         label: item.name ?? item.label ?? "",
-        value: item.id ?? item.value ?? "",
+        value: String(item.id ?? item.value ?? ""),
       })),
     [sourceDataSources]
+  );
+
+  const targetOptions = useMemo(
+    () =>
+      targetDataSources.map((item) => ({
+        label: item.name ?? item.label ?? "",
+        value: String(item.id ?? item.value ?? ""),
+      })),
+    [targetDataSources]
   );
 
   useEffect(() => {
@@ -300,18 +324,10 @@ const ClientLinkSection: React.FC<Props> = ({
       const firstValue = sourceOptions[0]?.value;
       setSourceDataSourceId(firstValue);
       form.setFieldValue("sourceId", firstValue);
-      resetSourceTestStatus();
+      // 这里不要 resetSourceTestStatus()
+      // 否则初始化回填时会把 success/error 冲成 idle
     }
-  }, [sourceOptions, sourceDataSourceId, form]);
-
-  const targetOptions = useMemo(
-    () =>
-      targetDataSources.map((item) => ({
-        label: item.name ?? item.label ?? "",
-        value: item.id ?? item.value ?? "",
-      })),
-    [targetDataSources]
-  );
+  }, [sourceOptions, sourceDataSourceId, form, setSourceDataSourceId]);
 
   useEffect(() => {
     if (!targetOptions.length) {
@@ -328,9 +344,9 @@ const ClientLinkSection: React.FC<Props> = ({
       const firstValue = targetOptions[0]?.value;
       setTargetDataSourceId(firstValue);
       form.setFieldValue("targetId", firstValue);
-      resetTargetTestStatus();
+      // 这里不要 resetTargetTestStatus()
     }
-  }, [targetOptions, targetDataSourceId, form]);
+  }, [targetOptions, targetDataSourceId, form, setTargetDataSourceId]);
 
   useEffect(() => {
     form.setFieldsValue({
@@ -348,14 +364,6 @@ const ClientLinkSection: React.FC<Props> = ({
     targetDataSourceId,
     bridgeClientIds,
   ]);
-
-  const resetSourceTestStatus = () => {
-    setSourceTestStatus("idle");
-  };
-
-  const resetTargetTestStatus = () => {
-    setTargetTestStatus("idle");
-  };
 
   const runConnectivityTest = async (
     type: "source" | "target",
@@ -399,7 +407,12 @@ const ClientLinkSection: React.FC<Props> = ({
       }
 
       if (success) {
-        message.success(res?.data?.message || "连通性测试通过");
+        openPrettyNotification({
+          type: "success",
+          title: "操作日志",
+          description: res?.data?.message || "连通性测试通过",
+          meta: "",
+        });
       } else {
         message.error(
           res?.data?.errorMessage || res?.data?.message || "连通性测试失败"
@@ -487,6 +500,7 @@ const ClientLinkSection: React.FC<Props> = ({
                     value={sourceType?.dbType}
                     onChange={(value, option) => {
                       handleSourceChange(value, option);
+                      setSourceDataSourceId(undefined);
                       resetSourceTestStatus();
                     }}
                     className="w-full"
@@ -575,6 +589,7 @@ const ClientLinkSection: React.FC<Props> = ({
                     value={targetType?.dbType}
                     onChange={(value, option) => {
                       handleTargetChange(value, option);
+                      setTargetDataSourceId(undefined);
                       resetTargetTestStatus();
                     }}
                     className="w-full"

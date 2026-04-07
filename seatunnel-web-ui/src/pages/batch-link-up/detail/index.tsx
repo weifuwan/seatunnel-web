@@ -2,10 +2,11 @@ import { Form } from "antd";
 import BaseInfoSection from "./components/BaseInfoSection";
 import BottomActionBar from "./components/BottomActionBar";
 import ClientLinkSection from "./components/ClientLinkSection";
-import ModeSection from "./components/ModeSection";
 import PageHeader from "./components/PageHeader";
 import { STEP_THEME } from "./constants";
 import useDetailPage from "./hooks/useDetailPage";
+
+export type ConnectivityStatus = "idle" | "loading" | "success" | "error";
 
 const DetailPage = () => {
   const {
@@ -21,7 +22,6 @@ const DetailPage = () => {
     targetLabel,
     mode,
     scrollRef,
-    baseSectionRef,
     clientSectionRef,
     setActiveStep,
     setSourceClientId,
@@ -33,6 +33,15 @@ const DetailPage = () => {
     goBack,
     goStep,
     handleNext,
+
+    sourceTestStatus,
+    targetTestStatus,
+    setSourceTestStatus,
+    setTargetTestStatus,
+    sourceDataSourceId,
+    targetDataSourceId,
+    setSourceDataSourceId,
+    setTargetDataSourceId,
   } = useDetailPage();
 
   if (!params) {
@@ -51,9 +60,12 @@ const DetailPage = () => {
 
   const hintText = (() => {
     if (isBaseStep) return "先完成基础配置，再进入客户端链接配置";
-    if (mode === "GUIDE_MULTI")
+    if (mode === "GUIDE_MULTI") {
       return "确认客户端链接关系后，将进入多表向导配置";
-    if (mode === "SCRIPT") return "确认客户端链接关系后，将进入脚本配置";
+    }
+    if (mode === "SCRIPT") {
+      return "确认客户端链接关系后，将进入脚本配置";
+    }
     return "确认客户端链接关系后，将进入单表向导配置";
   })();
 
@@ -121,16 +133,14 @@ const DetailPage = () => {
           <Form form={form} layout="vertical">
             <div className="overflow-hidden rounded-[24px] border border-[#EAECF0] bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
               {isBaseStep && (
-                <>
-                  <BaseInfoSection
-                    sourceType={sourceType}
-                    targetType={targetType}
-                    handleSourceChange={handleSourceChange}
-                    handleTargetChange={handleTargetChange}
-                    mode={mode}
-                    setMode={handleModeChange}
-                  />
-                </>
+                <BaseInfoSection
+                  sourceType={sourceType}
+                  targetType={targetType}
+                  handleSourceChange={handleSourceChange}
+                  handleTargetChange={handleTargetChange}
+                  mode={mode}
+                  setMode={handleModeChange}
+                />
               )}
 
               {isClientStep && (
@@ -149,6 +159,14 @@ const DetailPage = () => {
                   setBridgeClientIds={setBridgeClientIds}
                   handleSourceChange={handleSourceChange}
                   handleTargetChange={handleTargetChange}
+                  sourceDataSourceId={sourceDataSourceId}
+                  targetDataSourceId={targetDataSourceId}
+                  setSourceDataSourceId={setSourceDataSourceId}
+                  setTargetDataSourceId={setTargetDataSourceId}
+                  sourceTestStatus={sourceTestStatus}
+                  targetTestStatus={targetTestStatus}
+                  setSourceTestStatus={setSourceTestStatus}
+                  setTargetTestStatus={setTargetTestStatus}
                 />
               )}
             </div>

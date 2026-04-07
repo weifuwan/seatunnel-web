@@ -388,7 +388,6 @@ export default function LoginPanel({
             type="default"
             onClick={async () => {
               try {
-                console.log("---");
 
                 await form.validateFields();
                 const values = form.getFieldsValue();
@@ -403,17 +402,13 @@ export default function LoginPanel({
                   });
 
                   onFire("THANKS");
-                  message.success(defaultLoginSuccessMessage);
-
                   await fetchUserInfo();
 
                   const urlParams = new URL(window.location.href).searchParams;
                   window.location.href = urlParams.get("redirect") || "/";
                   return;
                 }
-
                 onFire("TILT");
-                message.error(data?.message || "");
               } catch (error) {
                 const defaultLoginFailureMessage = intl.formatMessage({
                   id: "pages.login.failure",

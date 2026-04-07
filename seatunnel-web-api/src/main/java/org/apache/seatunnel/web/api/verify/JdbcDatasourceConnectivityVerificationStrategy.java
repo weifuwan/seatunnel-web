@@ -180,7 +180,7 @@ public class JdbcDatasourceConnectivityVerificationStrategy
                 }
 
                 result.setSuccess(true);
-                result.setMessage("Datasource connectivity verification passed");
+                result.setMessage("verification passed");
                 result.setDurationMs(System.currentTimeMillis() - start);
 
                 log.info("Connectivity verification passed: clientId={}, datasourceId={}, jobId={}, finalStatus={}",
@@ -189,7 +189,7 @@ public class JdbcDatasourceConnectivityVerificationStrategy
             }
 
             result.setSuccess(false);
-            result.setMessage("Datasource connectivity verification failed");
+            result.setMessage("verification failed");
             result.setErrorMessage("Unexpected job status: " + observedStatus.name());
             result.setDurationMs(System.currentTimeMillis() - start);
 

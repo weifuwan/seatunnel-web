@@ -1,24 +1,28 @@
-import ClickSpark from '@/components/ClickSpark';
-import { useIntl } from '@umijs/max';
-import { Col, message, Modal, Row, Spin } from 'antd';
-import { motion } from 'framer-motion';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import AddOrEditDataSourceModal from './components/AddOrEditDataSourceModal';
-import DataSourceCard from './components/DataSourceCard';
-import EmptyState from './components/EmptyState';
-import PageHeader from './components/PageHeader';
-import SearchBar from './components/SearchBar';
-import { PAGE_ANIMATION, PAGE_DEFAULT_PAGINATION } from './constants';
-import { createDataSource, deleteDataSource, fetchDataSourcePage, testDataSourceConnection } from './service';
-import { filterDataSourceList } from './utils';
+import ClickSpark from "@/components/ClickSpark";
+import { useIntl } from "@umijs/max";
+import { Col, message, Modal, Row, Spin } from "antd";
+import { motion } from "framer-motion";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import AddOrEditDataSourceModal from "./components/AddOrEditDataSourceModal";
+import DataSourceCard from "./components/DataSourceCard";
+import EmptyState from "./components/EmptyState";
+import PageHeader from "./components/PageHeader";
+import SearchBar from "./components/SearchBar";
+import { PAGE_ANIMATION, PAGE_DEFAULT_PAGINATION } from "./constants";
+import "./index.less";
+import {
+  deleteDataSource,
+  fetchDataSourcePage,
+  testDataSourceConnection,
+} from "./service";
 import type {
   DataSourceModalRef,
   DataSourceOperateType,
   DataSourcePageParams,
   DataSourceRecord,
   PaginationInfo,
-} from './types';
-import './index.less';
+} from "./types";
+import { filterDataSourceList } from "./utils";
 
 const { confirm } = Modal;
 
@@ -28,8 +32,10 @@ const DataSourcePage: React.FC = () => {
 
   const [loading, setLoading] = useState(false);
   const [dataSourceList, setDataSourceList] = useState<DataSourceRecord[]>([]);
-  const [pagination, setPagination] = useState<PaginationInfo>(PAGE_DEFAULT_PAGINATION);
-  const [searchKeyword, setSearchKeyword] = useState('');
+  const [pagination, setPagination] = useState<PaginationInfo>(
+    PAGE_DEFAULT_PAGINATION
+  );
+  const [searchKeyword, setSearchKeyword] = useState("");
 
   const fetchList = async (params?: Partial<DataSourcePageParams>) => {
     try {
@@ -47,9 +53,9 @@ const DataSourcePage: React.FC = () => {
         message.error(
           response.message ||
             intl.formatMessage({
-              id: 'pages.datasource.message.loadFailed',
-              defaultMessage: 'Load data source list failed',
-            }),
+              id: "pages.datasource.message.loadFailed",
+              defaultMessage: "Load data source list failed",
+            })
         );
         return;
       }
@@ -60,9 +66,9 @@ const DataSourcePage: React.FC = () => {
       message.error(
         error?.message ||
           intl.formatMessage({
-            id: 'pages.datasource.message.loadFailed',
-            defaultMessage: 'Load data source list failed',
-          }),
+            id: "pages.datasource.message.loadFailed",
+            defaultMessage: "Load data source list failed",
+          })
       );
     } finally {
       setLoading(false);
@@ -84,14 +90,14 @@ const DataSourcePage: React.FC = () => {
 
   const handleCreate = () => {
     modalRef.current?.open({
-      operateType: 'CREATE' as DataSourceOperateType,
+      operateType: "CREATE" as DataSourceOperateType,
       onSuccess: handleRefresh,
     });
   };
 
   const handleEdit = (record: DataSourceRecord) => {
     modalRef.current?.open({
-      operateType: 'EDIT' as DataSourceOperateType,
+      operateType: "EDIT" as DataSourceOperateType,
       currentRecord: record,
       onSuccess: handleRefresh,
     });
@@ -100,49 +106,49 @@ const DataSourcePage: React.FC = () => {
   const handleDelete = (record: DataSourceRecord) => {
     confirm({
       title: intl.formatMessage({
-        id: 'pages.datasource.delete.confirmTitle',
-        defaultMessage: 'Are you sure you want to delete it ?',
+        id: "pages.datasource.delete.confirmTitle",
+        defaultMessage: "Are you sure you want to delete it ?",
       }),
       centered: true,
       content: (
         <span>
           {intl.formatMessage(
             {
-              id: 'pages.datasource.delete.confirmContentLine1',
-              defaultMessage: 'Are you sure you delete datasource [{name}] ?',
+              id: "pages.datasource.delete.confirmContentLine1",
+              defaultMessage: "Are you sure you delete datasource [{name}] ?",
             },
             {
-              name: <span style={{ color: 'orange' }}>{record.name}</span>,
-            },
+              name: <span style={{ color: "orange" }}>{record.name}</span>,
+            }
           )}
           <br />
           {intl.formatMessage({
-            id: 'pages.datasource.delete.confirmContentLine2',
+            id: "pages.datasource.delete.confirmContentLine2",
             defaultMessage:
-              'Once a data source is deleted, it cannot be recovered. Please proceed with caution.',
+              "Once a data source is deleted, it cannot be recovered. Please proceed with caution.",
           })}
         </span>
       ),
       okText: intl.formatMessage({
-        id: 'pages.datasource.delete.okText',
-        defaultMessage: 'Delete',
+        id: "pages.datasource.delete.okText",
+        defaultMessage: "Delete",
       }),
-      okType: 'primary',
+      okType: "primary",
       okButtonProps: {
-        size: 'small',
+        size: "small",
         danger: true,
       },
       cancelButtonProps: {
-        size: 'small',
+        size: "small",
       },
       maskClosable: true,
       async onOk() {
         if (!record.id) {
           message.error(
             intl.formatMessage({
-              id: 'pages.datasource.message.idNotExist',
-              defaultMessage: 'id does not exist',
-            }),
+              id: "pages.datasource.message.idNotExist",
+              defaultMessage: "id does not exist",
+            })
           );
           return;
         }
@@ -155,15 +161,15 @@ const DataSourcePage: React.FC = () => {
             return;
           }
 
-          message.success(response.message || 'Delete success');
+          message.success(response.message || "Delete success");
           handleRefresh();
         } catch (error: any) {
           message.error(
             error?.message ||
               intl.formatMessage({
-                id: 'pages.datasource.message.deleteFailed',
-                defaultMessage: 'Delete failed',
-              }),
+                id: "pages.datasource.message.deleteFailed",
+                defaultMessage: "Delete failed",
+              })
           );
         }
       },
@@ -174,42 +180,25 @@ const DataSourcePage: React.FC = () => {
     if (!record.id) {
       message.error(
         intl.formatMessage({
-          id: 'pages.datasource.message.unknownError',
-          defaultMessage: 'Unknown error',
-        }),
+          id: "pages.datasource.message.unknownError",
+          defaultMessage: "Unknown error",
+        })
       );
       return;
     }
 
     try {
-      const response = await testDataSourceConnection(record.id);
+      await testDataSourceConnection(record.id);
 
-      if (response.code !== 0) {
-        message.error(
-          response.message ||
-            intl.formatMessage({
-              id: 'pages.datasource.message.unknownError',
-              defaultMessage: 'Unknown error',
-            }),
-        );
-        return;
-      }
+      // message.success(
+      //   intl.formatMessage({
+      //     id: "pages.datasource.message.connectSuccess",
+      //     defaultMessage: "Connected Success",
+      //   })
+      // );
 
-      message.success(
-        intl.formatMessage({
-          id: 'pages.datasource.message.connectSuccess',
-          defaultMessage: 'Connected Success',
-        }),
-      );
       handleRefresh();
-    } catch (error: any) {
-      message.error(
-        error?.message ||
-          intl.formatMessage({
-            id: 'pages.datasource.message.unknownError',
-            defaultMessage: 'Unknown error',
-          }),
-      );
+    } catch (_) {
     }
   };
 
@@ -239,7 +228,10 @@ const DataSourcePage: React.FC = () => {
                 <SearchBar value={searchKeyword} onChange={setSearchKeyword} />
               </motion.div>
 
-              <motion.p variants={PAGE_ANIMATION.fadeUp} className="datasource-page-count">
+              <motion.p
+                variants={PAGE_ANIMATION.fadeUp}
+                className="datasource-page-count"
+              >
                 发现 {filteredDataSourceList.length} 个数据源
               </motion.p>
 
@@ -270,7 +262,9 @@ const DataSourcePage: React.FC = () => {
                     ))}
                   </Row>
 
-                  {!loading && filteredDataSourceList.length === 0 && <EmptyState onCreate={handleCreate}/>}
+                  {!loading && filteredDataSourceList.length === 0 && (
+                    <EmptyState onCreate={handleCreate} />
+                  )}
                 </motion.div>
               </Spin>
             </motion.div>

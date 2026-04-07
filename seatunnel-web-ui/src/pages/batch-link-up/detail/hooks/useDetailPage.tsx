@@ -37,6 +37,12 @@ export default function useDetailPage() {
   const baseSectionRef = useRef<HTMLDivElement>(null);
   const clientSectionRef = useRef<HTMLDivElement>(null);
 
+  const [sourceTestStatus, setSourceTestStatus] = useState<any>("idle");
+  const [targetTestStatus, setTargetTestStatus] = useState<any>("idle");
+
+  const [sourceDataSourceId, setSourceDataSourceId] = useState<string>();
+  const [targetDataSourceId, setTargetDataSourceId] = useState<string>();
+
   useEffect(() => {
     if (!id) return;
 
@@ -52,7 +58,9 @@ export default function useDetailPage() {
     const currentMode = data?.mode || "GUIDE_SINGLE";
 
     form.setFieldsValue({
-      jobName: data?.jobName || `${data?.sourceType?.dbType?.toLowerCase()}2${data?.targetType?.dbType?.toLowerCase()}`,
+      jobName:
+        data?.jobName ||
+        `${data?.sourceType?.dbType?.toLowerCase()}2${data?.targetType?.dbType?.toLowerCase()}`,
       description: data?.description || "",
       mode: currentMode,
     });
@@ -151,7 +159,7 @@ export default function useDetailPage() {
       if (id) {
         sessionStorage.setItem(
           `batch-link-up-detail-${id}`,
-          JSON.stringify(merged),
+          JSON.stringify(merged)
         );
 
         if (currentMode === "GUIDE_SINGLE") {
@@ -201,5 +209,13 @@ export default function useDetailPage() {
     goBack,
     goStep,
     handleNext,
+    sourceTestStatus,
+    targetTestStatus,
+    setSourceTestStatus,
+    setTargetTestStatus,
+    sourceDataSourceId,
+    targetDataSourceId,
+    setSourceDataSourceId,
+    setTargetDataSourceId,
   };
 }

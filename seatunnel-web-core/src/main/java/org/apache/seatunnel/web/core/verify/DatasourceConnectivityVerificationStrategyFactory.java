@@ -1,4 +1,4 @@
-package org.apache.seatunnel.web.api.verify;
+package org.apache.seatunnel.web.core.verify;
 
 import jakarta.annotation.Resource;
 import org.apache.seatunnel.web.spi.enums.DbType;
@@ -8,7 +8,6 @@ import java.util.List;
 
 @Component
 public class DatasourceConnectivityVerificationStrategyFactory {
-
     @Resource
     private List<DatasourceConnectivityVerificationStrategy> strategies;
 

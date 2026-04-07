@@ -1,4 +1,4 @@
-package org.apache.seatunnel.web.api.verify;
+package org.apache.seatunnel.web.core.verify;
 
 
 import org.apache.seatunnel.web.dao.entity.DataSource;

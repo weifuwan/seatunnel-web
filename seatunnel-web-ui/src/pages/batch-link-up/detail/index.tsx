@@ -159,7 +159,7 @@ const DetailPage = () => {
                 className="absolute left-0 top-0 h-full rounded-full transition-[width] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
                 style={{
                   width: stepProgress,
-                  background: "rgba(23,92,211,0.3)",
+                  background: "rgba(23,92,211,0.25)",
                 }}
               />
             </div>

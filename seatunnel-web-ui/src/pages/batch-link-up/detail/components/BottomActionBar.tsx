@@ -8,6 +8,7 @@ interface Props {
   onPrev?: () => void;
   nextText?: string;
   hintText?: string;
+  nextDisabled?: boolean;
 }
 
 const BottomActionBar: React.FC<Props> = ({
@@ -16,6 +17,7 @@ const BottomActionBar: React.FC<Props> = ({
   onPrev,
   nextText = "下一步",
   hintText = "完成基础信息与客户端链接配置后，即可进入下一步",
+  nextDisabled = false,
 }) => {
   return (
     <div
@@ -42,6 +44,7 @@ const BottomActionBar: React.FC<Props> = ({
           <Button
             type="primary"
             onClick={onNext}
+            disabled={nextDisabled}
             className="!h-10 !rounded-full !px-5 shadow-sm"
           >
             {nextText}

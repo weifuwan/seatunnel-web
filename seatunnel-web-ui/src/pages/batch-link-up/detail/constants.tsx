@@ -3,18 +3,23 @@ import type { ClientItem } from "./types";
 
 export const STEP_THEME = {
   base: {
-    pill: "bg-[#F5F9FF] text-[#175CD3]",
-    pillInactive: "bg-[#F9FAFB] text-[#667085]",
-    dot: "bg-[#1570EF] text-white",
-    dotInactive: "bg-[#D0D5DD] text-white",
+    pill: "bg-[#EEF4FF] text-[#175CD3]",
+    dot: "bg-[#175CD3] text-white",
+
+    pillDone: "bg-[#F5F8FF] text-[#175CD3]",
+    dotDone: "bg-[#5B8DEF] text-white",
+
+    pillInactive: "bg-[#F9FAFB] text-[#98A2B3]",
+    dotInactive: "bg-[#EAECF0] text-[#98A2B3]",
   },
   client: {
-    pill: "bg-[#F5F9FF] text-[#175CD3]",
-    pillInactive: "bg-[#F9FAFB] text-[#667085]",
-    dot: "bg-[#1570EF] text-white",
-    dotInactive: "bg-[#D0D5DD] text-white",
+    pill: "bg-[#EEF4FF] text-[#175CD3]",
+    dot: "bg-[#175CD3] text-white",
+
+    pillInactive: "bg-[#F9FAFB] text-[#98A2B3]",
+    dotInactive: "bg-[#EAECF0] text-[#98A2B3]",
   },
-} as const;
+};
 
 export const mockSourceClients: ClientItem[] = [
   { id: "s1", name: "InfluxDB-Client-01", type: "InfluxDB", status: "online" },

@@ -1,3 +1,4 @@
+import { openPrettyNotification } from "@/utils/prettyNotification";
 import { Form } from "antd";
 import BaseInfoSection from "./components/BaseInfoSection";
 import BottomActionBar from "./components/BottomActionBar";
@@ -33,7 +34,6 @@ const DetailPage = () => {
     goBack,
     goStep,
     handleNext,
-
     sourceTestStatus,
     targetTestStatus,
     setSourceTestStatus,
@@ -50,6 +50,27 @@ const DetailPage = () => {
 
   const isBaseStep = activeStep === "base";
   const isClientStep = activeStep === "client";
+  const isBaseDone = activeStep === "client";
+
+  const basePillClass = isBaseStep
+    ? STEP_THEME.base.pill
+    : isBaseDone
+      ? STEP_THEME.base.pillDone
+      : STEP_THEME.base.pillInactive;
+
+  const baseDotClass = isBaseStep
+    ? STEP_THEME.base.dot
+    : isBaseDone
+      ? STEP_THEME.base.dotDone
+      : STEP_THEME.base.dotInactive;
+
+  const clientPillClass = isClientStep
+    ? STEP_THEME.client.pill
+    : STEP_THEME.client.pillInactive;
+
+  const clientDotClass = isClientStep
+    ? STEP_THEME.client.dot
+    : STEP_THEME.client.dotInactive;
 
   const nextText = (() => {
     if (isBaseStep) return "下一步：客户端链接配置";
@@ -69,6 +90,44 @@ const DetailPage = () => {
     return "确认客户端链接关系后，将进入单表向导配置";
   })();
 
+  const canGoNextFromClient =
+    sourceTestStatus === "success" && targetTestStatus === "success";
+
+  const handleNextWithGuard = async () => {
+    if (activeStep === "client" && !canGoNextFromClient) {
+      if (sourceTestStatus !== "success" && targetTestStatus !== "success") {
+        openPrettyNotification({
+          type: "warning",
+          title: "操作警告",
+          description: "请先完成来源和去向的连通性测试，并确保都通过",
+        });
+        return;
+      }
+
+      if (sourceTestStatus !== "success") {
+        openPrettyNotification({
+          type: "warning",
+          title: "操作警告",
+          description: "请先完成来源的连通性测试，并确保都通过",
+        });
+        return;
+      }
+
+      if (targetTestStatus !== "success") {
+        openPrettyNotification({
+          type: "warning",
+          title: "操作警告",
+          description: "请先完成去向的连通性测试，并确保都通过",
+        });
+        return;
+      }
+    }
+
+    await handleNext();
+  };
+
+  const stepProgress = activeStep === "client" ? "100%" : "0%";
+
   return (
     <div className="min-h-screen bg-white">
       <PageHeader onBack={goBack} />
@@ -81,17 +140,13 @@ const DetailPage = () => {
               onClick={() => goStep("base")}
               className={[
                 "flex items-center gap-2 rounded-full px-3 py-1.5 text-sm transition-all duration-200",
-                isBaseStep
-                  ? STEP_THEME.base.pill
-                  : STEP_THEME.base.pillInactive,
+                basePillClass,
               ].join(" ")}
             >
               <span
                 className={[
                   "flex h-5 w-5 items-center justify-center rounded-full text-[12px] font-semibold transition-all duration-200",
-                  isBaseStep
-                    ? STEP_THEME.base.dot
-                    : STEP_THEME.base.dotInactive,
+                  baseDotClass,
                 ].join(" ")}
               >
                 1
@@ -99,24 +154,28 @@ const DetailPage = () => {
               基础配置
             </button>
 
-            <div className="h-px flex-1 bg-[#EAECF0]" />
+            <div className="relative h-[2px] flex-1 overflow-hidden rounded-full bg-[#EAECF0]">
+              <div
+                className="absolute left-0 top-0 h-full rounded-full transition-[width] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
+                style={{
+                  width: stepProgress,
+                  background: "rgba(23,92,211,0.3)",
+                }}
+              />
+            </div>
 
             <button
               type="button"
               onClick={() => goStep("client")}
               className={[
                 "flex items-center gap-2 rounded-full px-3 py-1.5 text-sm transition-all duration-200",
-                isClientStep
-                  ? STEP_THEME.client.pill
-                  : STEP_THEME.client.pillInactive,
+                clientPillClass,
               ].join(" ")}
             >
               <span
                 className={[
                   "flex h-5 w-5 items-center justify-center rounded-full text-[12px] font-semibold transition-all duration-200",
-                  isClientStep
-                    ? STEP_THEME.client.dot
-                    : STEP_THEME.client.dotInactive,
+                  clientDotClass,
                 ].join(" ")}
               >
                 2
@@ -176,10 +235,11 @@ const DetailPage = () => {
 
       <BottomActionBar
         onCancel={goBack}
-        onNext={handleNext}
+        onNext={handleNextWithGuard}
         onPrev={isClientStep ? () => setActiveStep("base") : undefined}
         nextText={nextText}
         hintText={hintText}
+        nextDisabled={isClientStep && !canGoNextFromClient}
       />
     </div>
   );

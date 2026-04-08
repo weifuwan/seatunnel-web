@@ -2,6 +2,7 @@ package org.apache.seatunnel.web.core.verify.job;
 
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import jakarta.annotation.Resource;
 import org.apache.seatunnel.plugin.datasource.api.hocon.DataSourceHoconBuilder;
 import org.apache.seatunnel.plugin.datasource.api.jdbc.DataSourceProcessor;
 import org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConnectionProvider;
@@ -12,9 +13,8 @@ import org.apache.seatunnel.web.dao.entity.SeaTunnelClient;
 import org.apache.seatunnel.web.spi.enums.DbType;
 import org.springframework.stereotype.Component;
 
-import jakarta.annotation.Resource;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -29,7 +29,10 @@ public class JdbcConnectivityTestJobDefinitionBuilder implements ConnectivityTes
     ));
 
     @Resource
-    private ConnectivitySourcePluginResolver sourcePluginResolver;
+    private ConnectivitySourceBuilderResolver sourceBuilderResolver;
+
+    @Resource
+    private ConnectivitySourcePluginNameResolver sourcePluginNameResolver;
 
     @Resource
     private ConsoleSinkHoconBuilder consoleSinkHoconBuilder;
@@ -47,14 +50,17 @@ public class JdbcConnectivityTestJobDefinitionBuilder implements ConnectivityTes
 
     @Override
     public ConnectivityTestJob build(SeaTunnelClient client, DataSource datasource) {
-        String sourcePluginName = sourcePluginResolver.resolve(datasource.getDbType());
+        DbType dbType = datasource.getDbType();
 
-        DataSourceProcessor processor = DataSourceUtils.getDatasourceProcessor(datasource.getDbType());
-        DataSourceHoconBuilder sourceBuilder = processor.getQueryBuilder(sourcePluginName);
+        String builderKey = sourceBuilderResolver.resolveBuilderKey(dbType);
+        String hoconPluginName = sourcePluginNameResolver.resolvePluginName(dbType);
+
+        DataSourceProcessor processor = DataSourceUtils.getDatasourceProcessor(dbType);
+        DataSourceHoconBuilder sourceBuilder = processor.getQueryBuilder(builderKey);
         JdbcConnectionProvider connectionProvider = processor.getConnectionManager();
 
         Config sourceNodeConfig = buildMinimalSourceNodeConfig();
-        Config sourceConfig = sourceBuilder.buildSourceHocon(
+        Config sourcePluginConfig = sourceBuilder.buildSourceHocon(
                 datasource.getConnectionParams(),
                 sourceNodeConfig,
                 connectionProvider,
@@ -64,8 +70,8 @@ public class JdbcConnectivityTestJobDefinitionBuilder implements ConnectivityTes
         String jobName = buildJobName(client.getId(), datasource.getId());
         String jobConfig = seaTunnelJobConfigAssembler.assemble(
                 testJobEnvConfigBuilder.buildBatchEnv(),
-                sourcePluginName,
-                sourceConfig,
+                hoconPluginName,
+                sourcePluginConfig,
                 consoleSinkHoconBuilder.pluginName(),
                 consoleSinkHoconBuilder.build()
         );
@@ -74,7 +80,7 @@ public class JdbcConnectivityTestJobDefinitionBuilder implements ConnectivityTes
     }
 
     private Config buildMinimalSourceNodeConfig() {
-        Map<String, Object> map = new HashMap<String, Object>(4);
+        Map<String, Object> map = new LinkedHashMap<String, Object>(4);
         map.put("query", "select 1 as connectivity_check");
         return ConfigFactory.parseMap(map);
     }

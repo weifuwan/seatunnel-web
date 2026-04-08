@@ -18,7 +18,7 @@ const DetailPage = () => {
     activeStep,
     sourceClientId,
     targetClientId,
-    bridgeClientIds,
+    bridgeClientId,
     sourceLabel,
     targetLabel,
     mode,
@@ -27,7 +27,7 @@ const DetailPage = () => {
     setActiveStep,
     setSourceClientId,
     setTargetClientId,
-    setBridgeClientIds,
+    setBridgeClientId,
     handleSourceChange,
     handleTargetChange,
     handleModeChange,
@@ -212,10 +212,10 @@ const DetailPage = () => {
                   targetLabel={targetLabel}
                   sourceClientId={sourceClientId}
                   targetClientId={targetClientId}
-                  bridgeClientIds={bridgeClientIds}
+                  bridgeClientId={bridgeClientId}
                   setSourceClientId={setSourceClientId}
                   setTargetClientId={setTargetClientId}
-                  setBridgeClientIds={setBridgeClientIds}
+                  setBridgeClientId={setBridgeClientId}
                   handleSourceChange={handleSourceChange}
                   handleTargetChange={handleTargetChange}
                   sourceDataSourceId={sourceDataSourceId}

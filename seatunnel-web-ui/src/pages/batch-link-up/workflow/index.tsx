@@ -211,6 +211,7 @@ export default function Workflow({
               <RightConfigPanel
                 activeTab={activeTab}
                 onTabChange={setActiveTab}
+                params={params}
               />
             </div>
           </div>

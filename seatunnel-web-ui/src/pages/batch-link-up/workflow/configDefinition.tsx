@@ -4,11 +4,11 @@ import MappingConfigContent from "./MappingConfigContent";
 import AdvancedConfigContent from "./AdvancedConfigContent";
 import type { TabDefinition } from "./types";
 
-export const tabDefinitions: TabDefinition[] = [
+export const getTabDefinitions = (params?: any): TabDefinition[] => [
   {
     key: "basic",
     label: "基础",
-    content: <BasicConfigContent />,
+    content: <BasicConfigContent params={params} />,
   },
   {
     key: "schedule",

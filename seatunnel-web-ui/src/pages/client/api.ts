@@ -85,7 +85,7 @@ export const seatunnelClientApi = {
   },
 
   verifyDatasource: (
-    clientId: number | string,
+    clientId:  string,
     datasourceId: number | string
   ): Promise<{
     code: number;

@@ -17,7 +17,6 @@ export default function SingleConfigPage() {
     if (!cache) return;
 
     const data = JSON.parse(cache);
-
     setParams(data);
     setSourceType(data?.sourceType || null);
     setTargetType(data?.targetType || null);

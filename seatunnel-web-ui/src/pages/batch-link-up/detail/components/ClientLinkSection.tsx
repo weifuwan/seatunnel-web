@@ -21,10 +21,10 @@ interface Props {
   targetLabel: string;
   sourceClientId?: string;
   targetClientId?: string;
-  bridgeClientIds: string[];
+  bridgeClientId: any;
   setSourceClientId: (id?: string) => void;
   setTargetClientId: (id?: string) => void;
-  setBridgeClientIds: (ids: string[]) => void;
+  setBridgeClientId: (ids: string) => void;
   handleSourceChange: (value: string, option: any) => void;
   handleTargetChange: (value: string, option: any) => void;
 
@@ -166,8 +166,8 @@ const ClientLinkSection: React.FC<Props> = ({
   targetType,
   sourceLabel,
   targetLabel,
-  bridgeClientIds,
-  setBridgeClientIds,
+  bridgeClientId,
+  setBridgeClientId,
   handleSourceChange,
   handleTargetChange,
   sectionRef,
@@ -285,11 +285,10 @@ const ClientLinkSection: React.FC<Props> = ({
   useEffect(() => {
     if (!bridgeClientOptions.length) return;
 
-    if (!bridgeClientIds || bridgeClientIds.length === 0) {
-      setBridgeClientIds([bridgeClientOptions[0].value]);
-      // 初始化默认值时，不重置状态
+    if (!bridgeClientId) {
+      setBridgeClientId(bridgeClientOptions[0].value);
     }
-  }, [bridgeClientOptions, bridgeClientIds, setBridgeClientIds]);
+  }, [bridgeClientOptions, bridgeClientId, setBridgeClientId]);
 
   const sourceOptions = useMemo(
     () =>
@@ -354,7 +353,7 @@ const ClientLinkSection: React.FC<Props> = ({
       targetType: targetType?.dbType,
       sourceId: sourceDataSourceId,
       targetId: targetDataSourceId,
-      bridgeClientIds,
+      bridgeClientId,
     });
   }, [
     form,
@@ -362,14 +361,14 @@ const ClientLinkSection: React.FC<Props> = ({
     targetType,
     sourceDataSourceId,
     targetDataSourceId,
-    bridgeClientIds,
+    bridgeClientId,
   ]);
 
   const runConnectivityTest = async (
     type: "source" | "target",
     datasourceId?: string | number
   ) => {
-    const clientId = bridgeClientIds?.[0];
+const clientId = bridgeClientId;
 
     if (!clientId) {
       message.warning("请先选择客户端节点");
@@ -486,7 +485,7 @@ const ClientLinkSection: React.FC<Props> = ({
                   runConnectivityTest("source", sourceDataSourceId)
                 }
                 loading={sourceTestStatus === "loading"}
-                disabled={!sourceDataSourceId || !bridgeClientIds?.length}
+                disabled={!sourceDataSourceId || !bridgeClientId}
                 type="primary"
               >
                 测试连通性
@@ -540,9 +539,9 @@ const ClientLinkSection: React.FC<Props> = ({
                   客户端节点
                 </div>
                 <Select
-                  value={bridgeClientIds}
+                  value={bridgeClientId}
                   onChange={(values) => {
-                    setBridgeClientIds(values);
+                    setBridgeClientId(values);
                     resetSourceTestStatus();
                     resetTargetTestStatus();
                   }}
@@ -556,7 +555,7 @@ const ClientLinkSection: React.FC<Props> = ({
 
               <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-4">
                 <div className="text-sm font-medium text-slate-800">
-                  当前已选择 {bridgeClientIds.length} 个节点
+                  当前已选择 {bridgeClientId ? "1" : "0"} 个节点
                 </div>
                 <div className="mt-1 text-xs text-slate-500">
                   任务会在你选中的客户端节点上运行，我们会用它来做连接测试和正式执行。
@@ -575,7 +574,7 @@ const ClientLinkSection: React.FC<Props> = ({
                   runConnectivityTest("target", targetDataSourceId)
                 }
                 loading={targetTestStatus === "loading"}
-                disabled={!targetDataSourceId || !bridgeClientIds?.length}
+                disabled={!targetDataSourceId || !bridgeClientId}
                 type="primary"
               >
                 测试连通性

@@ -1,17 +1,21 @@
 import { Button, Space } from "antd";
-import { tabDefinitions } from "./configDefinition";
+import { getTabDefinitions } from "./configDefinition";
 import styles from "./index.less";
 import type { TabKey } from "./types";
 
 interface RightConfigPanelProps {
   activeTab?: TabKey;
   onTabChange?: (tab: TabKey) => void;
+  params?: any;
 }
 
 export default function RightConfigPanel({
   activeTab = "basic",
   onTabChange,
+  params,
 }: RightConfigPanelProps) {
+  const tabDefinitions = getTabDefinitions(params);
+
   const activeConfig =
     tabDefinitions.find((item: any) => item.key === activeTab) ??
     tabDefinitions[0];

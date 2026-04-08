@@ -8,12 +8,14 @@ interface ExtraParamsConfigProps {
   params: Array<{ key: string; value: string }>;
   onParamsChange: (params: Array<{ key: string; value: string }>) => void;
   selectedNode: { id: string; data: { text?: string; dbType?: string } };
+  hideHeader?: boolean;
 }
 
 const ExtraParamsConfig: FC<ExtraParamsConfigProps> = ({
   params,
   onParamsChange,
   selectedNode,
+  hideHeader = false,
 }) => {
   const getParamMeta = (type?: string) => {
     switch (type?.toUpperCase()) {
@@ -90,19 +92,39 @@ const ExtraParamsConfig: FC<ExtraParamsConfigProps> = ({
 
   return (
     <div className="workflow-panel__params">
-      <div className="workflow-panel__params-head">
-        <div className="workflow-panel__params-title">参数列表</div>
+      {hideHeader ? (
+        <div
+          className="workflow-panel__params-toolbar"
+          style={{ display: "flex", justifyContent: "space-between" }}
+        >
+          <div className="workflow-panel__group-head">
+            <div className="workflow-panel__group-kicker">额外参数</div>
+          </div>
+          <Tooltip title="添加一个额外参数">
+            <button
+              type="button"
+              className="workflow-panel__icon-btn"
+              onClick={handleAddParam}
+            >
+              <PlusOutlined />
+            </button>
+          </Tooltip>
+        </div>
+      ) : (
+        <div className="workflow-panel__params-head">
+          <div className="workflow-panel__params-title">参数列表</div>
 
-        <Tooltip title="添加一个额外参数">
-          <button
-            type="button"
-            className="workflow-panel__icon-btn"
-            onClick={handleAddParam}
-          >
-            <PlusOutlined />
-          </button>
-        </Tooltip>
-      </div>
+          <Tooltip title="添加一个额外参数">
+            <button
+              type="button"
+              className="workflow-panel__icon-btn"
+              onClick={handleAddParam}
+            >
+              <PlusOutlined />
+            </button>
+          </Tooltip>
+        </div>
+      )}
 
       {params.length === 0 ? (
         <div className="workflow-panel__empty">暂无额外参数</div>
@@ -128,7 +150,6 @@ const ExtraParamsConfig: FC<ExtraParamsConfigProps> = ({
                   placeholder="选择参数"
                   showSearch
                   optionFilterProp="value"
-                  size="large"
                   className="workflow-panel__antd-select workflow-panel__param-key"
                   popupClassName="workflow-panel__dropdown"
                 />
@@ -139,7 +160,6 @@ const ExtraParamsConfig: FC<ExtraParamsConfigProps> = ({
                     handleParamChange(idx, "value", e.target.value)
                   }
                   placeholder="输入参数值"
-                  size="large"
                   className="workflow-panel__param-value"
                   suffix={
                     <DeleteOutlined

@@ -1,5 +1,5 @@
+import { Divider, Input, Segmented, Select, Tooltip } from "antd";
 import { BarChart3, Database, Eye, FileCode2, Table2 } from "lucide-react";
-import { Button, Input, Segmented, Select, Tooltip } from "antd";
 import { memo, useMemo } from "react";
 import PanelShell from "../PanelShell";
 import ExtraParamsConfig from "./ExtraParamsConfig";
@@ -32,7 +32,7 @@ function SourcePanel({ selectedNode, onClose, onNodeDataChange }: Props) {
 
   const currentDataSource = useMemo(() => {
     return sourceDataSourceOptions.find(
-      (item: any) => item.value === sourceDataSourceId,
+      (item: any) => item.value === sourceDataSourceId
     );
   }, [sourceDataSourceId, sourceDataSourceOptions]);
 
@@ -57,9 +57,7 @@ function SourcePanel({ selectedNode, onClose, onNodeDataChange }: Props) {
   const handleReadModeChange = (value: string) => {
     updateNode({
       readMode: value,
-      ...(value === "table"
-        ? { sql: "" }
-        : { sourceTable: undefined }),
+      ...(value === "table" ? { sql: "" } : { sourceTable: undefined }),
     });
   };
 
@@ -107,13 +105,12 @@ function SourcePanel({ selectedNode, onClose, onNodeDataChange }: Props) {
       }
     >
       <section className="workflow-panel__section">
-        <div className="workflow-panel__section-head">
-          <div className="workflow-panel__section-title">数据源</div>
-        </div>
+        <div className="workflow-panel__group">
+          <div className="workflow-panel__group-head">
+            <div className="workflow-panel__group-kicker">数据源</div>
+          </div>
 
-        <div className="workflow-panel__stack">
           <div className="workflow-panel__field workflow-panel__field--full">
-            {/* <div className="workflow-panel__label">来源数据源</div> */}
             <Select
               value={sourceDataSourceId}
               onChange={handleDataSourceChange}
@@ -121,31 +118,40 @@ function SourcePanel({ selectedNode, onClose, onNodeDataChange }: Props) {
               placeholder="请选择来源数据源"
               showSearch
               optionFilterProp="label"
+              className="workflow-panel__antd-select"
+              style={{width: "100%"}}
+              popupClassName="workflow-panel__dropdown"
             />
           </div>
 
-          <div className="workflow-panel__meta-card workflow-panel__meta-card--compact">
-            <div className="workflow-panel__meta-icon">
-              <Database size={16} />
+          {sourceDataSourceId && (
+            <div className="workflow-panel__meta-card workflow-panel__meta-card--compact">
+              <div className="workflow-panel__meta-icon">
+                <Database size={16} />
+              </div>
+              <div className="workflow-panel__meta-content">
+                <div className="workflow-panel__meta-title">
+                  {currentDataSource?.label || "未命名数据源"}
+                </div>
+                <div className="workflow-panel__meta-desc">
+                  {currentDataSource?.dbType || dbType || "数据库类型待确定"}
+                </div>
+              </div>
             </div>
-            <div className="workflow-panel__meta-content">
-              <div className="workflow-panel__meta-title">
-                {currentDataSource?.label || "暂未选择数据源"}
-              </div>
-              <div className="workflow-panel__meta-desc">
-                {currentDataSource?.dbType || dbType || "数据库类型待确定"}
-              </div>
+          )}
+        </div>
+
+        <div className="workflow-panel__divider" />
+
+        <div className="workflow-panel__group">
+          <div className="workflow-panel__group-head" style={{ display: "flex",justifyContent: "space-between" }}>
+            <div className="workflow-panel__group-kicker">读取方式</div>
+            <div style={{ display: "flex" }}>
+              <Tooltip title="预览读取结果样例数据"><Eye size={15} onClick={handlePreview}/></Tooltip> <Divider type="vertical" />
+              <Tooltip title="统计当前读取配置下的数据情况"><BarChart3 size={15} onClick={handleStatistics}/></Tooltip>
             </div>
           </div>
-        </div>
-      </section>
 
-      <section className="workflow-panel__section">
-        <div className="workflow-panel__section-head">
-          <div className="workflow-panel__section-title">读取方式</div>
-        </div>
-
-        <div className="workflow-panel__stack">
           <Segmented
             block
             value={readMode}
@@ -154,7 +160,7 @@ function SourcePanel({ selectedNode, onClose, onNodeDataChange }: Props) {
               {
                 label: (
                   <div className="workflow-panel__segmented-item">
-                    <Table2 size={15} />
+                    <Table2 size={14} />
                     <span>表列表</span>
                   </div>
                 ),
@@ -163,7 +169,7 @@ function SourcePanel({ selectedNode, onClose, onNodeDataChange }: Props) {
               {
                 label: (
                   <div className="workflow-panel__segmented-item">
-                    <FileCode2 size={15} />
+                    <FileCode2 size={14} />
                     <span>自定义 SQL</span>
                   </div>
                 ),
@@ -171,25 +177,24 @@ function SourcePanel({ selectedNode, onClose, onNodeDataChange }: Props) {
               },
             ]}
           />
-
           {readMode === "table" ? (
             <div className="workflow-panel__field workflow-panel__field--full">
-              <div className="workflow-panel__label">来源表</div>
+              {/* <div className="workflow-panel__label">来源表</div> */}
               <Select
                 value={sourceTable}
                 onChange={(value) => updateNode({ sourceTable: value })}
                 options={tableOptions}
                 placeholder="请选择来源表"
                 className="workflow-panel__antd-select"
+                style={{width: "100%"}}
                 popupClassName="workflow-panel__dropdown"
                 showSearch
                 optionFilterProp="label"
-                size="large"
               />
             </div>
           ) : (
             <div className="workflow-panel__field workflow-panel__field--full">
-              <div className="workflow-panel__label">SQL 语句</div>
+              {/* <div className="workflow-panel__label">SQL 语句</div> */}
               <TextArea
                 value={sql}
                 onChange={(e) => updateNode({ sql: e.target.value })}
@@ -200,47 +205,16 @@ function SourcePanel({ selectedNode, onClose, onNodeDataChange }: Props) {
             </div>
           )}
         </div>
-      </section>
 
-      <section className="workflow-panel__section">
-        <div className="workflow-panel__section-head">
-          <div className="workflow-panel__section-title">额外参数</div>
-        </div>
+        <div className="workflow-panel__divider" />
 
-        <ExtraParamsConfig
-          params={extraParams}
-          onParamsChange={(params) => updateNode({ extraParams: params })}
-          selectedNode={selectedNode}
-        />
-      </section>
-
-      <section className="workflow-panel__section workflow-panel__section--subtle">
-        <div className="workflow-panel__section-head">
-          <div className="workflow-panel__section-title">辅助操作</div>
-        </div>
-
-        <div className="workflow-panel__action-grid">
-          <Tooltip title="预览读取结果样例数据">
-            <Button
-              icon={<Eye size={16} />}
-              size="large"
-              className="workflow-panel__action-btn"
-              onClick={handlePreview}
-            >
-              数据预览
-            </Button>
-          </Tooltip>
-
-          <Tooltip title="统计当前读取配置下的数据情况">
-            <Button
-              icon={<BarChart3 size={16} />}
-              size="large"
-              className="workflow-panel__action-btn"
-              onClick={handleStatistics}
-            >
-              数据统计
-            </Button>
-          </Tooltip>
+        <div className="workflow-panel__group">
+          <ExtraParamsConfig
+            params={extraParams}
+            onParamsChange={(params) => updateNode({ extraParams: params })}
+            selectedNode={selectedNode}
+            hideHeader
+          />
         </div>
       </section>
     </PanelShell>

@@ -1,5 +1,5 @@
 import { Menu, message } from "antd";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   addEdge,
   applyEdgeChanges,
@@ -29,7 +29,11 @@ export default function useFlowBuilder({ form, params }: Props) {
   const [runVisible, setRunVisible] = useState(false);
   const [drawerVisible, setDrawerVisible] = useState(false);
 
-  const [selectedNode, setSelectedNode] = useState<any>(null);
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const selectedNode = useMemo(
+    () => nodes.find((node) => node.id === selectedNodeId) || null,
+    [nodes, selectedNodeId]
+  );
   const [selectedNodes, setSelectedNodes] = useState<any[]>([]);
   const [selectedEdges, setSelectedEdges] = useState<any[]>([]);
 
@@ -237,13 +241,13 @@ export default function useFlowBuilder({ form, params }: Props) {
   );
 
   const onNodeClick = useCallback((_: any, node: any) => {
-    setSelectedNode(node);
+    setSelectedNodeId(node.id);
     setDrawerVisible(true);
   }, []);
 
   const onNodeContextMenu = useCallback((event: any, node: any) => {
     event.preventDefault();
-    setSelectedNode(node);
+    setSelectedNodeId(node.id);
     setMenuPosition({ x: event.clientX, y: event.clientY });
     setMenuVisible(true);
   }, []);
@@ -447,6 +451,7 @@ export default function useFlowBuilder({ form, params }: Props) {
 
   const onCloseDrawer = useCallback(() => {
     setDrawerVisible(false);
+    setSelectedNodeId(null);
   }, []);
 
   const handleNodeDataChange = (nodeId: string, newData: any) => {

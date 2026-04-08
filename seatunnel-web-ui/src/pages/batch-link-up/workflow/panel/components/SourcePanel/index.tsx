@@ -1,6 +1,7 @@
+import { fetchDataSourceOptions } from "@/pages/data-source/service";
 import { Divider, Input, Segmented, Select, Tooltip } from "antd";
 import { BarChart3, Database, Eye, FileCode2, Table2 } from "lucide-react";
-import { memo, useMemo } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import PanelShell from "../PanelShell";
 import ExtraParamsConfig from "./ExtraParamsConfig";
 import "./index.less";
@@ -16,6 +17,7 @@ interface Props {
 function SourcePanel({ selectedNode, onClose, onNodeDataChange }: Props) {
   const nodeId = selectedNode?.id;
   const nodeData = selectedNode?.data || {};
+  console.log(selectedNode);
 
   const title = nodeData?.title || "MYSQL";
   const dbType = nodeData?.dbType || "MYSQL";
@@ -27,7 +29,9 @@ function SourcePanel({ selectedNode, onClose, onNodeDataChange }: Props) {
   const sql = nodeData?.sql || "";
   const extraParams = nodeData?.extraParams || [];
 
-  const sourceDataSourceOptions = nodeData?.sourceDataSourceOptions || [];
+  const [sourceDataSourceOptions, setSourceDataSourceOptions] = useState<any[]>(
+    []
+  );
   const tableOptions = nodeData?.tableOptions || [];
 
   const currentDataSource = useMemo(() => {
@@ -43,6 +47,53 @@ function SourcePanel({ selectedNode, onClose, onNodeDataChange }: Props) {
       ...patch,
     });
   };
+
+  useEffect(() => {
+    const loadDataSourceOptions = async () => {
+      if (!dbType) {
+        setSourceDataSourceOptions([]);
+        return;
+      }
+
+      try {
+        const res = await fetchDataSourceOptions(dbType);
+        const list = Array.isArray(res?.data) ? res.data : [];
+        const options = list.map((item: any) => ({
+          label: item?.label,
+          value: item?.value + "",
+          dbType: item?.dbType,
+        }));
+        setSourceDataSourceOptions(options);
+      } catch (error) {
+        console.error("load data source options error", error);
+        setSourceDataSourceOptions([]);
+      }
+    };
+
+    loadDataSourceOptions();
+  }, [dbType]);
+
+  useEffect(() => {
+    if (!sourceDataSourceId || sourceDataSourceOptions.length === 0) return;
+
+    const matched = sourceDataSourceOptions.find(
+      (item: any) => item.value === sourceDataSourceId
+    );
+
+    if (!matched) return;
+
+    const nextTitle = matched?.label || nodeData?.title;
+    const nextDbType = matched?.dbType || nodeData?.dbType || "MYSQL";
+
+    // 避免无意义重复更新
+    if (nodeData?.title === nextTitle && nodeData?.dbType === nextDbType)
+      return;
+
+    updateNode({
+      title: nextTitle,
+      dbType: nextDbType,
+    });
+  }, [sourceDataSourceId, sourceDataSourceOptions]);
 
   const handleDataSourceChange = (value: string, option: any) => {
     updateNode({
@@ -110,33 +161,23 @@ function SourcePanel({ selectedNode, onClose, onNodeDataChange }: Props) {
             <div className="workflow-panel__group-kicker">数据源</div>
           </div>
 
-          <div className="workflow-panel__field workflow-panel__field--full">
-            <Select
-              value={sourceDataSourceId}
-              onChange={handleDataSourceChange}
-              options={sourceDataSourceOptions}
-              placeholder="请选择来源数据源"
-              showSearch
-              optionFilterProp="label"
-              className="workflow-panel__antd-select"
-              style={{width: "100%"}}
-              popupClassName="workflow-panel__dropdown"
-            />
-          </div>
 
           {sourceDataSourceId && (
             <div className="workflow-panel__meta-card workflow-panel__meta-card--compact">
               <div className="workflow-panel__meta-icon">
                 <Database size={16} />
               </div>
-              <div className="workflow-panel__meta-content">
-                <div className="workflow-panel__meta-title">
-                  {currentDataSource?.label || "未命名数据源"}
-                </div>
-                <div className="workflow-panel__meta-desc">
-                  {currentDataSource?.dbType || dbType || "数据库类型待确定"}
-                </div>
-              </div>
+              <Select
+                value={sourceDataSourceId}
+                onChange={handleDataSourceChange}
+                options={sourceDataSourceOptions}
+                placeholder="请选择来源数据源"
+                showSearch
+                optionFilterProp="label"
+                className="workflow-panel__antd-select"
+                style={{ width: "100%" }}
+                popupClassName="workflow-panel__dropdown"
+              />
             </div>
           )}
         </div>
@@ -144,11 +185,19 @@ function SourcePanel({ selectedNode, onClose, onNodeDataChange }: Props) {
         <div className="workflow-panel__divider" />
 
         <div className="workflow-panel__group">
-          <div className="workflow-panel__group-head" style={{ display: "flex",justifyContent: "space-between" }}>
+          <div
+            className="workflow-panel__group-head"
+            style={{ display: "flex", justifyContent: "space-between" }}
+          >
             <div className="workflow-panel__group-kicker">读取方式</div>
             <div style={{ display: "flex" }}>
-              <Tooltip title="预览读取结果样例数据"><Eye size={15} onClick={handlePreview}/></Tooltip> <Divider type="vertical" />
-              <Tooltip title="统计当前读取配置下的数据情况"><BarChart3 size={15} onClick={handleStatistics}/></Tooltip>
+              <Tooltip title="预览读取结果样例数据">
+                <Eye size={15} onClick={handlePreview} style={{cursor: "pointer"}}/>
+              </Tooltip>{" "}
+              <Divider type="vertical" />
+              <Tooltip title="统计当前读取配置下的数据情况">
+                <BarChart3 size={15} onClick={handleStatistics} style={{cursor: "pointer"}}/>
+              </Tooltip>
             </div>
           </div>
 
@@ -186,7 +235,7 @@ function SourcePanel({ selectedNode, onClose, onNodeDataChange }: Props) {
                 options={tableOptions}
                 placeholder="请选择来源表"
                 className="workflow-panel__antd-select"
-                style={{width: "100%"}}
+                style={{ width: "100%" }}
                 popupClassName="workflow-panel__dropdown"
                 showSearch
                 optionFilterProp="label"
@@ -199,7 +248,7 @@ function SourcePanel({ selectedNode, onClose, onNodeDataChange }: Props) {
                 value={sql}
                 onChange={(e) => updateNode({ sql: e.target.value })}
                 placeholder="请输入自定义 SQL，例如：SELECT * FROM user_info"
-                autoSize={{ minRows: 7, maxRows: 12 }}
+                autoSize={{ minRows: 5, maxRows: 12 }}
                 className="workflow-panel__antd-textarea"
               />
             </div>

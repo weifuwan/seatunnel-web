@@ -35,7 +35,11 @@ interface FlowCanvasProps {
   targetType?: any;
 }
 
-function buildInitialGraph(sourceType?: any, targetType?: any): {
+function buildInitialGraph(
+  params?: any,
+  sourceType?: any,
+  targetType?: any
+): {
   nodes: Node[];
   edges: Edge[];
 } {
@@ -67,6 +71,7 @@ function buildInitialGraph(sourceType?: any, targetType?: any): {
         title: sourceTitle,
         description: "读取源端数据",
         dbType: sourceDbType,
+        sourceDataSourceId: params?.sourceDataSourceId,
       },
     },
     {
@@ -78,6 +83,7 @@ function buildInitialGraph(sourceType?: any, targetType?: any): {
         title: sinkTitle,
         description: "写入目标端数据",
         dbType: targetDbType,
+        targetDataSourceId: params?.targetDataSourceId,
       },
     },
   ];
@@ -118,7 +124,7 @@ export default function FlowCanvas({
       return;
     }
 
-    const { nodes, edges } = buildInitialGraph(sourceType, targetType);
+    const { nodes, edges } = buildInitialGraph(params, sourceType, targetType);
 
     flow.setNodes(nodes);
     flow.setEdges(edges);

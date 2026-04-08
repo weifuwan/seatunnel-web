@@ -64,14 +64,14 @@ export default function PanelShell({
             ) : null}
           </div>
 
-          <button
+          {/* <button
             type="button"
             className="workflow-panel__close"
             onClick={onClose}
             aria-label="关闭面板"
           >
             <CloseIcon />
-          </button>
+          </button> */}
         </div>
 
         <div className="workflow-panel__body">{children}</div>

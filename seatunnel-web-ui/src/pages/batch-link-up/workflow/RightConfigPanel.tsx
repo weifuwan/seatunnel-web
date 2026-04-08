@@ -42,14 +42,14 @@ export default function RightConfigPanel({
 
       <div className={styles.formArea}>{activeConfig.content}</div>
 
-      <div className={styles.sidePanelFooter}>
+      {/* <div className={styles.sidePanelFooter}>
         <Space className={styles.footerActions}>
           <Button className={styles.footerButton}>重置</Button>
           <Button type="primary" className={styles.footerPrimaryButton}>
             应用配置
           </Button>
         </Space>
-      </div>
+      </div> */}
     </div>
   );
 }

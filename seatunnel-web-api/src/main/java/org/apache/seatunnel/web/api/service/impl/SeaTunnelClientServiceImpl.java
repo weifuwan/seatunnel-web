@@ -8,6 +8,8 @@ import org.apache.seatunnel.web.api.exceptions.ServiceException;
 import org.apache.seatunnel.web.api.service.DataSourceService;
 import org.apache.seatunnel.web.api.service.SeaTunnelClientService;
 import org.apache.seatunnel.web.common.enums.SeaTunnelClientHealthStatusEnum;
+import org.apache.seatunnel.web.core.utils.MetricValueParser;
+import org.apache.seatunnel.web.core.utils.SeaTunnelClientUrlUtils;
 import org.apache.seatunnel.web.core.verify.DatasourceConnectivityVerificationStrategy;
 import org.apache.seatunnel.web.core.verify.DatasourceConnectivityVerificationStrategyFactory;
 import org.apache.seatunnel.web.dao.entity.DataSource;
@@ -42,9 +44,9 @@ public class SeaTunnelClientServiceImpl implements SeaTunnelClientService {
     @Resource
     private DataSourceService dataSourceService;
 
-
     @Resource
     private DatasourceConnectivityVerificationStrategyFactory strategyFactory;
+
 
     @Override
     public void saveOrUpdate(SeaTunnelClientDTO dto) {
@@ -55,7 +57,10 @@ public class SeaTunnelClientServiceImpl implements SeaTunnelClientService {
             SeaTunnelClient entity = new SeaTunnelClient();
             BeanUtils.copyProperties(dto, entity);
 
-            String baseUrl = buildBaseUrl(dto);
+            String baseUrl = SeaTunnelClientUrlUtils.buildBaseUrl(
+                    dto.getClientAddress(),
+                    dto.getClientPort()
+            );
             entity.setBaseUrl(baseUrl);
 
             fillVersionFromOverview(baseUrl, entity);
@@ -70,52 +75,14 @@ public class SeaTunnelClientServiceImpl implements SeaTunnelClientService {
         SeaTunnelClient entity = getEntity(dto.getId());
         BeanUtils.copyProperties(dto, entity);
 
-        String baseUrl = buildBaseUrl(dto);
+        String baseUrl = SeaTunnelClientUrlUtils.buildBaseUrl(
+                dto.getClientAddress(),
+                dto.getClientPort()
+        );
         entity.setBaseUrl(baseUrl);
 
         entity.setUpdateTime(now);
         seaTunnelClientDao.updateById(entity);
-    }
-
-    private void fillVersionFromOverview(String baseUrl, SeaTunnelClient entity) {
-        try {
-            Map overview = seaTunnelRestClient.overview(baseUrl + "/overview", null);
-            Object projectVersion = overview == null ? null : overview.get("projectVersion");
-            if (projectVersion != null) {
-                entity.setClientVersion(String.valueOf(projectVersion));
-            }
-        } catch (Exception e) {
-            log.warn("Fetch seatunnel client overview failed, baseUrl={}", baseUrl, e);
-        }
-    }
-
-    private String buildBaseUrl(SeaTunnelClientDTO dto) {
-        String address = dto.getClientAddress();
-        String port = dto.getClientPort();
-
-        if (port == null) {
-            throw new IllegalArgumentException("clientPort不能为空");
-        }
-
-        if (address == null || address.trim().isEmpty()) {
-            throw new IllegalArgumentException("clientAddress不能为空");
-        }
-
-        address = address.trim();
-
-        if (!address.startsWith("http://") && !address.startsWith("https://")) {
-            address = "http://" + address;
-        }
-
-        if (address.endsWith("/")) {
-            address = address.substring(0, address.length() - 1);
-        }
-
-        if (port != null && !port.trim().isEmpty()) {
-            return address + ":" + port.trim();
-        }
-
-        return address;
     }
 
     @Override
@@ -124,16 +91,25 @@ public class SeaTunnelClientServiceImpl implements SeaTunnelClientService {
         if (entity == null) {
             throw new RuntimeException("entity is null");
         }
+
         List<Map<String, Object>> metricsList =
                 seaTunnelRestClient.systemMonitoringInformation(id);
 
         Map<String, Object> metricMap =
                 (metricsList == null || metricsList.isEmpty()) ? null : metricsList.get(0);
 
-        Double cpuUsage = parsePercent(metricMap == null ? null : metricMap.get("load.system"));
-        Double memoryUsage = parsePercent(metricMap == null ? null : metricMap.get("heap.memory.used/total"));
-        Integer threadCount = parseInteger(metricMap == null ? null : metricMap.get("thread.count"));
-        Integer runningOps = parseInteger(metricMap == null ? null : metricMap.get("operations.running.count"));
+        Double cpuUsage = MetricValueParser.parsePercent(
+                metricMap == null ? null : metricMap.get("load.system")
+        );
+        Double memoryUsage = MetricValueParser.parsePercent(
+                metricMap == null ? null : metricMap.get("heap.memory.used/total")
+        );
+        Integer threadCount = MetricValueParser.parseInteger(
+                metricMap == null ? null : metricMap.get("thread.count")
+        );
+        Integer runningOps = MetricValueParser.parseInteger(
+                metricMap == null ? null : metricMap.get("operations.running.count")
+        );
 
         return new SeaTunnelClientMetricsVO(
                 cpuUsage,
@@ -186,41 +162,26 @@ public class SeaTunnelClientServiceImpl implements SeaTunnelClientService {
         DbType dbType = datasource.getDbType();
         DatasourceConnectivityVerificationStrategy strategy = strategyFactory.getStrategy(dbType);
 
-        long timeoutMs = dto.getTimeoutMs() == null || dto.getTimeoutMs() <= 0 ? 15000L : dto.getTimeoutMs();
-        long pollIntervalMs = dto.getPollIntervalMs() == null || dto.getPollIntervalMs() <= 0 ? 1000L : dto.getPollIntervalMs();
+        long timeoutMs = dto.getTimeoutMs() == null || dto.getTimeoutMs() <= 0
+                ? 15000L : dto.getTimeoutMs();
+        long pollIntervalMs = dto.getPollIntervalMs() == null || dto.getPollIntervalMs() <= 0
+                ? 1000L : dto.getPollIntervalMs();
 
         return strategy.verify(client, datasource, timeoutMs, pollIntervalMs);
     }
 
-    private Integer parseInteger(Object value) {
-        if (value == null) {
-            return 0;
-        }
+    /**
+     * Fill client version from overview if available.
+     */
+    public void fillVersionFromOverview(String baseUrl, SeaTunnelClient entity) {
         try {
-            return Integer.parseInt(String.valueOf(value).trim());
+            Map overview = seaTunnelRestClient.overview(baseUrl + "/overview", null);
+            Object projectVersion = overview == null ? null : overview.get("projectVersion");
+            if (projectVersion != null) {
+                entity.setClientVersion(String.valueOf(projectVersion));
+            }
         } catch (Exception e) {
-            return 0;
-        }
-    }
-
-    private Double parsePercent(Object value) {
-        if (value == null) {
-            return null;
-        }
-
-        String str = String.valueOf(value).trim();
-        if (str.isEmpty()) {
-            return null;
-        }
-
-        if (str.endsWith("%")) {
-            str = str.substring(0, str.length() - 1);
-        }
-
-        try {
-            return Double.parseDouble(str);
-        } catch (Exception e) {
-            return null;
+            log.warn("Fetch seatunnel client overview failed, baseUrl={}", baseUrl, e);
         }
     }
 
@@ -240,19 +201,9 @@ public class SeaTunnelClientServiceImpl implements SeaTunnelClientService {
     }
 
     /**
-     * 更新客户端启用状态
-     */
-    private void updateClientStatus(Long id, Integer status) {
-        SeaTunnelClient entity = getEntity(id);
-        entity.setUpdateTime(new Date());
-        seaTunnelClientDao.updateById(entity);
-    }
-
-    /**
      * 查询客户端实体，不存在则抛异常
      */
     private SeaTunnelClient getEntity(Long id) {
-        SeaTunnelClient entity = seaTunnelClientDao.queryById(id);
-        return entity;
+        return seaTunnelClientDao.queryById(id);
     }
 }

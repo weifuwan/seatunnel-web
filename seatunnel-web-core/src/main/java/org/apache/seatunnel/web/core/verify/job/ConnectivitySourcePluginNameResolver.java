@@ -7,13 +7,9 @@ import org.springframework.stereotype.Component;
 public class ConnectivitySourcePluginNameResolver {
 
     public String resolvePluginName(DbType dbType) {
-        switch (dbType) {
-            case MYSQL:
-            case POSTGRE_SQL:
-            case ORACLE:
-                return "Jdbc";
-            default:
-                throw new IllegalArgumentException("暂不支持该数据源类型的 Source 插件名解析: " + dbType);
-        }
+        return switch (dbType) {
+            case MYSQL, POSTGRE_SQL, ORACLE -> "Jdbc";
+            default -> throw new IllegalArgumentException("暂不支持该数据源类型的 Source 插件名解析: " + dbType);
+        };
     }
 }

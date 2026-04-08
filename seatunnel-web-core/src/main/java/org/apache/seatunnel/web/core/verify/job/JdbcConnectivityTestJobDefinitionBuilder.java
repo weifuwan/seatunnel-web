@@ -13,16 +13,12 @@ import org.apache.seatunnel.web.dao.entity.SeaTunnelClient;
 import org.apache.seatunnel.web.spi.enums.DbType;
 import org.springframework.stereotype.Component;
 
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 @Component
 public class JdbcConnectivityTestJobDefinitionBuilder implements ConnectivityTestJobDefinitionBuilder {
 
-    private static final Set<DbType> SUPPORTED = new HashSet<DbType>(Arrays.asList(
+    private static final Set<DbType> SUPPORTED = new HashSet<>(Arrays.asList(
             DbType.MYSQL,
             DbType.POSTGRE_SQL,
             DbType.ORACLE

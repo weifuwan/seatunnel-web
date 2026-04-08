@@ -8,43 +8,22 @@ import org.apache.seatunnel.web.dao.entity.SeaTunnelClient;
 import org.apache.seatunnel.web.engine.client.rest.SeaTunnelRestClient;
 import org.springframework.stereotype.Component;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Component
+@SuppressWarnings("rawtypes")
 public class DefaultSeaTunnelTestJobExecutor implements SeaTunnelTestJobExecutor {
-
-    private static final Set<JobStatus> VERIFY_SUCCESS_STATUSES = Collections.unmodifiableSet(
-            new HashSet<JobStatus>(Arrays.asList(
-                    JobStatus.RUNNING,
-                    JobStatus.FINISHED,
-                    JobStatus.SAVEPOINT_DONE
-            ))
-    );
-
-    private static final Set<JobStatus> VERIFY_FAIL_STATUSES = Collections.unmodifiableSet(
-            new HashSet<JobStatus>(Arrays.asList(
-                    JobStatus.FAILED,
-                    JobStatus.CANCELED,
-                    JobStatus.UNKNOWABLE
-            ))
-    );
-
-    private static final Set<JobStatus> ACTIVE_STATUSES = Collections.unmodifiableSet(
-            new HashSet<JobStatus>(Arrays.asList(
-                    JobStatus.INITIALIZING,
-                    JobStatus.CREATED,
-                    JobStatus.PENDING,
-                    JobStatus.SCHEDULED,
-                    JobStatus.RUNNING,
-                    JobStatus.FAILING,
-                    JobStatus.DOING_SAVEPOINT,
-                    JobStatus.CANCELING
-            ))
-    );
 
     @Resource
     private SeaTunnelRestClient seaTunnelRestClient;
+
+    @Resource
+    private ConnectivityJobStatusRules statusRules;
+
+    @Resource
+    private SeaTunnelJobResponseParser responseParser;
 
     @Override
     public JobExecutionResult executeAndWait(
@@ -58,24 +37,11 @@ public class DefaultSeaTunnelTestJobExecutor implements SeaTunnelTestJobExecutor
         JobExecutionResult result = new JobExecutionResult();
 
         try {
-            Map submitResponse = seaTunnelRestClient.submitJobText(
-                    client.getId(),
-                    job.getJobConfig(),
-                    job.getConfigFormat(),
-                    null,
-                    job.getJobName(),
-                    false
-            );
-
-            jobId = extractJobId(submitResponse);
+            jobId = submitTestJob(client, job);
             result.setJobId(jobId);
 
             if (jobId == null) {
-                result.setSuccess(false);
-                result.setFinalStatus("SUBMIT_FAILED");
-                result.setErrorMessage("Failed to extract jobId from submit response");
-                result.setDurationMs(System.currentTimeMillis() - start);
-                return result;
+                return buildSubmitFailedResult(result, start);
             }
 
             JobStatus observedStatus = waitForVerificationPhase(
@@ -88,42 +54,24 @@ public class DefaultSeaTunnelTestJobExecutor implements SeaTunnelTestJobExecutor
             result.setFinalStatus(observedStatus == null ? "TIMEOUT" : observedStatus.name());
 
             if (observedStatus == null) {
-                result.setSuccess(false);
-                result.setErrorMessage("The test job did not reach a verifiable state within the timeout");
-                result.setDurationMs(System.currentTimeMillis() - start);
-
-                if (job.isCleanupRequired()) {
-                    tryCleanupAndWaitTerminal(client.getId(), jobId, pollIntervalMs, timeoutMs / 2);
-                }
-                return result;
+                return handleTimeout(result, client, job, jobId, start, pollIntervalMs, timeoutMs);
             }
 
-            if (VERIFY_FAIL_STATUSES.contains(observedStatus)) {
-                result.setSuccess(false);
-                result.setRawLog(tryReadLog(client.getId(), jobId));
-                result.setDurationMs(System.currentTimeMillis() - start);
-                return result;
+            if (statusRules.isVerifyFail(observedStatus)) {
+                return handleVerifyFail(result, client, jobId, start);
             }
 
-            if (VERIFY_SUCCESS_STATUSES.contains(observedStatus)) {
-                if (job.isCleanupRequired() && ACTIVE_STATUSES.contains(observedStatus)) {
-                    stopJobQuietly(client.getId(), jobId);
-                    JobStatus terminalStatus = waitForTerminalAfterStop(
-                            client.getId(),
-                            jobId,
-                            timeoutMs / 2,
-                            pollIntervalMs
-                    );
-                    if (terminalStatus != null) {
-                        result.setFinalStatus(terminalStatus.name());
-                    } else {
-                        result.setFinalStatus("STOPPING_TIMEOUT");
-                    }
-                }
-
-                result.setSuccess(true);
-                result.setDurationMs(System.currentTimeMillis() - start);
-                return result;
+            if (statusRules.isVerifySuccess(observedStatus)) {
+                return handleVerifySuccess(
+                        result,
+                        client,
+                        job,
+                        jobId,
+                        observedStatus,
+                        start,
+                        timeoutMs,
+                        pollIntervalMs
+                );
             }
 
             result.setSuccess(false);
@@ -146,35 +94,136 @@ public class DefaultSeaTunnelTestJobExecutor implements SeaTunnelTestJobExecutor
         }
     }
 
+    /** Submit the test job and parse its jobId. */
+    private Long submitTestJob(SeaTunnelClient client, ConnectivityTestJob job) {
+        Map submitResponse = seaTunnelRestClient.submitJobText(
+                client.getId(),
+                job.getJobConfig(),
+                job.getConfigFormat(),
+                null,
+                job.getJobName(),
+                false
+        );
+        return responseParser.extractJobId(submitResponse);
+    }
+
+    /** Build a result for submit failure. */
+    private JobExecutionResult buildSubmitFailedResult(JobExecutionResult result, long start) {
+        result.setSuccess(false);
+        result.setFinalStatus("SUBMIT_FAILED");
+        result.setErrorMessage("Failed to extract jobId from submit response");
+        result.setDurationMs(System.currentTimeMillis() - start);
+        return result;
+    }
+
+    /** Handle timeout and try cleanup if needed. */
+    private JobExecutionResult handleTimeout(
+            JobExecutionResult result,
+            SeaTunnelClient client,
+            ConnectivityTestJob job,
+            Long jobId,
+            long start,
+            long pollIntervalMs,
+            long timeoutMs) {
+
+        result.setSuccess(false);
+        result.setErrorMessage("The test job did not reach a verifiable state within the timeout");
+        result.setDurationMs(System.currentTimeMillis() - start);
+
+        if (job.isCleanupRequired()) {
+            tryCleanupAndWaitTerminal(client.getId(), jobId, pollIntervalMs, timeoutMs / 2);
+        }
+        return result;
+    }
+
+    /** Handle verification failure and attach raw log. */
+    private JobExecutionResult handleVerifyFail(
+            JobExecutionResult result,
+            SeaTunnelClient client,
+            Long jobId,
+            long start) {
+
+        result.setSuccess(false);
+        result.setRawLog(tryReadLog(client.getId(), jobId));
+        result.setDurationMs(System.currentTimeMillis() - start);
+        return result;
+    }
+
+    /** Handle verification success and stop the job if cleanup is required. */
+    private JobExecutionResult handleVerifySuccess(
+            JobExecutionResult result,
+            SeaTunnelClient client,
+            ConnectivityTestJob job,
+            Long jobId,
+            JobStatus observedStatus,
+            long start,
+            long timeoutMs,
+            long pollIntervalMs) throws InterruptedException {
+
+        if (job.isCleanupRequired() && statusRules.isActive(observedStatus)) {
+            stopJobQuietly(client.getId(), jobId);
+
+            JobStatus terminalStatus = waitForTerminalAfterStop(
+                    client.getId(),
+                    jobId,
+                    timeoutMs / 2,
+                    pollIntervalMs
+            );
+
+            if (terminalStatus != null) {
+                result.setFinalStatus(terminalStatus.name());
+            } else {
+                result.setFinalStatus("STOPPING_TIMEOUT");
+            }
+        }
+
+        result.setSuccess(true);
+        result.setDurationMs(System.currentTimeMillis() - start);
+        return result;
+    }
+
+    /** Wait until the job reaches a verifiable status. */
     private JobStatus waitForVerificationPhase(
             Long clientId,
             Long jobId,
             long timeoutMs,
             long pollIntervalMs) throws InterruptedException {
 
-        long deadline = System.currentTimeMillis() + timeoutMs;
-        while (System.currentTimeMillis() < deadline) {
-            JobStatus status = queryJobStatus(clientId, jobId);
-            if (status != null) {
-                if (VERIFY_SUCCESS_STATUSES.contains(status) || VERIFY_FAIL_STATUSES.contains(status)) {
-                    return status;
-                }
+        return pollStatusUntil(clientId, jobId, timeoutMs, pollIntervalMs, new StatusStopCondition() {
+            @Override
+            public boolean shouldStop(JobStatus status) {
+                return statusRules.isVerifiable(status);
             }
-            Thread.sleep(pollIntervalMs);
-        }
-        return null;
+        });
     }
 
+    /** Wait until the job reaches a terminal status after stop. */
     private JobStatus waitForTerminalAfterStop(
             Long clientId,
             Long jobId,
             long timeoutMs,
             long pollIntervalMs) throws InterruptedException {
 
+        return pollStatusUntil(clientId, jobId, timeoutMs, pollIntervalMs, new StatusStopCondition() {
+            @Override
+            public boolean shouldStop(JobStatus status) {
+                return statusRules.isTerminal(status);
+            }
+        });
+    }
+
+    /** Poll job status until the stop condition is met or timeout occurs. */
+    private JobStatus pollStatusUntil(
+            Long clientId,
+            Long jobId,
+            long timeoutMs,
+            long pollIntervalMs,
+            StatusStopCondition stopCondition) throws InterruptedException {
+
         long deadline = System.currentTimeMillis() + timeoutMs;
         while (System.currentTimeMillis() < deadline) {
             JobStatus status = queryJobStatus(clientId, jobId);
-            if (status != null && status.isEndState()) {
+            if (status != null && stopCondition.shouldStop(status)) {
                 return status;
             }
             Thread.sleep(pollIntervalMs);
@@ -182,6 +231,7 @@ public class DefaultSeaTunnelTestJobExecutor implements SeaTunnelTestJobExecutor
         return null;
     }
 
+    /** Stop the job and wait for terminal status quietly. */
     private void tryCleanupAndWaitTerminal(
             Long clientId,
             Long jobId,
@@ -199,10 +249,11 @@ public class DefaultSeaTunnelTestJobExecutor implements SeaTunnelTestJobExecutor
         }
     }
 
+    /** Query current job status with detail-first and list-based fallback. */
     private JobStatus queryJobStatus(Long clientId, Long jobId) {
         try {
             Map info = seaTunnelRestClient.jobInfo(clientId, jobId);
-            JobStatus status = extractStatus(info);
+            JobStatus status = responseParser.extractStatus(info);
             if (status != null) {
                 return status;
             }
@@ -211,7 +262,7 @@ public class DefaultSeaTunnelTestJobExecutor implements SeaTunnelTestJobExecutor
 
         try {
             List running = seaTunnelRestClient.runningJobs(clientId);
-            if (containsJob(running, jobId)) {
+            if (responseParser.containsJob(running, jobId)) {
                 return JobStatus.RUNNING;
             }
         } catch (Exception ignored) {
@@ -219,7 +270,7 @@ public class DefaultSeaTunnelTestJobExecutor implements SeaTunnelTestJobExecutor
 
         try {
             List finished = seaTunnelRestClient.finishedJobs(clientId, "FINISHED");
-            if (containsJob(finished, jobId)) {
+            if (responseParser.containsJob(finished, jobId)) {
                 return JobStatus.FINISHED;
             }
         } catch (Exception ignored) {
@@ -227,7 +278,7 @@ public class DefaultSeaTunnelTestJobExecutor implements SeaTunnelTestJobExecutor
 
         try {
             List failed = seaTunnelRestClient.finishedJobs(clientId, "FAILED");
-            if (containsJob(failed, jobId)) {
+            if (responseParser.containsJob(failed, jobId)) {
                 return JobStatus.FAILED;
             }
         } catch (Exception ignored) {
@@ -235,7 +286,7 @@ public class DefaultSeaTunnelTestJobExecutor implements SeaTunnelTestJobExecutor
 
         try {
             List canceled = seaTunnelRestClient.finishedJobs(clientId, "CANCELED");
-            if (containsJob(canceled, jobId)) {
+            if (responseParser.containsJob(canceled, jobId)) {
                 return JobStatus.CANCELED;
             }
         } catch (Exception ignored) {
@@ -244,10 +295,12 @@ public class DefaultSeaTunnelTestJobExecutor implements SeaTunnelTestJobExecutor
         return null;
     }
 
+    /** Try to stop the job without interrupting the main flow. */
     private void stopJobQuietly(Long clientId, Long jobId) {
         if (jobId == null) {
             return;
         }
+
         try {
             seaTunnelRestClient.stopJob(clientId, jobId, false);
             log.info("Stop requested for test job: clientId={}, jobId={}", clientId, jobId);
@@ -256,6 +309,7 @@ public class DefaultSeaTunnelTestJobExecutor implements SeaTunnelTestJobExecutor
         }
     }
 
+    /** Read job log for troubleshooting when possible. */
     private String tryReadLog(Long clientId, Long jobId) {
         try {
             Object logObj = seaTunnelRestClient.logs(clientId, jobId, "TEXT");
@@ -266,123 +320,17 @@ public class DefaultSeaTunnelTestJobExecutor implements SeaTunnelTestJobExecutor
         }
     }
 
-    private Long extractJobId(Map submitResponse) {
-        if (submitResponse == null || submitResponse.isEmpty()) {
-            return null;
-        }
-
-        Object direct = firstNonNull(
-                submitResponse.get("jobId"),
-                submitResponse.get("job_id"),
-                submitResponse.get("id")
-        );
-        Long parsedDirect = toLong(direct);
-        if (parsedDirect != null) {
-            return parsedDirect;
-        }
-
-        Object data = submitResponse.get("data");
-        if (data instanceof Map) {
-            Map dataMap = (Map) data;
-            Object nested = firstNonNull(
-                    dataMap.get("jobId"),
-                    dataMap.get("job_id"),
-                    dataMap.get("id")
-            );
-            return toLong(nested);
-        }
-
-        return null;
-    }
-
-    private JobStatus extractStatus(Map info) {
-        if (info == null || info.isEmpty()) {
-            return null;
-        }
-
-        Object direct = firstNonNull(
-                info.get("status"),
-                info.get("jobStatus"),
-                info.get("state")
-        );
-        JobStatus directStatus = toJobStatus(direct);
-        if (directStatus != null) {
-            return directStatus;
-        }
-
-        Object data = info.get("data");
-        if (data instanceof Map) {
-            Map dataMap = (Map) data;
-            Object nested = firstNonNull(
-                    dataMap.get("status"),
-                    dataMap.get("jobStatus"),
-                    dataMap.get("state")
-            );
-            return toJobStatus(nested);
-        }
-
-        return null;
-    }
-
-    private boolean containsJob(List list, Long jobId) {
-        if (list == null || list.isEmpty() || jobId == null) {
-            return false;
-        }
-
-        for (Object item : list) {
-            if (item instanceof Map) {
-                Map map = (Map) item;
-                Long id = toLong(firstNonNull(map.get("jobId"), map.get("job_id"), map.get("id")));
-                if (jobId.equals(id)) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    private JobStatus toJobStatus(Object value) {
-        if (value == null) {
-            return null;
-        }
-
-        try {
-            return JobStatus.fromString(String.valueOf(value));
-        } catch (Exception ignored) {
-            return null;
-        }
-    }
-
-    private Long toLong(Object value) {
-        if (value == null) {
-            return null;
-        }
-
-        try {
-            return Long.parseLong(String.valueOf(value));
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    private Object firstNonNull(Object... values) {
-        if (values == null) {
-            return null;
-        }
-
-        for (Object value : values) {
-            if (value != null) {
-                return value;
-            }
-        }
-        return null;
-    }
-
+    /** Convert exception to a simple readable message. */
     private String simplifyMessage(Throwable e) {
         String msg = e.getMessage();
         if (msg == null || msg.trim().isEmpty()) {
             return e.getClass().getSimpleName();
         }
         return msg;
+    }
+
+    /** Callback used to decide when polling should stop. */
+    private interface StatusStopCondition {
+        boolean shouldStop(JobStatus status);
     }
 }

@@ -11,7 +11,7 @@ import java.util.Map;
 public class TestJobEnvConfigBuilder {
 
     public Config buildBatchEnv() {
-        Map<String, Object> map = new LinkedHashMap<String, Object>();
+        Map<String, Object> map = new LinkedHashMap<>();
         map.put("parallelism", 1);
         map.put("job.mode", "BATCH");
         return ConfigFactory.parseMap(map);

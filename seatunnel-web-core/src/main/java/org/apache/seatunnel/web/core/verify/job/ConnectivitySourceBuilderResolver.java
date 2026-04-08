@@ -7,15 +7,11 @@ import org.springframework.stereotype.Component;
 public class ConnectivitySourceBuilderResolver {
 
     public String resolveBuilderKey(DbType dbType) {
-        switch (dbType) {
-            case MYSQL:
-                return "JDBC-MYSQL";
-            case POSTGRE_SQL:
-                return "JDBC-POSTGRE";
-            case ORACLE:
-                return "JDBC-ORACLE";
-            default:
-                throw new IllegalArgumentException("暂不支持该数据源类型的 Source Builder 解析: " + dbType);
-        }
+        return switch (dbType) {
+            case MYSQL -> "JDBC-MYSQL";
+            case POSTGRE_SQL -> "JDBC-POSTGRE";
+            case ORACLE -> "JDBC-ORACLE";
+            default -> throw new IllegalArgumentException("暂不支持该数据源类型的 Source Builder 解析: " + dbType);
+        };
     }
 }

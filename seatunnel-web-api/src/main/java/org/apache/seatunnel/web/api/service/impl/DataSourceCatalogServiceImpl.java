@@ -28,8 +28,7 @@ public class DataSourceCatalogServiceImpl implements DataSourceCatalogService {
 
     private static final String KEY_TABLE_PATH = "table_path";
     private static final String KEY_QUERY = "query";
-    private static final String KEY_TASK_EXECUTE_TYPE = "taskExecuteType";
-    private static final String SINGLE_TABLE = "SINGLE_TABLE";
+    private static final String KEY_READ_MODE = "read_mode";
 
     @Resource
     private DataSourceService dataSourceService;
@@ -149,13 +148,14 @@ public class DataSourceCatalogServiceImpl implements DataSourceCatalogService {
         validateRequestBody(requestBody, "requestBody");
 
         String tablePath = getRequiredText(requestBody, KEY_TABLE_PATH);
+        String readMode = getRequiredText(requestBody, KEY_READ_MODE);
 
         DataSource dataSource = getDataSourceOrThrow(datasourceId);
         BaseConnectionParam connectionParam = buildConnectionParam(dataSource);
         JdbcCatalog jdbcCatalog = getJdbcCatalog(dataSource, connectionParam);
 
         Map<String, Object> columnRequest = Map.of(
-                KEY_TASK_EXECUTE_TYPE, SINGLE_TABLE,
+                KEY_READ_MODE, readMode,
                 KEY_TABLE_PATH, tablePath,
                 KEY_QUERY, ""
         );

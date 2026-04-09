@@ -63,8 +63,8 @@ export default function PanelShell({
               </div>
             ) : null}
           </div>
-
-          {/* <button
+{/* 
+          <button
             type="button"
             className="workflow-panel__close"
             onClick={onClose}

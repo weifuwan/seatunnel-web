@@ -16,16 +16,16 @@ public class QueryRequest {
 
     public static QueryRequest from(Map<String, Object> body, BaseConnectionParam param) {
         QueryRequest req = new QueryRequest();
-        req.taskExecuteType = TaskExecutionTypeEnum.valueOf(body.get("taskExecuteType").toString().toUpperCase());
+        req.taskExecuteType = TaskExecutionTypeEnum.valueOf(body.get("read_mode").toString().toUpperCase());
         switch (req.taskExecuteType) {
-            case TABLE_CUSTOM:
+            case SQL:
                 if (body.containsKey("query")) {
                     req.query = body.get("query").toString();
                 } else {
                     throw new RuntimeException("query not exist");
                 }
                 break;
-            case SINGLE_TABLE:
+            case TABLE:
                 if (body.containsKey("table_path")) {
                     req.tablePath = TablePath.of(
                             param.getDatabase(),

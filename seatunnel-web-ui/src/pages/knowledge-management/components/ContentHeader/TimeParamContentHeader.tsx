@@ -53,7 +53,7 @@ const TimeParamContentHeader: React.FC<Props> = ({
             className="mt-[10px] max-w-[760px] text-[14px] leading-[1.8]"
             style={{ color: TEXT_SECONDARY }}
           >
-            统一维护时间变量的格式、默认值与动态表达式，便于调度参数复用与时间计算配置。
+            统一维护时间变量的格式、替换规则、动态表达式和默认值，方便时间参数解析与配置生成。
           </p>
         </div>
 

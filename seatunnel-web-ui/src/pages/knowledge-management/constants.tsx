@@ -11,14 +11,14 @@ export const BLUE_LIGHT = "#eef2ff";
 export const menuList: MenuItemConfig[] = [
   {
     key: "connector",
-    label: "Connector解释",
-    desc: "维护参数语义、类型与规则",
+    label: "连接器参数",
+    desc: "维护参数名称、类型与使用规则",
     icon: <AppstoreAddOutlined />,
   },
   {
     key: "time",
-    label: "时间解释",
-    desc: "维护时间变量与表达式规则",
+    label: "时间变量",
+    desc: "维护时间变量与替换表达式规则",
     icon: <ClockCircleOutlined />,
   },
 ];
@@ -26,12 +26,6 @@ export const menuList: MenuItemConfig[] = [
 export const pageTitleMap: Record<MenuKey, string> = {
   connector: "Connector 参数知识",
   time: "时间变量知识",
-};
-
-export const pageDescMap: Record<MenuKey, string> = {
-  connector:
-    "统一维护 Connector 参数的名称、说明、类型、必填规则、默认值和示例值，帮助系统更准确地生成同步配置。",
-  time: "统一维护时间变量、格式规则、动态表达式和默认值，帮助系统正确解析时间相关参数并生成可执行配置。",
 };
 
 export const infoTextMap: Record<MenuKey, string> = {

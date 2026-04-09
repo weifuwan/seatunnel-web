@@ -242,7 +242,7 @@ const Index: React.FC = () => {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "270px 1fr",
+              gridTemplateColumns: "280px 1fr",
               minHeight: "calc(100vh - 170px)",
             }}
           >

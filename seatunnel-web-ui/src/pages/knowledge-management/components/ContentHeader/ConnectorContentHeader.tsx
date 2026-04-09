@@ -55,7 +55,7 @@ const ConnectorContentHeader: React.FC<Props> = ({
             className="mt-[10px] max-w-[760px] text-[14px] leading-[1.8]"
             style={{ color: TEXT_SECONDARY }}
           >
-            统一维护 Connector 参数的名称、类型、默认值与说明，方便表单生成与参数复用。
+            统一维护连接器参数的名称、说明、类型、必填规则、默认值和示例值，方便统一配置与复用。
           </p>
         </div>
 

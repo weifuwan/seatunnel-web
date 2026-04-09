@@ -171,7 +171,7 @@ export function useSourcePanelLogic({
     };
 
     loadTableOptions();
-  }, [sourceDataSourceId, sourceTable, updateNode]);
+  }, [sourceDataSourceId]);
 
   const handleDataSourceChange = useCallback(
     (value: string, option: any) => {

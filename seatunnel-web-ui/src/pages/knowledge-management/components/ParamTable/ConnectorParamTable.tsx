@@ -1,20 +1,24 @@
 import React from "react";
 import { Empty, Space, Table, Tag, Typography } from "antd";
-import type { ColumnsType } from "antd/es/table";
-import { BLUE, BORDER_COLOR } from "../../constants";
+import type { TablePaginationConfig, ColumnsType } from "antd/es/table";
 import { MenuKey, ParamItem } from "../../types";
+import { BLUE, BORDER_COLOR } from "../../constants/ui";
 
 const { Text } = Typography;
 
 interface Props {
   activeMenu: MenuKey;
   dataSource: ParamItem[];
+  loading?: boolean;
+  pagination?: false | TablePaginationConfig;
   onEdit: (record: ParamItem) => void;
   onDelete: (record: ParamItem) => void;
 }
 
 const ConnectorParamTable: React.FC<Props> = ({
   dataSource,
+  loading = false,
+  pagination,
   onEdit,
   onDelete,
 }) => {
@@ -37,7 +41,7 @@ const ConnectorParamTable: React.FC<Props> = ({
             {record.connectorName}
           </Tag>
         ) : (
-          "-"
+          <Text type="secondary">-</Text>
         ),
     },
     {
@@ -62,7 +66,7 @@ const ConnectorParamTable: React.FC<Props> = ({
       key: "paramDesc",
       ellipsis: true,
       render: (value: string) => (
-        <Text className="text-[#475467]">{value}</Text>
+        <Text className="text-[#475467]">{value || "-"}</Text>
       ),
     },
     {
@@ -83,14 +87,14 @@ const ConnectorParamTable: React.FC<Props> = ({
             {record.paramType}
           </Tag>
         ) : (
-          "-"
+          <Text type="secondary">-</Text>
         ),
     },
     {
-      title: "规则",
+      title: "是否必填",
       dataIndex: "required",
       key: "required",
-      width: 110,
+      width: 120,
       render: (_, record) =>
         record.type === "connector" ? (
           record.required ? (
@@ -117,14 +121,14 @@ const ConnectorParamTable: React.FC<Props> = ({
             </Tag>
           )
         ) : (
-          "-"
+          <Text type="secondary">-</Text>
         ),
     },
     {
       title: "默认值",
       dataIndex: "defaultValue",
       key: "defaultValue",
-      width: 160,
+      width: 180,
       ellipsis: true,
       render: (value?: string) =>
         value ? <Text code>{value}</Text> : <Text type="secondary">-</Text>,
@@ -133,7 +137,7 @@ const ConnectorParamTable: React.FC<Props> = ({
       title: "示例值",
       dataIndex: "exampleValue",
       key: "exampleValue",
-      width: 240,
+      width: 260,
       ellipsis: true,
       render: (value?: string) =>
         value ? <Text code>{value}</Text> : <Text type="secondary">-</Text>,
@@ -165,13 +169,16 @@ const ConnectorParamTable: React.FC<Props> = ({
     >
       <Table<ParamItem>
         rowKey="id"
+        loading={loading}
         columns={columns}
         dataSource={dataSource}
-        pagination={{
-          pageSize: 10,
-          showSizeChanger: false,
-          showTotal: (total) => `共 ${total} 条`,
-        }}
+        pagination={
+          pagination ?? {
+            pageSize: 10,
+            showSizeChanger: false,
+            showTotal: (total) => `共 ${total} 条`,
+          }
+        }
         locale={{
           emptyText: (
             <div className="py-14">
@@ -179,7 +186,7 @@ const ConnectorParamTable: React.FC<Props> = ({
             </div>
           ),
         }}
-        scroll={{ x: 1200, y: "calc(100vh - 430px)" }}
+        scroll={{ x: 1250, y: "calc(100vh - 430px)" }}
       />
     </div>
   );

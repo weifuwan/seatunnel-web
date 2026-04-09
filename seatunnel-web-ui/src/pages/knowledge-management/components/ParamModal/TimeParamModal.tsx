@@ -1,8 +1,9 @@
 import React from "react";
 import { ClockCircleOutlined } from "@ant-design/icons";
 import { Form, Input, Modal, Select } from "antd";
-import { TEXT_SECONDARY, timeFormatOptions } from "../../constants";
 import { FormValues, MenuKey, ParamItem } from "../../types";
+import { TEXT_SECONDARY } from "../../constants/ui";
+import { timeFormatOptions } from "../../constants/options";
 
 const { TextArea } = Input;
 

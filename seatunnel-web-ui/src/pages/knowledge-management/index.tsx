@@ -1,52 +1,66 @@
-import React, { useMemo, useState } from "react";
-import {
-  DeleteOutlined,
-  ExclamationCircleOutlined,
-} from "@ant-design/icons";
-import { Form, MenuProps, message, Modal } from "antd";
+import React, { useEffect, useMemo, useState } from "react";
+import { ExclamationCircleOutlined } from "@ant-design/icons";
+import { Form, message, Modal } from "antd";
+
 import PageHeader from "./components/PageHeader";
 import SideNav from "./components/SideNav";
 import ContentHeader from "./components/ContentHeader";
+import ParamTable from "./components/ParamTable";
+import ParamModal from "./components/ParamModal";
 
-import { CARD_BG, BORDER_COLOR, initialData, PAGE_BG } from "./constants";
+import { CARD_BG, BORDER_COLOR, PAGE_BG } from "./constants/ui";
+
 import {
   ConnectorParamItem,
+  ConnectorParamVO,
   FormValues,
   MenuKey,
   ParamItem,
   TimeParamItem,
 } from "./types";
-import ParamTable from "./components/ParamTable";
-import ParamModal from "./components/ParamModal";
+import {
+  createConnectorParam,
+  deleteConnectorParam,
+  fetchConnectorParamPage,
+  updateConnectorParam,
+} from "./api";
 
 const { confirm } = Modal;
 
 const Index: React.FC = () => {
   const [activeMenu, setActiveMenu] = useState<MenuKey>("connector");
   const [keyword, setKeyword] = useState("");
-  const [tableData, setTableData] =
-    useState<Record<MenuKey, ParamItem[]>>(initialData);
+
+  const [connectorLoading, setConnectorLoading] = useState(false);
+  const [connectorData, setConnectorData] = useState<ConnectorParamItem[]>([]);
+  const [connectorPageNum, setConnectorPageNum] = useState(1);
+  const [connectorPageSize, setConnectorPageSize] = useState(10);
+  const [connectorTotal, setConnectorTotal] = useState(0);
+
+  const [timeData, setTimeData] = useState<TimeParamItem[]>([]);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<ParamItem | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
   const [form] = Form.useForm<FormValues>();
 
-  const currentList = useMemo(() => {
-    const list = tableData[activeMenu] || [];
-    const kw = keyword.trim().toLowerCase();
-    if (!kw) return list;
+  const currentList = useMemo<ParamItem[]>(() => {
+    if (activeMenu === "connector") {
+      return connectorData;
+    }
 
-    return list.filter((item) => {
+    const kw = keyword.trim().toLowerCase();
+    if (!kw) return timeData;
+
+    return timeData.filter((item) => {
       const fields = [
         item.paramName,
         item.paramDesc,
         item.defaultValue,
         item.exampleValue,
-        item.type === "connector" ? item.connectorName : "",
-        item.type === "connector" ? item.paramType : "",
-        item.type === "time" ? item.timeFormat : "",
-        item.type === "time" ? item.expression || "" : "",
+        item.timeFormat,
+        item.expression || "",
       ];
 
       return fields.some((field) =>
@@ -55,7 +69,7 @@ const Index: React.FC = () => {
           .includes(kw)
       );
     });
-  }, [tableData, activeMenu, keyword]);
+  }, [activeMenu, connectorData, keyword, timeData]);
 
   const resetModal = () => {
     setModalOpen(false);
@@ -65,7 +79,51 @@ const Index: React.FC = () => {
 
   const handleResetSelection = () => {
     setKeyword("");
+    setConnectorPageNum(1);
   };
+
+  const mapConnectorVOToItem = (
+    record: ConnectorParamVO
+  ): ConnectorParamItem => ({
+    id: record.id,
+    type: "connector",
+    connectorName: record.connectorName,
+    paramName: record.paramName,
+    paramDesc: record.paramDesc,
+    paramType: record.paramType,
+    required: record.requiredFlag === 1,
+    defaultValue: record.defaultValue || "",
+    exampleValue: record.exampleValue || "",
+    paramContext: record.paramContext || "",
+  });
+
+  const loadConnectorData = async () => {
+    setConnectorLoading(true);
+    try {
+      const res = await fetchConnectorParamPage({
+        type: "connector",
+        paramName: keyword || undefined,
+        pageNum: connectorPageNum,
+        pageSize: connectorPageSize,
+      });
+
+      const records = Array.isArray(res?.records)
+        ? res.records.map(mapConnectorVOToItem)
+        : [];
+
+      setConnectorData(records);
+      setConnectorTotal(res?.total || 0);
+    } catch (error) {
+      message.error("获取 Connector 参数失败");
+    } finally {
+      setConnectorLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeMenu !== "connector") return;
+    loadConnectorData();
+  }, [activeMenu, keyword, connectorPageNum, connectorPageSize]);
 
   const openAddModal = () => {
     setEditingRecord(null);
@@ -75,6 +133,7 @@ const Index: React.FC = () => {
       form.setFieldsValue({
         required: false,
         paramType: "string",
+        paramContext: "",
       });
     } else {
       form.setFieldsValue({
@@ -97,6 +156,7 @@ const Index: React.FC = () => {
         required: record.required,
         defaultValue: record.defaultValue,
         exampleValue: record.exampleValue,
+        paramContext: record.paramContext || "",
       });
     } else {
       form.setFieldsValue({
@@ -119,36 +179,29 @@ const Index: React.FC = () => {
       content: `确定删除「${record.paramName}」吗？`,
       okText: "确定",
       cancelText: "取消",
-      onOk() {
-        setTableData((prev) => ({
-          ...prev,
-          [activeMenu]: prev[activeMenu].filter(
-            (item) => item.id !== record.id
-          ),
-        }));
-        
-        message.success("删除成功");
-      },
-    });
-  };
+      async onOk() {
+        if (record.type === "connector") {
+          try {
+            await deleteConnectorParam(record.id);
+            message.success("删除成功");
 
-  const handleBatchDelete = () => {
-    
-    confirm({
-      title: "确认批量删除",
-      icon: <ExclamationCircleOutlined />,
-      content: `确定删除已选中的 ${selectedRowKeys.length} 条数据吗？`,
-      okText: "确定",
-      cancelText: "取消",
-      onOk() {
-        setTableData((prev) => ({
-          ...prev,
-          [activeMenu]: prev[activeMenu].filter(
-            (item) => !selectedRowKeys.includes(item.id)
-          ),
-        }));
-        setSelectedRowKeys([]);
-        message.success("批量删除成功");
+            if (
+              connectorData.length === 1 &&
+              connectorPageNum > 1 &&
+              connectorTotal > 1
+            ) {
+              setConnectorPageNum((prev) => prev - 1);
+            } else {
+              loadConnectorData();
+            }
+          } catch (error) {
+            message.error("删除失败");
+          }
+          return;
+        }
+
+        setTimeData((prev) => prev.filter((item) => item.id !== record.id));
+        message.success("删除成功");
       },
     });
   };
@@ -158,50 +211,49 @@ const Index: React.FC = () => {
       const values = await form.validateFields();
       setSubmitting(true);
 
-      const nextId = Date.now();
-
       if (activeMenu === "connector") {
-        const payload: ConnectorParamItem = {
-          id: editingRecord?.id ?? nextId,
+        const payload = {
+          id: editingRecord?.id,
           type: "connector",
           connectorName: values.connectorName || "",
           paramName: values.paramName,
           paramDesc: values.paramDesc,
           paramType: values.paramType || "string",
-          required: !!values.required,
+          requiredFlag: values.required ? 1 : 0,
           defaultValue: values.defaultValue || "",
           exampleValue: values.exampleValue || "",
+          paramContext: values.paramContext || "",
         };
 
-        setTableData((prev) => ({
-          ...prev,
-          connector: editingRecord
-            ? prev.connector.map((item) =>
-                item.id === editingRecord.id ? payload : item
-              )
-            : [payload, ...prev.connector],
-        }));
-      } else {
-        const payload: TimeParamItem = {
-          id: editingRecord?.id ?? nextId,
-          type: "time",
-          paramName: values.paramName,
-          paramDesc: values.paramDesc,
-          timeFormat: values.timeFormat || "yyyy-MM-dd HH:mm:ss",
-          defaultValue: values.defaultValue || "",
-          exampleValue: values.exampleValue || "",
-          expression: values.expression || "",
-        };
+        if (editingRecord?.type === "connector") {
+          await updateConnectorParam(payload);
+        } else {
+          await createConnectorParam(payload);
+        }
 
-        setTableData((prev) => ({
-          ...prev,
-          time: editingRecord
-            ? prev.time.map((item) =>
-                item.id === editingRecord.id ? payload : item
-              )
-            : [payload, ...prev.time],
-        }));
+        message.success(editingRecord ? "编辑成功" : "新增成功");
+        resetModal();
+        loadConnectorData();
+        return;
       }
+
+      const nextId = editingRecord?.id ?? Date.now();
+      const timePayload: TimeParamItem = {
+        id: nextId,
+        type: "time",
+        paramName: values.paramName,
+        paramDesc: values.paramDesc,
+        timeFormat: values.timeFormat || "yyyy-MM-dd HH:mm:ss",
+        defaultValue: values.defaultValue || "",
+        exampleValue: values.exampleValue || "",
+        expression: values.expression || "",
+      };
+
+      setTimeData((prev) =>
+        editingRecord?.type === "time"
+          ? prev.map((item) => (item.id === editingRecord.id ? timePayload : item))
+          : [timePayload, ...prev]
+      );
 
       message.success(editingRecord ? "编辑成功" : "新增成功");
       resetModal();
@@ -212,7 +264,27 @@ const Index: React.FC = () => {
     }
   };
 
-
+  const tablePagination =
+    activeMenu === "connector"
+      ? {
+          current: connectorPageNum,
+          pageSize: connectorPageSize,
+          total: connectorTotal,
+          showSizeChanger: true,
+          showQuickJumper: true,
+          showTotal: (total: number) => `共 ${total} 条`,
+          onChange: (page: number, pageSize: number) => {
+            setConnectorPageNum(page);
+            setConnectorPageSize(pageSize);
+          },
+        }
+      : {
+          current: 1,
+          pageSize: 10,
+          total: currentList.length,
+          showSizeChanger: false,
+          showTotal: (total: number) => `共 ${total} 条`,
+        };
 
   return (
     <div
@@ -248,7 +320,10 @@ const Index: React.FC = () => {
           >
             <SideNav
               activeMenu={activeMenu}
-              onChange={setActiveMenu}
+              onChange={(key) => {
+                setActiveMenu(key);
+                setKeyword("");
+              }}
               onResetSelection={handleResetSelection}
             />
 
@@ -261,15 +336,22 @@ const Index: React.FC = () => {
             >
               <ContentHeader
                 activeMenu={activeMenu}
-                count={currentList.length}
+                count={activeMenu === "connector" ? connectorTotal : currentList.length}
                 keyword={keyword}
-                onKeywordChange={setKeyword}
+                onKeywordChange={(value) => {
+                  setKeyword(value);
+                  if (activeMenu === "connector") {
+                    setConnectorPageNum(1);
+                  }
+                }}
                 onAdd={openAddModal}
               />
 
               <ParamTable
                 activeMenu={activeMenu}
                 dataSource={currentList}
+                loading={activeMenu === "connector" ? connectorLoading : false}
+                pagination={tablePagination}
                 onEdit={openEditModal}
                 onDelete={handleDelete}
               />

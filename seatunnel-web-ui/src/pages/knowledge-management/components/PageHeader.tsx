@@ -1,7 +1,7 @@
 import React from "react";
 import { BulbOutlined } from "@ant-design/icons";
 import { Typography } from "antd";
-import { BLUE, TEXT_SECONDARY } from "../constants";
+import { BLUE, TEXT_SECONDARY } from "../constants/ui";
 
 const { Title, Text } = Typography;
 

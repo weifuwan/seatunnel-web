@@ -1,6 +1,6 @@
 import React from "react";
-import { BORDER_COLOR, BLUE, BLUE_LIGHT, menuList } from "../constants";
 import { MenuKey } from "../types";
+import { BLUE, BLUE_LIGHT, BORDER_COLOR, menuList } from "../constants/ui";
 
 interface Props {
   activeMenu: MenuKey;

@@ -6,6 +6,8 @@ import TimeParamTable from "./TimeParamTable";
 interface Props {
   activeMenu: MenuKey;
   dataSource: ParamItem[];
+  loading: boolean;
+  pagination: any;
   onEdit: (record: ParamItem) => void;
   onDelete: (record: ParamItem) => void;
 }

@@ -1,8 +1,8 @@
 import React from "react";
 import { Empty, Space, Table, Tag, Typography } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { BLUE, BORDER_COLOR } from "../../constants";
 import { MenuKey, ParamItem } from "../../types";
+import { BLUE, BORDER_COLOR } from "../../constants/ui";
 
 const { Text } = Typography;
 

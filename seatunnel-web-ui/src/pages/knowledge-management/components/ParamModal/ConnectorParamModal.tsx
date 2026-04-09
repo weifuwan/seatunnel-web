@@ -1,12 +1,9 @@
 import React from "react";
 import { SettingOutlined } from "@ant-design/icons";
 import { Form, Input, Modal, Select, Switch } from "antd";
-import {
-  connectorNameOptions,
-  connectorTypeOptions,
-  TEXT_SECONDARY,
-} from "../../constants";
 import { FormValues, MenuKey, ParamItem } from "../../types";
+import { TEXT_SECONDARY } from "../../constants/ui";
+import { connectorNameOptions, connectorTypeOptions } from "../../constants/options";
 
 const { TextArea } = Input;
 

@@ -155,7 +155,7 @@ public class DataSourceCatalogServiceImpl implements DataSourceCatalogService {
         JdbcCatalog jdbcCatalog = getJdbcCatalog(dataSource, connectionParam);
 
         Map<String, Object> columnRequest = Map.of(
-                KEY_READ_MODE, readMode,
+                KEY_READ_MODE, "table",
                 KEY_TABLE_PATH, tablePath,
                 KEY_QUERY, ""
         );

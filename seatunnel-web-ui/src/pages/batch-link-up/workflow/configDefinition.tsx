@@ -1,8 +1,9 @@
 import BasicConfigContent from "./BasicConfigContent";
-import ScheduleConfigContent from "./ScheduleConfigContent";
+
 import MappingConfigContent from "./MappingConfigContent";
 import AdvancedConfigContent from "./AdvancedConfigContent";
 import type { TabDefinition } from "./types";
+import ScheduleConfigContent from "./components/ScheduleConfigContent";
 
 export const getTabDefinitions = (params?: any): TabDefinition[] => [
   {
@@ -15,14 +16,14 @@ export const getTabDefinitions = (params?: any): TabDefinition[] => [
     label: "调度",
     content: <ScheduleConfigContent />,
   },
-  // {
-  //   key: "mapping",
-  //   label: "映射",
-  //   content: <MappingConfigContent />,
-  // },
-  // {
-  //   key: "advanced",
-  //   label: "高级",
-  //   content: <AdvancedConfigContent />,
-  // },
+  {
+    key: "mapping",
+    label: "映射",
+    content: <MappingConfigContent />,
+  },
+  {
+    key: "advanced",
+    label: "高级",
+    content: <AdvancedConfigContent />,
+  },
 ];

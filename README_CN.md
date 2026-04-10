@@ -1,4 +1,4 @@
-![Batch Sync Screenshot](docs/images/img_19.png)
+<img width="1920" height="945" alt="image" src="https://github.com/user-attachments/assets/901d765c-cbd7-4f39-ae3a-de6716ae09f2" />
 ## SeaTunnel Web
 
 **SeaTunnel Web** 是一个面向 **Apache SeaTunnel** 的现代化 Web 管理平台，用于简化数据集成任务的创建、配置和运行管理。
@@ -29,36 +29,11 @@ SeaTunnel Web 的目标是提升 Apache SeaTunnel 的易用性和开发效率，
 
 SeaTunnel Web 致力于让 Apache SeaTunnel 在生产环境中更加易用、可维护，并提升数据工程团队的开发效率。
 
-## 部分截图
-
-![Batch Sync Screenshot](docs/images/img_14.png)
-![Batch Sync Screenshot](docs/images/img_13.png)
-![Batch Sync Screenshot](docs/images/img_12.png)
-![Batch Sync Screenshot](docs/images/img_11.png)
-![Batch Sync Screenshot](docs/images/img.png)
-![Batch Sync Screenshot](docs/images/img_1.png)
-![Batch Sync Screenshot](docs/images/img_2.png)
-![Batch Sync Screenshot](docs/images/img_3.png)
-![Batch Sync Screenshot](docs/images/img_4.png)
-![Batch Sync Screenshot](docs/images/img_5.png)
-![Batch Sync Screenshot](docs/images/img_6.png)
-![Batch Sync Screenshot](docs/images/img_7.png)
-![Batch Sync Screenshot](docs/images/img_8.png)
-![Batch Sync Screenshot](docs/images/img_9.png)
-![Batch Sync Screenshot](docs/images/img_10.png)
-![Batch Sync Screenshot](docs/images/img_15.png)
-![Batch Sync Screenshot](docs/images/img_16.png)
-![Batch Sync Screenshot](docs/images/img_17.png)
-![Batch Sync Screenshot](docs/images/img_18.png)
-
-
 ## 🔥 加入社区群
 
 如果你想第一时间体验 SeaTunnel Web 适配版，或者想与我们一起从 0 到 1 建设生态， 欢迎加入 SeaTunnel Web 早期共建群。
 
-<p align="left">
-  <img src="docs/images/wechat-group-qr.jpg" alt="SeaTunnel Web 交流群" width="200">
-</p>
+<img width="200" height="300" alt="image" src="https://github.com/user-attachments/assets/3feda231-2b7d-4b2b-bb3b-817c315f4a34" />
 
 ## Github地址
 

@@ -16,6 +16,7 @@ public class ConnectorParamMetaCreateDTO {
     @NotBlank(message = "connectorName不能为空")
     @Size(max = 128, message = "connectorName长度不能超过128")
     private String connectorName;
+    private String connectorType;
 
     @NotBlank(message = "paramName不能为空")
     @Size(max = 128, message = "paramName长度不能超过128")

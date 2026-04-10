@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ExclamationCircleOutlined } from "@ant-design/icons";
 import { Form, message, Modal } from "antd";
 
@@ -82,48 +82,50 @@ const Index: React.FC = () => {
     setConnectorPageNum(1);
   };
 
-  const mapConnectorVOToItem = (
-    record: ConnectorParamVO
-  ): ConnectorParamItem => ({
-    id: record.id,
-    type: "connector",
-    connectorName: record.connectorName,
-    paramName: record.paramName,
-    paramDesc: record.paramDesc,
-    paramType: record.paramType,
-    required: record.requiredFlag === 1,
-    defaultValue: record.defaultValue || "",
-    exampleValue: record.exampleValue || "",
-    paramContext: record.paramContext || "",
-  });
+  const mapConnectorVOToItem = useCallback(
+    (record: ConnectorParamVO): ConnectorParamItem => ({
+      id: record.id,
+      type: "connector",
+      connectorName: record.connectorName,
+      connectorType: record.connectorType,
+      paramName: record.paramName,
+      paramDesc: record.paramDesc,
+      paramType: record.paramType,
+      required: record.requiredFlag === 1,
+      defaultValue: record.defaultValue || "",
+      exampleValue: record.exampleValue || "",
+      paramContext: record.paramContext || "",
+    }),
+    []
+  );
 
-  const loadConnectorData = async () => {
+  const loadConnectorData = useCallback(async () => {
     setConnectorLoading(true);
     try {
       const res = await fetchConnectorParamPage({
         type: "connector",
         paramName: keyword || undefined,
-        pageNum: connectorPageNum,
+        pageNo: connectorPageNum,
         pageSize: connectorPageSize,
       });
 
-      const records = Array.isArray(res?.records)
-        ? res.records.map(mapConnectorVOToItem)
+      const records = Array.isArray(res?.data?.bizData)
+        ? res.data.bizData.map(mapConnectorVOToItem)
         : [];
 
       setConnectorData(records);
-      setConnectorTotal(res?.total || 0);
+      setConnectorTotal(res?.data?.pagination?.total || 0);
     } catch (error) {
       message.error("获取 Connector 参数失败");
     } finally {
       setConnectorLoading(false);
     }
-  };
+  }, [connectorPageNum, connectorPageSize, keyword, mapConnectorVOToItem]);
 
   useEffect(() => {
     if (activeMenu !== "connector") return;
     loadConnectorData();
-  }, [activeMenu, keyword, connectorPageNum, connectorPageSize]);
+  }, [activeMenu, loadConnectorData]);
 
   const openAddModal = () => {
     setEditingRecord(null);
@@ -150,6 +152,7 @@ const Index: React.FC = () => {
     if (record.type === "connector") {
       form.setFieldsValue({
         connectorName: record.connectorName,
+        connectorType: record.connectorType,
         paramName: record.paramName,
         paramDesc: record.paramDesc,
         paramType: record.paramType,
@@ -216,6 +219,7 @@ const Index: React.FC = () => {
           id: editingRecord?.id,
           type: "connector",
           connectorName: values.connectorName || "",
+          connectorType: values.connectorType || "",
           paramName: values.paramName,
           paramDesc: values.paramDesc,
           paramType: values.paramType || "string",
@@ -225,13 +229,15 @@ const Index: React.FC = () => {
           paramContext: values.paramContext || "",
         };
 
-        if (editingRecord?.type === "connector") {
+        const isEdit = Boolean(editingRecord?.id);
+
+        if (isEdit) {
           await updateConnectorParam(payload);
         } else {
           await createConnectorParam(payload);
         }
 
-        message.success(editingRecord ? "编辑成功" : "新增成功");
+        message.success(isEdit ? "编辑成功" : "新增成功");
         resetModal();
         loadConnectorData();
         return;
@@ -255,7 +261,7 @@ const Index: React.FC = () => {
           : [timePayload, ...prev]
       );
 
-      message.success(editingRecord ? "编辑成功" : "新增成功");
+      message.success(editingRecord?.id ? "编辑成功" : "新增成功");
       resetModal();
     } catch (error) {
       // ignore
@@ -274,7 +280,8 @@ const Index: React.FC = () => {
           showQuickJumper: true,
           showTotal: (total: number) => `共 ${total} 条`,
           onChange: (page: number, pageSize: number) => {
-            setConnectorPageNum(page);
+            const pageSizeChanged = pageSize !== connectorPageSize;
+            setConnectorPageNum(pageSizeChanged ? 1 : page);
             setConnectorPageSize(pageSize);
           },
         }
@@ -323,6 +330,7 @@ const Index: React.FC = () => {
               onChange={(key) => {
                 setActiveMenu(key);
                 setKeyword("");
+                setConnectorPageNum(1);
               }}
               onResetSelection={handleResetSelection}
             />

@@ -155,6 +155,44 @@ public enum Status {
     DELETE_BATCH_JOB_INSTANCE_ERROR(11708, "delete batch job instance error", "删除批处理任务实例失败"),
     UPDATE_BATCH_JOB_INSTANCE_ERROR(11709, "update batch job instance error", "更新批处理任务实例失败"),
     GENERATE_JOB_INSTANCE_ID_ERROR(11710, "generate job instance id error", "生成任务实例ID失败"),
+
+    // -------------------- Connector Param Meta --------------------
+
+    CONNECTOR_PARAM_META_ALREADY_EXISTS(
+            11801,
+            "connector param meta already exists",
+            "连接器参数元数据已存在"
+    ),
+
+    CONNECTOR_PARAM_META_NOT_EXIST(
+            11802,
+            "connector param meta not exists",
+            "连接器参数元数据不存在"
+    ),
+
+    CREATE_CONNECTOR_PARAM_META_ERROR(
+            11803,
+            "create connector param meta error",
+            "创建连接器参数元数据失败"
+    ),
+
+    UPDATE_CONNECTOR_PARAM_META_ERROR(
+            11804,
+            "update connector param meta error",
+            "更新连接器参数元数据失败"
+    ),
+
+    QUERY_CONNECTOR_PARAM_META_ERROR(
+            11805,
+            "query connector param meta error",
+            "查询连接器参数元数据失败"
+    ),
+
+    DELETE_CONNECTOR_PARAM_META_ERROR(
+            11806,
+            "delete connector param meta error",
+            "删除连接器参数元数据失败"
+    ),
     ;
 
 

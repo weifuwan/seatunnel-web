@@ -1,8 +1,8 @@
-import React from "react";
 import { Empty, Space, Table, Tag, Typography } from "antd";
-import type { TablePaginationConfig, ColumnsType } from "antd/es/table";
-import { MenuKey, ParamItem } from "../../types";
+import type { ColumnsType, TablePaginationConfig } from "antd/es/table";
+import React from "react";
 import { BLUE, BORDER_COLOR } from "../../constants/ui";
+import { MenuKey, ParamItem } from "../../types";
 
 const { Text } = Typography;
 
@@ -15,6 +15,40 @@ interface Props {
   onDelete: (record: ParamItem) => void;
 }
 
+const pillStyle: React.CSSProperties = {
+  borderRadius: 999,
+  paddingInline: 10,
+  fontSize: 12,
+  lineHeight: "20px",
+};
+
+const softCodeStyle: React.CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  maxWidth: "100%",
+  padding: "2px 10px",
+  borderRadius: 10,
+  background: "#F5F7FA",
+  border: "1px solid #EAECF0",
+  color: "#344054",
+  fontSize: 12,
+  lineHeight: "20px",
+  fontFamily:
+    'ui-monospace, SFMono-Regular, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+};
+
+const actionStyle: React.CSSProperties = {
+  fontSize: 13,
+  fontWeight: 500,
+  cursor: "pointer",
+  padding: "4px 10px",
+  borderRadius: 8,
+  border: "none",
+  outline: "none",
+  transition: "all 180ms cubic-bezier(0.22, 1, 0.36, 1)",
+  transform: "translateY(0) scale(1)",
+};
+
 const ConnectorParamTable: React.FC<Props> = ({
   dataSource,
   loading = false,
@@ -24,38 +58,45 @@ const ConnectorParamTable: React.FC<Props> = ({
 }) => {
   const columns: ColumnsType<ParamItem> = [
     {
-      title: "Connector",
+      title: "SeaTunnel连接器",
       dataIndex: "connectorName",
       key: "connectorName",
-      width: 160,
-      render: (_, record) =>
-        record.type === "connector" ? (
-          <Tag
-            className="rounded-full px-[10px]"
-            style={{
-              borderColor: "#cdd8ff",
-              color: BLUE,
-              background: "#f7f9ff",
-            }}
-          >
-            {record.connectorName}
-          </Tag>
-        ) : (
-          <Text type="secondary">-</Text>
-        ),
+      width: 170,
+      render: (_, record) => {
+        if (record.type !== "connector") {
+          return <Text type="secondary">-</Text>;
+        }
+
+        return (
+          <div className="min-w-0 py-1">
+            <div className="flex items-center gap-2">
+              <span
+                className="truncate text-[14px] font-semibold leading-[22px]"
+                style={{ color: "#245BDB" }}
+                title={record.connectorName || "-"}
+              >
+                {record.connectorName || "-"}
+              </span>
+            </div>
+
+            {record.connectorType ? (
+              <div className="mt-1 text-[12px] leading-5 text-[#98A2B3]">
+                类型：{record.connectorType}
+              </div>
+            ) : null}
+          </div>
+        );
+      },
     },
     {
-      title: "参数",
+      title: "参数名",
       dataIndex: "paramName",
       key: "paramName",
-      width: 220,
-      render: (value: string) => (
-        <div>
-          <div className="text-[14px] font-semibold leading-[1.4] text-[#101828]">
-            {value}
-          </div>
-          <div className="mt-1 text-[12px] text-[#98A2B3]">
-            Connector 参数
+      width: 170,
+      render: (_, record) => (
+        <div className="min-w-0">
+          <div className="truncate text-[14px] font-semibold leading-[22px] text-[#101828]">
+            {record.paramName || "-"}
           </div>
         </div>
       ),
@@ -66,7 +107,9 @@ const ConnectorParamTable: React.FC<Props> = ({
       key: "paramDesc",
       ellipsis: true,
       render: (value: string) => (
-        <Text className="text-[#475467]">{value || "-"}</Text>
+        <Text className="text-[13px] leading-6 text-[#475467]">
+          {value || "-"}
+        </Text>
       ),
     },
     {
@@ -77,14 +120,18 @@ const ConnectorParamTable: React.FC<Props> = ({
       render: (_, record) =>
         record.type === "connector" ? (
           <Tag
-            className="rounded-[8px]"
+            bordered
             style={{
-              color: "#3478f6",
-              background: "#eff6ff",
-              borderColor: "#bfdbfe",
+              marginInlineEnd: 0,
+              borderRadius: 10,
+              paddingInline: 10,
+              color: "#175CD3",
+              background: "#EFF8FF",
+              borderColor: "#B2DDFF",
+              fontSize: 12,
             }}
           >
-            {record.paramType}
+            {record.paramType || "-"}
           </Tag>
         ) : (
           <Text type="secondary">-</Text>
@@ -99,22 +146,31 @@ const ConnectorParamTable: React.FC<Props> = ({
         record.type === "connector" ? (
           record.required ? (
             <Tag
-              className="rounded-[8px]"
+              bordered
               style={{
-                color: "#ef4444",
-                background: "#fef2f2",
-                borderColor: "#fecaca",
+                marginInlineEnd: 0,
+                borderRadius: 10,
+                paddingInline: 10,
+                color: "#D92D20",
+                background: "#FEF3F2",
+                borderColor: "#FECDCA",
+                fontSize: 12,
+                fontWeight: 500,
               }}
             >
               必填
             </Tag>
           ) : (
             <Tag
-              className="rounded-[8px]"
+              bordered
               style={{
+                marginInlineEnd: 0,
+                borderRadius: 10,
+                paddingInline: 10,
                 color: "#475467",
-                background: "#f8fafc",
-                borderColor: "#e4e7ec",
+                background: "#F8FAFC",
+                borderColor: "#E4E7EC",
+                fontSize: 12,
               }}
             >
               非必填
@@ -131,30 +187,61 @@ const ConnectorParamTable: React.FC<Props> = ({
       width: 180,
       ellipsis: true,
       render: (value?: string) =>
-        value ? <Text code>{value}</Text> : <Text type="secondary">-</Text>,
+        value ? (
+          <span style={softCodeStyle} title={value}>
+            {value}
+          </span>
+        ) : (
+          <Text type="secondary">-</Text>
+        ),
     },
     {
       title: "示例值",
       dataIndex: "exampleValue",
       key: "exampleValue",
-      width: 260,
+      width: 170,
       ellipsis: true,
       render: (value?: string) =>
-        value ? <Text code>{value}</Text> : <Text type="secondary">-</Text>,
+        value ? (
+          <span style={softCodeStyle} title={value}>
+            {value}
+          </span>
+        ) : (
+          <Text type="secondary">-</Text>
+        ),
     },
     {
       title: "操作",
       key: "action",
-      width: 140,
+      width: 150,
       fixed: "right",
       render: (_: unknown, record: ParamItem) => (
-        <Space size={16}>
-          <a onClick={() => onEdit(record)} style={{ color: BLUE }}>
+        <Space size={8}>
+          <button
+            type="button"
+            className="connector-param-table__action connector-param-table__action--edit"
+            onClick={() => onEdit(record)}
+            style={{
+              ...actionStyle,
+              color: BLUE,
+              background: "#F5F8FF",
+            }}
+          >
             编辑
-          </a>
-          <a onClick={() => onDelete(record)} style={{ color: "#ff4d4f" }}>
+          </button>
+
+          <button
+            type="button"
+            className="connector-param-table__action connector-param-table__action--delete"
+            onClick={() => onDelete(record)}
+            style={{
+              ...actionStyle,
+              color: "#D92D20",
+              background: "#FEF3F2",
+            }}
+          >
             删除
-          </a>
+          </button>
         </Space>
       ),
     },
@@ -162,9 +249,10 @@ const ConnectorParamTable: React.FC<Props> = ({
 
   return (
     <div
-      className="overflow-hidden rounded-[14px] bg-white"
+      className="overflow-hidden rounded-[16px] bg-white"
       style={{
         border: `1px solid ${BORDER_COLOR}`,
+        boxShadow: "0 4px 18px rgba(16, 24, 40, 0.04)",
       }}
     >
       <Table<ParamItem>
@@ -186,8 +274,34 @@ const ConnectorParamTable: React.FC<Props> = ({
             </div>
           ),
         }}
-        scroll={{ x: 1250, y: "calc(100vh - 430px)" }}
+        scroll={{ x: 1280, y: "calc(100vh - 430px)" }}
+        rowClassName={() => "connector-param-table-row"}
       />
+
+      <style>
+        {`
+          .ant-table-wrapper .ant-table-thead > tr > th {
+            background: #f8fafc;
+            color: #344054;
+            font-weight: 600;
+            font-size: 13px;
+            border-bottom: 1px solid #eef2f6;
+          }
+
+          .ant-table-wrapper .ant-table-tbody > tr > td {
+            border-bottom: 1px solid #f2f4f7;
+            vertical-align: middle;
+          }
+
+          .ant-table-wrapper .connector-param-table-row:hover > td {
+            background: #fafcff !important;
+          }
+
+          .ant-table-wrapper .ant-table-pagination {
+            margin: 16px 16px 18px;
+          }
+        `}
+      </style>
     </div>
   );
 };

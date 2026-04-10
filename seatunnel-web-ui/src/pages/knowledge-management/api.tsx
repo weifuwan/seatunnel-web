@@ -1,6 +1,5 @@
-import { request } from "@umijs/max";
+import HttpUtils from "@/utils/HttpUtils";
 import { ConnectorParamQuery, ConnectorParamVO, PageResult } from "./types";
-
 
 export interface SaveConnectorParamPayload {
   id?: number;
@@ -16,48 +15,46 @@ export interface SaveConnectorParamPayload {
   remark?: string;
 }
 
+export interface ConnectorParamListQuery {
+  connectorName?: string;
+  type?: string;
+}
+
 export async function fetchConnectorParamPage(params: ConnectorParamQuery) {
-  return request<PageResult<ConnectorParamVO>>(
+  return HttpUtils.post<PageResult<ConnectorParamVO>>(
     "/api/v1/connector-param-meta/page",
-    {
-      method: "GET",
-      params,
-    }
+    params
   );
 }
 
 export async function fetchConnectorParamDetail(id: number) {
-  return request<ConnectorParamVO>(`/api/v1/connector-param-meta/${id}`, {
-    method: "GET",
-  });
+  return HttpUtils.get<ConnectorParamVO>(`/api/v1/connector-param-meta/${id}`);
 }
 
 export async function createConnectorParam(data: SaveConnectorParamPayload) {
-  return request<number>("/api/v1/connector-param-meta", {
-    method: "POST",
-    data,
-  });
+  return HttpUtils.post<number>("/api/v1/connector-param-meta", data);
 }
 
 export async function updateConnectorParam(data: SaveConnectorParamPayload) {
-  return request<boolean>("/api/v1/connector-param-meta", {
-    method: "PUT",
-    data,
-  });
+  if (!data.id) {
+    throw new Error("更新 Connector 参数时 id 不能为空");
+  }
+
+  return HttpUtils.put<boolean>(
+    `/api/v1/connector-param-meta/${data.id}`,
+    data
+  );
 }
 
 export async function deleteConnectorParam(id: number) {
-  return request<boolean>(`/api/v1/connector-param-meta/${id}`, {
-    method: "DELETE",
-  });
+  return HttpUtils.delete<boolean>(`/api/v1/connector-param-meta/${id}`);
 }
 
-export async function fetchConnectorParamList(params?: {
-  connectorName?: string;
-  type?: string;
-}) {
-  return request<ConnectorParamVO[]>("/api/v1/connector-param-meta/list", {
-    method: "GET",
-    params,
-  });
+export async function fetchConnectorParamList(
+  params?: ConnectorParamListQuery
+) {
+  return HttpUtils.get<ConnectorParamVO[]>(
+    "/api/v1/connector-param-meta/list",
+    params
+  );
 }

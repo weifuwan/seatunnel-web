@@ -1,8 +1,9 @@
 import React from "react";
 import { PlusOutlined, SearchOutlined } from "@ant-design/icons";
 import { Button, Input } from "antd";
-import { BLUE, TEXT_SECONDARY } from "../../constants";
+
 import { MenuKey } from "../../types";
+import { BLUE, TEXT_SECONDARY } from "../../constants/ui";
 
 interface Props {
   activeMenu: MenuKey;

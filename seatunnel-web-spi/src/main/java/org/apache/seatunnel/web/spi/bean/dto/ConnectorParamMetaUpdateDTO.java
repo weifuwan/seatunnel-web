@@ -16,6 +16,7 @@ public class ConnectorParamMetaUpdateDTO {
 
     @Size(max = 128, message = "connectorName长度不能超过128")
     private String connectorName;
+    private String connectorType;
 
     @Size(max = 128, message = "paramName长度不能超过128")
     private String paramName;

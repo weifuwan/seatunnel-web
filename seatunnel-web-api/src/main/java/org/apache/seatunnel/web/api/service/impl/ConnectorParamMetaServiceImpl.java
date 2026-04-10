@@ -1,124 +1,195 @@
 package org.apache.seatunnel.web.api.service.impl;
 
-
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import lombok.RequiredArgsConstructor;
+import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.seatunnel.web.api.exceptions.ServiceException;
 import org.apache.seatunnel.web.api.service.ConnectorParamMetaService;
 import org.apache.seatunnel.web.dao.entity.ConnectorParamMetaEntity;
-import org.apache.seatunnel.web.dao.mapper.ConnectorParamMetaMapper;
+import org.apache.seatunnel.web.dao.repository.ConnectorParamMetaDao;
 import org.apache.seatunnel.web.spi.bean.dto.ConnectorParamMetaCreateDTO;
 import org.apache.seatunnel.web.spi.bean.dto.ConnectorParamMetaQueryDTO;
 import org.apache.seatunnel.web.spi.bean.dto.ConnectorParamMetaUpdateDTO;
+import org.apache.seatunnel.web.spi.bean.entity.PaginationResult;
 import org.apache.seatunnel.web.spi.bean.vo.ConnectorParamMetaVO;
+import org.apache.seatunnel.web.spi.enums.Status;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
-@RequiredArgsConstructor
-public class ConnectorParamMetaServiceImpl
-        extends ServiceImpl<ConnectorParamMetaMapper, ConnectorParamMetaEntity>
-        implements ConnectorParamMetaService {
+public class ConnectorParamMetaServiceImpl implements ConnectorParamMetaService {
 
-    private final ConnectorParamMetaMapper connectorParamMetaMapper;
+    @Resource
+    private ConnectorParamMetaDao connectorParamMetaDao;
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public Long create(ConnectorParamMetaCreateDTO dto) {
-        checkDuplicate(dto.getType(), dto.getConnectorName(), dto.getParamName(), null);
+        validateCreateDto(dto);
 
-        ConnectorParamMetaEntity entity = new ConnectorParamMetaEntity();
-        BeanUtils.copyProperties(dto, entity);
+        try {
+            if (connectorParamMetaDao.checkDuplicate(dto.getType(), dto.getConnectorName(), dto.getParamName())) {
+                throw new ServiceException(Status.CONNECTOR_PARAM_META_ALREADY_EXISTS);
+            }
 
-        connectorParamMetaMapper.insert(entity);
-        return entity.getId();
+            ConnectorParamMetaEntity entity = new ConnectorParamMetaEntity();
+            BeanUtils.copyProperties(dto, entity);
+
+            connectorParamMetaDao.insert(entity);
+            return entity.getId();
+        } catch (ServiceException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Create connector param meta failed, dto={}", dto, e);
+            throw new ServiceException(Status.INTERNAL_SERVER_ERROR_ARGS, e.getMessage());
+        }
     }
 
     @Override
-    public boolean updateById(ConnectorParamMetaUpdateDTO dto) {
-        ConnectorParamMetaEntity existing = connectorParamMetaMapper.selectById(dto.getId());
-        if (existing == null) {
-            throw new IllegalArgumentException("参数记录不存在，id=" + dto.getId());
+    @Transactional(rollbackFor = Exception.class)
+    public Boolean update(Long id, ConnectorParamMetaUpdateDTO dto) {
+        validateId(id);
+        validateUpdateDto(dto);
+
+        ConnectorParamMetaEntity existing = getEntityOrThrow(id);
+
+        try {
+            String targetType = StringUtils.isNotBlank(dto.getType()) ? dto.getType() : existing.getType();
+            String targetConnectorName = StringUtils.isNotBlank(dto.getConnectorName())
+                    ? dto.getConnectorName()
+                    : existing.getConnectorName();
+            String targetParamName = StringUtils.isNotBlank(dto.getParamName())
+                    ? dto.getParamName()
+                    : existing.getParamName();
+
+            if (connectorParamMetaDao.checkDuplicateExcludeId(targetType, targetConnectorName, targetParamName, id)) {
+                throw new ServiceException(Status.CONNECTOR_PARAM_META_ALREADY_EXISTS);
+            }
+
+            ConnectorParamMetaEntity entity = new ConnectorParamMetaEntity();
+            BeanUtils.copyProperties(dto, entity);
+            entity.setId(id);
+            entity.initUpdate();
+            return connectorParamMetaDao.updateById(entity);
+        } catch (ServiceException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Update connector param meta failed, id={}, dto={}", id, dto, e);
+            throw new ServiceException(Status.INTERNAL_SERVER_ERROR_ARGS, e.getMessage());
         }
-
-        String targetType = StringUtils.hasText(dto.getType()) ? dto.getType() : existing.getType();
-        String targetConnectorName = StringUtils.hasText(dto.getConnectorName()) ? dto.getConnectorName() : existing.getConnectorName();
-        String targetParamName = StringUtils.hasText(dto.getParamName()) ? dto.getParamName() : existing.getParamName();
-
-        checkDuplicate(targetType, targetConnectorName, targetParamName, dto.getId());
-
-        ConnectorParamMetaEntity entity = new ConnectorParamMetaEntity();
-        BeanUtils.copyProperties(dto, entity);
-
-        return connectorParamMetaMapper.updateById(entity) > 0;
     }
 
     @Override
     public ConnectorParamMetaVO getById(Long id) {
-        ConnectorParamMetaEntity entity = connectorParamMetaMapper.selectById(id);
+        validateId(id);
+
+        try {
+            return toVO(getEntityOrThrow(id));
+        } catch (ServiceException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Query connector param meta by id failed, id={}", id, e);
+            throw new ServiceException(Status.INTERNAL_SERVER_ERROR_ARGS, e.getMessage());
+        }
+    }
+
+    @Override
+    public PaginationResult<ConnectorParamMetaVO> pageQuery(ConnectorParamMetaQueryDTO dto) {
+        if (dto == null) {
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "queryDTO");
+        }
+
+        if (dto.getPageNum() == null || dto.getPageNum() <= 0) {
+            dto.setPageNum(1L);
+        }
+        if (dto.getPageSize() == null || dto.getPageSize() <= 0) {
+            dto.setPageSize(10L);
+        }
+
+        try {
+            IPage<ConnectorParamMetaEntity> pageResult = connectorParamMetaDao.queryPage(dto);
+            List<ConnectorParamMetaVO> records = pageResult.getRecords()
+                    .stream()
+                    .map(this::toVO)
+                    .collect(Collectors.toList());
+
+            return PaginationResult.buildSuc(records, pageResult);
+        } catch (ServiceException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Page query connector param meta failed, dto={}", dto, e);
+            throw new ServiceException(Status.INTERNAL_SERVER_ERROR_ARGS, e.getMessage());
+        }
+    }
+
+    @Override
+    public List<ConnectorParamMetaVO> list(String connectorName, String type) {
+        try {
+            return connectorParamMetaDao.queryList(connectorName, type)
+                    .stream()
+                    .map(this::toVO)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("List connector param meta failed, connectorName={}, type={}", connectorName, type, e);
+            throw new ServiceException(Status.INTERNAL_SERVER_ERROR_ARGS, e.getMessage());
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void delete(Long id) {
+        validateId(id);
+        getEntityOrThrow(id);
+
+        try {
+            connectorParamMetaDao.deleteById(id);
+        } catch (ServiceException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Delete connector param meta failed, id={}", id, e);
+            throw new ServiceException(Status.INTERNAL_SERVER_ERROR_ARGS, e.getMessage());
+        }
+    }
+
+    private void validateCreateDto(ConnectorParamMetaCreateDTO dto) {
+        if (dto == null) {
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "connectorParamMetaCreateDTO");
+        }
+        if (StringUtils.isBlank(dto.getType())) {
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "type");
+        }
+        if (StringUtils.isBlank(dto.getConnectorName())) {
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "connectorName");
+        }
+        if (StringUtils.isBlank(dto.getParamName())) {
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "paramName");
+        }
+    }
+
+    private void validateUpdateDto(ConnectorParamMetaUpdateDTO dto) {
+        if (dto == null) {
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "connectorParamMetaUpdateDTO");
+        }
+    }
+
+    private void validateId(Long id) {
+        if (id == null || id <= 0) {
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "id");
+        }
+    }
+
+    private ConnectorParamMetaEntity getEntityOrThrow(Long id) {
+        ConnectorParamMetaEntity entity = connectorParamMetaDao.queryById(id);
         if (entity == null) {
-            return null;
+            throw new ServiceException(Status.CONNECTOR_PARAM_META_NOT_EXIST);
         }
-        return toVO(entity);
-    }
-
-    @Override
-    public IPage<ConnectorParamMetaVO> pageQuery(ConnectorParamMetaQueryDTO dto) {
-        Page<ConnectorParamMetaEntity> page = new Page<>(dto.getPageNum(), dto.getPageSize());
-
-        LambdaQueryWrapper<ConnectorParamMetaEntity> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(StringUtils.hasText(dto.getType()), ConnectorParamMetaEntity::getType, dto.getType())
-                .eq(StringUtils.hasText(dto.getConnectorName()), ConnectorParamMetaEntity::getConnectorName, dto.getConnectorName())
-                .like(StringUtils.hasText(dto.getParamName()), ConnectorParamMetaEntity::getParamName, dto.getParamName())
-                .orderByDesc(ConnectorParamMetaEntity::getUpdateTime)
-                .orderByDesc(ConnectorParamMetaEntity::getId);
-
-        IPage<ConnectorParamMetaEntity> entityPage = connectorParamMetaMapper.selectPage(page, wrapper);
-
-        Page<ConnectorParamMetaVO> voPage = new Page<>(entityPage.getCurrent(), entityPage.getSize(), entityPage.getTotal());
-        voPage.setRecords(entityPage.getRecords().stream().map(this::toVO).collect(Collectors.toList()));
-        return voPage;
-    }
-
-    @Override
-    public List<ConnectorParamMetaVO> listByConnectorName(String connectorName, String type) {
-        LambdaQueryWrapper<ConnectorParamMetaEntity> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(StringUtils.hasText(connectorName), ConnectorParamMetaEntity::getConnectorName, connectorName)
-                .eq(StringUtils.hasText(type), ConnectorParamMetaEntity::getType, type)
-                .orderByAsc(ConnectorParamMetaEntity::getParamName);
-
-        return connectorParamMetaMapper.selectList(wrapper)
-                .stream()
-                .map(this::toVO)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public boolean deleteById(Long id) {
-        return connectorParamMetaMapper.deleteById(id) > 0;
-    }
-
-    private void checkDuplicate(String type, String connectorName, String paramName, Long excludeId) {
-        LambdaQueryWrapper<ConnectorParamMetaEntity> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(ConnectorParamMetaEntity::getType, type)
-                .eq(ConnectorParamMetaEntity::getConnectorName, connectorName)
-                .eq(ConnectorParamMetaEntity::getParamName, paramName);
-
-        List<ConnectorParamMetaEntity> exists = connectorParamMetaMapper.selectList(wrapper);
-        boolean duplicated = exists.stream()
-                .anyMatch(item -> !Objects.equals(item.getId(), excludeId));
-
-        if (duplicated) {
-            throw new IllegalArgumentException(
-                    String.format("参数已存在：type=%s, connectorName=%s, paramName=%s", type, connectorName, paramName)
-            );
-        }
+        return entity;
     }
 
     private ConnectorParamMetaVO toVO(ConnectorParamMetaEntity entity) {

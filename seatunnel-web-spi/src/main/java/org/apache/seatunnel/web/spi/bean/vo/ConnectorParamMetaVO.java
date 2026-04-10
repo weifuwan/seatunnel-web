@@ -13,6 +13,8 @@ public class ConnectorParamMetaVO {
 
     private String connectorName;
 
+    private String connectorType;
+
     private String paramName;
 
     private String paramDesc;

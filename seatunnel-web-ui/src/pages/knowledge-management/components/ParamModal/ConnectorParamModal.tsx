@@ -1,14 +1,16 @@
-import React from "react";
 import { SettingOutlined } from "@ant-design/icons";
-import { Form, Input, Modal, Select, Switch } from "antd";
-import { FormValues, MenuKey, ParamItem } from "../../types";
+import { Button, Col, Form, Input, Modal, Row, Select, Switch } from "antd";
+import React from "react";
+import {
+  connectorNameOptions,
+  connectorTypeOptions,
+} from "../../constants/options";
 import { TEXT_SECONDARY } from "../../constants/ui";
-import { connectorNameOptions, connectorTypeOptions } from "../../constants/options";
+import { FormValues, ParamItem } from "../../types";
 
 const { TextArea } = Input;
 
 interface Props {
-  activeMenu: MenuKey;
   open: boolean;
   editingRecord: ParamItem | null;
   submitting: boolean;
@@ -74,7 +76,7 @@ const ConnectorParamModal: React.FC<Props> = ({
             </div>
 
             <div className="mt-[2px] text-[13px] leading-5 text-[#667085]">
-              维护 Connector 参数的名称、说明、类型与默认规则
+              维护 Connector 参数的名称、说明、类型、默认规则与深度语义
             </div>
           </div>
         </div>
@@ -85,7 +87,21 @@ const ConnectorParamModal: React.FC<Props> = ({
             className="text-[13px] leading-5"
             style={{ color: TEXT_SECONDARY || "#667085" }}
           >
-            建议补充默认值与示例值，方便后续配置复用
+            建议补充默认值、示例值和参数深度语义，方便后续推荐与复用
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button onClick={onCancel} style={{ borderRadius: 16 }}>
+              取消
+            </Button>
+            <Button
+              type="primary"
+              loading={submitting}
+              style={{ borderRadius: 16 }}
+              onClick={onSubmit}
+            >
+              保存
+            </Button>
           </div>
         </div>
       }
@@ -93,10 +109,17 @@ const ConnectorParamModal: React.FC<Props> = ({
       <Form<FormValues>
         form={form}
         layout="vertical"
-        initialValues={{ required: false }}
+        initialValues={{
+          required: false,
+          paramType: "string",
+          paramContext: "",
+        }}
       >
         <div className="flex flex-col gap-4">
-          <div className="rounded-2xl border border-[#EEF2F6] bg-white p-[18px] shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
+          <div
+            className="rounded-2xl border border-[#EEF2F6] bg-white p-[18px] shadow-[0_1px_2px_rgba(16,24,40,0.04)]"
+            style={{ paddingBottom: 28 }}
+          >
             <h3 className="m-0 text-[15px] font-semibold leading-6 text-[#101828]">
               基础信息
             </h3>
@@ -104,27 +127,44 @@ const ConnectorParamModal: React.FC<Props> = ({
               先定义参数归属、名称和用途说明，便于后续统一维护
             </div>
 
-            <Form.Item
-              label="Connector"
-              name="connectorName"
-              rules={[{ required: true, message: "请选择 Connector" }]}
-            >
-              <Select
-                placeholder="请选择 Connector"
-                options={connectorNameOptions}
-                showSearch
-                optionFilterProp="label"
-              />
-            </Form.Item>
-
+            <Row gutter={24}>
+              <Col span={12}>
+                <Form.Item
+                  label="Connector"
+                  name="connectorName"
+                  rules={[{ required: true, message: "请选择 Connector" }]}
+                >
+                  <Select
+                    placeholder="请选择 Connector"
+                    options={connectorNameOptions}
+                    showSearch
+                    optionFilterProp="label"
+                  />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  label="连接器类型"
+                  name="connectorType"
+                  rules={[{ required: true, message: "请输入连接器类型" }]}
+                >
+                  <Select
+                    placeholder="如 source / sink"
+                    options={[
+                      { label: "SOURCE", value: "source" },
+                      { label: "SINK", value: "sink" },
+                    ]}
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
             <Form.Item
               label="参数名称"
               name="paramName"
               rules={[{ required: true, message: "请输入参数名称" }]}
             >
-              <Input placeholder="如 parallelism / query / table" />
+              <Input placeholder="如 parallelism / query / table / fetch.size" />
             </Form.Item>
-
             <Form.Item
               label="参数说明"
               name="paramDesc"
@@ -197,6 +237,46 @@ const ConnectorParamModal: React.FC<Props> = ({
                 <Input placeholder="请输入示例值" />
               </Form.Item>
             </div>
+          </div>
+
+          <div
+            className="rounded-2xl border border-[#EEF2F6] bg-white p-[18px] shadow-[0_1px_2px_rgba(16,24,40,0.04)]"
+            style={{ paddingBottom: 28 }}
+          >
+            <h3 className="m-0 text-[15px] font-semibold leading-6 text-[#101828]">
+              参数深度语义
+            </h3>
+            <div className="mb-4 mt-1 text-[13px] leading-5 text-[#667085]">
+              用于补充处理逻辑、影响范围、推荐依据和示例，主要供 AI 参数推荐使用
+            </div>
+
+            <Form.Item
+              label="参数上下文"
+              name="paramContext"
+              style={{ marginBottom: 0 }}
+            >
+              <TextArea
+                rows={10}
+                showCount
+                maxLength={6000}
+                placeholder={`建议填写 JSON 或半结构化内容，例如：
+{
+  "summary": "控制 JDBC 结果集读取时的单次抓取批量",
+  "processingLogic": [
+    "影响结果集分批拉取过程",
+    "不等于 limit",
+    "越大网络往返越少，但单批内存压力更高"
+  ],
+  "recommendationHints": [
+    "大结果集可适当调大",
+    "宽表或大字段场景不宜过大"
+  ],
+  "cautions": [
+    "不是越大越好"
+  ]
+}`}
+              />
+            </Form.Item>
           </div>
         </div>
       </Form>

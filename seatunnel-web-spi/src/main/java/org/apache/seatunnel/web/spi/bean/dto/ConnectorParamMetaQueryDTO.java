@@ -14,6 +14,7 @@ public class ConnectorParamMetaQueryDTO {
      * 连接器名称
      */
     private String connectorName;
+    private String connectorType;
 
     /**
      * 参数名，支持模糊查询

@@ -15,14 +15,14 @@ export const getTabDefinitions = (params?: any): TabDefinition[] => [
     label: "调度",
     content: <ScheduleConfigContent />,
   },
-  {
-    key: "mapping",
-    label: "映射",
-    content: <MappingConfigContent />,
-  },
-  {
-    key: "advanced",
-    label: "高级",
-    content: <AdvancedConfigContent />,
-  },
+  // {
+  //   key: "mapping",
+  //   label: "映射",
+  //   content: <MappingConfigContent />,
+  // },
+  // {
+  //   key: "advanced",
+  //   label: "高级",
+  //   content: <AdvancedConfigContent />,
+  // },
 ];

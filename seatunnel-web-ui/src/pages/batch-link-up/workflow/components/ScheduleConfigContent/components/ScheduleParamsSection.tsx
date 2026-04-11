@@ -23,9 +23,9 @@ const ScheduleParamsSection: React.FC<Props> = ({ value, onChange }) => {
               const nextList = [
                 ...dataSource,
                 {
-                  key: "",
-                  value: "",
-                  description: "",
+                  key: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                  paramName: "",
+                  paramValue: "",
                 },
               ];
 

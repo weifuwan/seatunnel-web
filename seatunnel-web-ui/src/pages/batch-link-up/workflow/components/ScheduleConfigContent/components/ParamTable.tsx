@@ -9,6 +9,14 @@ interface ParamTableProps {
   onChange?: (nextDataSource: ParamRow[]) => void;
 }
 
+const inputStyle: React.CSSProperties = {
+  height: 30,
+  borderRadius: 16,
+  borderColor: "#D0D5DD",
+  background: "#FCFCFD",
+  boxShadow: "none",
+};
+
 const ParamTable: React.FC<ParamTableProps> = ({ dataSource, onChange }) => {
   const handleFieldChange = (
     rowKey: React.Key,
@@ -43,7 +51,7 @@ const ParamTable: React.FC<ParamTableProps> = ({ dataSource, onChange }) => {
           size="small"
           value={value}
           placeholder="请输入参数名"
-          className="rounded-md"
+          style={inputStyle}
           onChange={(e) =>
             handleFieldChange(record.key, "paramName", e.target.value)
           }
@@ -67,7 +75,7 @@ const ParamTable: React.FC<ParamTableProps> = ({ dataSource, onChange }) => {
           size="small"
           value={value}
           placeholder="请输入参数值或表达式"
-          className="rounded-md"
+          style={inputStyle}
           onChange={(e) =>
             handleFieldChange(record.key, "paramValue", e.target.value)
           }
@@ -77,7 +85,7 @@ const ParamTable: React.FC<ParamTableProps> = ({ dataSource, onChange }) => {
     {
       title: <span style={{ fontSize: 13, fontWeight: 500 }}>操作</span>,
       key: "action",
-      width: "20%",
+      width: "18%",
       render: (_, record) => (
         <a
           className="schedule-table-action"

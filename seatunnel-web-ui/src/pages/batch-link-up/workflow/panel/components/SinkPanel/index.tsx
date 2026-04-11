@@ -1,251 +1,11 @@
-// // App.tsx
-// import type { FC } from "react";
-// import { memo, useEffect, useRef, useState } from "react";
-
-// import QualityDetail from "@/pages/batch-link-up/DataViewSQL";
-
-// import { useIntl } from "@umijs/max";
-// import { Form, message, Tabs } from "antd";
-// import { useReactFlow } from "reactflow";
-// import "./index.less";
-// import OutputFieldsTab from "./OutputFieldsTab";
-// import SinkConfigTab from "./SinkConfigTab";
-// import UpstreamFieldValidateTab from "./UpstreamFieldValidateTab";
-// import { dataSourceCatalogApi, fetchDataSourceOptions } from "@/pages/data-source/service";
-
-// interface AppProps {
-//   selectedNode: {
-//     id: string;
-//     data: any;
-//   };
-//   onNodeDataChange: (nodeId: string, newData: any) => void;
-// }
-
-// const App: FC<AppProps> = ({ selectedNode, onNodeDataChange }) => {
-//   const intl = useIntl();
-
-//   const [activeKey, setActiveKey] = useState("1");
-
-//   const [sinkOption, setSinkOption] = useState<any[]>([]);
-//   const [sinkColumns, setSinkColumns] = useState<any[]>([]);
-//   const ref = useRef<any>(null);
-//   const [sinkForm] = Form.useForm();
-//   const [sinkTableOption, setSinkTableOption] = useState<any[]>([]);
-
-//   const autoCreateTable = Form.useWatch("generate_sink_sql", sinkForm) ?? true;
-
-//   // useEffect(() => {
-//   //   if (autoCreateTable && activeKey === "2") {
-//   //     setActiveKey("1");
-//   //   }
-//   // }, [autoCreateTable, activeKey]);
-
-//   const { getEdges, getNode } = useReactFlow();
-
-//   const getSinkTableList = (id: string) => {
-//     dataSourceCatalogApi.listTable(id).then((data) => {
-//       if (data?.code === 0) {
-//         setSinkTableOption(data?.data);
-//       } else {
-//         message.error(data?.message);
-//       }
-//     });
-//   };
-
-//   const handleAutoCreateTableChange = (flag: boolean) => {
-//     sinkForm.setFieldValue("generate_sink_sql", flag);
-
-//     const prevNodes = getPrevNodes(selectedNode?.id);
-//     const lastNode = prevNodes?.[0];
-
-//     let nextSinkColumns = [];
-
-//     if (flag) {
-//       nextSinkColumns = lastNode?.data?.sourceFields || [];
-//     } else {
-//       nextSinkColumns = selectedNode?.data?.sinkFields || [];
-//     }
-
-//     setSinkColumns(nextSinkColumns);
-
-//     onNodeDataChange(selectedNode?.id, {
-//       ...selectedNode?.data,
-//       ...sinkForm.getFieldsValue(),
-//       generate_sink_sql: flag,
-//       sinkFields: !flag
-//         ? selectedNode?.data?.sinkFields
-//         : selectedNode?.data?.sinkFields,
-//     });
-//   };
-
-//   useEffect(() => {
-//     if (selectedNode) {
-//       const sinkId = selectedNode?.data?.sinkId;
-//       if (sinkId === undefined || sinkId === "") {
-//         fetchDataSourceOptions(selectedNode?.data?.dbType).then((data) => {
-//           if (data?.code === 0) {
-//             setSinkOption(data?.data);
-
-//             if (data?.data?.length > 0) {
-//               const firstOption = data.data[0];
-//               const firstSinkId = firstOption.value;
-
-//               sinkForm.setFieldValue("sinkId", firstSinkId);
-//               sinkForm.setFieldValue("taskExecuteType", "SINGLE_TABLE");
-//               sinkForm.setFieldValue("generate_sink_sql", true);
-
-//               onNodeDataChange(selectedNode?.id, {
-//                 ...selectedNode?.data,
-//                 sinkId: firstSinkId,
-//                 taskExecuteType: "SINGLE_TABLE",
-//                 generate_sink_sql: true,
-//               });
-
-//               const lastPrevNodes = getPrevNodes(selectedNode?.id);
-//               let lastNode: any = {};
-//               if (lastPrevNodes && lastPrevNodes?.length > 0) {
-//                 lastNode = lastPrevNodes[0];
-//               }
-//               if (lastNode?.data?.sourceFields) {
-//                 setSinkColumns(lastNode?.data?.sourceFields || []);
-//               }
-//               getSinkTableList(firstOption.value);
-//             }
-//           } else {
-//             message.error(data?.message);
-//           }
-//         });
-//       } else {
-//         const lastPrevNodes = getPrevNodes(selectedNode?.id);
-//         let lastNode: any = {};
-//         if (lastPrevNodes && lastPrevNodes?.length > 0) {
-//           lastNode = lastPrevNodes[0];
-//         }
-
-//         fetchDataSourceOptions(selectedNode?.data?.dbType).then((data) => {
-//           if (data?.code === 0) {
-//             setSinkOption(data?.data);
-//             if (data?.data?.length > 0) {
-//               if (selectedNode?.data?.sinkId) {
-//                 getSinkTableList(selectedNode.data.sinkId);
-//               }
-//             }
-//           } else {
-//             message.error(data?.message);
-//           }
-//         });
-
-//         if (
-//           selectedNode?.data?.generate_sink_sql === true &&
-//           lastNode?.data?.sourceFields
-//         ) {
-//           setSinkColumns(lastNode?.data?.sourceFields || []);
-//         } else {
-//           setSinkColumns(selectedNode?.data?.sinkFields || []);
-//         }
-
-//         sinkForm.setFieldsValue({
-//           sinkId: selectedNode?.data?.sinkId || undefined,
-//           taskExecuteType: selectedNode?.data?.taskExecuteType || undefined,
-//           query: selectedNode?.data?.query || undefined,
-//           table: selectedNode?.data?.table || undefined,
-//           generate_sink_sql: selectedNode?.data?.generate_sink_sql || undefined,
-//         });
-
-//         sinkForm.setFieldValue(
-//           "generate_sink_sql",
-//           selectedNode?.data?.generate_sink_sql ?? true
-//         );
-//       }
-//     }
-//     // eslint-disable-next-line react-hooks/exhaustive-deps
-//   }, [selectedNode]);
-
-//   const getPrevNodes = (currentNodeId: string) => {
-//     const edges = getEdges();
-//     return edges
-//       .filter((e) => e.target === currentNodeId)
-//       .map((e) => getNode(e.source))
-//       .filter(Boolean);
-//   };
-
-//   const items = [
-//     {
-//       key: "1",
-//       label: intl.formatMessage({
-//         id: "pages.job.node.sink.tab.sinkSetting",
-//         defaultMessage: "Sink Setting",
-//       }),
-//       children: (
-//         <SinkConfigTab
-//           selectedNode={selectedNode}
-//           sinkOption={sinkOption}
-//           onNodeDataChange={onNodeDataChange}
-//           qualityDetailRef={ref}
-//           setSinkColumns={setSinkColumns}
-//           sinkForm={sinkForm}
-//           sinkTableOption={sinkTableOption}
-//           getSinkTableList={getSinkTableList}
-//           setAutoCreateTable={handleAutoCreateTableChange}
-//           autoCreateTable={autoCreateTable}
-//         />
-//       ),
-//     },
-
-//     {
-//       key: "2",
-//       label: intl.formatMessage({
-//         id: "pages.job.node.sink.tab.fieldsValidate",
-//         defaultMessage: "Fields Validate",
-//       }),
-//       children: (
-//         <UpstreamFieldValidateTab
-//           selectedNode={selectedNode}
-//           onNodeDataChange={onNodeDataChange}
-//           sinkColumns={sinkColumns}
-//           sinkForm={sinkForm}
-//           autoCreateTable={autoCreateTable}
-//         />
-//       ),
-//     },
-
-//     {
-//       key: "3",
-//       label: intl.formatMessage({
-//         id: "pages.job.node.sink.tab.outputFields",
-//         defaultMessage: "Output Fields",
-//       }),
-//       children: (
-//         <OutputFieldsTab
-//           selectedNode={selectedNode}
-//           onNodeDataChange={onNodeDataChange}
-//           sinkColumns={sinkColumns}
-//           setSinkColumns={setSinkColumns}
-//         />
-//       ),
-//     },
-//   ];
-
-//   return (
-//     <>
-//       <div style={{ padding: "0 16px" }}>
-//         <Tabs
-//           activeKey={activeKey}
-//           onChange={setActiveKey}
-//           destroyOnHidden
-//           items={items}
-//         />
-//       </div>
-//       <QualityDetail ref={ref} />
-//     </>
-//   );
-// };
-
-// export default memo(App);
-
+import { Input, Segmented, Select, Switch } from "antd";
+import { Database, FileCode2, Save, Table2, UploadCloud } from "lucide-react";
 import { memo } from "react";
 import PanelShell from "../PanelShell";
-
+import ExtraParamsConfig from "./ExtraParamsConfig";
+import SinkSqlEditorSection from "./SinkSqlEditorSection";
+import { useSinkPanelLogic } from "./hooks/useSinkPanelLogic";
+import "./index.less";
 
 interface Props {
   selectedNode: any;
@@ -253,71 +13,270 @@ interface Props {
   onNodeDataChange: (nodeId: string, newData: any) => void;
 }
 
-function SinkPanel({ selectedNode, onClose }: Props) {
-  const title = selectedNode?.data?.title || "ORACLE";
-  const dbType = selectedNode?.data?.dbType || "oracle";
-  const description = selectedNode?.data?.description || "写入目标端数据";
+function SinkPanel({ selectedNode, onClose, onNodeDataChange }: Props) {
+  const {
+    title,
+    dbType,
+    description,
+
+    sinkDataSourceId,
+    autoCreateTable,
+    writeMode,
+    sinkReadMode,
+    sinkTable,
+    sinkTableName,
+    sinkSql,
+    primaryKey,
+    batchSize,
+    extraParams,
+
+    sinkDataSourceOptions,
+    tableOptions,
+    tableLoading,
+
+    sqlPopoverOpen,
+    setSqlPopoverOpen,
+    selectedSqlTable,
+    setSelectedSqlTable,
+    generateSqlLoading,
+
+    updateNode,
+    handleDataSourceChange,
+    handleAutoCreateTableChange,
+    handleWriteModeChange,
+    handleSinkReadModeChange,
+    handleGenerateSinkSql,
+  } = useSinkPanelLogic({
+    selectedNode,
+    onNodeDataChange,
+  });
 
   return (
     <PanelShell
       eyebrow="Sink Config"
       title="目标配置"
       badge="输出节点"
-      desc="当前节点用于写入目标端数据，先展示目标配置面板骨架。"
+      desc="修改后会实时同步到当前画布节点"
       heroTitle={title}
       heroDesc={description}
       heroTag="SINK"
       dbType={dbType}
       onClose={onClose}
+      footer={
+        <button
+          type="button"
+          className="workflow-panel__btn workflow-panel__btn--ghost"
+          onClick={onClose}
+        >
+          关闭
+        </button>
+      }
     >
       <section className="workflow-panel__section">
-        <div className="workflow-panel__section-head">
-          <div className="workflow-panel__section-title">基础信息</div>
-          <div className="workflow-panel__section-tip">Sink</div>
-        </div>
-
-        <div className="workflow-panel__form-grid">
-          <div className="workflow-panel__field">
-            <div className="workflow-panel__label">目标类型</div>
-            <div className="workflow-panel__control">{title}</div>
+        <div className="workflow-panel__group">
+          <div className="workflow-panel__group-head">
+            <div className="workflow-panel__group-kicker">目标数据源</div>
           </div>
 
-          <div className="workflow-panel__field">
-            <div className="workflow-panel__label">节点名称</div>
-            <div className="workflow-panel__control">{title}</div>
+          <div className="workflow-panel__meta-card workflow-panel__meta-card--compact">
+            <div className="workflow-panel__meta-icon">
+              <Database size={16} />
+            </div>
+            <Select
+              value={sinkDataSourceId}
+              onChange={handleDataSourceChange}
+              options={sinkDataSourceOptions}
+              placeholder="请选择目标数据源"
+              showSearch
+              optionFilterProp="label"
+              className="workflow-panel__antd-select"
+              style={{ width: "100%" }}
+              popupClassName="workflow-panel__dropdown"
+            />
+          </div>
+        </div>
+
+        <div className="workflow-panel__divider" />
+
+        <div className="workflow-panel__group">
+          <div
+            className="workflow-panel__group-head"
+            style={{ display: "flex", justifyContent: "space-between" }}
+          >
+            <div className="workflow-panel__group-kicker">写入设置</div>
+
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                fontSize: 12,
+                color: "#667085",
+              }}
+            >
+              <span>自动建表</span>
+              <Switch
+                size="small"
+                checked={autoCreateTable}
+                onChange={handleAutoCreateTableChange}
+              />
+            </div>
           </div>
 
           <div className="workflow-panel__field workflow-panel__field--full">
-            <div className="workflow-panel__label">节点说明</div>
-            <div className="workflow-panel__textarea">{description}</div>
+            {autoCreateTable ? (
+              <div className="workflow-panel__field workflow-panel__field--full">
+                {/* <div className="workflow-panel__label">目标表</div> */}
+                <Input
+                  value={sinkTableName}
+                  onChange={(e) =>
+                    updateNode({ sinkTableName: e.target.value })
+                  }
+                  placeholder="请输入目标表名"
+                  className="workflow-panel__antd-input"
+                />
+              </div>
+            ) : (
+              <>
+                <div className="workflow-panel__field workflow-panel__field--full">
+                  <Segmented
+                    block
+                    value={sinkReadMode}
+                    style={{ marginBottom: 12 }}
+                    onChange={(value) =>
+                      handleSinkReadModeChange(String(value))
+                    }
+                    options={[
+                      {
+                        label: (
+                          <div className="workflow-panel__segmented-item">
+                            <Table2 size={14} />
+                            <span>按表写入</span>
+                          </div>
+                        ),
+                        value: "table",
+                      },
+                      {
+                        label: (
+                          <div className="workflow-panel__segmented-item">
+                            <FileCode2 size={14} />
+                            <span>自定义 SQL</span>
+                          </div>
+                        ),
+                        value: "sql",
+                      },
+                    ]}
+                  />
+                </div>
+
+                {sinkReadMode === "table" ? (
+                  <div className="workflow-panel__field workflow-panel__field--full">
+                    <Select
+                      value={sinkTable}
+                      onChange={(value) => updateNode({ sinkTable: value })}
+                      options={tableOptions}
+                      loading={tableLoading}
+                      placeholder="请选择目标表"
+                      className="workflow-panel__antd-select"
+                      style={{ width: "100%" }}
+                      popupClassName="workflow-panel__dropdown"
+                      showSearch
+                      optionFilterProp="rawLabel"
+                    />
+                  </div>
+                ) : (
+                  <SinkSqlEditorSection
+                    sinkDataSourceId={sinkDataSourceId}
+                    sql={sinkSql}
+                    tableOptions={tableOptions}
+                    sqlPopoverOpen={sqlPopoverOpen}
+                    setSqlPopoverOpen={setSqlPopoverOpen}
+                    selectedSqlTable={selectedSqlTable}
+                    setSelectedSqlTable={setSelectedSqlTable}
+                    generateSqlLoading={generateSqlLoading}
+                    onSqlChange={(value) => updateNode({ sinkSql: value })}
+                    onGenerateSql={handleGenerateSinkSql}
+                  />
+                )}
+              </>
+            )}
+
+            <div
+              className="workflow-panel__form-grid"
+              style={{ marginTop: autoCreateTable ? 12 : 0 }}
+            >
+              <div className="workflow-panel__divider" />
+              <Segmented
+                block
+                value={writeMode}
+                onChange={(value) => handleWriteModeChange(String(value))}
+                options={[
+                  {
+                    label: (
+                      <div className="workflow-panel__segmented-item">
+                        <Table2 size={14} />
+                        <span>追加写入</span>
+                      </div>
+                    ),
+                    value: "append",
+                  },
+                  {
+                    label: (
+                      <div className="workflow-panel__segmented-item">
+                        <Save size={14} />
+                        <span>覆盖写入</span>
+                      </div>
+                    ),
+                    value: "overwrite",
+                  },
+                  {
+                    label: (
+                      <div className="workflow-panel__segmented-item">
+                        <UploadCloud size={14} />
+                        <span>Upsert</span>
+                      </div>
+                    ),
+                    value: "upsert",
+                  },
+                ]}
+              />
+
+              {writeMode === "upsert" ? (
+                <div className="workflow-panel__field">
+                  <div className="workflow-panel__label" style={{marginTop: 12}}>主键字段</div>
+                  <Input
+                    value={primaryKey}
+                    onChange={(e) => updateNode({ primaryKey: e.target.value })}
+                    placeholder="请输入主键字段，例如：id"
+                    className="workflow-panel__antd-input"
+                  />
+                </div>
+              ) : (
+                <div />
+              )}
+            </div>
+
+            {/* <div className="workflow-panel__field">
+              <div className="workflow-panel__label">批量提交</div>
+              <Input
+                value={batchSize}
+                onChange={(e) => updateNode({ batchSize: e.target.value })}
+                placeholder="例如：1000"
+                className="workflow-panel__antd-input"
+              />
+            </div> */}
           </div>
         </div>
-      </section>
 
-      <section className="workflow-panel__section">
-        <div className="workflow-panel__section-head">
-          <div className="workflow-panel__section-title">写入配置</div>
-          <div className="workflow-panel__section-tip">占位</div>
-        </div>
+        <div className="workflow-panel__divider" />
 
-        <div className="workflow-panel__placeholder-list">
-          <div className="workflow-panel__placeholder-item"><span>目标表</span><em>示例占位</em></div>
-          <div className="workflow-panel__placeholder-item"><span>写入模式</span><em>示例占位</em></div>
-          <div className="workflow-panel__placeholder-item"><span>主键策略</span><em>示例占位</em></div>
-          <div className="workflow-panel__placeholder-item"><span>批量提交</span><em>示例占位</em></div>
-        </div>
-      </section>
-
-      <section className="workflow-panel__section">
-        <div className="workflow-panel__section-head">
-          <div className="workflow-panel__section-title">输出设置</div>
-          <div className="workflow-panel__section-tip">占位</div>
-        </div>
-
-        <div className="workflow-panel__chips">
-          <span className="workflow-panel__chip">追加写入</span>
-          <span className="workflow-panel__chip">覆盖写入</span>
-          <span className="workflow-panel__chip">字段映射</span>
+        <div className="workflow-panel__group">
+          <ExtraParamsConfig
+            params={extraParams}
+            onParamsChange={(params) => updateNode({ extraParams: params })}
+            selectedNode={selectedNode}
+            hideHeader
+          />
         </div>
       </section>
     </PanelShell>

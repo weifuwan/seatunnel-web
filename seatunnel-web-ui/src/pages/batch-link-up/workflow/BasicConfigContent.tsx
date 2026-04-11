@@ -2,6 +2,18 @@ interface BasicConfigContentProps {
   params?: any;
 }
 
+const getModeLabel = (mode?: string) => {
+  switch (mode) {
+    case "GUIDE_SINGLE":
+      return "单表同步";
+    case "GUIDE_MULTI":
+      return "多表同步";
+    case "SCRIPT":
+      return "脚本模式";
+    default:
+      return mode || "-";
+  }
+};
 export default function BasicConfigContent({
   params,
 }: BasicConfigContentProps) {
@@ -10,10 +22,23 @@ export default function BasicConfigContent({
   const jobName = params?.jobName || "未命名任务";
   const description = params?.description?.trim();
   const bridgeClientId = params?.bridgeClientId || "-";
+  const modeLabel = getModeLabel(params?.mode);
+  console.log(params);
 
   return (
     <div className="rounded-3xl border border-slate-200 bg-white px-4 py-4">
       <div className="space-y-5">
+        <div className="flex items-start justify-between gap-4" style={{alignItems: "center"}}>
+          <div className="min-w-0">
+            <div className="text-[13px] font-medium text-slate-400">
+              任务概览
+            </div>
+          </div>
+
+          <div className="shrink-0 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[12px] font-medium text-slate-600">
+            {modeLabel}
+          </div>
+        </div>
         <div className="rounded-2xl bg-slate-50 px-4 py-3">
           <div className="flex items-center justify-between text-center">
             <div className="min-w-0 flex-1">
@@ -67,8 +92,13 @@ export default function BasicConfigContent({
 
           <div>
             <div className="text-[12px] text-slate-400">Zeta</div>
-            <div className="mt-1 text-[14px] font-medium text-slate-900">
-              {bridgeClientId}
+            <div className="mt-1 flex items-center gap-2">
+              <span className="text-[15px] font-semibold leading-none text-slate-700">
+                #{bridgeClientId}
+              </span>
+              <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-600">
+                已绑定
+              </span>
             </div>
           </div>
         </div>

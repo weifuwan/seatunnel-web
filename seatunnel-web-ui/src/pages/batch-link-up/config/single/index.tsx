@@ -2,7 +2,10 @@ import { history, useParams } from "@umijs/max";
 import { Empty } from "antd";
 import { useEffect, useState } from "react";
 import Workflow from "../../workflow";
-import { ScheduleConfig } from "../../workflow/components/ScheduleConfigContent/types";
+import {
+  BasicConfig,
+  ScheduleConfig,
+} from "../../workflow/components/ScheduleConfigContent/types";
 
 const defaultScheduleConfig: ScheduleConfig = {
   paramsList: [],
@@ -60,14 +63,43 @@ const buildInitialScheduleConfig = (rawData?: any): ScheduleConfig => {
   };
 };
 
+const defaultBasicConfig: BasicConfig = {
+  jobName: "",
+  description: "",
+  bridgeClientId: "",
+  mode: "GUIDE_SINGLE",
+  sourceType: "SOURCE",
+  targetType: "SINK",
+  sourceDataSourceId: "",
+  targetDataSourceId: ""
+};
+
+const buildInitialBasicConfig = (rawData?: any): BasicConfig => {
+  return {
+    ...defaultBasicConfig,
+    jobName: rawData?.jobName || "",
+    description: rawData?.description || "",
+    bridgeClientId: rawData?.bridgeClientId || "",
+    mode: rawData?.mode || "GUIDE_SINGLE",
+    sourceType: rawData?.sourceType?.dbType || "SOURCE",
+    targetType: rawData?.targetType?.dbType || "SINK",
+    sourceDataSourceId: rawData?.sourceDataSourceId || rawData?.sourceId || "",
+    targetDataSourceId: rawData?.targetDataSourceId || rawData?.targetId || "",
+  };
+};
+
 export default function SingleConfigPage() {
   const { id } = useParams<{ id: string }>();
 
   const [params, setParams] = useState<any>(null);
   const [sourceType, setSourceType] = useState<any>(null);
   const [targetType, setTargetType] = useState<any>(null);
-  const [scheduleConfig, setScheduleConfig] =
-    useState<ScheduleConfig>(defaultScheduleConfig);
+  const [scheduleConfig, setScheduleConfig] = useState<ScheduleConfig>(
+    defaultScheduleConfig
+  );
+
+  const [basicConfig, setBasicConfig] =
+    useState<BasicConfig>(defaultBasicConfig);
 
   useEffect(() => {
     if (!id) return;
@@ -79,7 +111,7 @@ export default function SingleConfigPage() {
     setParams(data);
     setSourceType(data?.sourceType || null);
     setTargetType(data?.targetType || null);
-    console.log(buildInitialScheduleConfig(data));
+    setBasicConfig(buildInitialBasicConfig(data));
     setScheduleConfig(buildInitialScheduleConfig(data));
   }, [id]);
 
@@ -105,6 +137,8 @@ export default function SingleConfigPage() {
         targetType={targetType}
         setTargetType={setTargetType}
         setParams={setParams}
+        basicConfig={basicConfig}
+        setBasicConfig={setBasicConfig}
         scheduleConfig={scheduleConfig}
         setScheduleConfig={setScheduleConfig}
       />

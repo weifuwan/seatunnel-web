@@ -5,7 +5,10 @@ import { useEffect, useRef, useState } from "react";
 import { ReactFlowProvider } from "reactflow";
 import FlowCanvas from "./FlowCanvas";
 import RightConfigPanel from "./RightConfigPanel";
-import { ScheduleConfig } from "./components/ScheduleConfigContent/types";
+import {
+  BasicConfig,
+  ScheduleConfig,
+} from "./components/ScheduleConfigContent/types";
 import styles from "./index.less";
 
 interface WorkflowProps {
@@ -15,6 +18,8 @@ interface WorkflowProps {
   setSourceType: (value: any) => void;
   targetType: any;
   setTargetType: (value: any) => void;
+  basicConfig: BasicConfig;
+  setBasicConfig: React.Dispatch<React.SetStateAction<BasicConfig>>;
   scheduleConfig: ScheduleConfig;
   setScheduleConfig: (value: any) => void;
   setParams: React.Dispatch<React.SetStateAction<any>>;
@@ -25,6 +30,8 @@ export default function Workflow({
   goBack,
   sourceType,
   targetType,
+  basicConfig,
+  setBasicConfig,
   scheduleConfig,
   setScheduleConfig,
 }: WorkflowProps) {
@@ -82,6 +89,12 @@ export default function Workflow({
     };
   };
 
+  const buildBasicData = () => {
+    return {
+      ...basicConfig,
+    };
+  };
+
   const buildScheduleData = () => {
     return {
       ...scheduleConfig,
@@ -90,6 +103,7 @@ export default function Workflow({
 
   const buildFinalPayload = () => {
     return {
+      basic: buildBasicData(),
       workflow: buildWorkflowData(),
       schedule: buildScheduleData(),
       // 后续扩展放这里
@@ -103,6 +117,7 @@ export default function Workflow({
     const finalPayload = buildFinalPayload();
 
     console.log("最终保存数据 finalPayload =", finalPayload);
+    console.log("basic 数据 =", finalPayload.basic);
     console.log("workflow 数据 =", finalPayload.workflow);
     console.log("schedule 数据 =", finalPayload.schedule);
   };
@@ -265,6 +280,8 @@ export default function Workflow({
                 activeTab={activeTab}
                 onTabChange={setActiveTab}
                 params={params}
+                basicConfig={basicConfig}
+                setBasicConfig={setBasicConfig}
                 scheduleConfig={scheduleConfig}
                 setScheduleConfig={setScheduleConfig}
               />

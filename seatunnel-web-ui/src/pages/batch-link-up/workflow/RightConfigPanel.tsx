@@ -7,6 +7,8 @@ interface RightConfigPanelProps {
   activeTab?: TabKey;
   onTabChange?: (tab: TabKey) => void;
   params?: any;
+  basicConfig?: any;
+  setBasicConfig?: React.Dispatch<React.SetStateAction<any>>;
   scheduleConfig?: any;
   setScheduleConfig?: React.Dispatch<React.SetStateAction<any>>;
 }
@@ -15,11 +17,15 @@ export default function RightConfigPanel({
   activeTab = "basic",
   onTabChange,
   params,
+  basicConfig,
+  setBasicConfig,
   scheduleConfig,
   setScheduleConfig,
 }: RightConfigPanelProps) {
   const tabDefinitions = getTabDefinitions(
     params,
+    basicConfig,
+    setBasicConfig,
     scheduleConfig,
     setScheduleConfig
   );

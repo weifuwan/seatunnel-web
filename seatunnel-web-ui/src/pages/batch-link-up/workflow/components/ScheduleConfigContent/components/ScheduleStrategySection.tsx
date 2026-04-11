@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Checkbox, Form, InputNumber, Radio, Select, Space } from "antd";
 
 import {
@@ -8,32 +8,60 @@ import {
 } from "../constants";
 import StepNumberInput from "./StepNumberInput";
 
-const ScheduleStrategySection: React.FC = () => {
+interface Props {
+  value?: any;
+  onChange?: (patch: Record<string, any>) => void;
+}
+
+const ScheduleStrategySection: React.FC<Props> = ({ value, onChange }) => {
+  const [form] = Form.useForm();
+  console.log(value);
+
+  useEffect(() => {
+    form.setFieldsValue({
+      instanceGenerateMode: value?.instanceGenerateMode,
+      scheduleRunType: value?.scheduleRunType,
+      timeoutMode: value?.timeoutMode,
+      timeoutValue: value?.timeoutValue,
+      timeoutUnit: value?.timeoutUnit,
+      rerunPolicy: value?.rerunPolicy,
+      autoRetry: value?.autoRetry,
+      retryTimes: value?.retryTimes,
+      retryInterval: value?.retryInterval,
+    });
+  }, [value, form]);
+
   return (
     <div className="schedule-section-body">
       <div className="schedule-inner-panel">
         <Form
+          form={form}
           layout="horizontal"
           component={false}
           labelCol={{ flex: "118px" }}
           wrapperCol={{ flex: "1" }}
           labelAlign="left"
-          initialValues={{
-            timeoutMode: "system",
-            timeoutValue: 1,
-            timeoutUnit: "hour",
-            rerunPolicy: "success_or_fail",
-            autoRetry: true,
-            retryTimes: 1,
-            retryInterval: 1,
+          onValuesChange={(_, allValues) => {
+            onChange?.({
+              instanceGenerateMode: allValues.instanceGenerateMode,
+              scheduleRunType: allValues.scheduleRunType,
+              timeoutMode: allValues.timeoutMode,
+              timeoutValue: allValues.timeoutValue,
+              timeoutUnit: allValues.timeoutUnit,
+              rerunPolicy: allValues.rerunPolicy,
+              autoRetry: allValues.autoRetry,
+              retryTimes: allValues.retryTimes,
+              retryInterval: allValues.retryInterval,
+            });
           }}
         >
           <Form.Item
             style={formItemStyle}
             label={<span style={labelNodeStyle}>实例生成方式</span>}
             required
+            name="instanceGenerateMode"
           >
-            <Radio.Group defaultValue="nextDay">
+            <Radio.Group>
               <Space size={16} wrap>
                 <Radio value="nextDay">T+1次日生成</Radio>
                 <Radio value="immediately">发布后即时生成</Radio>
@@ -45,8 +73,9 @@ const ScheduleStrategySection: React.FC = () => {
             style={formItemStyle}
             label={<span style={labelNodeStyle}>调度类型</span>}
             required
+            name="scheduleRunType"
           >
-            <Radio.Group defaultValue="normal">
+            <Radio.Group>
               <Space size={16} wrap>
                 <Radio value="normal">正常调度</Radio>
                 <Radio value="pause">暂停调度</Radio>

@@ -6,21 +6,47 @@ import type { ParamRow } from "../types";
 
 interface ParamTableProps {
   dataSource: ParamRow[];
+  onChange?: (nextDataSource: ParamRow[]) => void;
 }
 
-const ParamTable: React.FC<ParamTableProps> = ({ dataSource }) => {
+const ParamTable: React.FC<ParamTableProps> = ({ dataSource, onChange }) => {
+  const handleFieldChange = (
+    rowKey: React.Key,
+    field: keyof Pick<ParamRow, "paramName" | "paramValue">,
+    fieldValue: string
+  ) => {
+    const nextDataSource = dataSource.map((item) =>
+      item.key === rowKey
+        ? {
+            ...item,
+            [field]: fieldValue,
+          }
+        : item
+    );
+
+    onChange?.(nextDataSource);
+  };
+
+  const handleDelete = (rowKey: React.Key) => {
+    const nextDataSource = dataSource.filter((item) => item.key !== rowKey);
+    onChange?.(nextDataSource);
+  };
+
   const columns: ColumnsType<ParamRow> = [
     {
       title: <span style={{ fontSize: 13, fontWeight: 500 }}>参数名</span>,
       dataIndex: "paramName",
       key: "paramName",
       width: "28%",
-      render: (value: string) => (
+      render: (value: string, record) => (
         <Input
           size="small"
           value={value}
           placeholder="请输入参数名"
           className="rounded-md"
+          onChange={(e) =>
+            handleFieldChange(record.key, "paramName", e.target.value)
+          }
         />
       ),
     },
@@ -36,12 +62,15 @@ const ParamTable: React.FC<ParamTableProps> = ({ dataSource }) => {
       dataIndex: "paramValue",
       key: "paramValue",
       width: "52%",
-      render: (value: string) => (
+      render: (value: string, record) => (
         <Input
           size="small"
           value={value}
           placeholder="请输入参数值或表达式"
           className="rounded-md"
+          onChange={(e) =>
+            handleFieldChange(record.key, "paramValue", e.target.value)
+          }
         />
       ),
     },
@@ -49,7 +78,14 @@ const ParamTable: React.FC<ParamTableProps> = ({ dataSource }) => {
       title: <span style={{ fontSize: 13, fontWeight: 500 }}>操作</span>,
       key: "action",
       width: "20%",
-      render: () => <a className="schedule-table-action">删除</a>,
+      render: (_, record) => (
+        <a
+          className="schedule-table-action"
+          onClick={() => handleDelete(record.key)}
+        >
+          删除
+        </a>
+      ),
     },
   ];
 

@@ -7,14 +7,22 @@ interface RightConfigPanelProps {
   activeTab?: TabKey;
   onTabChange?: (tab: TabKey) => void;
   params?: any;
+  scheduleConfig?: any;
+  setScheduleConfig?: React.Dispatch<React.SetStateAction<any>>;
 }
 
 export default function RightConfigPanel({
   activeTab = "basic",
   onTabChange,
   params,
+  scheduleConfig,
+  setScheduleConfig,
 }: RightConfigPanelProps) {
-  const tabDefinitions = getTabDefinitions(params);
+  const tabDefinitions = getTabDefinitions(
+    params,
+    scheduleConfig,
+    setScheduleConfig
+  );
   const [hoveredTab, setHoveredTab] = useState<string | null>(null);
 
   const currentContent =

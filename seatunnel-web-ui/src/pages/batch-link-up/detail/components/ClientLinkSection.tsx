@@ -405,18 +405,6 @@ const clientId = bridgeClientId;
         setTargetTestStatus(success ? "success" : "error");
       }
 
-      if (success) {
-        openPrettyNotification({
-          type: "success",
-          title: "操作日志",
-          description: res?.data?.message || "连通性测试通过",
-          meta: "",
-        });
-      } else {
-        message.error(
-          res?.data?.errorMessage || res?.data?.message || "连通性测试失败"
-        );
-      }
     } catch (error) {
       console.error("连通性测试失败:", error);
 

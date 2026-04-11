@@ -1,11 +1,14 @@
 import BasicConfigContent from "./BasicConfigContent";
-
 import MappingConfigContent from "./MappingConfigContent";
 import AdvancedConfigContent from "./AdvancedConfigContent";
 import type { TabDefinition } from "./types";
 import ScheduleConfigContent from "./components/ScheduleConfigContent";
 
-export const getTabDefinitions = (params?: any): TabDefinition[] => [
+export const getTabDefinitions = (
+  params?: any,
+  scheduleConfig?: any,
+  setScheduleConfig?: React.Dispatch<React.SetStateAction<any>>
+): TabDefinition[] => [
   {
     key: "basic",
     label: "基础",
@@ -14,7 +17,12 @@ export const getTabDefinitions = (params?: any): TabDefinition[] => [
   {
     key: "schedule",
     label: "调度",
-    content: <ScheduleConfigContent />,
+    content: (
+      <ScheduleConfigContent
+        value={scheduleConfig}
+        onChange={setScheduleConfig}
+      />
+    ),
   },
   {
     key: "mapping",

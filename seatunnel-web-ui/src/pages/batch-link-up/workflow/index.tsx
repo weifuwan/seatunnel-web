@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { ReactFlowProvider } from "reactflow";
 import FlowCanvas from "./FlowCanvas";
 import RightConfigPanel from "./RightConfigPanel";
+import { ScheduleConfig } from "./components/ScheduleConfigContent/types";
 import styles from "./index.less";
 
 interface WorkflowProps {
@@ -14,6 +15,8 @@ interface WorkflowProps {
   setSourceType: (value: any) => void;
   targetType: any;
   setTargetType: (value: any) => void;
+  scheduleConfig: ScheduleConfig;
+  setScheduleConfig: (value: any) => void;
   setParams: React.Dispatch<React.SetStateAction<any>>;
 }
 
@@ -22,6 +25,8 @@ export default function Workflow({
   goBack,
   sourceType,
   targetType,
+  scheduleConfig,
+  setScheduleConfig,
 }: WorkflowProps) {
   const [form] = Form.useForm();
   const [rightWidth, setRightWidth] = useState(380);
@@ -212,6 +217,8 @@ export default function Workflow({
                 activeTab={activeTab}
                 onTabChange={setActiveTab}
                 params={params}
+                scheduleConfig={scheduleConfig}
+                setScheduleConfig={setScheduleConfig}
               />
             </div>
           </div>

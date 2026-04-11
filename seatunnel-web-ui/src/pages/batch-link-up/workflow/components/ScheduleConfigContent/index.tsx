@@ -8,14 +8,31 @@ import ScheduleStrategySection from "./components/ScheduleStrategySection";
 import ScheduleTimeSection from "./components/ScheduleTimeSection";
 import SectionLabel from "./components/SectionLabel";
 
-export default function ScheduleConfigContent() {
+interface Props {
+  value?: any;
+  onChange?: (value: any) => void;
+}
+
+export default function ScheduleConfigContent({ value, onChange }: Props) {
+  const updateSchedule = (patch: Record<string, any>) => {
+    onChange?.((prev: any) => ({
+      ...prev,
+      ...patch,
+    }));
+  };
+
   const items: CollapseProps["items"] = [
     {
       key: "scheduleParams",
       label: (
         <SectionLabel title="调度参数" tooltip="配置任务运行时使用的调度参数" />
       ),
-      children: <ScheduleParamsSection />,
+      children: (
+        <ScheduleParamsSection
+          value={value}
+          onChange={updateSchedule}
+        />
+      ),
     },
     {
       key: "scheduleStrategy",
@@ -25,14 +42,24 @@ export default function ScheduleConfigContent() {
           tooltip="配置实例生成、资源组和重跑策略"
         />
       ),
-      children: <ScheduleStrategySection />,
+      children: (
+        <ScheduleStrategySection
+          value={value}
+          onChange={updateSchedule}
+        />
+      ),
     },
     {
       key: "scheduleTime",
       label: (
         <SectionLabel title="调度时间" tooltip="配置周期、时间和生效规则" />
       ),
-      children: <ScheduleTimeSection />,
+      children: (
+        <ScheduleTimeSection
+          value={value}
+          onChange={updateSchedule}
+        />
+      ),
     },
   ];
 

@@ -33,6 +33,7 @@ interface FlowCanvasProps {
   goBack: () => void;
   sourceType?: any;
   targetType?: any;
+  onWorkflowChange?: (value: { nodes: any[]; edges: any[] }) => void;
 }
 
 function buildInitialGraph(
@@ -107,6 +108,7 @@ export default function FlowCanvas({
   goBack,
   sourceType,
   targetType,
+  onWorkflowChange,
 }: FlowCanvasProps) {
   const flow = useFlowBuilder({ form, params });
   const placement = useNodePlacement({
@@ -114,6 +116,13 @@ export default function FlowCanvas({
     setControlMode: flow.setControlMode,
   });
   const initializedRef = useRef(false);
+
+  useEffect(() => {
+    onWorkflowChange?.({
+      nodes: flow.nodes,
+      edges: flow.edges,
+    });
+  }, [flow.nodes, flow.edges, onWorkflowChange]);
 
   useEffect(() => {
     if (!params || initializedRef.current) return;

@@ -35,6 +35,14 @@ export default function Workflow({
   >("basic");
   const draggingRef = useRef(false);
 
+  const [workflowGraph, setWorkflowGraph] = useState<{
+    nodes: any[];
+    edges: any[];
+  }>({
+    nodes: [],
+    edges: [],
+  });
+
   useEffect(() => {
     const handleMouseMove = (event: MouseEvent) => {
       if (!draggingRef.current) return;
@@ -65,6 +73,38 @@ export default function Workflow({
     draggingRef.current = true;
     document.body.style.cursor = "col-resize";
     document.body.style.userSelect = "none";
+  };
+
+  const buildWorkflowData = () => {
+    return {
+      nodes: workflowGraph.nodes,
+      edges: workflowGraph.edges,
+    };
+  };
+
+  const buildScheduleData = () => {
+    return {
+      ...scheduleConfig,
+    };
+  };
+
+  const buildFinalPayload = () => {
+    return {
+      workflow: buildWorkflowData(),
+      schedule: buildScheduleData(),
+      // 后续扩展放这里
+      // runtime: runtimeConfig,
+      // alert: alertConfig,
+      // retry: retryConfig,
+    };
+  };
+
+  const handleSave = () => {
+    const finalPayload = buildFinalPayload();
+
+    console.log("最终保存数据 finalPayload =", finalPayload);
+    console.log("workflow 数据 =", finalPayload.workflow);
+    console.log("schedule 数据 =", finalPayload.schedule);
   };
 
   return (
@@ -106,7 +146,14 @@ export default function Workflow({
                   <div className={styles.mainPanelTitle}>同步编排</div>
 
                   <Space size={10}>
-                    <div className={styles.actionChip}>保存</div>
+                    <div
+                      className={styles.actionChip}
+                      onClick={handleSave}
+                      role="button"
+                      tabIndex={0}
+                    >
+                      保存
+                    </div>
                     <div className={styles.actionChip}>预览</div>
                     <div className={styles.actionChip}>运行</div>
                   </Space>
@@ -189,6 +236,7 @@ export default function Workflow({
                             goBack={goBack}
                             sourceType={sourceType}
                             targetType={targetType}
+                            onWorkflowChange={setWorkflowGraph}
                           />
                         </ReactFlowProvider>
                       </div>

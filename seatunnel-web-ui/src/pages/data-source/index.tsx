@@ -190,12 +190,12 @@ const DataSourcePage: React.FC = () => {
     try {
       await testDataSourceConnection(record.id);
 
-      // message.success(
-      //   intl.formatMessage({
-      //     id: "pages.datasource.message.connectSuccess",
-      //     defaultMessage: "Connected Success",
-      //   })
-      // );
+      message.success(
+        intl.formatMessage({
+          id: "pages.datasource.message.connectSuccess",
+          defaultMessage: "Connected Success",
+        })
+      );
 
       handleRefresh();
     } catch (_) {

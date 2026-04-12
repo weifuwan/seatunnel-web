@@ -15,7 +15,6 @@ interface Props {
 
 const ScheduleStrategySection: React.FC<Props> = ({ value, onChange }) => {
   const [form] = Form.useForm();
-  console.log(value);
 
   useEffect(() => {
     form.setFieldsValue({

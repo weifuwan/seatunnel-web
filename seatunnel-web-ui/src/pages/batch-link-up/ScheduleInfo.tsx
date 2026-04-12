@@ -73,7 +73,7 @@ const ScheduleInfo: React.FC<ExecutionStatusProps> = ({ record }) => {
                     if (data?.code === 0) {
                       setCronExpression(data?.data || []);
                     } else {
-                      message.error(data?.message);
+                      message.error(data?.msg);
                     }
                   });
               } else {

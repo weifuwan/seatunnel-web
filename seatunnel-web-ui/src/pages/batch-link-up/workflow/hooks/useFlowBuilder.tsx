@@ -105,15 +105,72 @@ export default function useFlowBuilder({ form, params }: Props) {
     }) => {
       const id = `${nodeType}-${Date.now()}`;
 
+      const buildTransformData = () => {
+        if (componentType === "FIELDMAPPER") {
+          return {
+            label,
+            title: label,
+            description: "配置字段映射关系",
+            nodeType,
+            componentType,
+            config: {
+              mappings: [],
+              passThroughUnmapped: true,
+            },
+            meta: {
+              inputSchema: [],
+              outputSchema: [],
+              schemaStatus: "idle",
+              schemaError: "",
+            },
+          };
+        }
+
+        if (componentType === "SQL") {
+          return {
+            label,
+            title: label,
+            description: "支持自定义查询逻辑",
+            nodeType,
+            componentType,
+            config: {
+              sql: "",
+            },
+            meta: {
+              inputSchema: [],
+              outputSchema: [],
+              schemaStatus: "idle",
+              schemaError: "",
+            },
+          };
+        }
+
+        return {
+          label,
+          nodeType,
+          componentType,
+          config: {},
+          meta: {
+            inputSchema: [],
+            outputSchema: [],
+            schemaStatus: "idle",
+            schemaError: "",
+          },
+        };
+      };
+
       const newNode = {
         id,
         type: "custom",
         position,
-        data: {
-          label,
-          nodeType,
-          componentType,
-        },
+        data:
+          nodeType === "transform"
+            ? buildTransformData()
+            : {
+                label,
+                nodeType,
+                componentType,
+              },
       };
 
       setNodes((nds) => nds.concat(newNode));
@@ -454,21 +511,180 @@ export default function useFlowBuilder({ form, params }: Props) {
     setSelectedNodeId(null);
   }, []);
 
-  const handleNodeDataChange = (nodeId: string, newData: any) => {
-    setNodes((nds) =>
-      nds.map((node) =>
-        node.id === nodeId
-          ? {
-              ...node,
-              data: {
-                ...node.data,
-                ...newData,
+  const handleNodeDataChange = useCallback(
+    (nodeId: string, newData: any) => {
+      setNodes((nds) =>
+        nds.map((node) => {
+          if (node.id !== nodeId) return node;
+
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              ...newData,
+              config: {
+                ...(node.data?.config || {}),
+                ...(newData?.config || {}),
               },
-            }
-          : node
+              meta: {
+                ...(node.data?.meta || {}),
+                ...(newData?.meta || {}),
+              },
+            },
+          };
+        })
+      );
+    },
+    [setNodes]
+  );
+
+  const getDirectUpstreamNode = useCallback(
+    (nodeId: string) => {
+      const currentEdges = getEdges();
+      const currentNodes = getNodes();
+
+      const incomingEdge = currentEdges.find((edge) => edge.target === nodeId);
+      if (!incomingEdge) return null;
+
+      return (
+        currentNodes.find((node) => node.id === incomingEdge.source) || null
+      );
+    },
+    [getEdges, getNodes]
+  );
+
+  const getDirectUpstreamSchema = useCallback(
+    (nodeId: string) => {
+      const upstreamNode = getDirectUpstreamNode(nodeId);
+      return upstreamNode?.data?.meta?.outputSchema || [];
+    },
+    [getDirectUpstreamNode]
+  );
+
+  const getDirectDownstreamNodes = useCallback(
+    (nodeId: string) => {
+      const currentEdges = getEdges();
+      const currentNodes = getNodes();
+
+      const targetIds = currentEdges
+        .filter((edge) => edge.source === nodeId)
+        .map((edge) => edge.target);
+
+      return currentNodes.filter((node) => targetIds.includes(node.id));
+    },
+    [getEdges, getNodes]
+  );
+
+  const buildFieldMapperOutputSchema = (
+    inputSchema: any[] = [],
+    mappings: any[] = [],
+    passThroughUnmapped = false
+  ) => {
+    const mappedFields = mappings
+      .filter(
+        (item) => item.enabled !== false && item.sourceField && item.targetField
       )
+      .map((item) => {
+        const sourceField = inputSchema.find(
+          (f) => f.name === item.sourceField
+        );
+
+        return {
+          name: item.targetField,
+          type: item.targetType || sourceField?.type,
+          nullable: sourceField?.nullable,
+          comment: sourceField?.comment,
+          originFieldName: item.sourceField,
+        };
+      });
+
+    if (!passThroughUnmapped) {
+      return mappedFields;
+    }
+
+    const mappedSourceNames = new Set(
+      mappings
+        .filter((item) => item.enabled !== false)
+        .map((item) => item.sourceField)
     );
+
+    const passthroughFields = inputSchema
+      .filter((field) => !mappedSourceNames.has(field.name))
+      .map((field) => ({
+        ...field,
+        originFieldName: field.name,
+      }));
+
+    return [...mappedFields, ...passthroughFields];
   };
+
+  const refreshNodeSchema = useCallback(
+    (nodeId: string) => {
+      const currentNodes = getNodes();
+      const node = currentNodes.find((item) => item.id === nodeId);
+      if (!node) return;
+
+      if (node.data?.nodeType === "transform") {
+        const inputSchema = getDirectUpstreamSchema(nodeId);
+
+        if (node.data?.componentType === "FIELDMAPPER") {
+          const mappings = node.data?.config?.mappings || [];
+          const passThroughUnmapped =
+            node.data?.config?.passThroughUnmapped ?? true;
+
+          const outputSchema = buildFieldMapperOutputSchema(
+            inputSchema,
+            mappings,
+            passThroughUnmapped
+          );
+
+          handleNodeDataChange(nodeId, {
+            meta: {
+              inputSchema,
+              outputSchema,
+              schemaStatus: "success",
+              schemaError: "",
+            },
+          });
+        }
+
+        if (node.data?.componentType === "SQL") {
+          handleNodeDataChange(nodeId, {
+            meta: {
+              inputSchema,
+              outputSchema: inputSchema, // 先占位，后面再接 SQL 解析
+              schemaStatus: "success",
+              schemaError: "",
+            },
+          });
+        }
+      }
+
+      if (node.data?.nodeType === "sink") {
+        const inputSchema = getDirectUpstreamSchema(nodeId);
+
+        handleNodeDataChange(nodeId, {
+          meta: {
+            inputSchema,
+            schemaStatus: "success",
+            schemaError: "",
+          },
+        });
+      }
+    },
+    [getNodes, getDirectUpstreamSchema, handleNodeDataChange]
+  );
+
+  const refreshDownstreamSchemas = useCallback(
+    (nodeId: string) => {
+      const downstreamNodes = getDirectDownstreamNodes(nodeId);
+
+      downstreamNodes.forEach((node) => {
+        refreshNodeSchema(node.id);
+      });
+    },
+    [getDirectDownstreamNodes, refreshNodeSchema]
+  );
 
   return {
     nodes,
@@ -505,5 +721,10 @@ export default function useFlowBuilder({ form, params }: Props) {
     handleNodeDataChange,
     screenToFlowPosition,
     addNode,
+    getDirectUpstreamNode,
+    getDirectUpstreamSchema,
+    getDirectDownstreamNodes,
+    refreshNodeSchema,
+    refreshDownstreamSchemas,
   };
 }

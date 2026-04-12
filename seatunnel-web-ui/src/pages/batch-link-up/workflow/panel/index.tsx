@@ -10,12 +10,17 @@ interface WorkflowPanelProps {
   selectedNode: any;
   onClose: () => void;
   onNodeDataChange: (nodeId: string, newData: any) => void;
+  getDirectUpstreamSchema: (nodeId: string) => any[];
+  refreshNodeSchema: (nodeId: string) => void;
+  refreshDownstreamSchemas: (nodeId: string) => void;
 }
-
 const WorkflowPanel: FC<WorkflowPanelProps> = ({
   selectedNode,
   onClose,
   onNodeDataChange,
+  getDirectUpstreamSchema,
+  refreshNodeSchema,
+  refreshDownstreamSchemas
 }) => {
   const nodeType = selectedNode?.data?.nodeType;
 
@@ -41,15 +46,18 @@ const WorkflowPanel: FC<WorkflowPanelProps> = ({
     );
   }
 
-  if (nodeType === "transform") {
-    return (
-      <TransformPanel
-        selectedNode={selectedNode}
-        onClose={onClose}
-        onNodeDataChange={onNodeDataChange}
-      />
-    );
-  }
+ if (nodeType === "transform") {
+  return (
+    <TransformPanel
+      selectedNode={selectedNode}
+      onClose={onClose}
+      onNodeDataChange={onNodeDataChange}
+      getDirectUpstreamSchema={getDirectUpstreamSchema}
+      refreshNodeSchema={refreshNodeSchema}
+      refreshDownstreamSchemas={refreshDownstreamSchemas}
+    />
+  );
+}
 
   return null;
 };

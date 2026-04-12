@@ -4,10 +4,10 @@ import { memo, useRef } from "react";
 import PanelShell from "../PanelShell";
 import ExtraParamsConfig from "./ExtraParamsConfig";
 
+import QualityDetail from "@/pages/batch-link-up/DataViewSQL";
 import { useSourcePanelLogic } from "./hooks/useSourcePanelLogic";
 import "./index.less";
 import SqlEditorSection from "./SqlEditorSection";
-import QualityDetail from "@/pages/batch-link-up/DataViewSQL";
 
 interface Props {
   selectedNode: any;
@@ -49,6 +49,7 @@ function SourcePanel({ selectedNode, onClose, onNodeDataChange }: Props) {
     handleResolveSqlPreview,
     handleOpenResolvePopover,
     viewLoading,
+    handleResolveColumns,
   } = useSourcePanelLogic({
     selectedNode,
     onNodeDataChange,
@@ -138,6 +139,16 @@ function SourcePanel({ selectedNode, onClose, onNodeDataChange }: Props) {
                     统计
                   </Button>
                 </Tooltip>
+
+                <Tooltip title="解析当前读取配置下的字段信息">
+                  <Button
+                    onClick={handleResolveColumns}
+                    size="small"
+                    type="text"
+                  >
+                    解析字段
+                  </Button>
+                </Tooltip>
               </div>
             </div>
 
@@ -171,7 +182,18 @@ function SourcePanel({ selectedNode, onClose, onNodeDataChange }: Props) {
               <div className="workflow-panel__field workflow-panel__field--full">
                 <Select
                   value={sourceTable}
-                  onChange={(value) => updateNode({ sourceTable: value })}
+                  onChange={(value) =>
+                    updateNode({
+                      config: {
+                        sourceTable: value,
+                      },
+                      meta: {
+                        outputSchema: [],
+                        schemaStatus: "idle",
+                        schemaError: "",
+                      },
+                    })
+                  }
                   options={tableOptions}
                   loading={tableLoading}
                   placeholder="请选择来源表"
@@ -195,7 +217,18 @@ function SourcePanel({ selectedNode, onClose, onNodeDataChange }: Props) {
                 generateSqlLoading={generateSqlLoading}
                 resolveSqlLoading={resolveSqlLoading}
                 resolvedSqlPreview={resolvedSqlPreview}
-                onSqlChange={(value: any) => updateNode({ sql: value })}
+                onSqlChange={(value: any) =>
+                  updateNode({
+                    config: {
+                      sql: value,
+                    },
+                    meta: {
+                      outputSchema: [],
+                      schemaStatus: "idle",
+                      schemaError: "",
+                    },
+                  })
+                }
                 onGenerateSql={handleGenerateSql}
                 onResolveSqlPreview={handleResolveSqlPreview}
                 onOpenResolvePopover={handleOpenResolvePopover}
@@ -208,7 +241,13 @@ function SourcePanel({ selectedNode, onClose, onNodeDataChange }: Props) {
           <div className="workflow-panel__group">
             <ExtraParamsConfig
               params={extraParams}
-              onParamsChange={(params) => updateNode({ extraParams: params })}
+              onParamsChange={(params) =>
+                updateNode({
+                  config: {
+                    extraParams: params,
+                  },
+                })
+              }
               selectedNode={selectedNode}
               hideHeader
             />

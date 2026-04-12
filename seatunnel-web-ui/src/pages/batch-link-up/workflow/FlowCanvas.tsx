@@ -72,7 +72,18 @@ function buildInitialGraph(
         title: sourceTitle,
         description: "读取源端数据",
         dbType: sourceDbType,
-        sourceDataSourceId: params?.sourceDataSourceId,
+        config: {
+          sourceDataSourceId: params?.sourceDataSourceId || "",
+          readMode: "table",
+          sourceTable: undefined,
+          sql: "",
+          extraParams: [],
+        },
+        meta: {
+          outputSchema: [],
+          schemaStatus: "idle",
+          schemaError: "",
+        },
       },
     },
     {
@@ -84,7 +95,14 @@ function buildInitialGraph(
         title: sinkTitle,
         description: "写入目标端数据",
         dbType: targetDbType,
-        targetDataSourceId: params?.targetDataSourceId,
+        config: {
+          targetDataSourceId: params?.targetDataSourceId || "",
+        },
+        meta: {
+          inputSchema: [],
+          schemaStatus: "idle",
+          schemaError: "",
+        },
       },
     },
   ];
@@ -264,6 +282,9 @@ export default function FlowCanvas({
           selectedNode={flow.selectedNode}
           onClose={flow.onCloseDrawer}
           onNodeDataChange={flow.handleNodeDataChange}
+          getDirectUpstreamSchema={flow.getDirectUpstreamSchema}
+          refreshNodeSchema={flow.refreshNodeSchema}
+          refreshDownstreamSchemas={flow.refreshDownstreamSchemas}
         />
       )}
     </div>

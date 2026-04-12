@@ -26,6 +26,8 @@ const ExtraParamsConfig: FC<ExtraParamsConfigProps> = ({
     }
   };
 
+  console.log(params);
+
   const [keyOptions, setKeyOptions] = useState<any[]>([]);
 
   const dbType = selectedNode?.data?.dbType || "MYSQL";

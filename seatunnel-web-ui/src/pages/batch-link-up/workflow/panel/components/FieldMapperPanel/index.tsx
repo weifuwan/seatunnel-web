@@ -35,6 +35,7 @@ import React, {
   useState,
 } from "react";
 import PanelShell from "../PanelShell";
+import "./index.less"
 
 interface Props {
   selectedNode: any;
@@ -436,13 +437,14 @@ function FieldMapperPanel({
                 >
                   <Table<FieldMappingRow>
                     rowKey="key"
+                    className="field-mapper-table"
                     components={{ body: { row: Row } }}
                     columns={columns}
                     dataSource={rows}
                     pagination={false}
                     bordered={false}
                     size="middle"
-                    scroll={{ y: 500 }}
+                    // scroll={{ y: 700 }}
                     onRow={(record) => ({
                       onContextMenu: (e) => {
                         e.preventDefault();

@@ -129,24 +129,14 @@ function SourcePanel({ selectedNode, onClose, onNodeDataChange }: Props) {
                   style={{ padding: 0, margin: "0 4px" }}
                 />
 
-                <Tooltip title="统计当前读取配置下的数据情况">
-                  <Button
-                    onClick={handleStatistics}
-                    size="small"
-                    type="text"
-                    icon={<BarChart3 size={14} />}
-                  >
-                    统计
-                  </Button>
-                </Tooltip>
-
                 <Tooltip title="解析当前读取配置下的字段信息">
                   <Button
                     onClick={handleResolveColumns}
                     size="small"
                     type="text"
+                    icon={<BarChart3 size={14} />}
                   >
-                    解析字段
+                    字段解析
                   </Button>
                 </Tooltip>
               </div>

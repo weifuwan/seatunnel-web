@@ -226,7 +226,7 @@ export function useSourcePanelLogic({
       });
 
       const params = {
-        taskExecuteType: readModeValue === "sql" ? "SQL" : "SINGLE_TABLE",
+        read_mode: readModeValue,
         table_path: readModeValue === "table" ? tablePath : "",
         query: readModeValue === "sql" ? sqlText : "",
       };
@@ -251,11 +251,10 @@ export function useSourcePanelLogic({
       const rawColumns = resp?.data || [];
 
       const outputSchema = rawColumns.map((item: any) => ({
-        name: item?.columnName || item?.name || "",
-        type: item?.dataType || item?.type || "",
-        nullable: item?.nullable,
-        comment: item?.comment || item?.columnComment || "",
-        originFieldName: item?.columnName || item?.name || "",
+        type: item?.fieldType  || "",
+        nullable: item?.isNullable,
+        comment: item?.fieldComment || "",
+        originFieldName: item?.fieldName || "",
       }));
 
       updateNode({
@@ -290,22 +289,22 @@ export function useSourcePanelLogic({
     setTableLoading,
   ]);
 
-const handleReadModeChange = useCallback(
-  (value: string) => {
-    updateNode({
-      config: {
-        readMode: value,
-        ...(value === "table" ? { sql: "" } : { sourceTable: "" }),
-      },
-      meta: {
-        outputSchema: [],
-        schemaStatus: "idle",
-        schemaError: "",
-      },
-    });
-  },
-  [updateNode]
-);
+  const handleReadModeChange = useCallback(
+    (value: string) => {
+      updateNode({
+        config: {
+          readMode: value,
+          ...(value === "table" ? { sql: "" } : { sourceTable: "" }),
+        },
+        meta: {
+          outputSchema: [],
+          schemaStatus: "idle",
+          schemaError: "",
+        },
+      });
+    },
+    [updateNode]
+  );
 
   const handlePreview = useCallback(async () => {
     if (!sourceDataSourceId) {
@@ -455,8 +454,8 @@ const handleReadModeChange = useCallback(
   );
 
   const handleResolveColumns = useCallback(async () => {
-  await resolveSourceOutputSchema();
-}, [resolveSourceOutputSchema]);
+    await resolveSourceOutputSchema();
+  }, [resolveSourceOutputSchema]);
 
   return {
     nodeData,
@@ -493,6 +492,6 @@ const handleReadModeChange = useCallback(
     handleResolveSqlPreview,
     handleOpenResolvePopover,
 
-    handleResolveColumns
+    handleResolveColumns,
   };
 }

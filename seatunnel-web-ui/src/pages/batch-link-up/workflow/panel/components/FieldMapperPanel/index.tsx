@@ -1,5 +1,39 @@
-import { Button, Checkbox, Empty, Input, Select, Table } from "antd";
-import { memo, useEffect, useMemo } from "react";
+import { HolderOutlined } from "@ant-design/icons";
+import type { DragEndEvent } from "@dnd-kit/core";
+import {
+  DndContext,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import type { SyntheticListenerMap } from "@dnd-kit/core/dist/hooks/utilities";
+import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
+import {
+  SortableContext,
+  arrayMove,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import type { MenuProps, TableColumnsType } from "antd";
+import {
+  Button,
+  Dropdown,
+  Input,
+  Space,
+  Table,
+  Typography,
+  message,
+} from "antd";
+import React, {
+  memo,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import PanelShell from "../PanelShell";
 
 interface Props {
@@ -11,6 +45,134 @@ interface Props {
   refreshDownstreamSchemas: (nodeId: string) => void;
 }
 
+interface FieldMappingRow {
+  key: string;
+  sourceFieldName: string;
+  sinkFieldName: string;
+  sourceFieldType?: string;
+  enabled: boolean;
+}
+
+interface SchemaField {
+  id: string;
+  name: string;
+  type?: string;
+  nullable?: string;
+  comment?: string;
+}
+
+interface RowContextProps {
+  setActivatorNodeRef?: (element: HTMLElement | null) => void;
+  listeners?: SyntheticListenerMap;
+}
+
+interface RowProps extends React.HTMLAttributes<HTMLTableRowElement> {
+  "data-row-key": string;
+}
+
+const { Text } = Typography;
+const RowContext = React.createContext<RowContextProps>({});
+
+const buildFieldId = (prefix: string, index: number, name?: string) =>
+  `${prefix}_${name || "field"}_${index}`;
+
+const normalizeSchemaToList = (
+  schema: any[] = [],
+  prefix: string
+): SchemaField[] =>
+  schema.map((field: any, index: number) => ({
+    id:
+      field?.id ||
+      buildFieldId(prefix, index, field?.originFieldName || field?.name),
+    name: field?.originFieldName || field?.name || "",
+    type: field?.type || "",
+    nullable: field?.nullable,
+    comment: field?.comment || "",
+  }));
+
+const buildRowsFromSchema = (schemaFields: SchemaField[]): FieldMappingRow[] =>
+  schemaFields.map((field, index) => ({
+    key: `mapping_${field.name || "field"}_${index}`,
+    sourceFieldName: field.name,
+    sinkFieldName: field.name,
+    sourceFieldType: field.type || "",
+    enabled: true,
+  }));
+
+const buildRowsFromMappings = (
+  mappings: any[] = [],
+  schemaFields: SchemaField[] = []
+): FieldMappingRow[] => {
+  if (!mappings.length) {
+    return buildRowsFromSchema(schemaFields);
+  }
+
+  const sourceTypeMap = new Map(
+    schemaFields.map((item) => [item.name, item.type || ""])
+  );
+
+  return mappings.map((item: any, index: number) => ({
+    key: item?.id || `mapping_${index}`,
+    sourceFieldName: item?.sourceField || "",
+    sinkFieldName: item?.targetField || item?.sourceField || "",
+    sourceFieldType:
+      sourceTypeMap.get(item?.sourceField) || item?.targetType || "",
+    enabled: item?.enabled !== false,
+  }));
+};
+
+const DragHandle: React.FC = () => {
+  const { setActivatorNodeRef, listeners } = useContext(RowContext);
+
+  return (
+    <Button
+      type="text"
+      size="small"
+      icon={<HolderOutlined />}
+      style={{ cursor: "move", color: "#667085" }}
+      ref={setActivatorNodeRef}
+      {...listeners}
+    />
+  );
+};
+
+const Row: React.FC<RowProps> = (props) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: props["data-row-key"] });
+
+  const style: React.CSSProperties = {
+    ...props.style,
+    transform: CSS.Translate.toString(transform),
+    transition,
+    ...(isDragging
+      ? {
+          position: "relative",
+          zIndex: 999,
+          boxShadow: "0 8px 24px rgba(15, 23, 42, 0.12)",
+          background: "#fff",
+        }
+      : {}),
+  };
+
+  const contextValue = useMemo<RowContextProps>(
+    () => ({ setActivatorNodeRef, listeners }),
+    [setActivatorNodeRef, listeners]
+  );
+
+  return (
+    <RowContext.Provider value={contextValue}>
+      <tr {...props} ref={setNodeRef} style={style} {...attributes} />
+    </RowContext.Provider>
+  );
+};
+
 function FieldMapperPanel({
   selectedNode,
   onClose,
@@ -20,167 +182,189 @@ function FieldMapperPanel({
   refreshDownstreamSchemas,
 }: Props) {
   const nodeId = selectedNode?.id;
-  const title = selectedNode?.data?.title || selectedNode?.data?.label || "字段映射";
+  const title =
+    selectedNode?.data?.title || selectedNode?.data?.label || "字段映射";
   const description =
-    selectedNode?.data?.description || "配置输入字段与输出字段的对应关系";
+    selectedNode?.data?.description || "配置来源字段与目标字段的映射关系";
 
-  const mappings = selectedNode?.data?.config?.mappings || [];
   const passThroughUnmapped =
     selectedNode?.data?.config?.passThroughUnmapped ?? true;
+
+  const [rows, setRows] = useState<FieldMappingRow[]>([]);
+  const [selectedRowKey, setSelectedRowKey] = useState<string>();
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 4,
+      },
+    })
+  );
 
   const upstreamSchema = useMemo(() => {
     if (!nodeId) return [];
     return getDirectUpstreamSchema(nodeId) || [];
   }, [nodeId, getDirectUpstreamSchema]);
 
-  const inputSchema = selectedNode?.data?.meta?.inputSchema?.length
-    ? selectedNode?.data?.meta?.inputSchema
-    : upstreamSchema;
+  const inputSchema = useMemo(() => {
+    const currentInput =
+      selectedNode?.data?.meta?.inputSchema?.length > 0
+        ? selectedNode?.data?.meta?.inputSchema
+        : upstreamSchema;
 
-  const outputSchema = selectedNode?.data?.meta?.outputSchema || [];
+    return normalizeSchemaToList(currentInput, "input");
+  }, [selectedNode?.data?.meta?.inputSchema, upstreamSchema]);
 
   useEffect(() => {
-    if (!nodeId) return;
+    const mappings = selectedNode?.data?.config?.mappings || [];
+    setRows(buildRowsFromMappings(mappings, inputSchema));
+  }, [selectedNode?.data?.config?.mappings, inputSchema]);
 
-    onNodeDataChange(nodeId, {
-      meta: {
-        inputSchema: upstreamSchema,
-      },
-    });
-  }, [nodeId, upstreamSchema, onNodeDataChange]);
+  const updateSinkFieldName = useCallback((key: string, value: string) => {
+    setRows((prev) =>
+      prev.map((item) =>
+        item.key === key ? { ...item, sinkFieldName: value } : item
+      )
+    );
+  }, []);
 
-  const sourceFieldOptions = inputSchema.map((field: any) => ({
-    label: field.type ? `${field.name} (${field.type})` : field.name,
-    value: field.name,
-  }));
+  const handleSyncFields = () => {
+    if (!inputSchema.length) {
+      message.warning("暂无输入字段可同步");
+      return;
+    }
 
-  const handleAddMapping = () => {
-    const nextMappings = [
-      ...mappings,
-      {
-        id: `${Date.now()}`,
-        sourceField: "",
-        targetField: "",
-        targetType: "",
-        expression: "",
-        enabled: true,
-      },
-    ];
+    setRows(buildRowsFromSchema(inputSchema));
+    message.success("已按输入字段同步");
+  };
 
-    onNodeDataChange(nodeId, {
-      config: {
-        mappings: nextMappings,
-      },
+  const handleDeleteRow = useCallback((key: string) => {
+    setRows((prev) => prev.filter((item) => item.key !== key));
+  }, []);
+
+  const handleDragEnd = ({ active, over }: DragEndEvent) => {
+    if (!over || active.id === over.id) return;
+
+    setRows((prev) => {
+      const oldIndex = prev.findIndex((item) => item.key === active.id);
+      const newIndex = prev.findIndex((item) => item.key === over.id);
+      return arrayMove(prev, oldIndex, newIndex);
     });
   };
 
-  const handleMappingChange = (id: string, patch: any) => {
-    const nextMappings = mappings.map((item: any) =>
-      item.id === id ? { ...item, ...patch } : item
+  const handleApply = () => {
+    const validRows = rows.filter(
+      (item) => item.sourceFieldName?.trim() && item.sinkFieldName?.trim()
     );
 
+    if (!validRows.length) {
+      message.warning("请至少保留一条有效字段映射");
+      return;
+    }
+
+    const nextMappings = validRows.map((item, index) => ({
+      id: item.key || `mapping_${index}`,
+      sourceField: item.sourceFieldName.trim(),
+      targetField: item.sinkFieldName.trim(),
+      targetType: item.sourceFieldType || "",
+      expression: "",
+      enabled: true,
+    }));
+
+    const outputSchema = validRows.map((item) => ({
+      name: item.sinkFieldName.trim(),
+      type: item.sourceFieldType || "",
+    }));
+
     onNodeDataChange(nodeId, {
       config: {
+        ...(selectedNode?.data?.config || {}),
         mappings: nextMappings,
+        passThroughUnmapped,
       },
-    });
-  };
-
-  const handleDeleteMapping = (id: string) => {
-    const nextMappings = mappings.filter((item: any) => item.id !== id);
-
-    onNodeDataChange(nodeId, {
-      config: {
-        mappings: nextMappings,
-      },
-    });
-  };
-
-  const handleSyncUpstreamFields = () => {
-    onNodeDataChange(nodeId, {
       meta: {
-        inputSchema: upstreamSchema,
+        ...(selectedNode?.data?.meta || {}),
+        inputSchema: inputSchema.map((item) => ({
+          name: item.name,
+          type: item.type || "",
+          nullable: item.nullable,
+          comment: item.comment || "",
+        })),
+        outputSchema,
       },
     });
-    refreshNodeSchema(nodeId);
-  };
 
-  const handleApplyMapping = () => {
     refreshNodeSchema(nodeId);
     refreshDownstreamSchemas(nodeId);
+    message.success("字段映射已应用");
   };
 
-  const columns = [
+  function useDebounce<T extends (...args: any[]) => void>(fn: T, ms = 120): T {
+    const timer = useRef<NodeJS.Timeout | null>(null);
+
+    return useCallback(
+      ((...args: Parameters<T>) => {
+        if (timer.current) clearTimeout(timer.current);
+        timer.current = setTimeout(() => fn(...args), ms);
+      }) as T,
+      [fn, ms]
+    );
+  }
+
+  const debouncedUpdateSinkFieldName = useDebounce(updateSinkFieldName, 80);
+
+  const menuItems: MenuProps["items"] = [
     {
-      title: "启用",
-      dataIndex: "enabled",
-      width: 72,
-      render: (_: any, record: any) => (
-        <Checkbox
-          checked={record.enabled !== false}
-          onChange={(e) =>
-            handleMappingChange(record.id, { enabled: e.target.checked })
-          }
-        />
+      key: "delete",
+      label: "删除",
+      danger: true,
+      onClick: () => {
+        if (!selectedRowKey) return;
+        handleDeleteRow(selectedRowKey);
+        setMenuOpen(false);
+        message.success("已删除该字段");
+      },
+    },
+  ];
+
+  const columns: TableColumnsType<FieldMappingRow> = [
+    {
+      key: "sort",
+      align: "center",
+      width: 24,
+      render: () => <DragHandle />,
+    },
+    {
+      title: "Source Field",
+      dataIndex: "sourceFieldName",
+      width: "42%",
+      ellipsis: true,
+      render: (_, record) => (
+        <div className="flex min-w-0 flex-col">
+          <span className="truncate text-[13px] font-medium text-slate-800">
+            {record.sourceFieldName || "-"}
+          </span>
+        </div>
       ),
     },
     {
-      title: "来源字段",
-      dataIndex: "sourceField",
-      render: (_: any, record: any) => (
-        <Select
-          value={record.sourceField}
-          onChange={(value) => {
-            const sourceField = inputSchema.find((f: any) => f.name === value);
-            handleMappingChange(record.id, {
-              sourceField: value,
-              targetField: record.targetField || value,
-              targetType: record.targetType || sourceField?.type || "",
-            });
-          }}
-          options={sourceFieldOptions}
-          placeholder="请选择来源字段"
+      title: "Sink Field",
+      dataIndex: "sinkFieldName",
+      width: "42%",
+      ellipsis: true,
+      render: (_, record) => (
+        <Input
+          size="small"
+          variant="filled"
           style={{ width: "100%" }}
-          showSearch
-          optionFilterProp="label"
-        />
-      ),
-    },
-    {
-      title: "目标字段",
-      dataIndex: "targetField",
-      render: (_: any, record: any) => (
-        <Input
-          value={record.targetField}
-          onChange={(e) =>
-            handleMappingChange(record.id, { targetField: e.target.value })
-          }
+          value={record.sinkFieldName}
           placeholder="请输入目标字段名"
-        />
-      ),
-    },
-    {
-      title: "目标类型",
-      dataIndex: "targetType",
-      width: 140,
-      render: (_: any, record: any) => (
-        <Input
-          value={record.targetType}
           onChange={(e) =>
-            handleMappingChange(record.id, { targetType: e.target.value })
+            debouncedUpdateSinkFieldName(record.key, e.target.value)
           }
-          placeholder="如 STRING"
+          onContextMenu={(e) => e.stopPropagation()}
         />
-      ),
-    },
-    {
-      title: "操作",
-      dataIndex: "action",
-      width: 80,
-      render: (_: any, record: any) => (
-        <Button danger type="link" onClick={() => handleDeleteMapping(record.id)}>
-          删除
-        </Button>
       ),
     },
   ];
@@ -190,95 +374,87 @@ function FieldMapperPanel({
       eyebrow="Transform Config"
       title="字段映射"
       badge="处理节点"
-      desc="基于上游输出字段配置映射关系"
+      desc="通过拖拽和改名快速配置字段映射"
       heroTitle={title}
       heroDesc={description}
       heroTag="FIELDMAPPER"
       onClose={onClose}
+      footer={
+        <button
+          type="button"
+          className="workflow-panel__btn workflow-panel__btn--ghost"
+          onClick={onClose}
+        >
+          关闭
+        </button>
+      }
     >
-      <section className="workflow-panel__section">
-        <div className="workflow-panel__section-head">
-          <div className="workflow-panel__section-title">输入字段</div>
-          <div className="workflow-panel__section-tip">
-            共 {inputSchema.length} 个
+      <section className="workflow-panel__section space-y-4">
+        <div className="rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="space-y-1">
+              <div className="text-sm font-medium text-slate-800">字段信息</div>
+            </div>
+
+            <Space wrap>
+              <Button onClick={handleSyncFields} style={{ borderRadius: 16 }}>
+                同步字段
+              </Button>
+              <Button
+                type="primary"
+                onClick={handleApply}
+                style={{ borderRadius: 16 }}
+              >
+                应用映射
+              </Button>
+            </Space>
+          </div>
+
+          <div className="mt-2">
+            <Text className="text-xs text-slate-400">
+              右键某一行可快速删除该映射
+            </Text>
           </div>
         </div>
 
-        {inputSchema.length === 0 ? (
-          <Empty
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description="未获取到上游字段，请先配置来源节点或同步上游字段"
-          />
-        ) : (
-          <div className="workflow-panel__chips">
-            {inputSchema.map((field: any) => (
-              <span key={field.name} className="workflow-panel__chip">
-                {field.name}
-                {field.type ? ` · ${field.type}` : ""}
-              </span>
-            ))}
-          </div>
-        )}
-
-        <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-          <Button onClick={handleSyncUpstreamFields}>同步上游字段</Button>
-          <Checkbox
-            checked={passThroughUnmapped}
-            onChange={(e) =>
-              onNodeDataChange(nodeId, {
-                config: {
-                  passThroughUnmapped: e.target.checked,
-                },
-              })
-            }
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+          <Dropdown
+            trigger={["contextMenu"]}
+            open={menuOpen}
+            onOpenChange={setMenuOpen}
+            menu={{ items: menuItems }}
           >
-            透传未映射字段
-          </Checkbox>
-        </div>
-      </section>
-
-      <section className="workflow-panel__section">
-        <div className="workflow-panel__section-head">
-          <div className="workflow-panel__section-title">映射关系</div>
-          <div className="workflow-panel__section-tip">Field Mapper</div>
-        </div>
-
-        <div style={{ marginBottom: 12 }}>
-          <Button type="dashed" onClick={handleAddMapping}>
-            添加映射
-          </Button>
-        </div>
-
-        <Table
-          size="small"
-          rowKey="id"
-          columns={columns}
-          dataSource={mappings}
-          pagination={false}
-        />
-      </section>
-
-      <section className="workflow-panel__section">
-        <div className="workflow-panel__section-head">
-          <div className="workflow-panel__section-title">输出字段预览</div>
-          <div className="workflow-panel__section-tip">
-            共 {outputSchema.length} 个
-          </div>
-        </div>
-
-        <div className="workflow-panel__chips">
-          {outputSchema.map((field: any) => (
-            <span key={field.name} className="workflow-panel__chip">
-              {field.name}
-              {field.type ? ` · ${field.type}` : ""}
-            </span>
-          ))}
-        </div>
-
-        <div style={{ marginTop: 12 }}>
-          <Button type="primary" onClick={handleApplyMapping}>
-            应用映射
-          </Button>
+            <div onContextMenu={(e) => e.preventDefault()}>
+              <DndContext
+                sensors={sensors}
+                modifiers={[restrictToVerticalAxis]}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext
+                  items={rows.map((item) => item.key)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <Table<FieldMappingRow>
+                    rowKey="key"
+                    components={{ body: { row: Row } }}
+                    columns={columns}
+                    dataSource={rows}
+                    pagination={false}
+                    bordered={false}
+                    size="middle"
+                    scroll={{ y: 500 }}
+                    onRow={(record) => ({
+                      onContextMenu: (e) => {
+                        e.preventDefault();
+                        setSelectedRowKey(record.key);
+                        setMenuOpen(true);
+                      },
+                    })}
+                  />
+                </SortableContext>
+              </DndContext>
+            </div>
+          </Dropdown>
         </div>
       </section>
     </PanelShell>

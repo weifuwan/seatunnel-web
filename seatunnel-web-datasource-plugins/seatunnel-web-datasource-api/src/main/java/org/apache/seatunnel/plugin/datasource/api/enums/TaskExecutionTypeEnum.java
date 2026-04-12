@@ -10,8 +10,8 @@ import org.apache.seatunnel.plugin.datasource.api.jdbc.SingleTableStrategy;
 @AllArgsConstructor
 @Getter
 public enum TaskExecutionTypeEnum {
-    TABLE("SINGLE_TABLE", "单表同步", new SingleTableStrategy()),
-    SQL("TABLE_CUSTOM", "单表自定义", new CustomQueryStrategy()),
+    TABLE("TABLE", "单表同步", new SingleTableStrategy()),
+    SQL("SQL", "单表自定义", new CustomQueryStrategy()),
     ;
 
 

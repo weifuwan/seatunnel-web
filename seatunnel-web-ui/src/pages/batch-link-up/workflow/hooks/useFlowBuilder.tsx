@@ -556,6 +556,7 @@ export default function useFlowBuilder({ form, params }: Props) {
   const getDirectUpstreamSchema = useCallback(
     (nodeId: string) => {
       const upstreamNode = getDirectUpstreamNode(nodeId);
+      console.log(upstreamNode?.data?.meta?.outputSchema);
       return upstreamNode?.data?.meta?.outputSchema || [];
     },
     [getDirectUpstreamNode]

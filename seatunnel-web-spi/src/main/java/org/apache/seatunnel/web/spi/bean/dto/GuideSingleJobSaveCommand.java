@@ -5,6 +5,8 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.apache.seatunnel.web.common.enums.JobDefinitionMode;
 
+import java.util.Map;
+
 @Data
 @EqualsAndHashCode(callSuper = false)
 public class GuideSingleJobSaveCommand implements JobDefinitionSaveCommand {
@@ -13,7 +15,7 @@ public class GuideSingleJobSaveCommand implements JobDefinitionSaveCommand {
 
     private JobBasicConfig basic;
 
-    private GuideSingleJobContent content;
+    private Map<String, Object> workflow;
 
     private JobScheduleConfig schedule;
 

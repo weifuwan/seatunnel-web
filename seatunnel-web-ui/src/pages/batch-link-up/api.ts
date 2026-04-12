@@ -1,115 +1,125 @@
-
 import HttpUtils from '@/utils/HttpUtils';
 import { FormInstance, TablePaginationConfig } from 'antd';
 import { Key } from 'antd/es/table/interface';
 
 export enum Operate {
-    Add,
-    Edit,
+  Add,
+  Edit,
 }
 
 export interface SeatunnelJobDefinition {
-    id?: any;
-    jobName?: any;
-    jobDesc?: any;
-    jobDefinitionInfo?: any;
-    jobVersion?: any;
-    clientId?: any;
-    clientType?: any;
-    createTime?: any;
-    updateTime?: any;
+  id?: any;
+  jobName?: any;
+  jobDesc?: any;
+  jobDefinitionInfo?: any;
+  jobVersion?: any;
+  clientId?: any;
+  clientType?: any;
+  createTime?: any;
+  updateTime?: any;
 }
 
-
-
-export const apiPrefix = "/api/v1/job/batch-definition"
+export const apiPrefix = '/api/v1/job/batch-definition';
 
 export const seatunnelJobDefinitionApi = {
+  /**
+   * SCRIPT 模式保存/更新
+   */
+  saveOrUpdateScript: (data: any) => {
+    return HttpUtils.post(`${apiPrefix}/script/saveOrUpdate`, data);
+  },
 
-    saveOrUpdate: (data: any) => {
-        return HttpUtils.post(`${apiPrefix}/saveOrUpdate`, data);
-    },
+  /**
+   * GUIDE_SINGLE 模式保存/更新
+   */
+  saveOrUpdateGuideSingle: (data: any) => {
+    return HttpUtils.post(`${apiPrefix}/guide-single/saveOrUpdate`, data);
+  },
 
+  /**
+   * GUIDE_MULTI 模式保存/更新
+   */
+  saveOrUpdateGuideMulti: (data: any) => {
+    return HttpUtils.post(`${apiPrefix}/guide-multi/saveOrUpdate`, data);
+  },
 
-    selectById: (id: any): Promise<{ code: number; data: SeatunnelJobDefinition; message?: string }> => {
-        return HttpUtils.get(`${apiPrefix}/${id}`);
-    },
+  selectById: (
+    id: any,
+  ): Promise<{ code: number; data: SeatunnelJobDefinition; message?: string }> => {
+    return HttpUtils.get(`${apiPrefix}/${id}`);
+  },
 
-    getUniqueId: (): Promise<{ code: number; data: SeatunnelJobDefinition; message?: string }> => {
-        return HttpUtils.get(`${apiPrefix}/get-unique-id`);
-    },
+  getUniqueId: (): Promise<{ code: number; data: SeatunnelJobDefinition; message?: string }> => {
+    return HttpUtils.get(`${apiPrefix}/get-unique-id`);
+  },
 
-    delete: (id: string) => {
-        return HttpUtils.delete(`${apiPrefix}/${id}`);
-    },
+  delete: (id: string) => {
+    return HttpUtils.delete(`${apiPrefix}/${id}`);
+  },
 
+  page: (data: any): Promise<{ code: number; data: any; message?: string }> => {
+    return HttpUtils.post(`${apiPrefix}/page`, data);
+  },
 
-    page: (data: any): Promise<{ code: number; data: any; message?: string }> => {
-        return HttpUtils.post(`${apiPrefix}/page`, data);
-    },
-
-    hocon: (data: any) => {
-        return HttpUtils.post(`${apiPrefix}/buildHoconConfig`, data);
-    },
+  hocon: (data: any) => {
+    return HttpUtils.post(`${apiPrefix}/buildHoconConfig`, data);
+  },
 };
 
-
-
-export const executeApiPrefix = "/api/v1/executor"
+export const executeApiPrefix = '/api/v1/executor';
 
 export const seatunnelJobExecuteApi = {
+  execute: (jobDefineId: any) => {
+    return HttpUtils.get(executeApiPrefix + '/execute?jobDefineId=' + jobDefineId);
+  },
 
-    execute: (jobDefineId: any) => {
-        return HttpUtils.get(executeApiPrefix + "/execute?jobDefineId=" + jobDefineId);
-    },
-
-    executeadHoc: (data: any) => {
-        return HttpUtils.post(executeApiPrefix + "/execute/ad-hoc", data);
-
-    },
+  executeadHoc: (data: any) => {
+    return HttpUtils.post(executeApiPrefix + '/execute/ad-hoc', data);
+  },
 };
 
-const instanceApiPrefix = "/api/v1/job/batch-instance"
+const instanceApiPrefix = '/api/v1/job/batch-instance';
 
 export const seatunnelJobInstanceApi = {
+  page: (data: any): Promise<{ code: number; data: any; message?: string }> => {
+    return HttpUtils.post(`${instanceApiPrefix}/page`, data);
+  },
 
-    page: (data: any): Promise<{ code: number; data: any; message?: string }> => {
-        return HttpUtils.post(`${instanceApiPrefix}/page`, data);
-    },
+  selectById: (id: string): Promise<{ code: number; data: any; message?: string }> => {
+    return HttpUtils.get(`${instanceApiPrefix}/${id}`);
+  },
 
-    selectById: (id: string): Promise<{ code: number; data: any; message?: string }> => {
-        return HttpUtils.get(`${instanceApiPrefix}/${id}`);
-    },
-
-    getLog(instanceId: string) {
-        return HttpUtils.get(`${instanceApiPrefix}/${instanceId}/log`);
-    },
+  getLog(instanceId: string) {
+    return HttpUtils.get(`${instanceApiPrefix}/${instanceId}/log`);
+  },
 };
 
-const seatunnelJobScheduleApiPrefix = "/api/v1/job/schedule"
+const seatunnelJobScheduleApiPrefix = '/api/v1/job/schedule';
 
 export const seatunnelJobScheduleApi = {
-    getLast5ExecutionTimes: (cron: string) => {
-        return HttpUtils.get<any[]>(`${seatunnelJobScheduleApiPrefix}/last5-execution-times?cron=` + cron);
-    },
+  getLast5ExecutionTimes: (cron: string) => {
+    return HttpUtils.get<any[]>(
+      `${seatunnelJobScheduleApiPrefix}/last5-execution-times?cron=` + cron,
+    );
+  },
 
-    stopSchedule: (jobScheduleId: string) => {
-        return HttpUtils.get<any[]>(`${seatunnelJobScheduleApiPrefix}/stop-schedule?scheduleId=` + jobScheduleId);
-    },
+  stopSchedule: (jobScheduleId: string) => {
+    return HttpUtils.get<any[]>(
+      `${seatunnelJobScheduleApiPrefix}/stop-schedule?scheduleId=` + jobScheduleId,
+    );
+  },
 
-    startSchedule: (jobScheduleId: string) => {
-        return HttpUtils.get<any[]>(`${seatunnelJobScheduleApiPrefix}/start-schedule?scheduleId=` + jobScheduleId);
+  startSchedule: (jobScheduleId: string) => {
+    return HttpUtils.get<any[]>(
+      `${seatunnelJobScheduleApiPrefix}/start-schedule?scheduleId=` + jobScheduleId,
+    );
+  },
+};
 
-    }
-}
-
-
-const seatunnelCopilotApiPrefix = "/api/v1/copilot/ai"
+const seatunnelCopilotApiPrefix = '/api/v1/copilot/ai';
 
 export const seatunnelCopilotApi = {
-    copilot: (data: any) => {
-        return HttpUtils.post<any[]>(`${seatunnelCopilotApiPrefix}/agent`, data);
-    },
-
-
-}
+  copilot: (data: any) => {
+    return HttpUtils.post<any[]>(`${seatunnelCopilotApiPrefix}/agent`, data);
+  },
+};

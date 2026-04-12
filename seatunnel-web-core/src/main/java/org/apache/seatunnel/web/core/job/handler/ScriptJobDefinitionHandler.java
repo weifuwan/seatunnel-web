@@ -28,12 +28,12 @@ public class ScriptJobDefinitionHandler implements JobDefinitionModeHandler {
     public JobDefinitionAnalysisResult analyze(JobDefinitionSaveCommand command) {
         ScriptJobSaveCommand cmd = (ScriptJobSaveCommand) command;
 
-        // 根据脚本提取 sourceType / sinkType / table 摘要
+
         return JobDefinitionAnalysisResult.builder()
                 .sourceType("SCRIPT_SOURCE")
                 .sinkType("SCRIPT_SINK")
-//                .sourceTable(null)
-//                .sinkTable(null)
+                .sourceTable(null)
+                .sinkTable(null)
                 .build();
     }
 

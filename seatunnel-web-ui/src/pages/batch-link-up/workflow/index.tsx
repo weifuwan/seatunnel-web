@@ -1,8 +1,9 @@
 import { ArrowLeftOutlined } from "@ant-design/icons";
-import { Button, Col, Form, Row, Space } from "antd";
+import { Button, Col, Form, message, Row, Space } from "antd";
 import { Blocks, Braces, Database } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { ReactFlowProvider } from "reactflow";
+import { seatunnelJobDefinitionApi } from "../api";
 import FlowCanvas from "./FlowCanvas";
 import RightConfigPanel from "./RightConfigPanel";
 import {
@@ -108,8 +109,8 @@ export default function Workflow({
       schedule: buildScheduleData(),
       env: {
         "job.mode": "BATCH",
-        "parallelism": 1
-      }
+        parallelism: 1,
+      },
       // 后续扩展放这里
       // runtime: runtimeConfig,
       // alert: alertConfig,
@@ -117,15 +118,20 @@ export default function Workflow({
     };
   };
 
-  const handleSave = () => {
-    const finalPayload = buildFinalPayload();
+  const handleSave = async () => {
+    try {
+      const finalPayload = buildFinalPayload();
+      console.log(finalPayload);
 
-    console.log("最终保存数据 finalPayload =", finalPayload);
-    console.log("basic 数据 =", finalPayload.basic);
-    console.log("workflow 数据 =", finalPayload.workflow);
-    console.log("schedule 数据 =", finalPayload.schedule);
+      const res = await seatunnelJobDefinitionApi.saveOrUpdateGuideSingle(
+        finalPayload
+      );
+      message.success("保存成功");
+    } catch (error: any) {
+      console.error("保存任务失败", error);
+      message.error(error?.message || "保存任务失败");
+    }
   };
-
   return (
     <div className={styles.workflow}>
       <div className={styles.header}>

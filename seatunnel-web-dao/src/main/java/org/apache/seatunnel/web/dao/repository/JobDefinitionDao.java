@@ -7,6 +7,7 @@ import org.apache.seatunnel.web.spi.bean.vo.BatchJobDefinitionVO;
 import java.util.List;
 
 public interface JobDefinitionDao extends IDao<JobDefinitionEntity> {
+
     boolean saveOrUpdate(JobDefinitionEntity po);
 
     List<BatchJobDefinitionVO> selectPageWithLatestInstance(

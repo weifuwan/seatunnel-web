@@ -44,8 +44,8 @@ public class GuideMultiJobDefinitionHandler implements JobDefinitionModeHandler 
         return JobDefinitionAnalysisResult.builder()
                 .sourceType(sourceType)
                 .sinkType(sinkType)
-                .sourceTableJson(JSONUtils.toJsonString(sourceTables))
-                .sinkTableJson(JSONUtils.toJsonString(sinkTables))
+                .sourceTable(JSONUtils.toJsonString(sourceTables))
+                .sourceTable(JSONUtils.toJsonString(sinkTables))
                 .build();
     }
 

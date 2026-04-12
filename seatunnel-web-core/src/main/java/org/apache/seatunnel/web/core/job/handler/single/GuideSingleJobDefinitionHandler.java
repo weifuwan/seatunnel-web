@@ -1,7 +1,9 @@
-package org.apache.seatunnel.web.core.job.handler;
+package org.apache.seatunnel.web.core.job.handler.single;
+
 
 import org.apache.seatunnel.web.common.enums.JobDefinitionMode;
 import org.apache.seatunnel.web.common.utils.JSONUtils;
+import org.apache.seatunnel.web.core.job.handler.JobDefinitionModeHandler;
 import org.apache.seatunnel.web.core.job.model.JobDefinitionAnalysisResult;
 import org.apache.seatunnel.web.spi.bean.dto.GuideSingleJobSaveCommand;
 import org.apache.seatunnel.web.spi.bean.dto.JobDefinitionSaveCommand;
@@ -9,6 +11,16 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class GuideSingleJobDefinitionHandler implements JobDefinitionModeHandler {
+
+    private final GuideSingleWorkflowValidator workflowValidator;
+    private final GuideSingleWorkflowAnalyzer workflowAnalyzer;
+
+    public GuideSingleJobDefinitionHandler(
+            GuideSingleWorkflowValidator workflowValidator,
+            GuideSingleWorkflowAnalyzer workflowAnalyzer) {
+        this.workflowValidator = workflowValidator;
+        this.workflowAnalyzer = workflowAnalyzer;
+    }
 
     @Override
     public boolean supports(JobDefinitionMode mode) {
@@ -18,46 +30,23 @@ public class GuideSingleJobDefinitionHandler implements JobDefinitionModeHandler
     @Override
     public void validate(JobDefinitionSaveCommand command) {
         GuideSingleJobSaveCommand cmd = (GuideSingleJobSaveCommand) command;
-        if (cmd.getContent() == null) {
-            throw new IllegalArgumentException("content can not be null");
-        }
-        if (cmd.getContent().getSource() == null) {
-            throw new IllegalArgumentException("source can not be null");
-        }
-        if (cmd.getContent().getSink() == null) {
-            throw new IllegalArgumentException("sink can not be null");
-        }
+        workflowValidator.validate(cmd.getWorkflow());
     }
 
     @Override
     public JobDefinitionAnalysisResult analyze(JobDefinitionSaveCommand command) {
         GuideSingleJobSaveCommand cmd = (GuideSingleJobSaveCommand) command;
-
-        String sourceType = cmd.getContent().getSource().getDbType();
-        String sinkType = cmd.getContent().getSink().getDbType();
-        String sourceTable = cmd.getContent().getSource().getSourceTable();
-        String sinkTable = cmd.getContent().getSink().getSinkTableName();
-
-        return JobDefinitionAnalysisResult.builder()
-                .sourceType(sourceType)
-                .sinkType(sinkType)
-                .sourceTableJson(sourceTable)
-                .sinkTableJson(sinkTable)
-                .build();
+        return workflowAnalyzer.analyze(cmd.getWorkflow());
     }
 
     @Override
     public String serializeDefinition(JobDefinitionSaveCommand command) {
         GuideSingleJobSaveCommand cmd = (GuideSingleJobSaveCommand) command;
-        return JSONUtils.toJsonString(cmd.getContent());
+        return JSONUtils.toJsonString(cmd.getWorkflow());
     }
 
     @Override
     public String buildHoconConfig(JobDefinitionSaveCommand command) {
-        GuideSingleJobSaveCommand cmd = (GuideSingleJobSaveCommand) command;
-
-        // 这里直接按 source / mapping / transform / sink 去拼 HOCON
-        // 不再强制先转成旧版 DAG JSON
         return "TODO build guide single hocon";
     }
 }

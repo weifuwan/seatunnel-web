@@ -42,8 +42,8 @@ import java.nio.file.Paths;
 @Slf4j
 public class JobInstanceServiceImpl implements JobInstanceService {
 
-    @Resource
-    private BatchJobDefinitionService batchDefinitionApplicationService;
+//    @Resource
+//    private BatchJobDefinitionService batchDefinitionApplicationService;
 
     @Resource
     private StreamingJobDefinitionService streamingDefinitionApplicationService;
@@ -274,12 +274,13 @@ public class JobInstanceServiceImpl implements JobInstanceService {
     }
 
     private BatchJobDefinitionVO tryLoadBatchDefinition(Long jobDefineId) {
-        try {
-            return batchDefinitionApplicationService.selectById(jobDefineId);
-        } catch (Exception e) {
-            log.debug("Load batch job definition failed, jobDefineId={}", jobDefineId, e);
-            return null;
-        }
+//        try {
+//            return batchDefinitionApplicationService.selectById(jobDefineId);
+//        } catch (Exception e) {
+//            log.debug("Load batch job definition failed, jobDefineId={}", jobDefineId, e);
+//            return null;
+//        }
+        return null;
     }
 
     private JobInstance buildJobInstance(BaseJobDefinitionCommand definitionDTO, RunMode runMode) {

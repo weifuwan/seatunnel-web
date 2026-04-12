@@ -11,20 +11,20 @@ import java.util.Date;
 public class StreamingJobDefinitionAssembler {
 
     public StreamingJobDefinition create(SeatunnelStreamingJobDefinitionDTO dto,
-                                     JobDefinitionAnalysisResult analysis,
-                                     Date now) {
+                                         JobDefinitionAnalysisResult analysis,
+                                         Date now) {
         return StreamingJobDefinition.builder()
                 .id(dto.getId())
                 .jobName(dto.getJobName())
                 .jobDesc(dto.getJobDesc())
-                .jobDefinitionInfo(analysis.getNormalizedJobDefinitionInfo())
+//                .jobDefinitionInfo(analysis.getNormalizedJobDefinitionInfo())
                 .jobVersion(1)
                 .parallelism(dto.getParallelism())
                 .jobType(dto.getJobType())
                 .sourceType(analysis.getSourceType())
-                .sourceTable(analysis.getSourceTableJson())
+                .sourceTable(analysis.getSourceTable())
                 .sinkType(analysis.getSinkType())
-                .sinkTable(analysis.getSinkTableJson())
+                .sinkTable(analysis.getSinkTable())
                 .createTime(now)
                 .updateTime(now)
                 .build();
@@ -36,13 +36,13 @@ public class StreamingJobDefinitionAssembler {
                        Date now) {
         po.setJobName(dto.getJobName());
         po.setJobDesc(dto.getJobDesc());
-        po.setJobDefinitionInfo(analysis.getNormalizedJobDefinitionInfo());
+//        po.setJobDefinitionInfo(analysis.getNormalizedJobDefinitionInfo());
         po.setParallelism(dto.getParallelism());
         po.setJobType(dto.getJobType());
         po.setSourceType(analysis.getSourceType());
-        po.setSourceTable(analysis.getSourceTableJson());
+        po.setSourceTable(analysis.getSourceTable());
         po.setSinkType(analysis.getSinkType());
-        po.setSinkTable(analysis.getSinkTableJson());
+        po.setSinkTable(analysis.getSinkTable());
         po.setJobVersion(po.getJobVersion() == null ? 1 : po.getJobVersion() + 1);
         po.setUpdateTime(now);
     }

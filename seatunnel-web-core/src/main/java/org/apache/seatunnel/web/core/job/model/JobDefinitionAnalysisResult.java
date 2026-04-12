@@ -1,10 +1,14 @@
 package org.apache.seatunnel.web.core.job.model;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class JobDefinitionAnalysisResult {
 
     /**
@@ -20,15 +24,11 @@ public class JobDefinitionAnalysisResult {
     /**
      * Source table map json
      */
-    private String sourceTableJson;
+    private String sourceTable;
 
     /**
      * Sink table map json
      */
-    private String sinkTableJson;
+    private String sinkTable;
 
-    /**
-     * Normalized or validated job definition info
-     */
-    private String normalizedJobDefinitionInfo;
 }

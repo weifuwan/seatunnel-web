@@ -29,9 +29,9 @@ public class JobScheduleApplicationService {
         }
 
         String cronExpression = scheduleConfig.getCronExpression();
-        String scheduleStatus = scheduleConfig.getScheduleStatus();
+        ScheduleStatusEnum scheduleStatus = scheduleConfig.getScheduleStatus();
 
-        if (StringUtils.isBlank(cronExpression) || StringUtils.isBlank(scheduleStatus)) {
+        if (StringUtils.isBlank(cronExpression) || scheduleStatus == null) {
             removeSchedule(jobDefinitionId);
             return;
         }
@@ -54,7 +54,7 @@ public class JobScheduleApplicationService {
                 scheduleId = existing.getId();
             }
 
-            if (ScheduleStatusEnum.ACTIVE.name().equalsIgnoreCase(scheduleStatus)) {
+            if (ScheduleStatusEnum.ACTIVE == scheduleStatus) {
                 jobScheduleService.stopSchedule(scheduleId);
                 jobScheduleService.startSchedule(scheduleId);
             } else {

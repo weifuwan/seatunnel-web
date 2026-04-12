@@ -5,6 +5,7 @@ import org.apache.seatunnel.web.common.utils.JSONUtils;
 import org.apache.seatunnel.web.core.job.model.JobDefinitionAnalysisResult;
 import org.apache.seatunnel.web.spi.bean.dto.GuideMultiJobContent;
 import org.apache.seatunnel.web.spi.bean.dto.GuideMultiJobSaveCommand;
+import org.apache.seatunnel.web.spi.bean.dto.JobDefinitionEditDTO;
 import org.apache.seatunnel.web.spi.bean.dto.JobDefinitionSaveCommand;
 import org.springframework.stereotype.Component;
 
@@ -58,5 +59,10 @@ public class GuideMultiJobDefinitionHandler implements JobDefinitionModeHandler 
     @Override
     public String buildHoconConfig(JobDefinitionSaveCommand command) {
         return "TODO build guide multi hocon";
+    }
+
+    @Override
+    public void fillEditDTO(String definitionContent, JobDefinitionEditDTO dto) {
+
     }
 }

@@ -4,6 +4,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.seatunnel.web.common.enums.JobDefinitionMode;
 import org.apache.seatunnel.web.common.utils.JSONUtils;
 import org.apache.seatunnel.web.core.job.model.JobDefinitionAnalysisResult;
+import org.apache.seatunnel.web.spi.bean.dto.JobDefinitionEditDTO;
 import org.apache.seatunnel.web.spi.bean.dto.JobDefinitionSaveCommand;
 import org.apache.seatunnel.web.spi.bean.dto.ScriptJobSaveCommand;
 import org.springframework.stereotype.Component;
@@ -47,5 +48,10 @@ public class ScriptJobDefinitionHandler implements JobDefinitionModeHandler {
     public String buildHoconConfig(JobDefinitionSaveCommand command) {
         ScriptJobSaveCommand cmd = (ScriptJobSaveCommand) command;
         return cmd.getContent().getScriptText();
+    }
+
+    @Override
+    public void fillEditDTO(String definitionContent, JobDefinitionEditDTO dto) {
+
     }
 }

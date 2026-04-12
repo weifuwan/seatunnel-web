@@ -1,6 +1,7 @@
 package org.apache.seatunnel.web.spi.bean.dto;
 
 import lombok.Data;
+import org.apache.seatunnel.web.common.enums.ScheduleStatusEnum;
 
 import java.util.List;
 import java.util.Map;
@@ -36,7 +37,7 @@ public class JobScheduleConfig {
     /**
      * ACTIVE / INACTIVE 等，按你项目枚举定义来
      */
-    private String scheduleStatus;
+    private ScheduleStatusEnum scheduleStatus;
 
     @Data
     public static class ScheduleParamItem {

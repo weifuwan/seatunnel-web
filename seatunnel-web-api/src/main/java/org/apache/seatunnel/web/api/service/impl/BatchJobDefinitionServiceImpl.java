@@ -2,6 +2,7 @@ package org.apache.seatunnel.web.api.service.impl;
 
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.seatunnel.web.api.exceptions.ServiceException;
 import org.apache.seatunnel.web.api.service.BatchJobDefinitionService;
@@ -71,8 +72,8 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
             JobDefinitionEntity entity;
             int nextVersion;
 
-            if (existing == null) {
-                entity = jobDefinitionAssembler.create(command, analysis, now);
+            if (ObjectUtils.isEmpty(existing)) {
+                entity = jobDefinitionAssembler.create(command, analysis);
                 nextVersion = 1;
             } else {
                 nextVersion = existing.getJobVersion() == null ? 1 : existing.getJobVersion() + 1;
@@ -225,6 +226,69 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
             log.error("Delete batch job definition failed, id={}", id, e);
             throw new ServiceException(Status.DELETE_BATCH_JOB_DEFINITION_ERROR);
         }
+    }
+
+    @Override
+    public JobDefinitionEditDTO selectEditDetail(Long id) {
+        validateId(id);
+
+        try {
+            JobDefinitionEntity definition = getDefinitionOrThrow(id);
+            JobDefinitionContentEntity latestContent =
+                    jobDefinitionContentDao.queryLatestByJobDefinitionId(id);
+
+            if (latestContent == null) {
+                throw new ServiceException(Status.BATCH_JOB_DEFINITION_NOT_EXIST, "definition content not found");
+            }
+
+            JobDefinitionEditDTO dto = new JobDefinitionEditDTO();
+            dto.setId(definition.getId());
+            dto.setMode(definition.getMode());
+            dto.setBasic(buildBasicConfig(definition));
+            dto.setSchedule(buildScheduleConfig(id));
+
+            JobDefinitionModeHandler handler = handlerRegistry.getHandler(definition.getMode());
+            handler.fillEditDTO(latestContent.getDefinitionContent(), dto);
+
+            return dto;
+        } catch (ServiceException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Query job definition edit detail failed, id={}", id, e);
+            throw new ServiceException(Status.QUERY_BATCH_JOB_DEFINITION_ERROR);
+        }
+    }
+
+    private JobBasicConfig buildBasicConfig(JobDefinitionEntity definition) {
+        JobBasicConfig basic = new JobBasicConfig();
+        basic.setId(definition.getId());
+        basic.setMode(definition.getMode());
+        basic.setJobType(definition.getJobType());
+        basic.setJobName(definition.getJobName());
+        basic.setJobDesc(definition.getJobDesc());
+        basic.setClientId(definition.getClientId());
+        basic.setParallelism(definition.getParallelism());
+        return basic;
+    }
+
+    private JobScheduleConfig buildScheduleConfig(Long definitionId) {
+        JobSchedule schedule = scheduleApplicationService.getByTaskDefinitionId(definitionId);
+        if (schedule == null) {
+            return null;
+        }
+
+        JobScheduleConfig config = new JobScheduleConfig();
+        config.setCronExpression(schedule.getCronExpression());
+        config.setScheduleStatus(schedule.getScheduleStatus());
+
+        // 这里你按实际字段继续补
+        // 比如：
+        // config.setScheduleType(schedule.getScheduleType());
+        // config.setHourMode(schedule.getHourMode());
+        // config.setEffectType(schedule.getEffectType());
+        // ...
+
+        return config;
     }
 
     private void validatePagingRequest(BatchJobDefinitionQueryDTO dto) {

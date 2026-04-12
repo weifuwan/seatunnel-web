@@ -7,6 +7,7 @@ import org.apache.seatunnel.web.api.quartz.QuartzJob;
 import org.apache.seatunnel.web.api.service.JobScheduleService;
 import org.apache.seatunnel.web.common.enums.ScheduleStatusEnum;
 import org.apache.seatunnel.web.common.utils.ConvertUtil;
+import org.apache.seatunnel.web.common.utils.JSONUtils;
 import org.apache.seatunnel.web.common.utils.Utils;
 import org.apache.seatunnel.web.dao.entity.JobSchedule;
 import org.apache.seatunnel.web.dao.repository.JobScheduleDao;
@@ -49,6 +50,7 @@ public class JobScheduleServiceImpl implements JobScheduleService {
         }
 
         JobSchedule po = ConvertUtil.sourceToTarget(dto, JobSchedule.class);
+        po.setScheduleConfig(JSONUtils.toJsonString(dto.getScheduleConfig()));
         po.initInsert();
 
         int saveResult = jobScheduleDao.insert(po);

@@ -12,12 +12,10 @@ import java.util.Date;
 public class JobDefinitionAssembler {
 
     public JobDefinitionEntity create(JobDefinitionSaveCommand command,
-                                      JobDefinitionAnalysisResult analysis,
-                                      Date now) {
+                                      JobDefinitionAnalysisResult analysis) {
         JobBasicConfig basic = command.getBasic();
 
-        return JobDefinitionEntity.builder()
-                .id(basic.getId())
+        JobDefinitionEntity build = JobDefinitionEntity.builder()
                 .jobName(basic.getJobName())
                 .jobDesc(basic.getJobDesc())
                 .mode(command.getMode())
@@ -29,9 +27,9 @@ public class JobDefinitionAssembler {
                 .sinkType(analysis.getSinkType())
                 .sourceTable(analysis.getSourceTable())
                 .sinkTable(analysis.getSinkTable())
-                .createTime(now)
-                .updateTime(now)
                 .build();
+        build.initInsert();
+        return build;
     }
 
     public void update(JobDefinitionEntity entity,

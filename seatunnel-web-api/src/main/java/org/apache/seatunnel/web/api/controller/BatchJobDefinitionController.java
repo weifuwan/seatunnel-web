@@ -9,10 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.seatunnel.web.api.exceptions.ApiException;
 import org.apache.seatunnel.web.api.service.BatchJobDefinitionService;
 import org.apache.seatunnel.web.common.utils.CodeGenerateUtils;
-import org.apache.seatunnel.web.spi.bean.dto.BatchJobDefinitionQueryDTO;
-import org.apache.seatunnel.web.spi.bean.dto.GuideMultiJobSaveCommand;
-import org.apache.seatunnel.web.spi.bean.dto.GuideSingleJobSaveCommand;
-import org.apache.seatunnel.web.spi.bean.dto.ScriptJobSaveCommand;
+import org.apache.seatunnel.web.spi.bean.dto.*;
 import org.apache.seatunnel.web.spi.bean.entity.PaginationResult;
 import org.apache.seatunnel.web.spi.bean.entity.Result;
 import org.apache.seatunnel.web.spi.bean.vo.BatchJobDefinitionVO;
@@ -105,5 +102,12 @@ public class BatchJobDefinitionController {
     @ApiException(GET_BATCH_JOB_UNIQUE_ID_ERROR)
     public Result<Long> getUniqueId() {
         return Result.buildSuc(CodeGenerateUtils.getInstance().genCode());
+    }
+
+
+    @GetMapping("/{id}/edit-detail")
+    @Operation(summary = "查询任务编辑详情")
+    public Result<JobDefinitionEditDTO> selectEditDetail(@PathVariable Long id) {
+        return Result.buildSuc(batchJobDefinitionService.selectEditDetail(id));
     }
 }

@@ -42,10 +42,6 @@ public class JobSchedule extends BaseEntity {
      */
     private Date nextScheduleTime;
 
-    /**
-     * 调度配置信息
-     * 存储调度相关的额外配置信息，JSON格式
-     * 可包含：错过触发策略、优先级、任务参数等
-     */
+
     private String scheduleConfig;
 }

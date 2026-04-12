@@ -24,7 +24,7 @@ public class SeaTunnelJobScheduleDTO extends PaginationBaseDTO {
     private String cronExpression;
 
 
-    private String scheduleStatus;
+    private ScheduleStatusEnum scheduleStatus;
 
 
     private Date lastScheduleTime;

@@ -2,6 +2,7 @@ package org.apache.seatunnel.web.core.job.handler;
 
 import org.apache.seatunnel.web.common.enums.JobDefinitionMode;
 import org.apache.seatunnel.web.core.job.model.JobDefinitionAnalysisResult;
+import org.apache.seatunnel.web.spi.bean.dto.JobDefinitionEditDTO;
 import org.apache.seatunnel.web.spi.bean.dto.JobDefinitionSaveCommand;
 
 public interface JobDefinitionModeHandler {
@@ -15,4 +16,9 @@ public interface JobDefinitionModeHandler {
     String serializeDefinition(JobDefinitionSaveCommand command);
 
     String buildHoconConfig(JobDefinitionSaveCommand command);
+
+    /**
+     * 将 definitionContent 反序列化到编辑态 DTO
+     */
+    void fillEditDTO(String definitionContent, JobDefinitionEditDTO dto);
 }

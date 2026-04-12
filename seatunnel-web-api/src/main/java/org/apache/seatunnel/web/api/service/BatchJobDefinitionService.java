@@ -1,10 +1,7 @@
 package org.apache.seatunnel.web.api.service;
 
 
-import org.apache.seatunnel.web.spi.bean.dto.BatchJobDefinitionQueryDTO;
-import org.apache.seatunnel.web.spi.bean.dto.GuideMultiJobSaveCommand;
-import org.apache.seatunnel.web.spi.bean.dto.GuideSingleJobSaveCommand;
-import org.apache.seatunnel.web.spi.bean.dto.ScriptJobSaveCommand;
+import org.apache.seatunnel.web.spi.bean.dto.*;
 import org.apache.seatunnel.web.spi.bean.entity.PaginationResult;
 import org.apache.seatunnel.web.spi.bean.vo.BatchJobDefinitionVO;
 
@@ -27,5 +24,8 @@ public interface BatchJobDefinitionService {
     String buildHoconConfig(GuideSingleJobSaveCommand command);
 
     String buildHoconConfig(GuideMultiJobSaveCommand command);
+
+    JobDefinitionEditDTO selectEditDetail(Long id);
+
 
 }

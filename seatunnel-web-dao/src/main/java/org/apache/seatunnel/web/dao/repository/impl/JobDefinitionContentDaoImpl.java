@@ -38,6 +38,11 @@ public class JobDefinitionContentDaoImpl
 
     @Override
     public JobDefinitionContentEntity queryLatestByJobDefinitionId(Long jobDefinitionId) {
-        return jobDefinitionContentMapper.selectById(jobDefinitionId);
+        return jobDefinitionContentMapper.selectOne(
+                new LambdaQueryWrapper<JobDefinitionContentEntity>()
+                        .eq(JobDefinitionContentEntity::getJobDefinitionId, jobDefinitionId)
+                        .orderByDesc(JobDefinitionContentEntity::getVersion)
+                        .last("limit 1")
+        );
     }
 }

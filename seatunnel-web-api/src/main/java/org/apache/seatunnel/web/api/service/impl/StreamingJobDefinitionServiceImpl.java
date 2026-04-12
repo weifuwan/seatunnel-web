@@ -7,9 +7,7 @@ import org.apache.seatunnel.web.api.service.StreamingJobDefinitionService;
 import org.apache.seatunnel.web.api.service.application.streaming.StreamingJobLifecycleService;
 import org.apache.seatunnel.web.common.utils.ConvertUtil;
 import org.apache.seatunnel.web.core.job.assembler.StreamingJobDefinitionAssembler;
-import org.apache.seatunnel.web.core.job.handler.JobDefinitionHandler;
 import org.apache.seatunnel.web.core.job.model.JobDefinitionAnalysisResult;
-import org.apache.seatunnel.web.core.job.registry.JobDefinitionHandlerRegistry;
 import org.apache.seatunnel.web.dao.entity.StreamingJobDefinition;
 import org.apache.seatunnel.web.dao.repository.StreamingJobDefinitionDao;
 import org.apache.seatunnel.web.spi.bean.dto.SeatunnelStreamJobDefinitionDTO;
@@ -29,8 +27,8 @@ public class StreamingJobDefinitionServiceImpl implements StreamingJobDefinition
     @Resource
     private StreamingJobDefinitionDao repository;
 
-    @Resource
-    private JobDefinitionHandlerRegistry handlerRegistry;
+//    @Resource
+//    private JobDefinitionHandlerRegistry handlerRegistry;
 
     @Resource
     private StreamingJobDefinitionAssembler assembler;
@@ -48,19 +46,19 @@ public class StreamingJobDefinitionServiceImpl implements StreamingJobDefinition
             streamingJobLifecycleService.validateCanUpdate(dto.getId());
         }
 
-        JobDefinitionHandler handler = handlerRegistry.getHandler(dto);
-        JobDefinitionAnalysisResult analysis = handler.analyze(dto);
-
-        StreamingJobDefinition po;
-        if (existing == null) {
-            po = assembler.create(dto, analysis, now);
-        } else {
-            po = existing;
-            assembler.update(po, dto, analysis, now);
-        }
-
-        repository.saveOrUpdate(po);
-        return po.getId();
+//        JobModeDefinitionHandler handler = handlerRegistry.getHandler(dto);
+//        JobDefinitionAnalysisResult analysis = handler.analyze(dto);
+//
+//        StreamingJobDefinition po;
+//        if (existing == null) {
+//            po = assembler.create(dto, analysis, now);
+//        } else {
+//            po = existing;
+//            assembler.update(po, dto, analysis, now);
+//        }
+//
+//        repository.saveOrUpdate(po);
+        return null;
     }
 
     public StreamingJobDefinitionVO selectById(Long id) {
@@ -111,11 +109,7 @@ public class StreamingJobDefinitionServiceImpl implements StreamingJobDefinition
         return null;
     }
 
-    public String buildHoconConfig(SeatunnelStreamingJobDefinitionDTO dto) {
-        validateBuildRequest(dto);
-        JobDefinitionHandler handler = handlerRegistry.getHandler(dto);
-        return handler.buildHoconConfig(dto);
-    }
+
 
     public void deploy(Long jobDefinitionId) {
         streamingJobLifecycleService.deploy(jobDefinitionId);

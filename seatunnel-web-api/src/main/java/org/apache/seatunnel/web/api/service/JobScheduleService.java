@@ -2,7 +2,7 @@ package org.apache.seatunnel.web.api.service;
 
 import org.apache.seatunnel.web.common.enums.ScheduleStatusEnum;
 import org.apache.seatunnel.web.dao.entity.JobSchedule;
-import org.apache.seatunnel.web.spi.bean.dto.SeatunnelJobScheduleDTO;
+import org.apache.seatunnel.web.spi.bean.dto.SeaTunnelJobScheduleDTO;
 import org.quartz.SchedulerException;
 
 import java.util.List;
@@ -22,7 +22,7 @@ public interface JobScheduleService {
      * @return the generated task schedule ID
      * @throws SchedulerException if scheduler creation fails
      */
-    Long createTaskSchedule(SeatunnelJobScheduleDTO seatunnelJobScheduleDTO)
+    Long createTaskSchedule(SeaTunnelJobScheduleDTO seatunnelJobScheduleDTO)
             throws SchedulerException;
 
     /**
@@ -32,7 +32,7 @@ public interface JobScheduleService {
      * @return true if update is successful, false otherwise
      * @throws SchedulerException if scheduler update fails
      */
-    boolean updateTaskSchedule(SeatunnelJobScheduleDTO seatunnelJobScheduleDTO)
+    boolean updateTaskSchedule(SeaTunnelJobScheduleDTO seatunnelJobScheduleDTO)
             throws SchedulerException;
 
     /**

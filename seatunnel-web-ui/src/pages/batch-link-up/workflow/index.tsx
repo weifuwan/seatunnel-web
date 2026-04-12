@@ -106,6 +106,10 @@ export default function Workflow({
       basic: buildBasicData(),
       workflow: buildWorkflowData(),
       schedule: buildScheduleData(),
+      env: {
+        "job.mode": "BATCH",
+        "parallelism": 1
+      }
       // 后续扩展放这里
       // runtime: runtimeConfig,
       // alert: alertConfig,
@@ -161,16 +165,16 @@ export default function Workflow({
                   <div className={styles.mainPanelTitle}>同步编排</div>
 
                   <Space size={10}>
+                    <div className={styles.actionChip}>运行</div>
                     <div
                       className={styles.actionChip}
                       onClick={handleSave}
                       role="button"
                       tabIndex={0}
                     >
-                      保存
+                      发布
                     </div>
                     <div className={styles.actionChip}>预览</div>
-                    <div className={styles.actionChip}>运行</div>
                   </Space>
                 </div>
 

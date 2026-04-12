@@ -11,7 +11,7 @@ import org.apache.seatunnel.web.spi.bean.entity.NodeTypes;
 import org.springframework.stereotype.Component;
 
 @Component
-public class BatchWholeSyncJobDefinitionHandler extends AbstractJsonSupport implements JobDefinitionHandler {
+public class BatchWholeSyncJobDefinitionHandler extends AbstractJsonSupport implements JobModeDefinitionHandler {
 
     @Resource
     private JobDefinitionResolver jobDefinitionResolver;

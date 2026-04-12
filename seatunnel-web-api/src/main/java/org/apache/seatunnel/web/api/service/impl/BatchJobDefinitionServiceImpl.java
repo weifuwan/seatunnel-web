@@ -6,22 +6,22 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.seatunnel.web.api.exceptions.ServiceException;
 import org.apache.seatunnel.web.api.service.BatchJobDefinitionService;
 import org.apache.seatunnel.web.api.service.JobInstanceService;
-import org.apache.seatunnel.web.api.service.application.SeatunnelJobScheduleApplicationService;
+import org.apache.seatunnel.web.api.service.application.JobScheduleApplicationService;
 import org.apache.seatunnel.web.common.enums.ScheduleStatusEnum;
 import org.apache.seatunnel.web.common.utils.ConvertUtil;
-import org.apache.seatunnel.web.core.job.assembler.BatchJobDefinitionAssembler;
-import org.apache.seatunnel.web.core.job.handler.JobDefinitionHandler;
+import org.apache.seatunnel.web.core.job.assembler.JobDefinitionAssembler;
+import org.apache.seatunnel.web.core.job.handler.JobDefinitionModeHandler;
 import org.apache.seatunnel.web.core.job.model.JobDefinitionAnalysisResult;
-import org.apache.seatunnel.web.core.job.registry.JobDefinitionHandlerRegistry;
-import org.apache.seatunnel.web.dao.entity.BatchJobDefinition;
+import org.apache.seatunnel.web.core.job.registry.JobDefinitionModeHandlerRegistry;
+import org.apache.seatunnel.web.dao.entity.JobDefinitionContentEntity;
+import org.apache.seatunnel.web.dao.entity.JobDefinitionEntity;
 import org.apache.seatunnel.web.dao.entity.JobSchedule;
-import org.apache.seatunnel.web.dao.repository.BatchJobDefinitionDao;
-import org.apache.seatunnel.web.spi.bean.dto.BatchJobDefinitionQueryDTO;
-import org.apache.seatunnel.web.spi.bean.dto.SeatunnelBatchJobDefinitionDTO;
+import org.apache.seatunnel.web.dao.repository.JobDefinitionContentDao;
+import org.apache.seatunnel.web.dao.repository.JobDefinitionDao;
+import org.apache.seatunnel.web.spi.bean.dto.*;
 import org.apache.seatunnel.web.spi.bean.entity.PaginationResult;
 import org.apache.seatunnel.web.spi.bean.vo.BatchJobDefinitionVO;
 import org.apache.seatunnel.web.spi.enums.Status;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,50 +33,135 @@ import java.util.List;
 public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements BatchJobDefinitionService {
 
     @Resource
-    private BatchJobDefinitionDao batchJobDefinitionDao;
+    private JobDefinitionModeHandlerRegistry handlerRegistry;
 
     @Resource
-    private JobDefinitionHandlerRegistry handlerRegistry;
+    private JobDefinitionDao jobDefinitionDao;
 
     @Resource
-    private BatchJobDefinitionAssembler assembler;
+    private JobDefinitionContentDao jobDefinitionContentDao;
 
     @Resource
-    private SeatunnelJobScheduleApplicationService scheduleApplicationService;
+    private JobDefinitionAssembler jobDefinitionAssembler;
 
-    @Lazy
     @Resource
-    private JobInstanceService seatunnelJobInstanceService;
+    private JobScheduleApplicationService scheduleApplicationService;
 
-    @Override
+    @Resource
+    private JobInstanceService jobInstanceService;
+
     @Transactional(rollbackFor = Exception.class)
-    public Long saveOrUpdate(SeatunnelBatchJobDefinitionDTO dto) {
-        validateSaveRequest(dto);
+    protected Long doSaveOrUpdate(JobDefinitionSaveCommand command) {
+        validateBase(command);
 
         try {
             Date now = new Date();
-            BatchJobDefinition existing = dto.getId() == null ? null : batchJobDefinitionDao.queryById(dto.getId());
 
-            JobDefinitionHandler handler = handlerRegistry.getHandler(dto);
-            JobDefinitionAnalysisResult analysis = handler.analyze(dto);
+            JobDefinitionModeHandler handler = handlerRegistry.getHandler(command.getMode());
+            handler.validate(command);
 
-            BatchJobDefinition entity;
+            JobDefinitionAnalysisResult analysis = handler.analyze(command);
+            String definitionContent = handler.serializeDefinition(command);
+            String hoconContent = handler.buildHoconConfig(command);
+
+            JobDefinitionEntity existing = command.getId() == null
+                    ? null
+                    : jobDefinitionDao.queryById(command.getId());
+
+            JobDefinitionEntity entity;
+            int nextVersion;
+
             if (existing == null) {
-                entity = assembler.create(dto, analysis, now);
+                entity = jobDefinitionAssembler.create(command, analysis, now);
+                nextVersion = 1;
             } else {
+                nextVersion = existing.getJobVersion() == null ? 1 : existing.getJobVersion() + 1;
                 entity = existing;
-                assembler.update(entity, dto, analysis, now);
+                jobDefinitionAssembler.update(entity, command, analysis, now, nextVersion);
             }
 
-            batchJobDefinitionDao.saveOrUpdate(entity);
-            scheduleApplicationService.saveOrUpdateSchedule(entity.getId(), dto);
+            jobDefinitionDao.saveOrUpdate(entity);
+
+            JobDefinitionContentEntity contentEntity = JobDefinitionContentEntity.builder()
+                    .jobDefinitionId(entity.getId())
+                    .version(nextVersion)
+                    .mode(command.getMode())
+                    .contentSchemaVersion(1)
+                    .definitionContent(definitionContent)
+                    .hoconContent(hoconContent)
+                    .createTime(now)
+                    .build();
+
+            jobDefinitionContentDao.save(contentEntity);
+
+            scheduleApplicationService.saveOrUpdateSchedule(entity.getId(), command);
 
             return entity.getId();
         } catch (ServiceException e) {
             throw e;
         } catch (Exception e) {
-            log.error("Save or update batch job definition failed, dto={}", dto, e);
+            log.error("Save or update job definition failed, command={}", command, e);
             throw new ServiceException(Status.SAVE_OR_UPDATE_BATCH_JOB_DEFINITION_ERROR);
+        }
+    }
+
+    @Override
+    public Long saveOrUpdate(ScriptJobSaveCommand command) {
+        return doSaveOrUpdate(command);
+    }
+
+    @Override
+    public Long saveOrUpdate(GuideSingleJobSaveCommand command) {
+        return doSaveOrUpdate(command);
+    }
+
+    @Override
+    public Long saveOrUpdate(GuideMultiJobSaveCommand command) {
+        return doSaveOrUpdate(command);
+    }
+
+    protected String doBuildHoconConfig(JobDefinitionSaveCommand command) {
+        validateBase(command);
+
+        try {
+            JobDefinitionModeHandler handler = handlerRegistry.getHandler(command.getMode());
+            handler.validate(command);
+            return handler.buildHoconConfig(command);
+        } catch (ServiceException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Build hocon config failed, command={}", command, e);
+            throw new ServiceException(Status.BUILD_BATCH_JOB_HOCON_CONFIG_ERROR);
+        }
+    }
+
+    @Override
+    public String buildHoconConfig(ScriptJobSaveCommand command) {
+        return doBuildHoconConfig(command);
+    }
+
+    @Override
+    public String buildHoconConfig(GuideSingleJobSaveCommand command) {
+        return doBuildHoconConfig(command);
+    }
+
+    @Override
+    public String buildHoconConfig(GuideMultiJobSaveCommand command) {
+        return doBuildHoconConfig(command);
+    }
+
+    private void validateBase(JobDefinitionSaveCommand command) {
+        if (command == null) {
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "command");
+        }
+        if (command.getBasic() == null) {
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "basic");
+        }
+        if (command.getMode() == null) {
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "mode");
+        }
+        if (StringUtils.isBlank(command.getBasic().getJobName())) {
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "jobName");
         }
     }
 
@@ -85,9 +170,8 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
         validateId(id);
 
         try {
-            BatchJobDefinition entity = getDefinitionOrThrow(id);
+            JobDefinitionEntity entity = getDefinitionOrThrow(id);
             BatchJobDefinitionVO vo = ConvertUtil.sourceToTarget(entity, BatchJobDefinitionVO.class);
-
             fillScheduleFields(id, vo);
             return vo;
         } catch (ServiceException e) {
@@ -106,9 +190,9 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
             int offset = (dto.getPageNo() - 1) * dto.getPageSize();
 
             List<BatchJobDefinitionVO> records =
-                    batchJobDefinitionDao.selectPageWithLatestInstance(dto, offset, dto.getPageSize());
+                    jobDefinitionDao.selectPageWithLatestInstance(dto, offset, dto.getPageSize());
 
-            Long total = batchJobDefinitionDao.count(dto);
+            Long total = jobDefinitionDao.count(dto);
 
             if (records != null) {
                 records.forEach(vo -> fillScheduleFields(vo.getId(), vo));
@@ -128,51 +212,18 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
     public Boolean delete(Long id) {
         validateId(id);
 
-        BatchJobDefinition definition = getDefinitionOrThrow(id);
+        JobDefinitionEntity definition = getDefinitionOrThrow(id);
         validateDelete(definition.getId());
 
         try {
             scheduleApplicationService.removeSchedule(id);
-            seatunnelJobInstanceService.removeAllByDefinitionId(id);
-            return batchJobDefinitionDao.deleteById(id);
+            jobInstanceService.removeAllByDefinitionId(id);
+            return jobDefinitionDao.deleteById(id);
         } catch (ServiceException e) {
             throw e;
         } catch (Exception e) {
             log.error("Delete batch job definition failed, id={}", id, e);
             throw new ServiceException(Status.DELETE_BATCH_JOB_DEFINITION_ERROR);
-        }
-    }
-
-    @Override
-    public String buildHoconConfig(SeatunnelBatchJobDefinitionDTO dto) {
-        validateBuildRequest(dto);
-
-        try {
-            JobDefinitionHandler handler = handlerRegistry.getHandler(dto);
-            return handler.buildHoconConfig(dto);
-        } catch (ServiceException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("Build batch job hocon config failed, dto={}", dto, e);
-            throw new ServiceException(Status.BUILD_BATCH_JOB_HOCON_CONFIG_ERROR);
-        }
-    }
-
-    private void validateSaveRequest(SeatunnelBatchJobDefinitionDTO dto) {
-        if (dto == null) {
-            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "dto");
-        }
-        if (StringUtils.isBlank(dto.getJobDefinitionInfo())) {
-            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "jobDefinitionInfo");
-        }
-    }
-
-    private void validateBuildRequest(SeatunnelBatchJobDefinitionDTO dto) {
-        if (dto == null) {
-            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "dto");
-        }
-        if (StringUtils.isBlank(dto.getJobDefinitionInfo())) {
-            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "jobDefinitionInfo");
         }
     }
 
@@ -194,8 +245,8 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
         }
     }
 
-    private BatchJobDefinition getDefinitionOrThrow(Long id) {
-        BatchJobDefinition entity = batchJobDefinitionDao.queryById(id);
+    private JobDefinitionEntity getDefinitionOrThrow(Long id) {
+        JobDefinitionEntity entity = jobDefinitionDao.queryById(id);
         if (entity == null) {
             throw new ServiceException(Status.BATCH_JOB_DEFINITION_NOT_EXIST);
         }
@@ -203,7 +254,7 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
     }
 
     private void validateDelete(Long id) {
-        if (seatunnelJobInstanceService.existsRunningInstance(id)) {
+        if (jobInstanceService.existsRunningInstance(id)) {
             throw new ServiceException(Status.DELETE_BATCH_JOB_DEFINITION_ERROR, "running instance exists");
         }
 

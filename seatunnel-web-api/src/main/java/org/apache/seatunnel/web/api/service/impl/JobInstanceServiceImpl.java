@@ -21,7 +21,7 @@ import org.apache.seatunnel.web.dao.repository.JobInstanceDao;
 import org.apache.seatunnel.web.dao.repository.JobMetricsDao;
 import org.apache.seatunnel.web.spi.bean.dto.BaseJobDefinitionCommand;
 import org.apache.seatunnel.web.spi.bean.dto.SeatunnelBatchJobDefinitionDTO;
-import org.apache.seatunnel.web.spi.bean.dto.SeatunnelJobInstanceDTO;
+import org.apache.seatunnel.web.spi.bean.dto.SeaTunnelJobInstanceDTO;
 import org.apache.seatunnel.web.spi.bean.dto.SeatunnelStreamingJobDefinitionDTO;
 import org.apache.seatunnel.web.spi.bean.entity.PaginationResult;
 import org.apache.seatunnel.web.spi.bean.vo.BatchJobDefinitionVO;
@@ -95,7 +95,7 @@ public class JobInstanceServiceImpl implements JobInstanceService {
     }
 
     @Override
-    public PaginationResult<JobInstanceVO> paging(SeatunnelJobInstanceDTO dto) {
+    public PaginationResult<JobInstanceVO> paging(SeaTunnelJobInstanceDTO dto) {
         validatePagingRequest(dto);
 
         try {
@@ -336,7 +336,7 @@ public class JobInstanceServiceImpl implements JobInstanceService {
         }
     }
 
-    private void validatePagingRequest(SeatunnelJobInstanceDTO dto) {
+    private void validatePagingRequest(SeaTunnelJobInstanceDTO dto) {
         if (dto == null) {
             throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "dto");
         }

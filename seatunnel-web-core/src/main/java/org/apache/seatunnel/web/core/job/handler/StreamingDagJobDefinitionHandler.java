@@ -12,7 +12,7 @@ import org.apache.seatunnel.web.spi.bean.entity.NodeTypes;
 import org.springframework.stereotype.Component;
 
 @Component
-public class StreamingDagJobDefinitionHandler extends AbstractJsonSupport implements JobDefinitionHandler {
+public class StreamingDagJobDefinitionHandler extends AbstractJsonSupport implements JobModeDefinitionHandler {
 
     @Resource
     private JobDefinitionResolver jobDefinitionResolver;

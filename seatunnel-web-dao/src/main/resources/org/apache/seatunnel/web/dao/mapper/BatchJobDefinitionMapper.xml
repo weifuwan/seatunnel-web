@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="org.apache.seatunnel.web.dao.mapper.BatchJobDefinitionMapper">
+<mapper namespace="org.apache.seatunnel.web.dao.mapper.JobDefinitionMapper">
 
     <select id="selectPageWithLatestInstance"
             resultType="org.apache.seatunnel.web.spi.bean.vo.BatchJobDefinitionVO">
@@ -49,6 +49,39 @@
         (
         SELECT *
         FROM t_seatunnel_job_definition
+        <where>
+            <if test="dto.id != null">
+                AND id = #{dto.id}
+            </if>
+
+            <if test="dto.jobName != null and dto.jobName != ''">
+                AND job_name LIKE CONCAT('%', #{dto.jobName}, '%')
+            </if>
+
+            <if test="dto.createTimeStart != null">
+                AND create_time <![CDATA[ >= ]]> #{dto.createTimeStart}
+            </if>
+
+            <if test="dto.createTimeEnd != null">
+                AND create_time <![CDATA[ <= ]]> #{dto.createTimeEnd}
+            </if>
+
+            <if test="dto.sourceType != null and dto.sourceType != ''">
+                AND source_type = #{dto.sourceType}
+            </if>
+
+            <if test="dto.sinkType != null and dto.sinkType != ''">
+                AND sink_type = #{dto.sinkType}
+            </if>
+
+            <if test="dto.sourceTable != null and dto.sourceTable != ''">
+                AND source_table LIKE CONCAT('%', #{dto.sourceTable}, '%')
+            </if>
+
+            <if test="dto.sinkTable != null and dto.sinkTable != ''">
+                AND sink_table LIKE CONCAT('%', #{dto.sinkTable}, '%')
+            </if>
+        </where>
         ORDER BY create_time DESC
         LIMIT #{offset}, #{pageSize}
         ) d
@@ -76,7 +109,34 @@
         ON d.id = s.job_definition_id
 
         <where>
+            <if test="dto.status != null and dto.status != ''">
+                AND i.job_status = #{dto.status}
+            </if>
+        </where>
 
+        ORDER BY d.create_time DESC
+
+    </select>
+
+    <select id="selectDefinitionCount" resultType="java.lang.Long">
+        SELECT COUNT(1)
+        FROM t_seatunnel_job_definition d
+        LEFT JOIN
+        (
+        SELECT *
+        FROM
+        (
+        SELECT *,
+        ROW_NUMBER() OVER (
+        PARTITION BY job_definition_id
+        ORDER BY start_time DESC
+        ) rn
+        FROM t_seatunnel_job_instance
+        ) t
+        WHERE rn = 1
+        ) i
+        ON d.id = i.job_definition_id
+        <where>
             <if test="dto.id != null">
                 AND d.id = #{dto.id}
             </if>
@@ -111,22 +171,6 @@
 
             <if test="dto.sinkTable != null and dto.sinkTable != ''">
                 AND d.sink_table LIKE CONCAT('%', #{dto.sinkTable}, '%')
-            </if>
-
-        </where>
-
-        ORDER BY d.create_time DESC
-
-    </select>
-
-
-
-    <select id="selectDefinitionCount" resultType="java.lang.Long">
-        SELECT COUNT(1)
-        FROM t_seatunnel_job_definition
-        <where>
-            <if test="jobName != null and jobName != ''">
-                AND job_name = #{jobName}
             </if>
         </where>
     </select>

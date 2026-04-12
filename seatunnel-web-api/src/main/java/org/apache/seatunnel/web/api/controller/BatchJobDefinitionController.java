@@ -10,7 +10,9 @@ import org.apache.seatunnel.web.api.exceptions.ApiException;
 import org.apache.seatunnel.web.api.service.BatchJobDefinitionService;
 import org.apache.seatunnel.web.common.utils.CodeGenerateUtils;
 import org.apache.seatunnel.web.spi.bean.dto.BatchJobDefinitionQueryDTO;
-import org.apache.seatunnel.web.spi.bean.dto.SeatunnelBatchJobDefinitionDTO;
+import org.apache.seatunnel.web.spi.bean.dto.GuideMultiJobSaveCommand;
+import org.apache.seatunnel.web.spi.bean.dto.GuideSingleJobSaveCommand;
+import org.apache.seatunnel.web.spi.bean.dto.ScriptJobSaveCommand;
 import org.apache.seatunnel.web.spi.bean.entity.PaginationResult;
 import org.apache.seatunnel.web.spi.bean.entity.Result;
 import org.apache.seatunnel.web.spi.bean.vo.BatchJobDefinitionVO;
@@ -30,17 +32,37 @@ public class BatchJobDefinitionController {
     private BatchJobDefinitionService batchJobDefinitionService;
 
     /**
-     * Creates or updates a batch job definition.
+     * 保存或更新 SCRIPT 模式任务
      */
-    @PostMapping("/saveOrUpdate")
-    @Operation(summary = "saveOrUpdateBatchJobDefinition", description = "SAVE_OR_UPDATE_BATCH_JOB_DEFINITION_NOTES")
+    @PostMapping("/script/saveOrUpdate")
+    @Operation(summary = "saveOrUpdateScriptJobDefinition", description = "SAVE_OR_UPDATE_SCRIPT_JOB_DEFINITION_NOTES")
     @ApiException(SAVE_OR_UPDATE_BATCH_JOB_DEFINITION_ERROR)
-    public Result<Long> saveOrUpdate(@RequestBody SeatunnelBatchJobDefinitionDTO dto) {
-        return Result.buildSuc(batchJobDefinitionService.saveOrUpdate(dto));
+    public Result<Long> saveScript(@RequestBody ScriptJobSaveCommand command) {
+        return Result.buildSuc(batchJobDefinitionService.saveOrUpdate(command));
     }
 
     /**
-     * Retrieves batch job definition details by ID.
+     * 保存或更新 GUIDE_SINGLE 模式任务
+     */
+    @PostMapping("/guide-single/saveOrUpdate")
+    @Operation(summary = "saveOrUpdateGuideSingleJobDefinition", description = "SAVE_OR_UPDATE_GUIDE_SINGLE_JOB_DEFINITION_NOTES")
+    @ApiException(SAVE_OR_UPDATE_BATCH_JOB_DEFINITION_ERROR)
+    public Result<Long> saveGuideSingle(@RequestBody GuideSingleJobSaveCommand command) {
+        return Result.buildSuc(batchJobDefinitionService.saveOrUpdate(command));
+    }
+
+    /**
+     * 保存或更新 GUIDE_MULTI 模式任务
+     */
+    @PostMapping("/guide-multi/saveOrUpdate")
+    @Operation(summary = "saveOrUpdateGuideMultiJobDefinition", description = "SAVE_OR_UPDATE_GUIDE_MULTI_JOB_DEFINITION_NOTES")
+    @ApiException(SAVE_OR_UPDATE_BATCH_JOB_DEFINITION_ERROR)
+    public Result<Long> saveGuideMulti(@RequestBody GuideMultiJobSaveCommand command) {
+        return Result.buildSuc(batchJobDefinitionService.saveOrUpdate(command));
+    }
+
+    /**
+     * 根据 ID 查询任务定义详情
      */
     @GetMapping("/{id}")
     @Operation(summary = "selectBatchJobDefinitionById", description = "SELECT_BATCH_JOB_DEFINITION_BY_ID_NOTES")
@@ -53,18 +75,17 @@ public class BatchJobDefinitionController {
     }
 
     /**
-     * Performs pagination query for batch job definitions.
+     * 分页查询任务定义
      */
     @PostMapping("/page")
     @Operation(summary = "queryBatchJobDefinitionPaging", description = "QUERY_BATCH_JOB_DEFINITION_PAGING_NOTES")
     @ApiException(QUERY_BATCH_JOB_DEFINITION_ERROR)
-    public PaginationResult<BatchJobDefinitionVO> paging(
-            @RequestBody BatchJobDefinitionQueryDTO dto) {
+    public PaginationResult<BatchJobDefinitionVO> paging(@RequestBody BatchJobDefinitionQueryDTO dto) {
         return batchJobDefinitionService.paging(dto);
     }
 
     /**
-     * Deletes a batch job definition by ID.
+     * 删除任务定义
      */
     @DeleteMapping("/{id}")
     @Operation(summary = "deleteBatchJobDefinition", description = "DELETE_BATCH_JOB_DEFINITION_NOTES")
@@ -77,17 +98,7 @@ public class BatchJobDefinitionController {
     }
 
     /**
-     * Builds HOCON config based on batch job definition parameters.
-     */
-    @PostMapping("/buildHoconConfig")
-    @Operation(summary = "buildBatchJobHoconConfig", description = "BUILD_BATCH_JOB_HOCON_CONFIG_NOTES")
-    @ApiException(BUILD_BATCH_JOB_HOCON_CONFIG_ERROR)
-    public Result<String> buildHoconConfig(@RequestBody SeatunnelBatchJobDefinitionDTO dto) {
-        return Result.buildSuc(batchJobDefinitionService.buildHoconConfig(dto));
-    }
-
-    /**
-     * Generates a unique ID.
+     * 生成唯一 ID
      */
     @GetMapping("/get-unique-id")
     @Operation(summary = "getBatchJobUniqueId", description = "GET_BATCH_JOB_UNIQUE_ID_NOTES")

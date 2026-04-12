@@ -3,13 +3,13 @@ package org.apache.seatunnel.web.dao.repository;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import org.apache.seatunnel.web.common.enums.JobStatus;
 import org.apache.seatunnel.web.dao.entity.JobInstance;
-import org.apache.seatunnel.web.spi.bean.dto.SeatunnelJobInstanceDTO;
+import org.apache.seatunnel.web.spi.bean.dto.SeaTunnelJobInstanceDTO;
 import org.apache.seatunnel.web.spi.bean.vo.JobInstanceVO;
 
 import java.util.Date;
 
 public interface JobInstanceDao extends IDao<JobInstance> {
-    IPage<JobInstanceVO> pageWithDefinition(SeatunnelJobInstanceDTO dto);
+    IPage<JobInstanceVO> pageWithDefinition(SeaTunnelJobInstanceDTO dto);
 
     boolean existsRunningInstance(Long definitionId);
 

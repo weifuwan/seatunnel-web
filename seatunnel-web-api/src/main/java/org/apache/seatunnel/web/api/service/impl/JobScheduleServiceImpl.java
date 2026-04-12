@@ -10,7 +10,7 @@ import org.apache.seatunnel.web.common.utils.ConvertUtil;
 import org.apache.seatunnel.web.common.utils.Utils;
 import org.apache.seatunnel.web.dao.entity.JobSchedule;
 import org.apache.seatunnel.web.dao.repository.JobScheduleDao;
-import org.apache.seatunnel.web.spi.bean.dto.SeatunnelJobScheduleDTO;
+import org.apache.seatunnel.web.spi.bean.dto.SeaTunnelJobScheduleDTO;
 import org.quartz.*;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
@@ -37,7 +37,7 @@ public class JobScheduleServiceImpl implements JobScheduleService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public Long createTaskSchedule(SeatunnelJobScheduleDTO dto) throws SchedulerException {
+    public Long createTaskSchedule(SeaTunnelJobScheduleDTO dto) throws SchedulerException {
         log.info("Creating job schedule: {}", dto);
 
         if (dto == null || dto.getJobDefinitionId() == null) {
@@ -62,7 +62,7 @@ public class JobScheduleServiceImpl implements JobScheduleService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public boolean updateTaskSchedule(SeatunnelJobScheduleDTO dto) throws SchedulerException {
+    public boolean updateTaskSchedule(SeaTunnelJobScheduleDTO dto) throws SchedulerException {
         log.info("Updating task schedule: {}", dto);
 
         if (dto == null || dto.getId() == null) {

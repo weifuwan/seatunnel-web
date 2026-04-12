@@ -17,7 +17,7 @@ import java.util.Date;
 @ToString
 @EqualsAndHashCode(callSuper = true)
 @Schema(description = "Job instance DTO representing a single execution of a job")
-public class SeatunnelJobInstanceDTO extends PaginationBaseDTO {
+public class SeaTunnelJobInstanceDTO extends PaginationBaseDTO {
 
     @Schema(
             description = "Job instance ID (unique identifier for this execution)",

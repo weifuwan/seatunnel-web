@@ -9,7 +9,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.seatunnel.web.api.exceptions.ApiException;
 import org.apache.seatunnel.web.api.service.JobInstanceService;
-import org.apache.seatunnel.web.spi.bean.dto.SeatunnelJobInstanceDTO;
+import org.apache.seatunnel.web.spi.bean.dto.SeaTunnelJobInstanceDTO;
 import org.apache.seatunnel.web.spi.bean.entity.PaginationResult;
 import org.apache.seatunnel.web.spi.bean.entity.Result;
 import org.apache.seatunnel.web.spi.bean.vo.JobInstanceVO;
@@ -39,7 +39,7 @@ public class BatchJobInstanceController {
     @PostMapping("/page")
     @Operation(summary = "queryBatchJobInstancePaging", description = "QUERY_BATCH_JOB_INSTANCE_PAGING_NOTES")
     @ApiException(QUERY_BATCH_JOB_INSTANCE_ERROR)
-    public PaginationResult<JobInstanceVO> paging(@RequestBody SeatunnelJobInstanceDTO dto) {
+    public PaginationResult<JobInstanceVO> paging(@RequestBody SeaTunnelJobInstanceDTO dto) {
         return seatunnelJobInstanceService.paging(dto);
     }
 

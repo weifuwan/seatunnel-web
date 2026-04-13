@@ -9,7 +9,6 @@
         d.id AS id,
         d.job_name AS jobName,
         d.job_desc AS jobDesc,
-        d.job_definition_info AS jobDefinitionInfo,
         d.job_version AS jobVersion,
         d.parallelism AS parallelism,
         d.source_type AS sourceType,
@@ -53,31 +52,24 @@
             <if test="dto.id != null">
                 AND id = #{dto.id}
             </if>
-
             <if test="dto.jobName != null and dto.jobName != ''">
                 AND job_name LIKE CONCAT('%', #{dto.jobName}, '%')
             </if>
-
             <if test="dto.createTimeStart != null">
                 AND create_time <![CDATA[ >= ]]> #{dto.createTimeStart}
             </if>
-
             <if test="dto.createTimeEnd != null">
                 AND create_time <![CDATA[ <= ]]> #{dto.createTimeEnd}
             </if>
-
             <if test="dto.sourceType != null and dto.sourceType != ''">
                 AND source_type = #{dto.sourceType}
             </if>
-
             <if test="dto.sinkType != null and dto.sinkType != ''">
                 AND sink_type = #{dto.sinkType}
             </if>
-
             <if test="dto.sourceTable != null and dto.sourceTable != ''">
                 AND source_table LIKE CONCAT('%', #{dto.sourceTable}, '%')
             </if>
-
             <if test="dto.sinkTable != null and dto.sinkTable != ''">
                 AND sink_table LIKE CONCAT('%', #{dto.sinkTable}, '%')
             </if>
@@ -115,7 +107,6 @@
         </where>
 
         ORDER BY d.create_time DESC
-
     </select>
 
     <select id="selectDefinitionCount" resultType="java.lang.Long">

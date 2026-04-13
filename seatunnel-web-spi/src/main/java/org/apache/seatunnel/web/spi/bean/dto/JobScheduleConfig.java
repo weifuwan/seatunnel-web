@@ -11,7 +11,14 @@ public class JobScheduleConfig {
 
     private List<ScheduleParamItem> paramsList;
 
+    /**
+     * 例如：nextDay
+     */
     private String instanceGenerateMode;
+
+    /**
+     * 前端统一传：NORMAL / PAUSE / EMPTY
+     */
     private String scheduleRunType;
 
     private String timeoutMode;
@@ -34,10 +41,9 @@ public class JobScheduleConfig {
     private String effectType;
     private String cronExpression;
 
-    /**
-     * ACTIVE / INACTIVE 等，按你项目枚举定义来
-     */
-    private ScheduleStatusEnum scheduleStatus;
+    public ScheduleStatusEnum resolveScheduleStatus() {
+        return ScheduleStatusEnum.fromCode(this.scheduleRunType);
+    }
 
     @Data
     public static class ScheduleParamItem {

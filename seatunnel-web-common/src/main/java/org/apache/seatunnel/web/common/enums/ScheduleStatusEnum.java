@@ -1,20 +1,29 @@
 package org.apache.seatunnel.web.common.enums;
 
-import com.baomidou.mybatisplus.annotation.EnumValue;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-/**
- * 调度状态枚举
- */
+
 @Getter
 @AllArgsConstructor
 public enum ScheduleStatusEnum {
-    ACTIVE("ACTIVE","ACTIVE"),
-    PAUSED("PAUSED","PAUSED");
+    NORMAL,
+    PAUSE,
+    EMPTY;
 
-    @EnumValue
-    private final String code;
-    private final String description;
+    public static ScheduleStatusEnum fromCode(String code) {
+        if (code == null || code.trim().isEmpty()) {
+            return PAUSE;
+        }
+        for (ScheduleStatusEnum value : values()) {
+            if (value.name().equalsIgnoreCase(code.trim())) {
+                return value;
+            }
+        }
+        return PAUSE;
+    }
 
+    public boolean shouldStartQuartz() {
+        return this == NORMAL || this == EMPTY;
+    }
 }

@@ -10,6 +10,7 @@ import org.apache.seatunnel.web.api.service.JobInstanceService;
 import org.apache.seatunnel.web.api.service.application.JobScheduleApplicationService;
 import org.apache.seatunnel.web.common.enums.ScheduleStatusEnum;
 import org.apache.seatunnel.web.common.utils.ConvertUtil;
+import org.apache.seatunnel.web.common.utils.JSONUtils;
 import org.apache.seatunnel.web.core.job.assembler.JobDefinitionAssembler;
 import org.apache.seatunnel.web.core.job.handler.JobDefinitionModeHandler;
 import org.apache.seatunnel.web.core.job.model.JobDefinitionAnalysisResult;
@@ -277,16 +278,26 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
             return null;
         }
 
-        JobScheduleConfig config = new JobScheduleConfig();
-        config.setCronExpression(schedule.getCronExpression());
-        config.setScheduleStatus(schedule.getScheduleStatus());
+        JobScheduleConfig config = null;
+        if (StringUtils.isNotBlank(schedule.getScheduleConfig())) {
+            try {
+                config = JSONUtils.parseObject(schedule.getScheduleConfig(), JobScheduleConfig.class);
+            } catch (Exception e) {
+                log.warn("Parse schedule config failed, definitionId={}, raw={}",
+                        definitionId, schedule.getScheduleConfig(), e);
+            }
+        }
 
-        // 这里你按实际字段继续补
-        // 比如：
-        // config.setScheduleType(schedule.getScheduleType());
-        // config.setHourMode(schedule.getHourMode());
-        // config.setEffectType(schedule.getEffectType());
-        // ...
+        if (config == null) {
+            config = new JobScheduleConfig();
+        }
+
+        if (StringUtils.isBlank(config.getCronExpression())) {
+            config.setCronExpression(schedule.getCronExpression());
+        }
+        if (StringUtils.isBlank(config.getScheduleRunType()) && schedule.getScheduleStatus() != null) {
+            config.setScheduleRunType(schedule.getScheduleStatus().name());
+        }
 
         return config;
     }
@@ -323,7 +334,9 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
         }
 
         JobSchedule schedule = scheduleApplicationService.getByTaskDefinitionId(id);
-        if (schedule != null && ScheduleStatusEnum.ACTIVE.equals(schedule.getScheduleStatus())) {
+        if (schedule != null
+                && schedule.getScheduleStatus() != null
+                && schedule.getScheduleStatus().shouldStartQuartz()) {
             throw new ServiceException(Status.DELETE_BATCH_JOB_DEFINITION_ERROR, "schedule is still active");
         }
     }

@@ -19,7 +19,10 @@ interface Props {
   goDetail: (value: any, item?: any) => void;
 }
 
-const DEFAULT_TIME_RANGE = [moment().subtract(4, "days"), moment().add(1, "days")];
+const DEFAULT_TIME_RANGE = [
+  moment().subtract(4, "days"),
+  moment().add(1, "days"),
+];
 
 const parseSearchParamsFromUrl = () => {
   const params = new URLSearchParams(window.location.search);
@@ -37,7 +40,10 @@ const parseSearchParamsFromUrl = () => {
     sinkTable: params.get("sinkTable") || undefined,
     createTime:
       createTimeStart && createTimeEnd
-        ? [moment(createTimeStart, "YYYY-MM-DD HH:mm:ss"), moment(createTimeEnd, "YYYY-MM-DD HH:mm:ss")]
+        ? [
+            moment(createTimeStart, "YYYY-MM-DD HH:mm:ss"),
+            moment(createTimeEnd, "YYYY-MM-DD HH:mm:ss"),
+          ]
         : DEFAULT_TIME_RANGE,
   };
 };
@@ -56,12 +62,17 @@ const App: React.FC<Props> = ({ goDetail }) => {
   const intl = useIntl();
 
   const [taskList, setTaskList] = useState<any[]>([]);
-  const [searchParams, setSearchParams] = useState<any>(() => parseSearchParamsFromUrl());
+  const [searchParams, setSearchParams] = useState<any>(() =>
+    parseSearchParamsFromUrl()
+  );
   const [pagination, setPagination] = useState(() => parsePaginationFromUrl());
   const [loading, setLoading] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
 
-  const syncUrlParams = (params: any, pageInfo: { current: number; pageSize: number }) => {
+  const syncUrlParams = (
+    params: any,
+    pageInfo: { current: number; pageSize: number }
+  ) => {
     const query = new URLSearchParams();
 
     if (params?.jobName) query.set("jobName", params.jobName);
@@ -73,8 +84,14 @@ const App: React.FC<Props> = ({ goDetail }) => {
     if (params?.sinkTable) query.set("sinkTable", params.sinkTable);
 
     if (params?.createTime?.length === 2) {
-      query.set("createTimeStart", moment(params.createTime[0]).format("YYYY-MM-DD HH:mm:ss"));
-      query.set("createTimeEnd", moment(params.createTime[1]).format("YYYY-MM-DD HH:mm:ss"));
+      query.set(
+        "createTimeStart",
+        moment(params.createTime[0]).format("YYYY-MM-DD HH:mm:ss")
+      );
+      query.set(
+        "createTimeEnd",
+        moment(params.createTime[1]).format("YYYY-MM-DD HH:mm:ss")
+      );
     }
 
     query.set("current", String(pageInfo.current || 1));
@@ -91,12 +108,12 @@ const App: React.FC<Props> = ({ goDetail }) => {
     const transformedParams = { ...searchParams };
 
     if (transformedParams?.createTime?.length === 2) {
-      transformedParams.createTimeStart = moment(transformedParams.createTime[0]).format(
-        "YYYY-MM-DD HH:mm:ss",
-      );
-      transformedParams.createTimeEnd = moment(transformedParams.createTime[1]).format(
-        "YYYY-MM-DD HH:mm:ss",
-      );
+      transformedParams.createTimeStart = moment(
+        transformedParams.createTime[0]
+      ).format("YYYY-MM-DD HH:mm:ss");
+      transformedParams.createTimeEnd = moment(
+        transformedParams.createTime[1]
+      ).format("YYYY-MM-DD HH:mm:ss");
       delete transformedParams.createTime;
     }
 
@@ -107,22 +124,12 @@ const App: React.FC<Props> = ({ goDetail }) => {
         pageSize: pagination.pageSize,
       });
 
-      if (data?.code === 0) {
-        setTaskList(data?.data?.bizData || []);
-        setPagination((prev) => ({
-          ...prev,
-          total: data?.data?.pagination?.total || 0,
-        }));
-      } else {
-        message.error(data?.message || "Request failed");
-      }
+      setTaskList(data?.data?.bizData || []);
+      setPagination((prev) => ({
+        ...prev,
+        total: data?.data?.pagination?.total || 0,
+      }));
     } catch (error) {
-      message.error(
-        intl.formatMessage({
-          id: "pages.job.fetch.fail",
-          defaultMessage: "Failed to fetch task list",
-        }),
-      );
     } finally {
       setLoading(false);
     }
@@ -142,7 +149,10 @@ const App: React.FC<Props> = ({ goDetail }) => {
         key: "view",
         label: (
           <span style={{ fontWeight: 500 }}>
-            {intl.formatMessage({ id: "pages.job.menu.view", defaultMessage: "View" })}
+            {intl.formatMessage({
+              id: "pages.job.menu.view",
+              defaultMessage: "View",
+            })}
           </span>
         ),
       },
@@ -150,7 +160,10 @@ const App: React.FC<Props> = ({ goDetail }) => {
         key: "edit",
         label: (
           <span style={{ fontWeight: 500 }}>
-            {intl.formatMessage({ id: "pages.job.menu.edit", defaultMessage: "Edit" })}
+            {intl.formatMessage({
+              id: "pages.job.menu.edit",
+              defaultMessage: "Edit",
+            })}
           </span>
         ),
       },
@@ -158,55 +171,88 @@ const App: React.FC<Props> = ({ goDetail }) => {
         key: "delete",
         label: (
           <span style={{ fontWeight: 500 }}>
-            {intl.formatMessage({ id: "pages.job.menu.delete", defaultMessage: "Delete" })}
+            {intl.formatMessage({
+              id: "pages.job.menu.delete",
+              defaultMessage: "Delete",
+            })}
           </span>
         ),
       },
     ],
-    [intl],
+    [intl]
   );
 
   const baseColumns = [
     {
-      title: intl.formatMessage({ id: "pages.job.table.col.name", defaultMessage: "Name" }),
+      title: intl.formatMessage({
+        id: "pages.job.table.col.name",
+        defaultMessage: "Name",
+      }),
       dataIndex: "jobName",
       width: "12%",
       ellipsis: true,
       render: (_content: any, record: any) => (
         <div>
           <em style={{ fontWeight: 500 }}>
-            {intl.formatMessage({ id: "pages.job.table.label.jobId", defaultMessage: "JobId" })}
+            {intl.formatMessage({
+              id: "pages.job.table.label.jobId",
+              defaultMessage: "JobId",
+            })}
           </em>
-          : <span style={{ fontSize: "12px", color: "gray" }}>{record?.id}</span> <br />
+          :{" "}
+          <span style={{ fontSize: "12px", color: "gray" }}>{record?.id}</span>{" "}
+          <br />
           <em style={{ fontWeight: 500 }}>
-            {intl.formatMessage({ id: "pages.job.table.label.jobName", defaultMessage: "JobName" })}
+            {intl.formatMessage({
+              id: "pages.job.table.label.jobName",
+              defaultMessage: "JobName",
+            })}
           </em>
           : {record?.jobName}
         </div>
       ),
     },
     {
-      title: intl.formatMessage({ id: "pages.job.table.col.syncPlan", defaultMessage: "Sync Plan" }),
+      title: intl.formatMessage({
+        id: "pages.job.table.col.syncPlan",
+        defaultMessage: "Sync Plan",
+      }),
       dataIndex: "",
       width: "20%",
-      render: (_content: any, record: any) => <DataSourceSyncPlan record={record} />,
-    },
-    {
-      title: intl.formatMessage({ id: "pages.job.table.col.status", defaultMessage: "Status" }),
-      dataIndex: "taskParams",
-      width: "10%",
       render: (_content: any, record: any) => (
-        <TaskStatus status={record?.lastJobStatus} errorMessage={record?.errorMessage} />
+        <DataSourceSyncPlan record={record} />
       ),
     },
     {
-      title: intl.formatMessage({ id: "pages.job.table.col.execution", defaultMessage: "Execution" }),
-      dataIndex: "执行概况",
-      width: "15%",
-      render: (_content: any, record: any) => <ExecutionStatus record={record} />,
+      title: intl.formatMessage({
+        id: "pages.job.table.col.status",
+        defaultMessage: "Status",
+      }),
+      dataIndex: "taskParams",
+      width: "10%",
+      render: (_content: any, record: any) => (
+        <TaskStatus
+          status={record?.lastJobStatus}
+          errorMessage={record?.errorMessage}
+        />
+      ),
     },
     {
-      title: intl.formatMessage({ id: "pages.job.table.col.schedule", defaultMessage: "Schedule" }),
+      title: intl.formatMessage({
+        id: "pages.job.table.col.execution",
+        defaultMessage: "Execution",
+      }),
+      dataIndex: "执行概况",
+      width: "15%",
+      render: (_content: any, record: any) => (
+        <ExecutionStatus record={record} />
+      ),
+    },
+    {
+      title: intl.formatMessage({
+        id: "pages.job.table.col.schedule",
+        defaultMessage: "Schedule",
+      }),
       dataIndex: "taskName",
       width: "20%",
       render: (_content: any, record: any) => <ScheduleInfo record={record} />,
@@ -220,7 +266,10 @@ const App: React.FC<Props> = ({ goDetail }) => {
       width: "10%",
     },
     {
-      title: intl.formatMessage({ id: "pages.job.table.col.operate", defaultMessage: "Operate" }),
+      title: intl.formatMessage({
+        id: "pages.job.table.col.operate",
+        defaultMessage: "Operate",
+      }),
       dataIndex: "",
       width: "16%",
       fixed: "right" as const,
@@ -278,7 +327,7 @@ const App: React.FC<Props> = ({ goDetail }) => {
           intl.formatMessage({
             id: "pages.job.batch.start.success",
             defaultMessage: "Start all succeeded",
-          }),
+          })
         );
         setSelectedRowKeys([]);
         fetchTaskList();
@@ -287,7 +336,7 @@ const App: React.FC<Props> = ({ goDetail }) => {
           intl.formatMessage({
             id: "pages.job.batch.start.fail",
             defaultMessage: "Start all failed",
-          }),
+          })
         );
       }
     } catch (error) {
@@ -295,7 +344,7 @@ const App: React.FC<Props> = ({ goDetail }) => {
         intl.formatMessage({
           id: "pages.job.batch.start.fail",
           defaultMessage: "Start all failed",
-        }),
+        })
       );
     }
   };
@@ -309,7 +358,7 @@ const App: React.FC<Props> = ({ goDetail }) => {
           intl.formatMessage({
             id: "pages.job.batch.stop.success",
             defaultMessage: "Stop all succeeded",
-          }),
+          })
         );
         setSelectedRowKeys([]);
         fetchTaskList();
@@ -318,7 +367,7 @@ const App: React.FC<Props> = ({ goDetail }) => {
           intl.formatMessage({
             id: "pages.job.batch.stop.fail",
             defaultMessage: "Stop all failed",
-          }),
+          })
         );
       }
     } catch (error) {
@@ -326,7 +375,7 @@ const App: React.FC<Props> = ({ goDetail }) => {
         intl.formatMessage({
           id: "pages.job.batch.stop.fail",
           defaultMessage: "Stop all failed",
-        }),
+        })
       );
     }
   };

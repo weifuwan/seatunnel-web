@@ -45,11 +45,16 @@ public class JobScheduleServiceImpl implements JobScheduleService {
             throw new RuntimeException("Job definition id cannot be null");
         }
 
+        if (StringUtils.isBlank(dto.getCronExpression())) {
+            throw new RuntimeException("Cron expression cannot be empty");
+        }
+
         if (jobScheduleDao.existsByJobDefinitionId(dto.getJobDefinitionId())) {
             throw new RuntimeException("Schedule configuration already exists for this job definition");
         }
 
         JobSchedule po = ConvertUtil.sourceToTarget(dto, JobSchedule.class);
+        po.setCronExpression(dto.getCronExpression().trim());
         po.setScheduleConfig(JSONUtils.toJsonString(dto.getScheduleConfig()));
         po.initInsert();
 
@@ -71,6 +76,10 @@ public class JobScheduleServiceImpl implements JobScheduleService {
             throw new RuntimeException("Schedule id cannot be null");
         }
 
+        if (StringUtils.isBlank(dto.getCronExpression())) {
+            throw new RuntimeException("Cron expression cannot be empty");
+        }
+
         JobSchedule existingSchedule = jobScheduleDao.queryById(dto.getId());
         if (existingSchedule == null) {
             throw new RuntimeException("Task schedule configuration does not exist");
@@ -78,6 +87,8 @@ public class JobScheduleServiceImpl implements JobScheduleService {
 
         JobSchedule schedule = new JobSchedule();
         BeanUtils.copyProperties(dto, schedule);
+        schedule.setCronExpression(dto.getCronExpression().trim());
+        schedule.setScheduleConfig(JSONUtils.toJsonString(dto.getScheduleConfig()));
 
         boolean updateResult = jobScheduleDao.updateById(schedule);
         if (!updateResult) {
@@ -131,7 +142,7 @@ public class JobScheduleServiceImpl implements JobScheduleService {
 
             if (scheduler.checkExists(jobKey)) {
                 scheduler.deleteJob(jobKey);
-                log.info("Deleted existing Job: {}", taskScheduleId);
+                log.info("Deleted existing Quartz job before restart: {}", taskScheduleId);
             }
 
             JobDetail jobDetail = createJobDetail(jobSchedule);
@@ -145,7 +156,6 @@ public class JobScheduleServiceImpl implements JobScheduleService {
 
         Date nextExecutionTime = Utils.getNextExecutionTime(jobSchedule.getCronExpression());
         jobScheduleDao.updateNextScheduleTime(taskScheduleId, nextExecutionTime);
-        jobScheduleDao.updateScheduleStatus(taskScheduleId, ScheduleStatusEnum.ACTIVE);
 
         log.info("Task schedule started successfully: {}", taskScheduleId);
         return true;
@@ -158,7 +168,7 @@ public class JobScheduleServiceImpl implements JobScheduleService {
 
         JobSchedule taskSchedule = jobScheduleDao.queryById(taskScheduleId);
         if (taskSchedule == null) {
-            throw new RuntimeException("Task schedule configuration does not exist");
+            return true;
         }
 
         JobKey jobKey = buildJobKey(taskScheduleId);
@@ -170,8 +180,6 @@ public class JobScheduleServiceImpl implements JobScheduleService {
             log.error("Failed to stop schedule, scheduleId={}", taskScheduleId, e);
             throw new RuntimeException("Failed to stop schedule", e);
         }
-
-        jobScheduleDao.updateScheduleStatus(taskScheduleId, ScheduleStatusEnum.PAUSED);
 
         log.info("Task schedule stopped successfully: {}", taskScheduleId);
         return true;
@@ -217,7 +225,8 @@ public class JobScheduleServiceImpl implements JobScheduleService {
             throw new RuntimeException("Failed to update schedule time");
         }
 
-        if (ScheduleStatusEnum.ACTIVE.equals(taskSchedule.getScheduleStatus())) {
+        if (taskSchedule.getScheduleStatus() != null
+                && taskSchedule.getScheduleStatus().shouldStartQuartz()) {
             stopSchedule(taskScheduleId);
             startSchedule(taskScheduleId);
         }
@@ -228,7 +237,10 @@ public class JobScheduleServiceImpl implements JobScheduleService {
 
     @Override
     public List<JobSchedule> getRunningSchedules() {
-        return jobScheduleDao.queryByScheduleStatus(ScheduleStatusEnum.ACTIVE);
+        List<JobSchedule> result = new ArrayList<>();
+        result.addAll(jobScheduleDao.queryByScheduleStatus(ScheduleStatusEnum.NORMAL));
+        result.addAll(jobScheduleDao.queryByScheduleStatus(ScheduleStatusEnum.EMPTY));
+        return result;
     }
 
     @Override
@@ -251,9 +263,6 @@ public class JobScheduleServiceImpl implements JobScheduleService {
         return jobScheduleDao.updateNextScheduleTime(taskScheduleId, nextScheduleTime);
     }
 
-    /**
-     * 获取未来 5 次执行时间
-     */
     @Override
     public List<String> getLast5ExecutionTimesByCron(String cronExpression) {
         if (StringUtils.isBlank(cronExpression)) {
@@ -298,9 +307,7 @@ public class JobScheduleServiceImpl implements JobScheduleService {
         }
 
         try {
-            if (ScheduleStatusEnum.ACTIVE.equals(schedule.getScheduleStatus())) {
-                stopSchedule(schedule.getId());
-            }
+            stopSchedule(schedule.getId());
             jobScheduleDao.deleteById(schedule.getId());
         } catch (Exception e) {
             throw new RuntimeException("Failed to remove schedule", e);
@@ -309,7 +316,7 @@ public class JobScheduleServiceImpl implements JobScheduleService {
 
     private boolean isValidCronExpression(String cronExpression) {
         String[] parts = cronExpression.split(" ");
-        return parts.length == 5 || parts.length == 6;
+        return parts.length == 6 || parts.length == 7;
     }
 
     private JobKey buildJobKey(Long taskScheduleId) {

@@ -26,7 +26,7 @@ public class JobSchedule extends BaseEntity {
     private String cronExpression;
 
     /**
-     * 调度状态
+     * 调度运行模式：NORMAL / PAUSE / EMPTY
      */
     private ScheduleStatusEnum scheduleStatus;
 

@@ -23,43 +23,24 @@ public class JobScheduleApplicationService {
         }
 
         JobScheduleConfig scheduleConfig = command.getSchedule();
-        if (scheduleConfig == null) {
+        if (shouldRemoveSchedule(scheduleConfig)) {
             removeSchedule(jobDefinitionId);
             return;
         }
 
-        String cronExpression = scheduleConfig.getCronExpression();
-        ScheduleStatusEnum scheduleStatus = scheduleConfig.getScheduleStatus();
-
-        if (StringUtils.isBlank(cronExpression) || scheduleStatus == null) {
-            removeSchedule(jobDefinitionId);
-            return;
-        }
-
+        ScheduleStatusEnum scheduleStatus = scheduleConfig.resolveScheduleStatus();
         JobSchedule existing = jobScheduleService.getByTaskDefinitionId(jobDefinitionId);
 
-        SeaTunnelJobScheduleDTO scheduleDTO = new SeaTunnelJobScheduleDTO();
-        scheduleDTO.setJobDefinitionId(jobDefinitionId);
-        scheduleDTO.setCronExpression(cronExpression);
-        scheduleDTO.setScheduleStatus(scheduleStatus);
-        scheduleDTO.setScheduleConfig(scheduleConfig);
+        SeaTunnelJobScheduleDTO scheduleDTO = buildScheduleDTO(
+                jobDefinitionId,
+                scheduleConfig,
+                scheduleStatus,
+                existing
+        );
 
         try {
-            Long scheduleId;
-            if (existing == null) {
-                scheduleId = jobScheduleService.createTaskSchedule(scheduleDTO);
-            } else {
-                scheduleDTO.setId(existing.getId());
-                jobScheduleService.updateTaskSchedule(scheduleDTO);
-                scheduleId = existing.getId();
-            }
-
-            if (ScheduleStatusEnum.ACTIVE == scheduleStatus) {
-                jobScheduleService.stopSchedule(scheduleId);
-                jobScheduleService.startSchedule(scheduleId);
-            } else {
-                jobScheduleService.stopSchedule(scheduleId);
-            }
+            Long scheduleId = saveSchedule(scheduleDTO, existing);
+            refreshQuartzState(scheduleId, scheduleStatus);
         } catch (SchedulerException e) {
             throw new RuntimeException("Failed to save or update schedule", e);
         }
@@ -71,5 +52,43 @@ public class JobScheduleApplicationService {
 
     public JobSchedule getByTaskDefinitionId(Long jobDefinitionId) {
         return jobScheduleService.getByTaskDefinitionId(jobDefinitionId);
+    }
+
+    private boolean shouldRemoveSchedule(JobScheduleConfig scheduleConfig) {
+        return scheduleConfig == null || StringUtils.isBlank(scheduleConfig.getCronExpression());
+    }
+
+    private SeaTunnelJobScheduleDTO buildScheduleDTO(Long jobDefinitionId,
+                                                     JobScheduleConfig scheduleConfig,
+                                                     ScheduleStatusEnum scheduleStatus,
+                                                     JobSchedule existing) {
+        SeaTunnelJobScheduleDTO dto = new SeaTunnelJobScheduleDTO();
+        dto.setJobDefinitionId(jobDefinitionId);
+        dto.setCronExpression(scheduleConfig.getCronExpression());
+        dto.setScheduleStatus(scheduleStatus);
+        dto.setScheduleConfig(scheduleConfig);
+        if (existing != null) {
+            dto.setId(existing.getId());
+        }
+        return dto;
+    }
+
+    private Long saveSchedule(SeaTunnelJobScheduleDTO scheduleDTO, JobSchedule existing)
+            throws SchedulerException {
+        if (existing == null) {
+            return jobScheduleService.createTaskSchedule(scheduleDTO);
+        }
+        jobScheduleService.updateTaskSchedule(scheduleDTO);
+        return existing.getId();
+    }
+
+    private void refreshQuartzState(Long scheduleId, ScheduleStatusEnum scheduleStatus)
+            throws SchedulerException {
+        // 先停再启，避免 Quartz 中残留旧 trigger
+        jobScheduleService.stopSchedule(scheduleId);
+
+        if (scheduleStatus.shouldStartQuartz()) {
+            jobScheduleService.startSchedule(scheduleId);
+        }
     }
 }

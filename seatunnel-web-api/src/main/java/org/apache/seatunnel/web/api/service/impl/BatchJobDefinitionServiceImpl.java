@@ -8,7 +8,6 @@ import org.apache.seatunnel.web.api.exceptions.ServiceException;
 import org.apache.seatunnel.web.api.service.BatchJobDefinitionService;
 import org.apache.seatunnel.web.api.service.JobInstanceService;
 import org.apache.seatunnel.web.api.service.application.JobScheduleApplicationService;
-import org.apache.seatunnel.web.common.enums.ScheduleStatusEnum;
 import org.apache.seatunnel.web.common.utils.ConvertUtil;
 import org.apache.seatunnel.web.common.utils.JSONUtils;
 import org.apache.seatunnel.web.core.job.assembler.JobDefinitionAssembler;
@@ -90,7 +89,6 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
                     .mode(command.getMode())
                     .contentSchemaVersion(1)
                     .definitionContent(definitionContent)
-                    .hoconContent(hoconContent)
                     .createTime(now)
                     .build();
 
@@ -220,6 +218,7 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
         try {
             scheduleApplicationService.removeSchedule(id);
             jobInstanceService.removeAllByDefinitionId(id);
+            jobDefinitionContentDao.deleteByJobDefinitionId(id);
             return jobDefinitionDao.deleteById(id);
         } catch (ServiceException e) {
             throw e;

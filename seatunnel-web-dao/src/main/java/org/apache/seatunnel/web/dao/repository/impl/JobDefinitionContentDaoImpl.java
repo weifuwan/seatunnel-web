@@ -45,4 +45,12 @@ public class JobDefinitionContentDaoImpl
                         .last("limit 1")
         );
     }
+
+    @Override
+    public void deleteByJobDefinitionId(Long jobDefinitionId) {
+        jobDefinitionContentMapper.delete(
+                new LambdaQueryWrapper<JobDefinitionContentEntity>()
+                        .eq(JobDefinitionContentEntity::getJobDefinitionId, jobDefinitionId)
+        );
+    }
 }

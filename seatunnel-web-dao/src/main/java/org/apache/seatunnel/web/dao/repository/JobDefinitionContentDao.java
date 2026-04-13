@@ -11,4 +11,6 @@ public interface JobDefinitionContentDao extends IDao<JobDefinitionContentEntity
     List<JobDefinitionContentEntity> queryByJobDefinitionId(Long jobDefinitionId);
 
     JobDefinitionContentEntity queryLatestByJobDefinitionId(Long jobDefinitionId);
+
+    void deleteByJobDefinitionId(Long jobDefinitionId);
 }

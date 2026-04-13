@@ -93,7 +93,7 @@ export default {
   'pages.datasource.filter.all': '全部',
   'pages.datasource.filter.inputPlaceholder': '请输入...',
 
-  'pages.datasync.header.title': '批量数据同步任务',
+  'pages.datasync.header.title': '离线同步任务',
   'pages.datasync.header.subtitle': '完全向导式白屏配置，帮助您更轻松地创建数据同步任务 🪄',
 
   'pages.datasync.header.source.placeholder': '源端',

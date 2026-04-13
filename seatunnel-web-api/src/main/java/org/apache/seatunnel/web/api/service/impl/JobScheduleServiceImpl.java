@@ -11,6 +11,7 @@ import org.apache.seatunnel.web.common.utils.JSONUtils;
 import org.apache.seatunnel.web.common.utils.Utils;
 import org.apache.seatunnel.web.dao.entity.JobSchedule;
 import org.apache.seatunnel.web.dao.repository.JobScheduleDao;
+import org.apache.seatunnel.web.spi.bean.dto.JobScheduleConfig;
 import org.apache.seatunnel.web.spi.bean.dto.SeaTunnelJobScheduleDTO;
 import org.quartz.*;
 import org.springframework.beans.BeanUtils;
@@ -55,7 +56,7 @@ public class JobScheduleServiceImpl implements JobScheduleService {
 
         JobSchedule po = ConvertUtil.sourceToTarget(dto, JobSchedule.class);
         po.setCronExpression(dto.getCronExpression().trim());
-        po.setScheduleConfig(JSONUtils.toJsonString(dto.getScheduleConfig()));
+        po.setScheduleConfig(buildPersistedScheduleConfigJson(dto.getScheduleConfig()));
         po.initInsert();
 
         int saveResult = jobScheduleDao.insert(po);
@@ -88,7 +89,7 @@ public class JobScheduleServiceImpl implements JobScheduleService {
         JobSchedule schedule = new JobSchedule();
         BeanUtils.copyProperties(dto, schedule);
         schedule.setCronExpression(dto.getCronExpression().trim());
-        schedule.setScheduleConfig(JSONUtils.toJsonString(dto.getScheduleConfig()));
+        schedule.setScheduleConfig(buildPersistedScheduleConfigJson(dto.getScheduleConfig()));
 
         boolean updateResult = jobScheduleDao.updateById(schedule);
         if (!updateResult) {
@@ -157,6 +158,8 @@ public class JobScheduleServiceImpl implements JobScheduleService {
         Date nextExecutionTime = Utils.getNextExecutionTime(jobSchedule.getCronExpression());
         jobScheduleDao.updateNextScheduleTime(taskScheduleId, nextExecutionTime);
 
+        jobScheduleDao.updateScheduleStatus(taskScheduleId, ScheduleStatusEnum.NORMAL);
+
         log.info("Task schedule started successfully: {}", taskScheduleId);
         return true;
     }
@@ -180,6 +183,9 @@ public class JobScheduleServiceImpl implements JobScheduleService {
             log.error("Failed to stop schedule, scheduleId={}", taskScheduleId, e);
             throw new RuntimeException("Failed to stop schedule", e);
         }
+
+        jobScheduleDao.updateScheduleStatus(taskScheduleId, ScheduleStatusEnum.PAUSE);
+        jobScheduleDao.updateNextScheduleTime(taskScheduleId, null);
 
         log.info("Task schedule stopped successfully: {}", taskScheduleId);
         return true;
@@ -219,16 +225,23 @@ public class JobScheduleServiceImpl implements JobScheduleService {
             throw new RuntimeException("Task schedule configuration does not exist");
         }
 
+        ScheduleStatusEnum originalStatus = taskSchedule.getScheduleStatus();
         taskSchedule.setCronExpression(cronExpression.trim());
+
         boolean updateResult = jobScheduleDao.updateById(taskSchedule);
         if (!updateResult) {
             throw new RuntimeException("Failed to update schedule time");
         }
 
-        if (taskSchedule.getScheduleStatus() != null
-                && taskSchedule.getScheduleStatus().shouldStartQuartz()) {
+        if (originalStatus != null && originalStatus.shouldStartQuartz()) {
             stopSchedule(taskScheduleId);
             startSchedule(taskScheduleId);
+
+            if (originalStatus != ScheduleStatusEnum.NORMAL) {
+                jobScheduleDao.updateScheduleStatus(taskScheduleId, originalStatus);
+            }
+        } else {
+            jobScheduleDao.updateNextScheduleTime(taskScheduleId, null);
         }
 
         log.info("Schedule time updated successfully: {}", taskScheduleId);
@@ -312,6 +325,40 @@ public class JobScheduleServiceImpl implements JobScheduleService {
         } catch (Exception e) {
             throw new RuntimeException("Failed to remove schedule", e);
         }
+    }
+
+    private String buildPersistedScheduleConfigJson(JobScheduleConfig source) {
+        if (source == null) {
+            return null;
+        }
+
+        JobScheduleConfig persisted = new JobScheduleConfig();
+        persisted.setParamsList(source.getParamsList());
+        persisted.setInstanceGenerateMode(source.getInstanceGenerateMode());
+
+        persisted.setTimeoutMode(source.getTimeoutMode());
+        persisted.setTimeoutValue(source.getTimeoutValue());
+        persisted.setTimeoutUnit(source.getTimeoutUnit());
+
+        persisted.setRerunPolicy(source.getRerunPolicy());
+        persisted.setAutoRetry(source.getAutoRetry());
+        persisted.setRetryTimes(source.getRetryTimes());
+        persisted.setRetryInterval(source.getRetryInterval());
+
+        persisted.setScheduleType(source.getScheduleType());
+        persisted.setHourMode(source.getHourMode());
+
+        persisted.setHourlyRangeValue(source.getHourlyRangeValue());
+        persisted.setHourlyAppointValue(source.getHourlyAppointValue());
+        persisted.setDailyValue(source.getDailyValue());
+        persisted.setWeeklyValue(source.getWeeklyValue());
+
+        persisted.setEffectType(source.getEffectType());
+
+        persisted.setCronExpression(null);
+        persisted.setScheduleRunType(null);
+
+        return JSONUtils.toJsonString(persisted);
     }
 
     private boolean isValidCronExpression(String cronExpression) {

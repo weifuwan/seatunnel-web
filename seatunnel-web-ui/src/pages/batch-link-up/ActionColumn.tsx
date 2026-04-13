@@ -200,7 +200,7 @@ const ActionColumn: React.FC<ActionColumnProps> = ({
           </Popconfirm>
         )}
 
-        {record?.scheduleStatus === "ACTIVE" ? (
+        {record?.scheduleStatus === "NORMAL" ? (
           <Popconfirm
             title={intl.formatMessage({
               id: "pages.job.action.schedule.title",

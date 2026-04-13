@@ -29,6 +29,10 @@ public class JobScheduleApplicationService {
         }
 
         ScheduleStatusEnum scheduleStatus = scheduleConfig.resolveScheduleStatus();
+        if (scheduleStatus == null) {
+            throw new RuntimeException("Invalid scheduleRunType: " + scheduleConfig.getScheduleRunType());
+        }
+
         JobSchedule existing = jobScheduleService.getByTaskDefinitionId(jobDefinitionId);
 
         SeaTunnelJobScheduleDTO scheduleDTO = buildScheduleDTO(
@@ -40,7 +44,15 @@ public class JobScheduleApplicationService {
 
         try {
             Long scheduleId = saveSchedule(scheduleDTO, existing);
+
+            // 先同步 Quartz，避免残留旧 trigger
             refreshQuartzState(scheduleId, scheduleStatus);
+
+            // 再把最终业务状态回写成前端目标状态，避免被 startSchedule/stopSchedule 中间覆盖
+            boolean updated = jobScheduleService.updateScheduleStatus(scheduleId, scheduleStatus);
+            if (!updated) {
+                throw new RuntimeException("Failed to update final schedule status");
+            }
         } catch (SchedulerException e) {
             throw new RuntimeException("Failed to save or update schedule", e);
         }
@@ -64,9 +76,12 @@ public class JobScheduleApplicationService {
                                                      JobSchedule existing) {
         SeaTunnelJobScheduleDTO dto = new SeaTunnelJobScheduleDTO();
         dto.setJobDefinitionId(jobDefinitionId);
-        dto.setCronExpression(scheduleConfig.getCronExpression());
+        dto.setCronExpression(scheduleConfig.getCronExpression() == null
+                ? null
+                : scheduleConfig.getCronExpression().trim());
         dto.setScheduleStatus(scheduleStatus);
         dto.setScheduleConfig(scheduleConfig);
+
         if (existing != null) {
             dto.setId(existing.getId());
         }

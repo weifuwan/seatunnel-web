@@ -209,21 +209,21 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public Boolean delete(Long id) {
-        validateId(id);
+    public Boolean delete(Long jobDefinitionId) {
+        validateId(jobDefinitionId);
 
-        JobDefinitionEntity definition = getDefinitionOrThrow(id);
+        JobDefinitionEntity definition = getDefinitionOrThrow(jobDefinitionId);
         validateDelete(definition.getId());
 
         try {
-            scheduleApplicationService.removeSchedule(id);
-            jobInstanceService.removeAllByDefinitionId(id);
-            jobDefinitionContentDao.deleteByJobDefinitionId(id);
-            return jobDefinitionDao.deleteById(id);
+            scheduleApplicationService.removeSchedule(jobDefinitionId);
+            jobInstanceService.removeAllByDefinitionId(jobDefinitionId);
+            jobDefinitionContentDao.deleteByJobDefinitionId(jobDefinitionId);
+            return jobDefinitionDao.deleteById(jobDefinitionId);
         } catch (ServiceException e) {
             throw e;
         } catch (Exception e) {
-            log.error("Delete batch job definition failed, id={}", id, e);
+            log.error("Delete batch job definition failed, id={}", jobDefinitionId, e);
             throw new ServiceException(Status.DELETE_BATCH_JOB_DEFINITION_ERROR);
         }
     }

@@ -17,12 +17,13 @@ const DataSourceSyncPlan: React.FC<DataSourceSyncPlanProps> = ({ record }) => {
 
     if (typeof jsonStr === "object") return jsonStr;
 
-    try {
-      return JSON.parse(jsonStr);
-    } catch (e) {
-      console.warn("JSON parse failed:", jsonStr);
-      return null;
-    }
+    // try {
+    //   return JSON.parse(jsonStr);
+    // } catch (e) {
+    //   // console.warn("JSON parse failed:", jsonStr);
+    //   return null;
+    // }
+    return {};
   };
 
   const formatTables = (tableStr: any) => {

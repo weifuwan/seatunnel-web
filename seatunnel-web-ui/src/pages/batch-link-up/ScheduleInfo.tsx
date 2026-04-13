@@ -12,18 +12,13 @@ const ScheduleInfo: React.FC<ExecutionStatusProps> = ({ record }) => {
   const [cronExpression, setCronExpression] = useState<any[]>([]);
 
   const renderStatus = (status: string) => {
-    const label =
-      status === "ACTIVE"
-        ? intl.formatMessage({
-            id: "pages.job.schedule.status.active",
-            defaultMessage: "ACTIVE",
-          })
-        : intl.formatMessage({
-            id: "pages.job.schedule.status.inactive",
-            defaultMessage: "INACTIVE",
-          });
 
-    if (status === "ACTIVE") {
+    const label =
+      status === "NORMAL"
+        ? "启用"
+        : "暂停";
+
+    if (status === "NORMAL") {
       return <span style={{ color: "green" }}>{label}</span>;
     }
     return <span style={{ color: "red" }}>{label}</span>;
@@ -99,11 +94,8 @@ const ScheduleInfo: React.FC<ExecutionStatusProps> = ({ record }) => {
 
       <div style={{ display: "flex", alignItems: "center" }}>
         <span style={{ fontWeight: 700, fontSize: 19, marginRight: 8 }}>·</span>
-        <span style={{ marginRight: 56, fontWeight: 700 }}>
-          {intl.formatMessage({
-            id: "pages.job.schedule.status",
-            defaultMessage: "Status:",
-          })}{" "}
+        <span style={{ marginRight: 66, fontWeight: 700 }}>
+          状态
         </span>
         <span style={{ color: "gray" }}>{renderStatus(record?.scheduleStatus)}</span>
       </div>

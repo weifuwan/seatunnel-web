@@ -998,3 +998,28 @@ ol {
 .ant-select-dropdown .ant-select-item {
   border-radius: 16px;
 }
+
+/* Chrome / Edge / Safari */
+// ::-webkit-scrollbar {
+//   width: 12px;
+//   height: 8px;
+// }
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d4dbe5;
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #cbd2db;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: 10px;
+  scrollbar-color: #d4dbe5 transparent;
+}

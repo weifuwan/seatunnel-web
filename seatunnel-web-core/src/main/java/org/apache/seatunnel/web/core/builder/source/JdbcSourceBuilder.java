@@ -3,6 +3,7 @@ package org.apache.seatunnel.web.core.builder.source;
 import com.typesafe.config.Config;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.seatunnel.plugin.datasource.api.jdbc.DataSourceProcessor;
 import org.apache.seatunnel.plugin.datasource.api.utils.DataSourceUtils;
 import org.apache.seatunnel.web.common.config.ConfigValidator;
@@ -59,27 +60,64 @@ public class JdbcSourceBuilder implements SourceNodeConfigBuilder {
      */
     @Override
     public Config build(Config data) {
-        Long sourceId = data.getLong("sourceId");
+        Config config = resolveNodeConfig(data);
 
-        // Retrieve the data source from database
-        DataSource ds = dataSourceDao.queryById(sourceId);
-        if (ds == null) {
-            throw new RuntimeException("Data source does not exist");
+        Long sourceId = getLong(config, "sourceDataSourceId");
+        if (sourceId == null) {
+            throw new RuntimeException("sourceDataSourceId is missing");
         }
 
-        // Get processor based on database type
+        DataSource ds = dataSourceDao.queryById(sourceId);
+        if (ds == null) {
+            throw new RuntimeException("Data source does not exist, id=" + sourceId);
+        }
+
+        String dbType = getString(config, "dbType");
+        if (StringUtils.isBlank(dbType)) {
+            throw new RuntimeException("dbType is missing");
+        }
+
+        String pluginName = getString(config, "pluginName");
+        if (StringUtils.isBlank(pluginName)) {
+            throw new RuntimeException("pluginName is missing");
+        }
+
         DataSourceProcessor processor =
-                DataSourceUtils.getDatasourceProcessor(DbType.valueOf(data.getString("dbType")));
+                DataSourceUtils.getDatasourceProcessor(DbType.valueOf(dbType));
 
-        String pluginName = data.getString("pluginName");
-        // Build source configuration
         Config cfg = processor.getQueryBuilder(pluginName)
-                .buildSourceHocon(ds.getConnectionParams(), data, processor.getConnectionManager(), HoconBuildStage.INSTANCE);
+                .buildSourceHocon(
+                        ds.getConnectionParams(),
+                        config,
+                        processor.getConnectionManager(),
+                        HoconBuildStage.INSTANCE
+                );
 
-        // Validate configuration using processor-defined rules
         ConfigValidator.of(ReadonlyConfig.fromConfig(cfg))
                 .validate(processor.sourceOptionRule(pluginName));
 
         return cfg;
+    }
+
+    private String getString(Config config, String path) {
+        return config.hasPath(path) ? config.getString(path) : null;
+    }
+
+    private Long getLong(Config config, String path) {
+        if (!config.hasPath(path)) {
+            return null;
+        }
+        Object value = config.getAnyRef(path);
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Number) {
+            return ((Number) value).longValue();
+        }
+        String text = String.valueOf(value).trim();
+        if (text.isEmpty()) {
+            return null;
+        }
+        return Long.valueOf(text);
     }
 }

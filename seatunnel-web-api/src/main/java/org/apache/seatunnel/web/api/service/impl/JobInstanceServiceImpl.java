@@ -15,7 +15,7 @@ import org.apache.seatunnel.web.common.enums.JobMode;
 import org.apache.seatunnel.web.common.enums.RunMode;
 import org.apache.seatunnel.web.common.utils.CodeGenerateUtils;
 import org.apache.seatunnel.web.common.utils.ConvertUtil;
-import org.apache.seatunnel.web.core.hocon.JobConfigBuild;
+//import org.apache.seatunnel.web.core.hocon.JobConfigBuild;
 import org.apache.seatunnel.web.dao.entity.JobInstance;
 import org.apache.seatunnel.web.dao.repository.JobInstanceDao;
 import org.apache.seatunnel.web.dao.repository.JobMetricsDao;
@@ -54,8 +54,8 @@ public class JobInstanceServiceImpl implements JobInstanceService {
     @Resource
     private JobMetricsDao jobMetricsDao;
 
-    @Resource
-    private JobConfigBuild jobConfigBuild;
+//    @Resource
+//    private JobConfigBuild jobConfigBuild;
 
     @Resource
     private JobInstanceFactory jobInstanceFactory;
@@ -119,7 +119,8 @@ public class JobInstanceServiceImpl implements JobInstanceService {
         validateDefinitionCommand(dto);
 
         try {
-            return jobConfigBuild.buildJobConfig(dto);
+//            return jobConfigBuild.buildJobConfig(dto);
+            return "";
         } catch (ServiceException e) {
             throw e;
         } catch (Exception e) {
@@ -133,7 +134,7 @@ public class JobInstanceServiceImpl implements JobInstanceService {
         validateDefinitionCommand(dto);
 
         try {
-            return jobConfigBuild.buildBatchDagConfig(dto);
+            return "";
         } catch (ServiceException e) {
             throw e;
         } catch (Exception e) {

@@ -1,37 +1,46 @@
 package org.apache.seatunnel.web.core.builder;
 
-
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigRenderOptions;
-import org.apache.seatunnel.web.common.enums.JobMode;
-import org.apache.seatunnel.web.spi.bean.dto.BaseJobDefinitionCommand;
-import org.apache.seatunnel.web.spi.bean.dto.SeatunnelStreamingJobDefinitionDTO;
+import org.apache.seatunnel.web.spi.bean.dto.JobBasicConfig;
 import org.springframework.stereotype.Component;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Component
 public class EnvConfigBuilder {
 
-    public String build(BaseJobDefinitionCommand dto) {
-        Map<String, Object> map = new HashMap<>();
-        map.put("job.mode", dto.getJobType().getCode());
-        map.put("parallelism", dto.getParallelism());
-        JobMode jobMode = dto.getJobType();
-        if (jobMode == JobMode.STREAMING) {
-            SeatunnelStreamingJobDefinitionDTO streamDot = (SeatunnelStreamingJobDefinitionDTO) dto;
-            map.put("checkpoint.interval", streamDot.getCheckpointConfig());
-            map.put("checkpoint.timeout", streamDot.getCheckpointConfig());
+    public String build(JobBasicConfig basic) {
+        if (basic == null) {
+            throw new IllegalArgumentException("JobBasicConfig cannot be null");
         }
 
-        Config cfg = ConfigFactory.parseMap(map);
+        Map<String, Object> envMap = new LinkedHashMap<>();
+        fillCommonConfig(envMap, basic);
+        fillBatchConfig(envMap, basic);
 
+        Config cfg = ConfigFactory.parseMap(envMap);
         return cfg.root().render(
                 ConfigRenderOptions.defaults()
                         .setJson(false)
                         .setComments(false)
-                        .setOriginComments(false));
+                        .setOriginComments(false)
+        );
+    }
+
+    private void fillCommonConfig(Map<String, Object> envMap, JobBasicConfig basic) {
+        if (basic.getJobType() != null) {
+            envMap.put("job.mode", basic.getJobType().getCode());
+        }
+
+        if (basic.getParallelism() != null && basic.getParallelism() > 0) {
+            envMap.put("parallelism", basic.getParallelism());
+        }
+    }
+
+    private void fillBatchConfig(Map<String, Object> envMap, JobBasicConfig basic) {
+
     }
 }

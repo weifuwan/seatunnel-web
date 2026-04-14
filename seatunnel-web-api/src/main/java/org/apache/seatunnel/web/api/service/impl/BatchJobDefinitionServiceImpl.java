@@ -63,7 +63,6 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
 
             JobDefinitionAnalysisResult analysis = handler.analyze(command);
             String definitionContent = handler.serializeDefinition(command);
-            String hoconContent = handler.buildHoconConfig(command);
 
             JobDefinitionEntity existing = command.getId() == null
                     ? null

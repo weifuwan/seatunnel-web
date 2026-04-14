@@ -2,6 +2,7 @@ package org.apache.seatunnel.web.core.builder.sink;
 
 import com.typesafe.config.Config;
 import jakarta.annotation.Resource;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.seatunnel.plugin.datasource.api.jdbc.DataSourceProcessor;
 import org.apache.seatunnel.plugin.datasource.api.utils.DataSourceUtils;
 import org.apache.seatunnel.web.common.config.ConfigValidator;
@@ -11,84 +12,107 @@ import org.apache.seatunnel.web.dao.repository.DataSourceDao;
 import org.apache.seatunnel.web.spi.enums.DbType;
 import org.springframework.stereotype.Component;
 
-
 /**
- * JDBC Sink node builder.
- *
- * <p>
- * This builder generates the HOCON configuration for a JDBC sink node in a SeaTunnel job.
- * It validates the configuration using the DataSourceProcessor and rules defined for the sink.
- * </p>
+ * JDBC sink node builder.
  */
 @Component
 public class JdbcSinkBuilder implements SinkNodeConfigBuilder {
 
-    @Resource
-    private DataSourceDao dataSourceDao; // Service to fetch data source details
+    private static final String NODE_TYPE = "sink";
+    private static final String KEY_SINK_DATA_SOURCE_ID = "sinkDataSourceId";
+    private static final String KEY_DB_TYPE = "dbType";
+    private static final String KEY_PLUGIN_NAME = "pluginName";
+    private static final String KEY_CONNECTOR_TYPE = "connectorType";
 
-    /**
-     * Node type identifier.
-     *
-     * @return the node type string "sink"
-     */
+    @Resource
+    private DataSourceDao dataSourceDao;
+
     @Override
     public String nodeType() {
-        return "sink";
+        return NODE_TYPE;
     }
 
-    /**
-     * Build the HOCON configuration for the JDBC sink node.
-     *
-     * <p>
-     * Steps:
-     * </p>
-     * <ol>
-     *     <li>Retrieve sinkId from input config</li>
-     *     <li>Fetch the corresponding DataSourceVO from database</li>
-     *     <li>Obtain the DataSourceProcessor based on dbType</li>
-     *     <li>Build the sink HOCON configuration</li>
-     *     <li>Validate the configuration using the processor rules</li>
-     * </ol>
-     *
-     * @param data the input configuration containing sinkId, dbType, and other parameters
-     * @return validated HOCON configuration for the sink node
-     * @throws RuntimeException if sinkId is missing or DataSourceVO does not exist
-     */
     @Override
     public Config build(Config data) {
-        Long sinkId = data.getLong("sinkId");
+        Long sinkDataSourceId = parseSinkDataSourceId(data);
+        DataSource dataSource = getRequiredDataSource(sinkDataSourceId);
+        DbType dbType = parseDbType(data);
+        String connectorName = connectorName(data);
 
-        // Retrieve the data source from database
-        DataSource ds = dataSourceDao.queryById(sinkId);
-        if (ds == null) {
-            throw new RuntimeException("Data source does not exist");
-        }
+        DataSourceProcessor processor = DataSourceUtils.getDatasourceProcessor(dbType);
+        Config sinkConfig = processor.getQueryBuilder(connectorName)
+                .buildSinkHocon(dataSource.getConnectionParams(), data);
 
-        // Get processor based on database type
-        DataSourceProcessor processor =
-                DataSourceUtils.getDatasourceProcessor(DbType.valueOf(data.getString("dbType")));
-
-        String pluginName = data.getString("pluginName");
-
-        // Build sink configuration
-        Config cfg = processor.getQueryBuilder(pluginName)
-                .buildSinkHocon(ds.getConnectionParams(), data);
-
-        // Validate configuration using processor-defined rules
-        ConfigValidator.of(ReadonlyConfig.fromConfig(cfg))
-                .validate(processor.sinkOptionRule());
-
-        return cfg;
+        validateSinkConfig(processor, sinkConfig);
+        return sinkConfig;
     }
 
     /**
-     * Return the connector type name for this sink node.
-     *
-     * @param data input configuration
-     * @return connector type string
+     * Prefer pluginName. Fall back to connectorType when pluginName is blank.
      */
     @Override
     public String connectorName(Config data) {
-        return data.getString("connectorType");
+        String pluginName = getTrimmedString(data, KEY_PLUGIN_NAME);
+        if (StringUtils.isNotBlank(pluginName)) {
+            return pluginName;
+        }
+
+        String connectorType = getTrimmedString(data, KEY_CONNECTOR_TYPE);
+        if (StringUtils.isNotBlank(connectorType)) {
+            return connectorType;
+        }
+
+        throw new IllegalArgumentException(
+                "Missing connector name, neither '" + KEY_PLUGIN_NAME + "' nor '" + KEY_CONNECTOR_TYPE + "' is provided");
+    }
+
+    private Long parseSinkDataSourceId(Config data) {
+        String value = getTrimmedString(data, KEY_SINK_DATA_SOURCE_ID);
+        if (StringUtils.isBlank(value)) {
+            throw new IllegalArgumentException(
+                    "Missing required field '" + KEY_SINK_DATA_SOURCE_ID + "' in sink node config");
+        }
+
+        try {
+            return Long.valueOf(value);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException(
+                    "Invalid '" + KEY_SINK_DATA_SOURCE_ID + "': " + value + ", expected numeric value", e);
+        }
+    }
+
+    private DataSource getRequiredDataSource(Long sinkDataSourceId) {
+        DataSource dataSource = dataSourceDao.queryById(sinkDataSourceId);
+        if (dataSource == null) {
+            throw new IllegalArgumentException(
+                    "Sink data source does not exist, sinkDataSourceId=" + sinkDataSourceId);
+        }
+        return dataSource;
+    }
+
+    private DbType parseDbType(Config data) {
+        String dbTypeValue = getTrimmedString(data, KEY_DB_TYPE);
+        if (StringUtils.isBlank(dbTypeValue)) {
+            throw new IllegalArgumentException("Missing required field '" + KEY_DB_TYPE + "' in sink node config");
+        }
+
+        try {
+            return DbType.valueOf(dbTypeValue);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Unsupported dbType: " + dbTypeValue, e);
+        }
+    }
+
+    private void validateSinkConfig(DataSourceProcessor processor, Config sinkConfig) {
+        ConfigValidator.of(ReadonlyConfig.fromConfig(sinkConfig))
+                .validate(processor.sinkOptionRule());
+    }
+
+    private String getTrimmedString(Config data, String path) {
+        if (data == null || !data.hasPath(path)) {
+            return null;
+        }
+        String value = data.getString(path);
+        return value == null ? null : value.trim();
     }
 }

@@ -108,6 +108,7 @@ export default function SingleConfigPage() {
     if (!cache) return;
 
     const data = JSON.parse(cache);
+    console.log(data);
     setParams(data);
     setSourceType(data?.sourceType || null);
     setTargetType(data?.targetType || null);

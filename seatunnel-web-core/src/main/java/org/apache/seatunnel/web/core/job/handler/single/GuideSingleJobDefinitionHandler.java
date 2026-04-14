@@ -2,8 +2,6 @@ package org.apache.seatunnel.web.core.job.handler.single;
 
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.seatunnel.web.common.enums.JobDefinitionMode;
 import org.apache.seatunnel.web.common.utils.JSONUtils;
@@ -22,12 +20,15 @@ public class GuideSingleJobDefinitionHandler implements JobDefinitionModeHandler
 
     private final GuideSingleWorkflowValidator workflowValidator;
     private final GuideSingleWorkflowAnalyzer workflowAnalyzer;
+    private final GuideSingleHoconBuildService hoconBuildService;
 
     public GuideSingleJobDefinitionHandler(
             GuideSingleWorkflowValidator workflowValidator,
-            GuideSingleWorkflowAnalyzer workflowAnalyzer) {
+            GuideSingleWorkflowAnalyzer workflowAnalyzer,
+            GuideSingleHoconBuildService hoconBuildService) {
         this.workflowValidator = workflowValidator;
         this.workflowAnalyzer = workflowAnalyzer;
+        this.hoconBuildService = hoconBuildService;
     }
 
     @Override
@@ -55,7 +56,8 @@ public class GuideSingleJobDefinitionHandler implements JobDefinitionModeHandler
 
     @Override
     public String buildHoconConfig(JobDefinitionSaveCommand command) {
-        return "TODO build guide single hocon";
+        GuideSingleJobSaveCommand cmd = (GuideSingleJobSaveCommand) command;
+        return hoconBuildService.build(cmd);
     }
 
     @Override
@@ -64,23 +66,12 @@ public class GuideSingleJobDefinitionHandler implements JobDefinitionModeHandler
             return;
         }
 
-        ObjectNode root = JSONUtils.parseObject(definitionContent);
-        if (root == null) {
-            dto.setWorkflow(Collections.emptyMap());
-            return;
-        }
-
-        JsonNode workflowNode = root.get("workflow");
-        if (workflowNode == null || workflowNode.isNull() || !workflowNode.isObject()) {
-            dto.setWorkflow(Collections.emptyMap());
-            return;
-        }
-
         Map<String, Object> workflow = JSONUtils.parseObject(
-                workflowNode.toString(),
-                new TypeReference<Map<String, Object>>() {
+                definitionContent,
+                new TypeReference<>() {
                 }
         );
+
         dto.setWorkflow(workflow != null ? workflow : Collections.emptyMap());
     }
 }

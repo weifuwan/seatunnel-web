@@ -1,6 +1,7 @@
 package org.apache.seatunnel.web.core.builder;
 
 import com.typesafe.config.Config;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Builder interface for creating node configuration objects.
@@ -27,12 +28,35 @@ public interface NodeConfigBuilder<T> {
     /**
      * Extract the connector name from the node configuration.
      * <p>
-     * By default, the connector name is read from the {@code connectorType} field.
+     * Prefer {@code pluginName}; if absent, fallback to {@code connectorType}.
      *
      * @param data the configuration data of the node
      * @return the connector name
      */
     default String connectorName(Config data) {
-        return data.getString("pluginName").contains("CDC") ? data.getString("pluginName") : data.getString("connectorType");
+        Config config = resolveNodeConfig(data);
+
+        if (config.hasPath("pluginName")) {
+            String pluginName = config.getString("pluginName");
+            if (StringUtils.isNotBlank(pluginName)) {
+                return pluginName;
+            }
+        }
+
+        if (config.hasPath("connectorType")) {
+            String connectorType = config.getString("connectorType");
+            if (StringUtils.isNotBlank(connectorType)) {
+                return connectorType;
+            }
+        }
+
+        throw new RuntimeException("pluginName or connectorType is missing");
+    }
+
+    default Config resolveNodeConfig(Config data) {
+        if (data == null) {
+            throw new RuntimeException("node data is null");
+        }
+        return data.hasPath("config") ? data.getConfig("config") : data;
     }
 }

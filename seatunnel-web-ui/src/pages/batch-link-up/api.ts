@@ -61,6 +61,24 @@ export const seatunnelJobDefinitionApi = {
     return HttpUtils.post(`${apiPrefix}/page`, data);
   },
 
+  /**
+   * GUIDE_SINGLE 模式预览 HOCON
+   */
+  buildGuideSingleConfig: (
+    data: any,
+  ): Promise<{ code: number; data: string; message?: string }> => {
+    return HttpUtils.post(`${apiPrefix}/guide-single/build-config`, data);
+  },
+
+  /**
+   * GUIDE_MULTI 模式预览 HOCON
+   */
+  buildGuideMultiConfig: (
+    data: any,
+  ): Promise<{ code: number; data: string; message?: string }> => {
+    return HttpUtils.post(`${apiPrefix}/guide-multi/build-config`, data);
+  },
+
   hocon: (data: any) => {
     return HttpUtils.post(`${apiPrefix}/buildHoconConfig`, data);
   },

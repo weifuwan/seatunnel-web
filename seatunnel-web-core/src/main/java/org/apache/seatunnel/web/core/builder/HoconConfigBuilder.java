@@ -9,6 +9,7 @@ import org.apache.seatunnel.web.core.builder.transform.TransformNodeConfigBuilde
 import org.apache.seatunnel.web.core.dag.DagGraph;
 import org.apache.seatunnel.web.core.utils.SeaTunnelConfigUtil;
 import org.apache.seatunnel.web.spi.bean.dto.BaseJobDefinitionCommand;
+import org.apache.seatunnel.web.spi.bean.dto.JobBasicConfig;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -43,13 +44,14 @@ public class HoconConfigBuilder {
      * @param dagGraph the DAG representation of the job
      * @return HOCON string representing the full job configuration
      */
-    public String build(DagGraph dagGraph, BaseJobDefinitionCommand dto) {
+    public String build(DagGraph dagGraph, JobBasicConfig basic) {
         NodeGroup group = groupNodes(dagGraph.getNodesAsConfig());
         return SeaTunnelConfigUtil.generateConfig(
-                envConfigBuilder.build(dto),       // env section
-                render(group.sources()),        // source section
-                render(group.transforms()),     // transform section
-                render(group.sinks()));         // sink section
+                envConfigBuilder.build(basic),
+                render(group.sources()),
+                render(group.transforms()),
+                render(group.sinks())
+        );
     }
 
     /**

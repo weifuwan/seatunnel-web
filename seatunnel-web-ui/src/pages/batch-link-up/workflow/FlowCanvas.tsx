@@ -44,8 +44,9 @@ function buildInitialGraph(
   nodes: Node[];
   edges: Edge[];
 } {
-  const sourceId = "source-node";
-  const sinkId = "sink-node";
+  const timestamp = Date.now();
+  const sourceId = `source-${timestamp}`;
+  const sinkId = `sink-${timestamp}`;
 
   const sourceDbType = sourceType?.dbType || "MYSQL";
   const targetDbType = targetType?.dbType || "MYSQL";
@@ -74,6 +75,10 @@ function buildInitialGraph(
         dbType: sourceDbType,
         config: {
           sourceDataSourceId: params?.sourceDataSourceId || "",
+          dbType: sourceType?.dbType,
+          connectorType: sourceType?.connectorType,
+          pluginName: sourceType?.pluginName,
+          plugin_output: sourceId,
           readMode: "table",
           sourceTable: undefined,
           sql: "",
@@ -95,14 +100,9 @@ function buildInitialGraph(
         title: sinkTitle,
         description: "写入目标端数据",
         dbType: targetDbType,
-        config: {
-          targetDataSourceId: params?.targetDataSourceId || "",
-        },
-        meta: {
-          inputSchema: [],
-          schemaStatus: "idle",
-          schemaError: "",
-        },
+        connectorType: targetType?.connectorType,
+        pluginName: targetType?.pluginName,
+        plugin_input: sinkId,
       },
     },
   ];

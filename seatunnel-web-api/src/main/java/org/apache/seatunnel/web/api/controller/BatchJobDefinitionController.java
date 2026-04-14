@@ -9,14 +9,21 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.seatunnel.web.api.exceptions.ApiException;
 import org.apache.seatunnel.web.api.service.BatchJobDefinitionService;
 import org.apache.seatunnel.web.common.utils.CodeGenerateUtils;
-import org.apache.seatunnel.web.spi.bean.dto.*;
+import org.apache.seatunnel.web.spi.bean.dto.BatchJobDefinitionQueryDTO;
+import org.apache.seatunnel.web.spi.bean.dto.GuideMultiJobSaveCommand;
+import org.apache.seatunnel.web.spi.bean.dto.GuideSingleJobSaveCommand;
+import org.apache.seatunnel.web.spi.bean.dto.JobDefinitionEditDTO;
+import org.apache.seatunnel.web.spi.bean.dto.ScriptJobSaveCommand;
 import org.apache.seatunnel.web.spi.bean.entity.PaginationResult;
 import org.apache.seatunnel.web.spi.bean.entity.Result;
 import org.apache.seatunnel.web.spi.bean.vo.BatchJobDefinitionVO;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import static org.apache.seatunnel.web.spi.enums.Status.*;
+import static org.apache.seatunnel.web.spi.enums.Status.DELETE_BATCH_JOB_DEFINITION_ERROR;
+import static org.apache.seatunnel.web.spi.enums.Status.GET_BATCH_JOB_UNIQUE_ID_ERROR;
+import static org.apache.seatunnel.web.spi.enums.Status.QUERY_BATCH_JOB_DEFINITION_ERROR;
+import static org.apache.seatunnel.web.spi.enums.Status.SAVE_OR_UPDATE_BATCH_JOB_DEFINITION_ERROR;
 
 @Slf4j
 @RestController
@@ -39,6 +46,16 @@ public class BatchJobDefinitionController {
     }
 
     /**
+     * 预览生成 SCRIPT 模式 HOCON 配置
+     */
+    @PostMapping("/script/build-config")
+    @Operation(summary = "buildScriptJobHoconConfig", description = "BUILD_SCRIPT_JOB_HOCON_CONFIG_NOTES")
+    @ApiException(QUERY_BATCH_JOB_DEFINITION_ERROR)
+    public Result<String> buildScriptConfig(@RequestBody ScriptJobSaveCommand command) {
+        return Result.buildSuc(batchJobDefinitionService.buildHoconConfig(command));
+    }
+
+    /**
      * 保存或更新 GUIDE_SINGLE 模式任务
      */
     @PostMapping("/guide-single/saveOrUpdate")
@@ -49,6 +66,16 @@ public class BatchJobDefinitionController {
     }
 
     /**
+     * 预览生成 GUIDE_SINGLE 模式 HOCON 配置
+     */
+    @PostMapping("/guide-single/build-config")
+    @Operation(summary = "buildGuideSingleJobHoconConfig", description = "BUILD_GUIDE_SINGLE_JOB_HOCON_CONFIG_NOTES")
+    @ApiException(QUERY_BATCH_JOB_DEFINITION_ERROR)
+    public Result<String> buildGuideSingleConfig(@RequestBody GuideSingleJobSaveCommand command) {
+        return Result.buildSuc(batchJobDefinitionService.buildHoconConfig(command));
+    }
+
+    /**
      * 保存或更新 GUIDE_MULTI 模式任务
      */
     @PostMapping("/guide-multi/saveOrUpdate")
@@ -56,6 +83,16 @@ public class BatchJobDefinitionController {
     @ApiException(SAVE_OR_UPDATE_BATCH_JOB_DEFINITION_ERROR)
     public Result<Long> saveGuideMulti(@RequestBody GuideMultiJobSaveCommand command) {
         return Result.buildSuc(batchJobDefinitionService.saveOrUpdate(command));
+    }
+
+    /**
+     * 预览生成 GUIDE_MULTI 模式 HOCON 配置
+     */
+    @PostMapping("/guide-multi/build-config")
+    @Operation(summary = "buildGuideMultiJobHoconConfig", description = "BUILD_GUIDE_MULTI_JOB_HOCON_CONFIG_NOTES")
+    @ApiException(QUERY_BATCH_JOB_DEFINITION_ERROR)
+    public Result<String> buildGuideMultiConfig(@RequestBody GuideMultiJobSaveCommand command) {
+        return Result.buildSuc(batchJobDefinitionService.buildHoconConfig(command));
     }
 
     /**
@@ -104,7 +141,9 @@ public class BatchJobDefinitionController {
         return Result.buildSuc(CodeGenerateUtils.getInstance().genCode());
     }
 
-
+    /**
+     * 查询任务编辑详情
+     */
     @GetMapping("/{id}/edit-detail")
     @Operation(summary = "查询任务编辑详情")
     public Result<JobDefinitionEditDTO> selectEditDetail(@PathVariable Long id) {

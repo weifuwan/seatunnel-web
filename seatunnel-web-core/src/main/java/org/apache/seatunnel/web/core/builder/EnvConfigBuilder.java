@@ -31,8 +31,8 @@ public class EnvConfigBuilder {
     }
 
     private void fillCommonConfig(Map<String, Object> envMap, JobBasicConfig basic) {
-        if (basic.getJobType() != null) {
-            envMap.put("job.mode", basic.getJobType().getCode());
+        if (basic.getMode() != null) {
+            envMap.put("job.mode", basic.getJobMode().getCode());
         }
 
         if (basic.getParallelism() != null && basic.getParallelism() > 0) {

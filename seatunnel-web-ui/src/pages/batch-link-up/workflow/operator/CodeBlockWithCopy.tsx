@@ -1,116 +1,206 @@
-import { CheckCircleOutlined, CopyOutlined } from "@ant-design/icons";
-import { useState } from "react";
+import {
+  CheckCircleOutlined,
+  CopyOutlined,
+  CloseOutlined,
+} from "@ant-design/icons";
+import React, { useMemo, useState } from "react";
 
-const CodeBlockWithCopy = ({ content }) => {
+interface CodeBlockWithCopyProps {
+  content?: string;
+  height?: number;
+  title?: string;
+  onClose?: () => void;
+}
+
+type TokenType =
+  | "brace"
+  | "string"
+  | "key"
+  | "number"
+  | "boolean"
+  | "plain";
+
+interface Token {
+  text: string;
+  type: TokenType;
+}
+
+const CodeBlockWithCopy: React.FC<CodeBlockWithCopyProps> = ({
+  content = "",
+  height = 460,
+  title = "HOCON Preview",
+  onClose,
+}) => {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
     try {
-      // 去除 HTML 标签，获取纯文本内容
-      const plainText = content.replace(/<[^>]*>/g, "");
-      await navigator.clipboard.writeText(plainText);
+      await navigator.clipboard.writeText(content);
       setCopied(true);
-
-      // 2秒后恢复复制按钮状态
-      setTimeout(() => {
-        setCopied(false);
-      }, 2000);
+      setTimeout(() => setCopied(false), 1800);
     } catch (err) {
-      console.error("复制失败:", err);
-      // 降级方案：使用 document.execCommand
       const textArea = document.createElement("textarea");
-      textArea.value = content.replace(/<[^>]*>/g, "");
+      textArea.value = content;
+      textArea.style.position = "fixed";
+      textArea.style.opacity = "0";
       document.body.appendChild(textArea);
       textArea.select();
+
       try {
         document.execCommand("copy");
         setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      } catch (copyErr) {
-        console.error("降级复制也失败:", copyErr);
+        setTimeout(() => setCopied(false), 1800);
+      } finally {
+        document.body.removeChild(textArea);
       }
-      document.body.removeChild(textArea);
     }
   };
 
-  const simpleHighlight = (text) => {
-    if (!text) return "";
+  const tokenizeLine = (line: string): Token[] => {
+    const tokens: Token[] = [];
+    let i = 0;
 
-    // 只处理大括号和中括号，避免冲突
-    return text
-      .split("")
-      .map((char) => {
-        if (char === "{" || char === "}") {
-          return `<span style="color: #d73a49; font-weight: 600;">${char}</span>`;
+    while (i < line.length) {
+      const ch = line[i];
+
+      if ("{}[]".includes(ch)) {
+        tokens.push({ text: ch, type: "brace" });
+        i += 1;
+        continue;
+      }
+
+      if (ch === '"') {
+        let j = i + 1;
+        while (j < line.length) {
+          if (line[j] === '"' && line[j - 1] !== "\\") break;
+          j += 1;
         }
-        if (char === "[" || char === "]") {
-          return `<span style="color: #6f42c1; font-weight: 600;">${char}</span>`;
-        }
-        return char;
-      })
-      .join("");
+        const str = line.slice(i, Math.min(j + 1, line.length));
+        tokens.push({ text: str, type: "string" });
+        i = Math.min(j + 1, line.length);
+        continue;
+      }
+
+      const keyMatch = line.slice(i).match(/^[A-Za-z0-9._-]+(?=\s*=)/);
+      if (keyMatch) {
+        tokens.push({ text: keyMatch[0], type: "key" });
+        i += keyMatch[0].length;
+        continue;
+      }
+
+      const boolMatch = line.slice(i).match(/^(true|false|null)\b/);
+      if (boolMatch) {
+        tokens.push({ text: boolMatch[0], type: "boolean" });
+        i += boolMatch[0].length;
+        continue;
+      }
+
+      const numberMatch = line.slice(i).match(/^\d+(\.\d+)?\b/);
+      if (numberMatch) {
+        tokens.push({ text: numberMatch[0], type: "number" });
+        i += numberMatch[0].length;
+        continue;
+      }
+
+      let j = i + 1;
+      while (
+        j < line.length &&
+        !'{}[]"'.includes(line[j]) &&
+        !line.slice(j).match(/^[A-Za-z0-9._-]+(?=\s*=)/) &&
+        !line.slice(j).match(/^(true|false|null)\b/) &&
+        !line.slice(j).match(/^\d+(\.\d+)?\b/)
+      ) {
+        j += 1;
+      }
+
+      tokens.push({ text: line.slice(i, j), type: "plain" });
+      i = j;
+    }
+
+    return tokens;
+  };
+
+  const lines = useMemo(() => {
+    return content.split("\n").map((line) => tokenizeLine(line));
+  }, [content]);
+
+  const getTokenClassName = (type: TokenType) => {
+    switch (type) {
+      case "brace":
+        return "text-sky-600 font-semibold";
+      case "string":
+        return "text-emerald-600";
+      case "key":
+        return "text-slate-800 font-medium";
+      case "number":
+        return "text-amber-600";
+      case "boolean":
+        return "text-violet-600 font-medium";
+      default:
+        return "text-slate-700";
+    }
   };
 
   return (
-    <div style={{ height: "70vh", overflowY: "auto", position: "relative" }}>
-      {/* 复制按钮 */}
-      <div
-        onClick={handleCopy}
-        style={{
-          position: "absolute",
-          top: "20px",
-          right: "20px",
-          zIndex: 10,
-          backgroundColor: copied ? "#52c41a" : "#1890ff",
-          color: "white",
-          border: "none",
-          borderRadius: "4px",
-          padding: "6px 12px",
-          fontSize: "12px",
-          cursor: "pointer",
-          display: "flex",
-          alignItems: "center",
-          gap: "4px",
-          transition: "all 0.3s ease",
-          boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
-        }}
-      >
-        {copied ? (
-          <>
-            <CheckCircleOutlined />
-            
-          </>
-        ) : (
-          <>
-            <CopyOutlined />
-            
-          </>
-        )}
+    <div
+      className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
+      style={{ height }}
+    >
+      <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50 px-4 py-3">
+        <div className="flex items-center gap-2">
+          {/* <div className="h-2 w-2 rounded-full bg-sky-500" /> */}
+          <span className="text-sm font-semibold text-slate-700">{title}</span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleCopy}
+            style={{borderRadius: 16}}
+            className={[
+              "inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all",
+              copied
+                ? "border-emerald-200 bg-emerald-50 text-emerald-600"
+                : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50",
+            ].join(" ")}
+          >
+            {copied ? <CheckCircleOutlined /> : <CopyOutlined />}
+            <span>{copied ? "已复制" : "复制代码"}</span>
+          </button>
+
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+              title="关闭"
+            >
+              <CloseOutlined />
+            </button>
+          )}
+        </div>
       </div>
 
       <div
-        style={{
-          backgroundColor: "rgb(21 90 239/0.08)",
-          borderRadius: 8,
-          padding: "12px",
-          paddingTop: "12px", // 给复制按钮留出空间
-          color: "black",
-          fontFamily: "monospace",
-          whiteSpace: "pre-wrap",
-          wordBreak: "break-all",
-          fontSize: "14px",
-          lineHeight: "1.5",
-          overflow: "auto",
-          maxHeight: "100%",
-          position: "relative",
-        }}
+        className="overflow-auto bg-slate-50/70"
+        style={{ height: `calc(${height}px - 57px)` }}
       >
-        <pre style={{ margin: 0 }}>
-          <code
-            dangerouslySetInnerHTML={{
-              __html: simpleHighlight(content),
-            }}
-          />
+        <pre className="m-0 p-5 font-mono text-[13px] leading-7">
+          {lines.map((lineTokens, lineIndex) => (
+            <div
+              key={lineIndex}
+              className="min-h-[28px] whitespace-pre-wrap break-words"
+            >
+              {lineTokens.map((token, tokenIndex) => (
+                <span
+                  key={`${lineIndex}-${tokenIndex}`}
+                  className={getTokenClassName(token.type)}
+                >
+                  {token.text}
+                </span>
+              ))}
+            </div>
+          ))}
         </pre>
       </div>
     </div>

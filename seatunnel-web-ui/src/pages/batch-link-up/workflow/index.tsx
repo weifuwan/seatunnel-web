@@ -1,5 +1,5 @@
 import { ArrowLeftOutlined } from "@ant-design/icons";
-import { Button, Col, Form, message, Popover, Row, Space, Tooltip } from "antd";
+import { Button, Col, Form, message, Popover, Row, Space } from "antd";
 import { Blocks, Braces, Database } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { ReactFlowProvider } from "reactflow";
@@ -10,7 +10,7 @@ import {
   BasicConfig,
   ScheduleConfig,
 } from "./components/ScheduleConfigContent/types";
-import CloseIcon from "./icon/CloseIcon";
+import "./index.less";
 import styles from "./index.less";
 import CodeBlockWithCopy from "./operator/CodeBlockWithCopy";
 
@@ -99,23 +99,11 @@ export default function Workflow({
   const buildBasicData = () => {
     return {
       ...basicConfig,
-      sourceType: sourceType
-        ? {
-            dbType: sourceType.dbType,
-            connectorType: sourceType.connectorType,
-            pluginName: sourceType.pluginName,
-          }
-        : undefined,
-      targetType: targetType
-        ? {
-            dbType: targetType.dbType,
-            connectorType: targetType.connectorType,
-            pluginName: targetType.pluginName,
-          }
-        : undefined,
+      jobMode: "BATCH",
+      parallelism: 1,
     };
   };
-  
+
   const buildScheduleData = () => {
     return {
       ...scheduleConfig,
@@ -211,39 +199,17 @@ export default function Workflow({
                     </div>
                     <Popover
                       open={previewOpen}
-                      placement="topLeft"
+                      placement="leftTop"
+                      trigger="click"
+                      overlayClassName="st-hocon-popover"
                       content={
-                        <div
-                          className={styles["publish-popover"]}
-                          style={{ width: 600, height: 500 }}
-                        >
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "space-between",
-                              marginBottom: 6,
-                            }}
-                          >
-                            <div
-                              className={styles["latest-publish"]}
-                              style={{ fontWeight: 500 }}
-                            >
-                              SeaTunnel HOCON
-                            </div>
-
-                            <div
-                              onClick={() => setPreviewOpen(false)}
-                              style={{ cursor: "pointer" }}
-                              title={"关闭"}
-                            >
-                              <CloseIcon />
-                            </div>
-                          </div>
-
-                          <Tooltip title={"HOCON preview"}>
-                            <CodeBlockWithCopy content={previewContent} />
-                          </Tooltip>
+                        <div className="w-[700px]">
+                          <CodeBlockWithCopy
+                            content={previewContent}
+                            height={670}
+                            title="HOCON Preview"
+                            onClose={() => setPreviewOpen(false)}
+                          />
                         </div>
                       }
                     >

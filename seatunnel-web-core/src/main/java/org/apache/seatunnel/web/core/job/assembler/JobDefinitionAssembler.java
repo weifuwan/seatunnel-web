@@ -19,7 +19,7 @@ public class JobDefinitionAssembler {
                 .jobName(basic.getJobName())
                 .jobDesc(basic.getJobDesc())
                 .mode(command.getMode())
-                .jobType(basic.getJobType())
+                .jobType(basic.getJobMode())
                 .clientId(basic.getClientId())
                 .parallelism(basic.getParallelism())
                 .jobVersion(1)
@@ -42,7 +42,7 @@ public class JobDefinitionAssembler {
         entity.setJobName(basic.getJobName());
         entity.setJobDesc(basic.getJobDesc());
         entity.setMode(command.getMode());
-        entity.setJobType(basic.getJobType());
+        entity.setJobType(basic.getJobMode());
         entity.setClientId(basic.getClientId());
         entity.setParallelism(basic.getParallelism());
         entity.setJobVersion(nextVersion);

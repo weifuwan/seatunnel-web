@@ -262,7 +262,7 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
         JobBasicConfig basic = new JobBasicConfig();
         basic.setId(definition.getId());
         basic.setMode(definition.getMode());
-        basic.setJobType(definition.getJobType());
+        basic.setJobMode(definition.getJobType());
         basic.setJobName(definition.getJobName());
         basic.setJobDesc(definition.getJobDesc());
         basic.setClientId(definition.getClientId());

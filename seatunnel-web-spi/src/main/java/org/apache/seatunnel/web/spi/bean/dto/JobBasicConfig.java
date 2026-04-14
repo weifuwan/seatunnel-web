@@ -20,7 +20,7 @@ public class JobBasicConfig {
     /**
      * BATCH / STREAMING
      */
-    private JobMode jobType;
+    private JobMode jobMode;
 
     private String jobName;
 

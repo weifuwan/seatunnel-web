@@ -36,12 +36,12 @@ public interface NodeConfigBuilder<T> {
     default String connectorName(Config data) {
         Config config = resolveNodeConfig(data);
 
-        if (config.hasPath("pluginName")) {
-            String pluginName = config.getString("pluginName");
-            if (StringUtils.isNotBlank(pluginName)) {
-                return pluginName;
-            }
-        }
+//        if (config.hasPath("pluginName")) {
+//            String pluginName = config.getString("pluginName");
+//            if (StringUtils.isNotBlank(pluginName)) {
+//                return pluginName;
+//            }
+//        }
 
         if (config.hasPath("connectorType")) {
             String connectorType = config.getString("connectorType");

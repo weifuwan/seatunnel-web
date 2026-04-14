@@ -37,14 +37,22 @@ public class JdbcSinkBuilder implements SinkNodeConfigBuilder {
         Long sinkDataSourceId = parseSinkDataSourceId(data);
         DataSource dataSource = getRequiredDataSource(sinkDataSourceId);
         DbType dbType = parseDbType(data);
-        String connectorName = connectorName(data);
+
+        String pluginName = getString(data, "pluginName");
+        if (StringUtils.isBlank(pluginName)) {
+            throw new RuntimeException("pluginName is missing");
+        }
 
         DataSourceProcessor processor = DataSourceUtils.getDatasourceProcessor(dbType);
-        Config sinkConfig = processor.getQueryBuilder(connectorName)
+        Config sinkConfig = processor.getQueryBuilder(pluginName)
                 .buildSinkHocon(dataSource.getConnectionParams(), data);
 
         validateSinkConfig(processor, sinkConfig);
         return sinkConfig;
+    }
+
+    private String getString(Config config, String path) {
+        return config.hasPath(path) ? config.getString(path) : null;
     }
 
     /**
@@ -52,10 +60,6 @@ public class JdbcSinkBuilder implements SinkNodeConfigBuilder {
      */
     @Override
     public String connectorName(Config data) {
-        String pluginName = getTrimmedString(data, KEY_PLUGIN_NAME);
-        if (StringUtils.isNotBlank(pluginName)) {
-            return pluginName;
-        }
 
         String connectorType = getTrimmedString(data, KEY_CONNECTOR_TYPE);
         if (StringUtils.isNotBlank(connectorType)) {

@@ -8,7 +8,7 @@ const SceneCopy = React.memo(() => {
         <TextType
           text={[
             "Welcome To SeaTunnel Web 🌊",
-            "连接数据的温柔入口 🌊",
+            "让数据优雅的流动起来 💫",
             "让流动更轻一点 ✨",
           ]}
           typingSpeed={75}

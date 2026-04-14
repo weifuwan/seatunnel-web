@@ -77,7 +77,8 @@ public class JdbcConnectivityTestJobDefinitionBuilder implements ConnectivityTes
 
     private Config buildMinimalSourceNodeConfig() {
         Map<String, Object> map = new LinkedHashMap<String, Object>(4);
-        map.put("query", "select 1 as connectivity_check");
+        map.put("sql", "select 1 as connectivity_check");
+        map.put("readMode", "sql");
         return ConfigFactory.parseMap(map);
     }
 

@@ -74,8 +74,8 @@ public abstract class AbstractJdbcBatchBuilder extends AbstractJdbcHoconBuilder
         if (StringUtils.isBlank(sourceTable)) {
             throw new IllegalArgumentException("Missing source table, sourceTable is required when sql is blank");
         }
-
-        map.put(KEY_TABLE_PATH, buildTablePath(database, schema, sourceTable));
+        map.put(KEY_TABLE_PATH, database);
+        map.put(KEY_DATABASE, buildTablePath(database, schema, sourceTable));
     }
 
     protected void appendSourceAdvancedOptions(Config config, Map<String, Object> map) {

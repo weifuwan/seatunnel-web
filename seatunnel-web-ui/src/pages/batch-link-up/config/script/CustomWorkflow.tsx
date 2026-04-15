@@ -1,15 +1,15 @@
 import { ArrowLeftOutlined } from "@ant-design/icons";
-import { Button, Popover, Space } from "antd";
-import { FileCode2 } from "lucide-react";
+import { Button, Popover, Space, Upload } from "antd";
+import { Eye, FileCode2, PlayCircle } from "lucide-react";
 
-import styles from "./index.less";
 import "./index.less";
+import styles from "./index.less";
 
 import CodeBlockWithCopy from "../../workflow/operator/CodeBlockWithCopy";
 import RightConfigPanel from "../../workflow/RightConfigPanel";
 
-import HoconEditorPanel from "./HoconEditorPanel";
 import { useResizablePanel } from "../multi/hooks/useResizablePanel";
+import HoconEditorPanel from "./HoconEditorPanel";
 import { useCustomWorkflowState } from "./hooks/useCustomWorkflowState";
 
 interface CustomWorkflowProps {
@@ -87,17 +87,6 @@ export default function CustomWorkflow({
                   <div className={styles.mainPanelTitle}>自定义编排</div>
 
                   <Space size={10}>
-                    <div className={styles.actionChip}>运行</div>
-
-                    <div
-                      className={styles.actionChip}
-                      onClick={handleSave}
-                      role="button"
-                      tabIndex={0}
-                    >
-                      发布
-                    </div>
-
                     <Popover
                       open={previewOpen}
                       placement="leftTop"
@@ -115,14 +104,33 @@ export default function CustomWorkflow({
                       }
                     >
                       <div
-                        className={styles.actionChip}
+                        className={`${styles.actionChip} ${styles.actionChipGhost}`}
                         onClick={handlePreview}
                         role="button"
                         tabIndex={0}
                       >
-                        {previewLoading ? "生成中..." : "预览"}
+                        <Eye size={15} strokeWidth={1.9} />
+                        <span style={{ marginLeft: 4 }}>
+                          {previewLoading ? "生成中..." : "预览"}
+                        </span>
                       </div>
                     </Popover>
+                    <div
+                      className={`${styles.actionChip} ${styles.actionChipGhost}`}
+                    >
+                      <PlayCircle size={15} strokeWidth={1.9} />
+                      <span style={{ marginLeft: 4 }}>运行</span>
+                    </div>
+
+                    <div
+                      className={`${styles.actionChip} ${styles.actionChipGhost}`}
+                      onClick={handleSave}
+                      role="button"
+                      tabIndex={0}
+                    >
+                      <Upload size={15} strokeWidth={1.9} />
+                      <span>发布</span>
+                    </div>
                   </Space>
                 </div>
 

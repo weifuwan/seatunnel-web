@@ -218,24 +218,53 @@
 }
 
 .actionChip {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  height: 32px;
-  padding: 0 12px;
-  color: #64748b;
-  font-size: 12px;
-  background: #f8fafc;
-  border: 1px solid #e7edf5;
+  justify-content: center;
+  height: 34px;
+  padding: 0 14px;
   border-radius: 999px;
-  transition: all 0.2s ease;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  user-select: none;
+  border: 1px solid transparent;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease,
+    // transform 0.2s ease
+    ;
+  
+  // &:hover {
+  //   transform: translateY(-1px);
+  // }
 
-  &:hover {
-    color: #334155;
-    border-color: #dbe3ee;
-    background: #ffffff;
+  svg {
+    flex: 0 0 auto;
+    opacity: 0.92;
+  }
+
+
+  &:active {
+    transform: translateY(0);
   }
 }
 
+.actionChipGhost {
+  color: #64748b;
+  background: #f8fafc;
+  border-color: #e5edf5;
+
+  &:hover {
+    color: #334155;
+    background: rgba(255,255,255,0.8);
+    border-color: #d7e2ec;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+  }
+}
 .nodePalette {
   display: flex;
   flex-direction: column;

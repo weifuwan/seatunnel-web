@@ -17,7 +17,7 @@ export function useCustomWorkflowState({
   scheduleConfig,
 }: UseCustomWorkflowStateProps) {
   const [activeTab, setActiveTab] = useState<RightPanelTab>("basic");
-  const [hoconContent, setHoconContent] = useState("");
+  const [hoconContent, setHoconContent] = useState<string>("");
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewContent, setPreviewContent] = useState("");
   const [previewLoading, setPreviewLoading] = useState(false);

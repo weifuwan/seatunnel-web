@@ -6,7 +6,7 @@ export const hoconTemplateApi = {
     sourcePluginName: string;
     targetDbType: string;
     targetPluginName: string;
-  }) => {
+  }): Promise<any> => {
     const {
       sourceDbType,
       sourcePluginName,

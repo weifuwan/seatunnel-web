@@ -1,55 +1,48 @@
 import { ArrowLeftOutlined } from "@ant-design/icons";
-import { Button, Form, Popover, Space } from "antd";
-import { Blocks } from "lucide-react";
+import { Button, Popover, Space } from "antd";
+import { FileCode2 } from "lucide-react";
 
 import styles from "./index.less";
 import "./index.less";
 
 import CodeBlockWithCopy from "../../workflow/operator/CodeBlockWithCopy";
 import RightConfigPanel from "../../workflow/RightConfigPanel";
-import ReferenceTablePanel from "./components/ReferenceTablePanel";
-import TableTransferPanel from "./components/TableTransferPanel";
-import WholeSyncForm from "./components/MultiSyncForm";
-import MultiWorkflowParamConfig from "./components/MultiWorkflowParamConfig";
-import { useMultiWorkflowState } from "./hooks/useMultiWorkflowState";
-import { useResizablePanel } from "./hooks/useResizablePanel";
-import { MultiWorkflowProps } from "./types";
 
-export default function MultiWorkflow({
+import HoconEditorPanel from "./HoconEditorPanel";
+import { useResizablePanel } from "../multi/hooks/useResizablePanel";
+import { useCustomWorkflowState } from "./hooks/useCustomWorkflowState";
+
+interface CustomWorkflowProps {
+  params: any;
+  goBack: () => void;
+  basicConfig: any;
+  setBasicConfig: (value: any) => void;
+  scheduleConfig: any;
+  setScheduleConfig: (value: any) => void;
+}
+
+export default function CustomWorkflow({
   params,
   goBack,
   basicConfig,
   setBasicConfig,
   scheduleConfig,
   setScheduleConfig,
-}: MultiWorkflowProps) {
-  const [form] = Form.useForm();
-
+}: CustomWorkflowProps) {
   const { rightWidth, handleResizeStart } = useResizablePanel(380);
 
   const {
     activeTab,
     setActiveTab,
-    loading,
-    sourceOption,
-    targetOption,
-    tableData,
-    readOnlyTables,
-    multiTableList,
-    setMultiTableList,
-    matchMode,
-    tableKeyword,
+    hoconContent,
+    setHoconContent,
     previewOpen,
     setPreviewOpen,
     previewContent,
     previewLoading,
-    handleSourceIdChange,
-    handleMatchModeChange,
-    handleKeywordChange,
     handleSave,
     handlePreview,
-  } = useMultiWorkflowState({
-    form,
+  } = useCustomWorkflowState({
     params,
     basicConfig,
     scheduleConfig,
@@ -61,13 +54,13 @@ export default function MultiWorkflow({
         <div className={styles.headerInner}>
           <div className={styles.titleWrap}>
             <div className={styles.titleIcon}>
-              <Blocks size={18} />
+              <FileCode2 size={18} />
             </div>
 
             <div>
-              <div className={styles.title}>多表离线任务</div>
+              <div className={styles.title}>自定义编排任务</div>
               <div className={styles.subtitle}>
-                配置多表同步链路、表匹配规则与运行参数，在一个页面完成创建与调试。
+                通过自定义 HOCON 配置任务内容，并在右侧补充基础信息与调度参数。
               </div>
             </div>
           </div>
@@ -91,7 +84,7 @@ export default function MultiWorkflow({
             <div className={styles.leftPane}>
               <div className={styles.mainPanel}>
                 <div className={styles.mainPanelHeader}>
-                  <div className={styles.mainPanelTitle}>多表同步编排</div>
+                  <div className={styles.mainPanelTitle}>自定义编排</div>
 
                   <Space size={10}>
                     <div className={styles.actionChip}>运行</div>
@@ -134,41 +127,11 @@ export default function MultiWorkflow({
                 </div>
 
                 <div className={styles.mainPanelContent}>
-                  <div className="h-full overflow-auto px-3 py-2">
-                    <Form form={form} layout="vertical">
-                      <div className="rounded-2xl">
-                        {/* <div className="mb-5 text-base font-semibold text-slate-800">
-                          数据表设置
-                        </div> */}
-
-                        <WholeSyncForm
-                          form={form}
-                          sourceOption={sourceOption}
-                          targetOption={targetOption}
-                          matchMode={matchMode}
-                          tableKeyword={tableKeyword}
-                          onSourceIdChange={handleSourceIdChange}
-                          onMatchModeChange={handleMatchModeChange}
-                          onKeywordChange={handleKeywordChange}
-                        />
-
-                        {(matchMode === "1" || matchMode === "4") && (
-                          <TableTransferPanel
-                            loading={loading}
-                            data={tableData}
-                            targetKeys={multiTableList}
-                            matchMode={matchMode}
-                            onChange={setMultiTableList}
-                          />
-                        )}
-
-                        {(matchMode === "2" || matchMode === "3") && (
-                          <ReferenceTablePanel loading={loading} data={readOnlyTables} />
-                        )}
-                      </div>
-
-                      <MultiWorkflowParamConfig />
-                    </Form>
+                  <div className="h-full overflow-auto">
+                    <HoconEditorPanel
+                      value={hoconContent}
+                      onChange={setHoconContent}
+                    />
                   </div>
                 </div>
               </div>

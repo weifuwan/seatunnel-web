@@ -79,6 +79,16 @@ export const seatunnelJobDefinitionApi = {
     return HttpUtils.post(`${apiPrefix}/guide-multi/build-config`, data);
   },
 
+  
+  /**
+   * SCRIPT 模式预览 HOCON
+   */
+  buildScriptConfig: (
+    data: any,
+  ): Promise<{ code: number; data: string; message?: string }> => {
+    return HttpUtils.post(`${apiPrefix}/script/build-config`, data);
+  },
+
   hocon: (data: any) => {
     return HttpUtils.post(`${apiPrefix}/buildHoconConfig`, data);
   },

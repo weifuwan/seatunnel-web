@@ -17,6 +17,8 @@ public class GuideMultiJobSaveCommand implements JobDefinitionSaveCommand {
 
     private JobScheduleConfig schedule;
 
+    private GuideMultiEnvConfig env;
+
     @Override
     public JobDefinitionMode getMode() {
         return JobDefinitionMode.GUIDE_MULTI;

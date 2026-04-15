@@ -1,4 +1,6 @@
 import type { ReactNode } from "react";
+import React from "react";
+import { BasicConfig, ScheduleConfig } from "../../workflow/components/ScheduleConfigContent/types";
 
 export interface WholeSyncTaskDraft {
     source: {
@@ -27,6 +29,24 @@ export interface WholeSyncTaskDraft {
     };
 }
 
+
+
+export interface DbTypeValue {
+  dbType?: string;
+  connectorType?: string;
+  pluginName?: string;
+}
+
+export interface MultiWorkflowProps {
+  params: any;
+  goBack: () => void;
+  basicConfig: BasicConfig;
+  setBasicConfig: React.Dispatch<React.SetStateAction<BasicConfig>>;
+  scheduleConfig: ScheduleConfig;
+  setScheduleConfig: (value: any) => void;
+}
+
+export type RightPanelTab = "basic" | "schedule" | "mapping" | "advanced";
 
 
 export interface TableItem {

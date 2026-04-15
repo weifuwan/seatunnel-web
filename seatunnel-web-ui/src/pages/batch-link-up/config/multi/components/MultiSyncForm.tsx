@@ -16,7 +16,7 @@ interface Props {
 
 const formItemClass = "[&_.ant-form-item-label>label]:text-[13px] [&_.ant-form-item-label>label]:text-slate-600";
 
-const WholeSyncForm: React.FC<Props> = ({
+const MultiSyncForm: React.FC<Props> = ({
   form,
   sourceOption,
   targetOption,
@@ -111,4 +111,4 @@ const WholeSyncForm: React.FC<Props> = ({
   );
 };
 
-export default WholeSyncForm;
+export default MultiSyncForm;

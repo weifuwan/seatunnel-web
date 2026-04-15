@@ -3,56 +3,63 @@ package org.apache.seatunnel.web.spi.bean.dto;
 import lombok.Data;
 
 import java.util.List;
-import java.util.Map;
 
 @Data
 public class GuideMultiJobContent {
 
-    private MultiSourceConfig source;
+    /**
+     * 对齐前端 content.source
+     */
+    private WorkflowSourceConfig source;
 
-    private MultiSinkConfig sink;
+    /**
+     * 对齐前端 content.target
+     */
+    private WorkflowTargetConfig target;
 
-    private List<TableSyncItem> tableItems;
-
-    private MultiSyncRule syncRule;
+    /**
+     * 对齐前端 content.tableMatch
+     */
+    private TableMatchConfig tableMatch;
 
     @Data
-    public static class MultiSourceConfig {
-        private String dataSourceId;
+    public static class WorkflowSourceConfig {
         private String dbType;
-        private List<Map<String, Object>> extraParams;
+        private String connectorType;
+        private String datasourceId;
+        private String pluginName;
+        private Integer fetchSize;
+        private Integer splitSize;
     }
 
     @Data
-    public static class MultiSinkConfig {
-        private String dataSourceId;
+    public static class WorkflowTargetConfig {
         private String dbType;
-        private String writeMode;
-        private Boolean autoCreateTable;
-        private List<Map<String, Object>> extraParams;
+        private String connectorType;
+        private String datasourceId;
+        private String pluginName;
+        private String dataSaveMode;
+        private Integer batchSize;
+        private String schemaSaveMode;
+        private Boolean enableUpsert;
+        private String fieldIde;
     }
 
     @Data
-    public static class TableSyncItem {
-        private String sourceTable;
-        private String sinkTable;
-        private String primaryKey;
-        private String whereClause;
-        private String writeMode;
-        private Boolean autoCreateTable;
-        private List<FieldMapping> fieldMappings;
-    }
+    public static class TableMatchConfig {
+        /**
+         * 前端当前是 "1" / "2" / "3" / "4"
+         */
+        private String mode;
 
-    @Data
-    public static class FieldMapping {
-        private String sourceFieldName;
-        private String sinkFieldName;
-    }
+        /**
+         * matchMode 为 1/4 时使用
+         */
+        private List<String> tables;
 
-    @Data
-    public static class MultiSyncRule {
-        private String tableMatchStrategy;
-        private String conflictStrategy;
-        private String namingStrategy;
+        /**
+         * matchMode 为 2/3 时使用
+         */
+        private String keyword;
     }
 }

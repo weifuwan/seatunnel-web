@@ -13,7 +13,7 @@ interface Props {
   goBack: () => void;
 }
 
-const WholeSyncHeader: React.FC<Props> = ({
+const MultiSyncHeader: React.FC<Props> = ({
   sourceType,
   targetType,
   onSourceChange,
@@ -67,4 +67,4 @@ const WholeSyncHeader: React.FC<Props> = ({
   );
 };
 
-export default WholeSyncHeader;
+export default MultiSyncHeader;

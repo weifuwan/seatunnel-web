@@ -1,9 +1,9 @@
 import { seatunnelJobDefinitionApi } from "@/pages/batch-link-up/api";
+import CloseIcon from "@/pages/batch-link-up/workflow/icon/CloseIcon";
+import CodeBlockWithCopy from "@/pages/batch-link-up/workflow/operator/CodeBlockWithCopy";
 import { FileTextOutlined, SaveOutlined } from "@ant-design/icons";
 import { Button, Divider, message, Popover, Tooltip } from "antd";
 import React from "react";
-import CloseIcon from "../../icon/CloseIcon";
-import CodeBlockWithCopy from "../../operator/CodeBlockWithCopy";
 
 interface Props {
   form: any;
@@ -17,7 +17,7 @@ interface Props {
   buildTaskDraft: () => any;
 }
 
-const WholeSyncActions: React.FC<Props> = ({
+const MultiSyncActions: React.FC<Props> = ({
   form,
   baseForm,
   goBack,
@@ -68,13 +68,12 @@ const WholeSyncActions: React.FC<Props> = ({
         jobType: "BATCH",
       };
 
-      const res = await seatunnelJobDefinitionApi.saveOrUpdate(params);
-      if (res?.code === 0) {
-        goBack();
-        message.success(isEdit ? "更新成功" : "发布成功");
-      } else {
-        message.error(res?.message || (isEdit ? "更新失败" : "发布失败"));
-      }
+      const res = await seatunnelJobDefinitionApi.saveOrUpdateGuideMulti(
+        params
+      );
+
+      goBack();
+      message.success(isEdit ? "更新成功" : "发布成功");
     } catch (e) {
       console.error(e);
     }
@@ -94,12 +93,9 @@ const WholeSyncActions: React.FC<Props> = ({
       };
 
       const res = await seatunnelJobDefinitionApi.hocon(params);
-      if (res?.code === 0) {
-        setOpen(true);
-        setContent(res?.data);
-      } else {
-        message.error(res?.message || "生成hocon失败");
-      }
+
+      setOpen(true);
+      setContent(res?.data);
     } catch (e) {
       console.error(e);
     }
@@ -174,4 +170,4 @@ const WholeSyncActions: React.FC<Props> = ({
   );
 };
 
-export default WholeSyncActions;
+export default MultiSyncActions;

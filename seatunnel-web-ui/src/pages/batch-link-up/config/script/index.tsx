@@ -41,7 +41,10 @@ const defaultScheduleConfig: ScheduleConfig = {
   cronExpression: "0 17 0 * * ?",
 };
 
-const defaultBasicConfig: BasicConfig = {
+const defaultBasicConfig: BasicConfig & {
+  sourcePluginName?: string;
+  targetPluginName?: string;
+} = {
   jobName: "",
   description: "",
   bridgeClientId: "",
@@ -50,6 +53,8 @@ const defaultBasicConfig: BasicConfig = {
   targetType: "SINK",
   sourceDataSourceId: "",
   targetDataSourceId: "",
+  sourcePluginName: "",
+  targetPluginName: "",
 };
 
 const buildInitialScheduleConfig = (rawData?: any): ScheduleConfig => {
@@ -75,7 +80,7 @@ const buildInitialScheduleConfig = (rawData?: any): ScheduleConfig => {
   };
 };
 
-const buildInitialBasicConfig = (rawData?: any): BasicConfig => {
+const buildInitialBasicConfig = (rawData?: any) => {
   return {
     ...defaultBasicConfig,
     jobName: rawData?.jobName || "",
@@ -84,6 +89,8 @@ const buildInitialBasicConfig = (rawData?: any): BasicConfig => {
     mode: rawData?.mode || "SCRIPT",
     sourceType: rawData?.sourceType?.dbType || "SOURCE",
     targetType: rawData?.targetType?.dbType || "SINK",
+    sourcePluginName: rawData?.sourceType?.pluginName || "",
+    targetPluginName: rawData?.targetType?.pluginName || "",
     sourceDataSourceId: rawData?.sourceDataSourceId || rawData?.sourceId || "",
     targetDataSourceId: rawData?.targetDataSourceId || rawData?.targetId || "",
   };

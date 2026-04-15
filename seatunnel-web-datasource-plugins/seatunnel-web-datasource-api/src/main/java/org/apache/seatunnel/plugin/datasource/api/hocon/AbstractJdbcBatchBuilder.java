@@ -215,4 +215,33 @@ public abstract class AbstractJdbcBatchBuilder extends AbstractJdbcHoconBuilder
     }
 
     public abstract String pluginName();
+
+    @Override
+    public String sourceTemplate() {
+        return ""
+                + "Jdbc" + " {\n"
+                + "  url = \"jdbc:mysql://127.0.0.1:3306/demo\"\n"
+                + "  user = \"root\"\n"
+                + "  password = \"******\"\n"
+                + "  driver = \"" + defaultDriver() + "\"\n"
+                + "  query = \"select * from demo_table\"\n"
+                + "  fetch_size = 1000\n"
+                + "}\n";
+    }
+
+    @Override
+    public String sinkTemplate() {
+        return ""
+                + "Jdbc" + " {\n"
+                + "  url = \"jdbc:mysql://127.0.0.1:3306/demo\"\n"
+                + "  user = \"root\"\n"
+                + "  password = \"******\"\n"
+                + "  driver = \"" + defaultDriver() + "\"\n"
+                + "  table = \"target_table\"\n"
+                + "  generate_sink_sql = true\n"
+                + "  data_save_mode = \"APPEND_DATA\"\n"
+                + "  schema_save_mode = \"CREATE_SCHEMA_WHEN_NOT_EXIST\"\n"
+                + "  batch_size = 1000\n"
+                + "}\n";
+    }
 }

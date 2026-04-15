@@ -46,4 +46,14 @@ public interface DataSourceHoconBuilder {
      * Used for dynamic discovery in the factory.
      */
     String pluginName();
+
+
+    default String sourceTemplate() {
+        return "";
+    }
+
+
+    default String sinkTemplate() {
+        return "";
+    }
 }

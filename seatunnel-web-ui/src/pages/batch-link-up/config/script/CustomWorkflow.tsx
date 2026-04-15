@@ -128,7 +128,7 @@ export default function CustomWorkflow({
                       role="button"
                       tabIndex={0}
                     >
-                      <Upload size={15} strokeWidth={1.9} />
+                      <Upload />
                       <span>发布</span>
                     </div>
                   </Space>

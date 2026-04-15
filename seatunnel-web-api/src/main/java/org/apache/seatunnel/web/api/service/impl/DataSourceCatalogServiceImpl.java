@@ -39,10 +39,7 @@ public class DataSourceCatalogServiceImpl implements DataSourceCatalogService {
         BaseConnectionParam connectionParam = buildConnectionParam(dataSource);
 
         try {
-            List<String> tables = getJdbcCatalog(dataSource, connectionParam).listTables();
-            return tables.stream()
-                    .map(this::toOption)
-                    .collect(Collectors.toList());
+            return getJdbcCatalog(dataSource, connectionParam).listTableOptions();
         } catch (ServiceException e) {
             throw e;
         } catch (Exception e) {

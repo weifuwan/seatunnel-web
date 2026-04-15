@@ -2,6 +2,7 @@ package org.apache.seatunnel.plugin.datasource.api.jdbc;
 
 import org.apache.seatunnel.web.common.QueryResult;
 import org.apache.seatunnel.plugin.datasource.api.modal.DataSourceTableColumn;
+import org.apache.seatunnel.web.spi.bean.vo.OptionVO;
 
 import java.util.List;
 import java.util.Map;
@@ -17,6 +18,13 @@ public interface JdbcCatalog {
      * @return table name list
      */
     List<String> listTables();
+
+    /**
+     * List all accessible tables.
+     *
+     * @return table name list
+     */
+    List<OptionVO> listTableOptions();
 
     /**
      * List columns of the specified table.

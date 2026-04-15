@@ -388,18 +388,6 @@ const WholeSync: FC<WholeSyncProps> = ({ goBack, baseForm }) => {
           </div>
         </div>
       </div>
-
-      <WholeSyncActions
-        form={form}
-        baseForm={baseForm}
-        goBack={goBack}
-        idFromUrl={idFromUrl}
-        sourceType={sourceType}
-        targetType={targetType}
-        matchMode={matchMode}
-        multiTableList={multiTableList}
-        buildTaskDraft={buildTaskDraft}
-      />
     </>
   );
 };

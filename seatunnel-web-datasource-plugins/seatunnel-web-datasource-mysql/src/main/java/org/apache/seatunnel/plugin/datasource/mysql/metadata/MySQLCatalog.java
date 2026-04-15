@@ -5,6 +5,7 @@ import org.apache.seatunnel.plugin.datasource.api.jdbc.AbstractJdbcCatalog;
 import org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConnectionProvider;
 import org.apache.seatunnel.plugin.datasource.api.jdbc.TablePath;
 import org.apache.seatunnel.plugin.datasource.api.modal.DataSourceTableColumn;
+import org.apache.seatunnel.web.spi.bean.vo.OptionVO;
 import org.apache.seatunnel.web.spi.datasource.BaseConnectionParam;
 
 import java.sql.ResultSet;
@@ -33,12 +34,31 @@ public class MySQLCatalog extends AbstractJdbcCatalog {
 
     @Override
     protected String getTableName(ResultSet rs) throws SQLException {
-        return rs.getString(1);
+        return rs.getString("TABLE_NAME");
     }
+
 
     @Override
     protected String getListTableSql(String databaseName) {
-        return "SHOW TABLES;";
+        return String.format(
+                "SELECT TABLE_NAME, TABLE_COMMENT " +
+                        "FROM INFORMATION_SCHEMA.TABLES " +
+                        "WHERE TABLE_SCHEMA = '%s' AND TABLE_TYPE = 'BASE TABLE' " +
+                        "ORDER BY TABLE_NAME",
+                databaseName
+        );
+    }
+
+    @Override
+    protected OptionVO buildTableOption(ResultSet rs) throws SQLException {
+        String tableName = rs.getString("TABLE_NAME");
+        String tableComment = rs.getString("TABLE_COMMENT");
+
+        OptionVO option = new OptionVO();
+        option.setValue(tableName);
+        option.setLabel(tableComment != null && !tableComment.trim().isEmpty() ? tableComment : tableName);
+        option.setDescription(tableComment);
+        return option;
     }
 
     @Override

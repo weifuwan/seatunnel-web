@@ -6,6 +6,7 @@ import org.apache.seatunnel.plugin.datasource.api.utils.SqlTimeVariableParser;
 import org.apache.seatunnel.web.common.FrontedTableColumn;
 import org.apache.seatunnel.web.common.QueryResult;
 import org.apache.seatunnel.plugin.datasource.api.modal.DataSourceTableColumn;
+import org.apache.seatunnel.web.spi.bean.vo.OptionVO;
 import org.apache.seatunnel.web.spi.datasource.BaseConnectionParam;
 
 import java.sql.*;
@@ -65,6 +66,40 @@ public abstract class AbstractJdbcCatalog implements JdbcCatalog {
         } catch (Exception e) {
             throw new RuntimeException(
                     String.format("Failed listing database in catalog %s", param.getDbType()), e);
+        }
+    }
+
+    public List<OptionVO> listTableOptions() {
+        try {
+            return queryOptionList(getListTableSql(this.param.getDatabase()), this::buildTableOption);
+        } catch (Exception e) {
+            throw new RuntimeException(
+                    String.format("Failed listing database in catalog %s", param.getDbType()), e);
+        }
+    }
+
+    protected OptionVO buildTableOption(ResultSet rs) throws SQLException {
+        String tableName = getTableName(rs);
+
+        OptionVO option = new OptionVO();
+        option.setValue(tableName);
+        option.setLabel(tableName);
+        option.setDescription(null);
+        return option;
+    }
+
+    protected List<OptionVO> queryOptionList(String sql, ResultSetConsumer<OptionVO> consumer)
+            throws SQLException {
+        try (PreparedStatement ps = getConnection().prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            List<OptionVO> result = new ArrayList<>();
+            while (rs.next()) {
+                OptionVO value = consumer.apply(rs);
+                if (value != null) {
+                    result.add(value);
+                }
+            }
+            return result;
         }
     }
 

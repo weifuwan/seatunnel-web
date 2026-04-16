@@ -1,6 +1,6 @@
 import { ArrowLeftOutlined } from "@ant-design/icons";
 import { Button, Col, Form, message, Popover, Row, Space } from "antd";
-import { Blocks, Braces, Database } from "lucide-react";
+import { Blocks, Braces, Database, Eye, PlayCircle, Upload } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { ReactFlowProvider } from "reactflow";
 import { seatunnelJobDefinitionApi } from "../api";
@@ -10,8 +10,6 @@ import {
   BasicConfig,
   ScheduleConfig,
 } from "./components/ScheduleConfigContent/types";
-import "./index.less";
-import styles from "./index.less";
 import CodeBlockWithCopy from "./operator/CodeBlockWithCopy";
 
 interface WorkflowProps {
@@ -149,18 +147,23 @@ export default function Workflow({
     }
   };
 
+  const actionChipClass =
+    "inline-flex h-[34px] cursor-pointer select-none items-center justify-center rounded-full border border-slate-200 bg-slate-50 px-3.5 text-[13px] font-medium leading-none text-slate-500 transition-colors duration-200 hover:border-slate-300 hover:bg-white/80 hover:text-slate-700 hover:shadow-[0_4px_12px_rgba(15,23,42,0.05)] active:translate-y-0";
+
   return (
-    <div className={styles.workflow}>
-      <div className={styles.header}>
-        <div className={styles.headerInner}>
-          <div className={styles.titleWrap}>
-            <div className={styles.titleIcon}>
+    <div className="flex h-screen flex-col overflow-hidden bg-white">
+      <div className="shrink-0 border-b border-slate-100 bg-white px-6 pb-4 pt-5">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex min-w-0 items-start gap-3.5">
+            <div className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-indigo-50 text-indigo-600">
               <Blocks size={18} />
             </div>
 
             <div>
-              <div className={styles.title}>单表离线任务</div>
-              <div className={styles.subtitle}>
+              <div className="mb-0 text-[20px] font-bold leading-[1.2] text-slate-900">
+                单表离线任务
+              </div>
+              <div className="text-[14px] leading-6 text-slate-500">
                 配置同步链路、字段映射与运行参数，在一个页面完成创建与调试。
               </div>
             </div>
@@ -170,8 +173,8 @@ export default function Workflow({
             <Button
               type="text"
               icon={<ArrowLeftOutlined />}
-              className={styles.backButton}
               onClick={goBack}
+              className="!h-10 !rounded-full !border !border-slate-200 !bg-white !px-4 !text-slate-700 !shadow-sm hover:!border-slate-300 hover:!bg-slate-50 hover:!text-slate-800"
             >
               返回上一步
             </Button>
@@ -179,24 +182,32 @@ export default function Workflow({
         </div>
       </div>
 
-      <div className={styles.workspace}>
-        <div className={styles.workspaceCard}>
-          <div className={styles.resizeLayout}>
-            <div className={styles.leftPane}>
-              <div className={styles.mainPanel}>
-                <div className={styles.mainPanelHeader}>
-                  <div className={styles.mainPanelTitle}>同步编排</div>
+      <div className="min-h-0 flex-1 overflow-hidden p-[18px]">
+        <div className="h-full overflow-hidden rounded-xl border border-slate-200 bg-gradient-to-b from-white via-white to-slate-50 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+          <div className="flex h-full min-w-0 items-stretch">
+            <div className="h-full min-w-0 flex-1 overflow-hidden">
+              <div className="flex h-full flex-col overflow-hidden rounded-lg bg-white shadow-[0_4px_18px_rgba(15,23,42,0.03)]">
+                <div className="flex h-14 shrink-0 items-center justify-between border-b border-slate-100 bg-gradient-to-b from-white to-slate-50 px-[18px]">
+                  <div className="text-[15px] font-semibold text-slate-800">
+                    同步编排
+                  </div>
 
                   <Space size={10}>
-                    <div className={styles.actionChip}>运行</div>
+                    <div className={actionChipClass}>
+                      <PlayCircle size={15} strokeWidth={1.9} />
+                      <span className="ml-1">运行</span>
+                    </div>
+
                     <div
-                      className={styles.actionChip}
+                      className={actionChipClass}
                       onClick={handleSave}
                       role="button"
                       tabIndex={0}
                     >
-                      发布
+                      <Upload size={15} strokeWidth={1.9} />
+                      <span className="ml-1">发布</span>
                     </div>
+
                     <Popover
                       open={previewOpen}
                       placement="leftTop"
@@ -214,25 +225,30 @@ export default function Workflow({
                       }
                     >
                       <div
-                        className={styles.actionChip}
+                        className={actionChipClass}
                         onClick={handlePreview}
                         role="button"
                         tabIndex={0}
                       >
-                        预览
+                        <Eye size={15} strokeWidth={1.9} />
+                        <span className="ml-1">
+                          {previewLoading ? "生成中..." : "预览"}
+                        </span>
                       </div>
                     </Popover>
                   </Space>
                 </div>
 
-                <div className={styles.mainPanelContent}>
+                <div className="min-h-0 flex-1 bg-white p-[18px] [background:radial-gradient(circle_at_top_left,rgba(78,116,248,0.04),transparent_22%),#ffffff]">
                   <Row gutter={24} style={{ height: "100%" }}>
                     <Col span={4}>
-                      <div className={styles.nodePalette}>
-                        <div className={styles.paletteTitle}>节点组件</div>
+                      <div className="flex h-full flex-col gap-3 overflow-auto border-r border-slate-100 p-3">
+                        <div className="px-0.5 pb-2 pt-1 text-[13px] font-semibold text-slate-700">
+                          节点组件
+                        </div>
 
                         <div
-                          className={styles.paletteNode}
+                          className="flex cursor-grab select-none items-center gap-3 rounded-[14px] border border-slate-200 bg-white p-3 shadow-[0_2px_8px_rgba(15,23,42,0.04)] transition-all duration-200 hover:-translate-y-px hover:border-slate-300 hover:shadow-[0_10px_24px_rgba(15,23,42,0.08)] active:scale-[0.99] active:cursor-grabbing"
                           draggable
                           onDragStart={(event) => {
                             event.dataTransfer.setData(
@@ -247,22 +263,22 @@ export default function Workflow({
                             event.dataTransfer.effectAllowed = "move";
                           }}
                         >
-                          <div
-                            className={`${styles.paletteIcon} ${styles.mappingIcon}`}
-                          >
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-b from-indigo-50 to-indigo-100 text-indigo-600">
                             <Braces size={16} />
                           </div>
 
-                          <div className={styles.paletteContent}>
-                            <div className={styles.paletteName}>字段映射</div>
-                            <div className={styles.paletteDesc}>
+                          <div className="min-w-0">
+                            <div className="text-[13px] font-semibold leading-[1.2] text-slate-900">
+                              字段映射
+                            </div>
+                            <div className="mt-1 text-[12px] leading-[1.4] text-slate-500">
                               配置字段对应关系
                             </div>
                           </div>
                         </div>
 
                         <div
-                          className={styles.paletteNode}
+                          className="flex cursor-grab select-none items-center gap-3 rounded-[14px] border border-slate-200 bg-white p-3 shadow-[0_2px_8px_rgba(15,23,42,0.04)] transition-all duration-200 hover:-translate-y-px hover:border-slate-300 hover:shadow-[0_10px_24px_rgba(15,23,42,0.08)] active:scale-[0.99] active:cursor-grabbing"
                           draggable
                           onDragStart={(event) => {
                             event.dataTransfer.setData(
@@ -277,15 +293,15 @@ export default function Workflow({
                             event.dataTransfer.effectAllowed = "move";
                           }}
                         >
-                          <div
-                            className={`${styles.paletteIcon} ${styles.sqlIcon}`}
-                          >
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-b from-violet-50 to-violet-100 text-violet-600">
                             <Database size={16} />
                           </div>
 
-                          <div className={styles.paletteContent}>
-                            <div className={styles.paletteName}>SQL</div>
-                            <div className={styles.paletteDesc}>
+                          <div className="min-w-0">
+                            <div className="text-[13px] font-semibold leading-[1.2] text-slate-900">
+                              SQL
+                            </div>
+                            <div className="mt-1 text-[12px] leading-[1.4] text-slate-500">
                               支持自定义查询
                             </div>
                           </div>
@@ -294,7 +310,7 @@ export default function Workflow({
                     </Col>
 
                     <Col span={20}>
-                      <div className={styles.canvasShell}>
+                      <div className="h-full overflow-hidden rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-4 text-[14px] text-slate-400">
                         <ReactFlowProvider>
                           <FlowCanvas
                             form={form}
@@ -313,20 +329,23 @@ export default function Workflow({
             </div>
 
             <div
-              className={styles.resizeBar}
+              className="relative flex w-[14px] shrink-0 cursor-col-resize items-center justify-center bg-transparent transition-colors duration-200 hover:bg-[rgba(49,94,251,0.04)]"
               onMouseDown={handleResizeStart}
               role="separator"
               aria-orientation="vertical"
               aria-label="调整左右面板宽度"
             >
-              <div className={styles.resizeBarLine} />
-              <div className={styles.resizeBarHandle}>
-                <span />
-                <span />
+              <div className="h-full w-px bg-slate-200 transition-colors duration-200" />
+              <div className="absolute left-1/2 top-1/2 flex h-[46px] w-5 -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center gap-1 rounded-full border border-slate-200 bg-white opacity-90 shadow-sm transition-all duration-200 hover:scale-100 hover:opacity-100 hover:shadow-[0_10px_28px_rgba(15,23,42,0.1)]">
+                <span className="block h-1 w-1 rounded-full bg-slate-400" />
+                <span className="block h-1 w-1 rounded-full bg-slate-400" />
               </div>
             </div>
 
-            <div className={styles.rightPane} style={{ width: rightWidth }}>
+            <div
+              className="h-full min-w-[320px] max-w-[520px] shrink-0 overflow-hidden"
+              style={{ width: rightWidth }}
+            >
               <RightConfigPanel
                 activeTab={activeTab}
                 onTabChange={setActiveTab}

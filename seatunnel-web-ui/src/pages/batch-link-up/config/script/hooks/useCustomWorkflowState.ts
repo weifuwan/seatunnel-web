@@ -3,8 +3,6 @@ import { useEffect, useRef, useState } from "react";
 import { seatunnelJobDefinitionApi } from "@/pages/batch-link-up/api";
 import { hoconTemplateApi } from "../hoconTemplateApi";
 
-type RightPanelTab = "basic" | "schedule" | "mapping" | "advance";
-
 interface UseCustomWorkflowStateProps {
   params: any;
   basicConfig: any;
@@ -16,7 +14,7 @@ export function useCustomWorkflowState({
   basicConfig,
   scheduleConfig,
 }: UseCustomWorkflowStateProps) {
-  const [activeTab, setActiveTab] = useState<RightPanelTab>("basic");
+  const [activeTab, setActiveTab] = useState<any>("basic");
   const [hoconContent, setHoconContent] = useState<string>("");
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewContent, setPreviewContent] = useState("");

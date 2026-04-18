@@ -37,9 +37,9 @@ public class JdbcSinkBuilder implements SinkNodeConfigBuilder {
         Config config = resolveNodeConfig(data);
         Long dataSourceId = parseDataSourceId(config);
         DataSource dataSource = getRequiredDataSource(dataSourceId);
-        DbType dbType = parseDbType(config);
+        DbType dbType = parseDbType(data);
 
-        String pluginName = getRequiredPluginName(config);
+        String pluginName = getRequiredPluginName(data);
 
         DataSourceProcessor processor = DataSourceUtils.getDatasourceProcessor(dbType);
         Config sinkConfig = processor.getQueryBuilder(pluginName)

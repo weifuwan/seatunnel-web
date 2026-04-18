@@ -4,6 +4,7 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.seatunnel.plugin.datasource.api.jdbc.AbstractJdbcHoconBuilder;
+import org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConfigReaders;
 import org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConnectionProvider;
 import org.apache.seatunnel.web.common.enums.HoconBuildStage;
 
@@ -11,6 +12,24 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConfigKeys.AUTO_CREATE_TABLE;
+import static org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConfigKeys.BATCH_SIZE;
+import static org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConfigKeys.CONFIG;
+import static org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConfigKeys.DATABASE;
+import static org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConfigKeys.EXTRA_PARAMS;
+import static org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConfigKeys.GENERATE_SINK_SQL;
+import static org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConfigKeys.KEY;
+import static org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConfigKeys.PRIMARY_KEY;
+import static org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConfigKeys.QUERY;
+import static org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConfigKeys.READ_MODE;
+import static org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConfigKeys.SCHEMA;
+import static org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConfigKeys.SQL;
+import static org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConfigKeys.TABLE;
+import static org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConfigKeys.TABLE_PATH;
+import static org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConfigKeys.TARGET_MODE;
+import static org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConfigKeys.TARGET_TABLE_NAME;
+import static org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConfigKeys.VALUE;
 
 public abstract class AbstractJdbcBatchBuilder extends AbstractJdbcHoconBuilder
         implements DataSourceHoconBuilder {
@@ -29,9 +48,9 @@ public abstract class AbstractJdbcBatchBuilder extends AbstractJdbcHoconBuilder
         Map<String, Object> map = new HashMap<>(32);
 
         putConnCommon(conn, map);
-        buildSourceTarget(config, conn, map, stage);
+        buildSourceReadTarget(config, conn, map, stage);
         appendSourceAdvancedOptions(config, map);
-        appendSourceDynamicParams(config, map);
+        appendSourceDynamicOptions(config, map);
 
         return ConfigFactory.parseMap(map);
     }
@@ -42,108 +61,109 @@ public abstract class AbstractJdbcBatchBuilder extends AbstractJdbcHoconBuilder
         Map<String, Object> map = new HashMap<>(32);
 
         putConnCommon(conn, map);
-        buildSinkTarget(config, conn, map);
-        buildSinkSaveMode(config, map);
-        buildSinkUpsert(config, map);
+        buildSinkWriteTarget(config, conn, map);
+        appendSinkSaveMode(config, map);
+        appendSinkUpsertOptions(config, map);
         appendSinkAdvancedOptions(config, map);
-        appendSinkDynamicParams(config, map);
+        appendSinkDynamicOptions(config, map);
 
         return ConfigFactory.parseMap(map);
     }
 
-    protected void buildSourceTarget(Config config,
-                                     Config conn,
-                                     Map<String, Object> map,
-                                     HoconBuildStage stage) {
-        String readMode = getString(config, KEY_READ_MODE, "table");
-        String sql = getString(config, KEY_SOURCE_SQL, "");
-        String sourceTable = getString(config, KEY_SOURCE_TABLE, "");
+    protected void buildSourceReadTarget(Config config,
+                                         Config conn,
+                                         Map<String, Object> map,
+                                         HoconBuildStage stage) {
+        String readMode = JdbcConfigReaders.getString(config, READ_MODE, "table");
+        String sql = JdbcConfigReaders.getString(config, SQL, "");
+        String table = JdbcConfigReaders.getString(config, TABLE, "");
 
-        String database = getString(conn, KEY_DATABASE, "");
-        String schema = getString(conn, KEY_SCHEMA, "");
+        String database = JdbcConfigReaders.getString(conn, DATABASE, "");
+        String schema = JdbcConfigReaders.getString(conn, SCHEMA, "");
 
         if (StringUtils.isNotBlank(sql)) {
-            map.put(KEY_QUERY, handleQueryByStage(sql, stage));
+            map.put(QUERY, handleQueryByStage(sql, stage));
             return;
         }
 
-        if (!"table".equalsIgnoreCase(readMode) && StringUtils.isBlank(sourceTable)) {
-            throw new IllegalArgumentException("Unsupported readMode without sourceTable: " + readMode);
+        if (!"table".equalsIgnoreCase(readMode) && StringUtils.isBlank(table)) {
+            throw new IllegalArgumentException("Unsupported readMode without table: " + readMode);
         }
 
-        if (StringUtils.isBlank(sourceTable)) {
-            throw new IllegalArgumentException("Missing source table, sourceTable is required when sql is blank");
+        if (StringUtils.isBlank(table)) {
+            throw new IllegalArgumentException("Missing source table, table is required when sql is blank");
         }
-        map.put(KEY_TABLE_PATH, database);
-        map.put(KEY_DATABASE, buildTablePath(database, schema, sourceTable));
+
+        map.put(TABLE_PATH, buildTablePath(database, schema, table));
     }
 
     protected void appendSourceAdvancedOptions(Config config, Map<String, Object> map) {
-        Integer fetchSize = getInteger(config, "fetchSize", null);
+        Integer fetchSize = JdbcConfigReaders.getInteger(config, "fetchSize", null);
         if (fetchSize != null && fetchSize > 0) {
             map.put("fetch_size", fetchSize);
         }
 
-        Integer splitSize = getInteger(config, "splitSize", null);
+        Integer splitSize = JdbcConfigReaders.getInteger(config, "splitSize", null);
         if (splitSize != null && splitSize > 0) {
             map.put("split.size", splitSize);
         }
     }
 
-    protected void appendSourceDynamicParams(Config config, Map<String, Object> map) {
-        appendConfigObject(config, KEY_CONFIG, map);
-        parseParamsArray(config, map);
+    protected void appendSourceDynamicOptions(Config config, Map<String, Object> map) {
+        JdbcConfigReaders.appendConfigObject(config, CONFIG, map);
+        JdbcConfigReaders.parseParamsArray(config, map);
         appendExtraParams(config, map);
     }
 
-    protected void buildSinkTarget(Config config, Config conn, Map<String, Object> map) {
-        String sinkSql = getString(config, KEY_SINK_SQL, "");
-        String sinkTableName = getString(config, KEY_SINK_TABLE_NAME, "");
+    protected void buildSinkWriteTarget(Config config,
+                                        Config conn,
+                                        Map<String, Object> map) {
+        String sql = JdbcConfigReaders.getString(config, SQL, "");
+        String targetTableName = JdbcConfigReaders.getString(config, TARGET_TABLE_NAME, "");
+        String table = JdbcConfigReaders.getString(config, TABLE, "");
 
-        String database = getString(conn, KEY_DATABASE, "");
-        String schema = getString(conn, KEY_SCHEMA, "");
+        String database = JdbcConfigReaders.getString(conn, DATABASE, "");
+        String schema = JdbcConfigReaders.getString(conn, SCHEMA, "");
 
-        if (StringUtils.isNotBlank(sinkSql)) {
-            map.put(KEY_QUERY, sinkSql);
-            map.put(KEY_GENERATE_SINK_SQL, false);
+        if (StringUtils.isNotBlank(sql)) {
+            map.put(QUERY, sql);
+            map.put(GENERATE_SINK_SQL, false);
             return;
         }
 
-        if (StringUtils.isBlank(sinkTableName)) {
-            throw new IllegalArgumentException("Missing sink target, neither sinkSql nor sinkTableName is provided");
+        String finalTable = StringUtils.isNotBlank(targetTableName) ? targetTableName : table;
+        if (StringUtils.isBlank(finalTable)) {
+            throw new IllegalArgumentException("Missing sink target, neither sql nor targetTableName/table is provided");
         }
 
-        map.put(KEY_TABLE, sinkTableName);
+        map.put(TABLE, finalTable);
         if (StringUtils.isNotBlank(database)) {
-            map.put(KEY_DATABASE, database);
+            map.put(DATABASE, database);
         }
         if (StringUtils.isNotBlank(schema)) {
-            map.put(KEY_SCHEMA, schema);
+            map.put(SCHEMA, schema);
         }
-        map.put(KEY_GENERATE_SINK_SQL, true);
+        map.put(GENERATE_SINK_SQL, true);
     }
 
-    protected void buildSinkSaveMode(Config config, Map<String, Object> map) {
-        boolean autoCreateTable = getBoolean(config, KEY_AUTO_CREATE_TABLE, false);
+    protected void appendSinkSaveMode(Config config, Map<String, Object> map) {
+        boolean autoCreateTable = JdbcConfigReaders.getBoolean(config, AUTO_CREATE_TABLE, false);
 
-        String dataSaveMode = getString(config, "dataSaveMode", "");
-        if (StringUtils.isNotBlank(dataSaveMode)) {
-            map.put("data_save_mode", dataSaveMode);
-        } else {
-            map.put("data_save_mode", "APPEND_DATA");
-        }
+        String dataSaveMode = JdbcConfigReaders.getString(config, "dataSaveMode", "");
+        map.put("data_save_mode",
+                StringUtils.isNotBlank(dataSaveMode) ? dataSaveMode : "APPEND_DATA");
 
-        String schemaSaveMode = getString(config, "schemaSaveMode", "");
-        if (StringUtils.isNotBlank(schemaSaveMode)) {
-            map.put("schema_save_mode", schemaSaveMode);
-        } else {
-            map.put("schema_save_mode",
-                    autoCreateTable ? "CREATE_SCHEMA_WHEN_NOT_EXIST" : "ERROR_WHEN_SCHEMA_NOT_EXIST");
-        }
+        String schemaSaveMode = JdbcConfigReaders.getString(config, "schemaSaveMode", "");
+        map.put("schema_save_mode",
+                StringUtils.isNotBlank(schemaSaveMode)
+                        ? schemaSaveMode
+                        : (autoCreateTable
+                        ? "CREATE_SCHEMA_WHEN_NOT_EXIST"
+                        : "ERROR_WHEN_SCHEMA_NOT_EXIST"));
     }
 
-    protected void buildSinkUpsert(Config config, Map<String, Object> map) {
-        String primaryKey = getString(config, KEY_PRIMARY_KEY, "");
+    protected void appendSinkUpsertOptions(Config config, Map<String, Object> map) {
+        String primaryKey = JdbcConfigReaders.getString(config, PRIMARY_KEY, "");
 
         if (config.hasPath("enableUpsert")) {
             map.put("enable_upsert", config.getValue("enableUpsert").unwrapped());
@@ -161,20 +181,36 @@ public abstract class AbstractJdbcBatchBuilder extends AbstractJdbcHoconBuilder
     }
 
     protected void appendSinkAdvancedOptions(Config config, Map<String, Object> map) {
-        Integer batchSize = getInteger(config, "batchSize", 1000);
+        Integer batchSize = JdbcConfigReaders.getInteger(config, BATCH_SIZE, 1000);
         if (batchSize != null && batchSize > 0) {
             map.put("batch_size", batchSize);
         }
 
         if (config.hasPath("exactlyOnce")) {
-            map.put("is_exactly_once", getBoolean(config, "exactlyOnce", false));
+            map.put("is_exactly_once", JdbcConfigReaders.getBoolean(config, "exactlyOnce", false));
         }
     }
 
-    protected void appendSinkDynamicParams(Config config, Map<String, Object> map) {
-        appendConfigObject(config, KEY_CONFIG, map);
-        parseParamsArray(config, map);
+    protected void appendSinkDynamicOptions(Config config, Map<String, Object> map) {
+        JdbcConfigReaders.appendConfigObject(config, CONFIG, map);
+        JdbcConfigReaders.parseParamsArray(config, map);
         appendExtraParams(config, map);
+    }
+
+    protected void appendExtraParams(Config config, Map<String, Object> map) {
+        if (config == null || !config.hasPath(EXTRA_PARAMS)) {
+            return;
+        }
+
+        List<? extends Config> list = config.getConfigList(EXTRA_PARAMS);
+        for (Config item : list) {
+            String key = JdbcConfigReaders.getString(item, KEY, "");
+            if (StringUtils.isBlank(key)) {
+                continue;
+            }
+            Object value = item.hasPath(VALUE) ? item.getValue(VALUE).unwrapped() : "";
+            map.put(key.trim(), value);
+        }
     }
 
     protected List<String> parsePrimaryKeys(String primaryKey) {
@@ -191,26 +227,7 @@ public abstract class AbstractJdbcBatchBuilder extends AbstractJdbcHoconBuilder
         return keys;
     }
 
-    protected void appendExtraParams(Config config, Map<String, Object> map) {
-        if (config == null || !config.hasPath(KEY_EXTRA_PARAMS)) {
-            return;
-        }
-
-        List<? extends Config> list = config.getConfigList(KEY_EXTRA_PARAMS);
-        for (Config item : list) {
-            String key = getString(item, KEY_KEY, "");
-            if (StringUtils.isBlank(key)) {
-                continue;
-            }
-            Object value = item.hasPath(KEY_VALUE) ? item.getValue(KEY_VALUE).unwrapped() : "";
-            map.put(key.trim(), value);
-        }
-    }
-
     protected String handleQueryByStage(String query, HoconBuildStage stage) {
-        if (StringUtils.isBlank(query)) {
-            return query;
-        }
         return query;
     }
 

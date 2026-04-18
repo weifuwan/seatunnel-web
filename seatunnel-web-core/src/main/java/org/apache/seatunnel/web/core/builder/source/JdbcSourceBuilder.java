@@ -2,7 +2,6 @@ package org.apache.seatunnel.web.core.builder.source;
 
 import com.typesafe.config.Config;
 import jakarta.annotation.Resource;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.seatunnel.plugin.datasource.api.jdbc.DataSourceProcessor;
 import org.apache.seatunnel.plugin.datasource.api.utils.DataSourceUtils;
@@ -14,110 +13,123 @@ import org.apache.seatunnel.web.dao.repository.DataSourceDao;
 import org.apache.seatunnel.web.spi.enums.DbType;
 import org.springframework.stereotype.Component;
 
-
 /**
- * JDBC Source node builder.
- *
- * <p>
- * This builder generates the HOCON configuration for a JDBC source node in a SeaTunnel job.
- * It validates the configuration using the DataSourceProcessor and rules defined for the source.
- * </p>
+ * JDBC source node builder.
  */
 @Component
-@Slf4j
 public class JdbcSourceBuilder implements SourceNodeConfigBuilder {
 
-    @Resource
-    private DataSourceDao dataSourceDao; // Service to fetch data source details
+    private static final String NODE_TYPE = "source";
+    private static final String KEY_DATA_SOURCE_ID = "dataSourceId";
+    private static final String KEY_DB_TYPE = "dbType";
+    private static final String KEY_PLUGIN_NAME = "pluginName";
+    private static final String KEY_CONNECTOR_TYPE = "connectorType";
 
-    /**
-     * Node type identifier.
-     *
-     * @return the node type string "source"
-     */
+    @Resource
+    private DataSourceDao dataSourceDao;
+
     @Override
     public String nodeType() {
-        return "source";
+        return NODE_TYPE;
     }
 
-    /**
-     * Build the HOCON configuration for the JDBC source node.
-     *
-     * <p>
-     * Steps:
-     * </p>
-     * <ol>
-     *     <li>Retrieve sourceId from input config</li>
-     *     <li>Fetch the corresponding DataSourceVO from database</li>
-     *     <li>Obtain the DataSourceProcessor based on dbType</li>
-     *     <li>Build the source HOCON configuration</li>
-     *     <li>Validate the configuration using the processor rules</li>
-     * </ol>
-     *
-     * @param data the input configuration containing sourceId, dbType, and other parameters
-     * @return validated HOCON configuration for the source node
-     * @throws RuntimeException if DataSourceVO does not exist
-     */
     @Override
     public Config build(Config data) {
         Config config = resolveNodeConfig(data);
 
-        Long sourceId = getLong(config, "sourceDataSourceId");
-        if (sourceId == null) {
-            throw new RuntimeException("sourceDataSourceId is missing");
-        }
+        Long dataSourceId = parseDataSourceId(config);
+        DataSource dataSource = getRequiredDataSource(dataSourceId);
+        DbType dbType = parseDbType(config);
 
-        DataSource ds = dataSourceDao.queryById(sourceId);
-        if (ds == null) {
-            throw new RuntimeException("Data source does not exist, id=" + sourceId);
-        }
+        String pluginName = getRequiredPluginName(config);
 
-        String dbType = getString(config, "dbType");
-        if (StringUtils.isBlank(dbType)) {
-            throw new RuntimeException("dbType is missing");
-        }
-
-        String pluginName = getString(config, "pluginName");
-        if (StringUtils.isBlank(pluginName)) {
-            throw new RuntimeException("pluginName is missing");
-        }
-
-        DataSourceProcessor processor =
-                DataSourceUtils.getDatasourceProcessor(DbType.valueOf(dbType));
-
-        Config cfg = processor.getQueryBuilder(pluginName)
+        DataSourceProcessor processor = DataSourceUtils.getDatasourceProcessor(dbType);
+        Config sourceConfig = processor.getQueryBuilder(pluginName)
                 .buildSourceHocon(
-                        ds.getConnectionParams(),
+                        dataSource.getConnectionParams(),
                         config,
                         processor.getConnectionManager(),
                         HoconBuildStage.INSTANCE
                 );
 
-        ConfigValidator.of(ReadonlyConfig.fromConfig(cfg))
+        validateSourceConfig(processor, pluginName, sourceConfig);
+        return sourceConfig;
+    }
+
+    /**
+     * Prefer connectorType as connector name.
+     */
+    @Override
+    public String connectorName(Config data) {
+        String connectorType = getTrimmedString(data, KEY_CONNECTOR_TYPE);
+        if (StringUtils.isNotBlank(connectorType)) {
+            return connectorType;
+        }
+
+        throw new IllegalArgumentException(
+                "Missing connector name, field '" + KEY_CONNECTOR_TYPE + "' is not provided");
+    }
+
+    private Long parseDataSourceId(Config config) {
+        String value = getTrimmedString(config, KEY_DATA_SOURCE_ID);
+        if (StringUtils.isBlank(value)) {
+            throw new IllegalArgumentException(
+                    "Missing required field '" + KEY_DATA_SOURCE_ID + "' in source node config");
+        }
+
+        try {
+            return Long.valueOf(value);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException(
+                    "Invalid '" + KEY_DATA_SOURCE_ID + "': " + value + ", expected numeric value", e);
+        }
+    }
+
+    private DataSource getRequiredDataSource(Long dataSourceId) {
+        DataSource dataSource = dataSourceDao.queryById(dataSourceId);
+        if (dataSource == null) {
+            throw new IllegalArgumentException(
+                    "Source data source does not exist, dataSourceId=" + dataSourceId);
+        }
+        return dataSource;
+    }
+
+    private DbType parseDbType(Config config) {
+        String dbTypeValue = getTrimmedString(config, KEY_DB_TYPE);
+        if (StringUtils.isBlank(dbTypeValue)) {
+            throw new IllegalArgumentException(
+                    "Missing required field '" + KEY_DB_TYPE + "' in source node config");
+        }
+
+        try {
+            return DbType.valueOf(dbTypeValue);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Unsupported dbType: " + dbTypeValue, e);
+        }
+    }
+
+    private String getRequiredPluginName(Config config) {
+        String pluginName = getTrimmedString(config, KEY_PLUGIN_NAME);
+        if (StringUtils.isBlank(pluginName)) {
+            throw new IllegalArgumentException(
+                    "Missing required field '" + KEY_PLUGIN_NAME + "' in source node config");
+        }
+        return pluginName;
+    }
+
+    private void validateSourceConfig(
+            DataSourceProcessor processor,
+            String pluginName,
+            Config sourceConfig) {
+        ConfigValidator.of(ReadonlyConfig.fromConfig(sourceConfig))
                 .validate(processor.sourceOptionRule(pluginName));
-
-        return cfg;
     }
 
-    private String getString(Config config, String path) {
-        return config.hasPath(path) ? config.getString(path) : null;
-    }
-
-    private Long getLong(Config config, String path) {
-        if (!config.hasPath(path)) {
+    private String getTrimmedString(Config config, String path) {
+        if (config == null || !config.hasPath(path)) {
             return null;
         }
-        Object value = config.getAnyRef(path);
-        if (value == null) {
-            return null;
-        }
-        if (value instanceof Number) {
-            return ((Number) value).longValue();
-        }
-        String text = String.valueOf(value).trim();
-        if (text.isEmpty()) {
-            return null;
-        }
-        return Long.valueOf(text);
+        String value = config.getString(path);
+        return value == null ? null : value.trim();
     }
 }

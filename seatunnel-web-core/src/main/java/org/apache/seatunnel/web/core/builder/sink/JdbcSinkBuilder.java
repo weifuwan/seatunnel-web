@@ -19,7 +19,7 @@ import org.springframework.stereotype.Component;
 public class JdbcSinkBuilder implements SinkNodeConfigBuilder {
 
     private static final String NODE_TYPE = "sink";
-    private static final String KEY_SINK_DATA_SOURCE_ID = "sinkDataSourceId";
+    private static final String KEY_DATA_SOURCE_ID = "dataSourceId";
     private static final String KEY_DB_TYPE = "dbType";
     private static final String KEY_PLUGIN_NAME = "pluginName";
     private static final String KEY_CONNECTOR_TYPE = "connectorType";
@@ -34,14 +34,11 @@ public class JdbcSinkBuilder implements SinkNodeConfigBuilder {
 
     @Override
     public Config build(Config data) {
-        Long sinkDataSourceId = parseSinkDataSourceId(data);
-        DataSource dataSource = getRequiredDataSource(sinkDataSourceId);
+        Long dataSourceId = parseDataSourceId(data);
+        DataSource dataSource = getRequiredDataSource(dataSourceId);
         DbType dbType = parseDbType(data);
 
-        String pluginName = getString(data, "pluginName");
-        if (StringUtils.isBlank(pluginName)) {
-            throw new RuntimeException("pluginName is missing");
-        }
+        String pluginName = getRequiredPluginName(data);
 
         DataSourceProcessor processor = DataSourceUtils.getDatasourceProcessor(dbType);
         Config sinkConfig = processor.getQueryBuilder(pluginName)
@@ -51,53 +48,49 @@ public class JdbcSinkBuilder implements SinkNodeConfigBuilder {
         return sinkConfig;
     }
 
-    private String getString(Config config, String path) {
-        return config.hasPath(path) ? config.getString(path) : null;
-    }
-
     /**
-     * Prefer pluginName. Fall back to connectorType when pluginName is blank.
+     * Prefer connectorType as connector name.
      */
     @Override
     public String connectorName(Config data) {
-
         String connectorType = getTrimmedString(data, KEY_CONNECTOR_TYPE);
         if (StringUtils.isNotBlank(connectorType)) {
             return connectorType;
         }
 
         throw new IllegalArgumentException(
-                "Missing connector name, neither '" + KEY_PLUGIN_NAME + "' nor '" + KEY_CONNECTOR_TYPE + "' is provided");
+                "Missing connector name, field '" + KEY_CONNECTOR_TYPE + "' is not provided");
     }
 
-    private Long parseSinkDataSourceId(Config data) {
-        String value = getTrimmedString(data, KEY_SINK_DATA_SOURCE_ID);
+    private Long parseDataSourceId(Config config) {
+        String value = getTrimmedString(config, KEY_DATA_SOURCE_ID);
         if (StringUtils.isBlank(value)) {
             throw new IllegalArgumentException(
-                    "Missing required field '" + KEY_SINK_DATA_SOURCE_ID + "' in sink node config");
+                    "Missing required field '" + KEY_DATA_SOURCE_ID + "' in sink node config");
         }
 
         try {
             return Long.valueOf(value);
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException(
-                    "Invalid '" + KEY_SINK_DATA_SOURCE_ID + "': " + value + ", expected numeric value", e);
+                    "Invalid '" + KEY_DATA_SOURCE_ID + "': " + value + ", expected numeric value", e);
         }
     }
 
-    private DataSource getRequiredDataSource(Long sinkDataSourceId) {
-        DataSource dataSource = dataSourceDao.queryById(sinkDataSourceId);
+    private DataSource getRequiredDataSource(Long dataSourceId) {
+        DataSource dataSource = dataSourceDao.queryById(dataSourceId);
         if (dataSource == null) {
             throw new IllegalArgumentException(
-                    "Sink data source does not exist, sinkDataSourceId=" + sinkDataSourceId);
+                    "Sink data source does not exist, dataSourceId=" + dataSourceId);
         }
         return dataSource;
     }
 
-    private DbType parseDbType(Config data) {
-        String dbTypeValue = getTrimmedString(data, KEY_DB_TYPE);
+    private DbType parseDbType(Config config) {
+        String dbTypeValue = getTrimmedString(config, KEY_DB_TYPE);
         if (StringUtils.isBlank(dbTypeValue)) {
-            throw new IllegalArgumentException("Missing required field '" + KEY_DB_TYPE + "' in sink node config");
+            throw new IllegalArgumentException(
+                    "Missing required field '" + KEY_DB_TYPE + "' in sink node config");
         }
 
         try {
@@ -107,16 +100,25 @@ public class JdbcSinkBuilder implements SinkNodeConfigBuilder {
         }
     }
 
+    private String getRequiredPluginName(Config config) {
+        String pluginName = getTrimmedString(config, KEY_PLUGIN_NAME);
+        if (StringUtils.isBlank(pluginName)) {
+            throw new IllegalArgumentException(
+                    "Missing required field '" + KEY_PLUGIN_NAME + "' in sink node config");
+        }
+        return pluginName;
+    }
+
     private void validateSinkConfig(DataSourceProcessor processor, Config sinkConfig) {
         ConfigValidator.of(ReadonlyConfig.fromConfig(sinkConfig))
                 .validate(processor.sinkOptionRule());
     }
 
-    private String getTrimmedString(Config data, String path) {
-        if (data == null || !data.hasPath(path)) {
+    private String getTrimmedString(Config config, String path) {
+        if (config == null || !config.hasPath(path)) {
             return null;
         }
-        String value = data.getString(path);
+        String value = config.getString(path);
         return value == null ? null : value.trim();
     }
 }

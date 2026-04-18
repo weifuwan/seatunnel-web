@@ -17,17 +17,18 @@ interface Props {
 
 function SourcePanel({ selectedNode, onClose, onNodeDataChange }: Props) {
   const qualityDetailRef = useRef<any>(null);
+
   const {
     title,
     dbType,
     description,
-    sourceDataSourceId,
+    dataSourceId,
     readMode,
-    sourceTable,
+    table,
     sql,
     extraParams,
 
-    sourceDataSourceOptions,
+    dataSourceOptions,
     tableOptions,
     tableLoading,
 
@@ -89,9 +90,9 @@ function SourcePanel({ selectedNode, onClose, onNodeDataChange }: Props) {
                 <Database size={16} />
               </div>
               <Select
-                value={sourceDataSourceId}
+                value={dataSourceId}
                 onChange={handleDataSourceChange}
-                options={sourceDataSourceOptions}
+                options={dataSourceOptions}
                 placeholder="请选择来源数据源"
                 showSearch
                 optionFilterProp="label"
@@ -171,18 +172,17 @@ function SourcePanel({ selectedNode, onClose, onNodeDataChange }: Props) {
             {readMode === "table" ? (
               <div className="workflow-panel__field workflow-panel__field--full">
                 <Select
-                  value={sourceTable}
+                  value={table}
                   onChange={(value) =>
-                    updateNode({
-                      config: {
-                        sourceTable: value,
-                      },
-                      meta: {
+                    updateNode(
+                      { table: value },
+                      undefined,
+                      {
                         outputSchema: [],
                         schemaStatus: "idle",
                         schemaError: "",
-                      },
-                    })
+                      }
+                    )
                   }
                   options={tableOptions}
                   loading={tableLoading}
@@ -196,7 +196,7 @@ function SourcePanel({ selectedNode, onClose, onNodeDataChange }: Props) {
               </div>
             ) : (
               <SqlEditorSection
-                sourceDataSourceId={sourceDataSourceId}
+                sourceDataSourceId={dataSourceId}
                 sql={sql}
                 tableOptions={tableOptions}
                 sqlPopoverOpen={sqlPopoverOpen}
@@ -208,16 +208,15 @@ function SourcePanel({ selectedNode, onClose, onNodeDataChange }: Props) {
                 resolveSqlLoading={resolveSqlLoading}
                 resolvedSqlPreview={resolvedSqlPreview}
                 onSqlChange={(value: any) =>
-                  updateNode({
-                    config: {
-                      sql: value,
-                    },
-                    meta: {
+                  updateNode(
+                    { sql: value },
+                    undefined,
+                    {
                       outputSchema: [],
                       schemaStatus: "idle",
                       schemaError: "",
-                    },
-                  })
+                    }
+                  )
                 }
                 onGenerateSql={handleGenerateSql}
                 onResolveSqlPreview={handleResolveSqlPreview}
@@ -231,13 +230,7 @@ function SourcePanel({ selectedNode, onClose, onNodeDataChange }: Props) {
           <div className="workflow-panel__group">
             <ExtraParamsConfig
               params={extraParams}
-              onParamsChange={(params) =>
-                updateNode({
-                  config: {
-                    extraParams: params,
-                  },
-                })
-              }
+              onParamsChange={(params) => updateNode({ extraParams: params })}
               selectedNode={selectedNode}
               hideHeader
             />

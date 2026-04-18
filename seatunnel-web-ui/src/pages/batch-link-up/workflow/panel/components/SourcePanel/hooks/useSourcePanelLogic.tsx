@@ -20,19 +20,21 @@ export function useSourcePanelLogic({
   const nodeId = selectedNode?.id;
   const nodeData = selectedNode?.data || {};
   const config = nodeData?.config || {};
+  const meta = nodeData?.meta || {};
 
   const title = nodeData?.title || "来源节点";
-  const dbType = nodeData?.dbType;
-  const description = nodeData?.description || "";
-  const sourceDataSourceId = config?.sourceDataSourceId || "";
+  const dbType = nodeData?.dbType || "MYSQL";
+  const description = nodeData?.description || "读取源端数据";
+
+  const dataSourceId = config?.dataSourceId
+    ? String(config.dataSourceId)
+    : "";
   const readMode = config?.readMode || "table";
-  const sourceTable = config?.sourceTable || undefined;
+  const table = config?.table || undefined;
   const sql = config?.sql || "";
   const extraParams = config?.extraParams || [];
 
-  const [sourceDataSourceOptions, setSourceDataSourceOptions] = useState<any[]>(
-    []
-  );
+  const [dataSourceOptions, setDataSourceOptions] = useState<any[]>([]);
   const [tableOptions, setTableOptions] = useState<any[]>([]);
   const [tableLoading, setTableLoading] = useState(false);
 
@@ -44,27 +46,46 @@ export function useSourcePanelLogic({
   const [resolvedSqlPreview, setResolvedSqlPreview] = useState("");
   const [viewLoading, setViewLoading] = useState(false);
 
+  const resetSchemaMeta = {
+    outputSchema: [],
+    schemaStatus: "idle",
+    schemaError: "",
+  };
+
   const updateNode = useCallback(
-    (patch: Record<string, any>) => {
+    (
+      configPatch?: Record<string, any>,
+      extraNodeDataPatch?: Record<string, any>,
+      metaPatch?: Record<string, any>
+    ) => {
       if (!nodeId) return;
+
       onNodeDataChange(nodeId, {
         ...nodeData,
-        ...patch,
+        ...(extraNodeDataPatch || {}),
+        config: {
+          ...(nodeData?.config || {}),
+          ...(configPatch || {}),
+        },
+        meta: {
+          ...(nodeData?.meta || {}),
+          ...(metaPatch || {}),
+        },
       });
     },
     [nodeId, nodeData, onNodeDataChange]
   );
 
   const currentDataSource = useMemo(() => {
-    return sourceDataSourceOptions.find(
-      (item: any) => String(item.value) === String(sourceDataSourceId)
+    return dataSourceOptions.find(
+      (item: any) => String(item.value) === String(dataSourceId)
     );
-  }, [sourceDataSourceId, sourceDataSourceOptions]);
+  }, [dataSourceId, dataSourceOptions]);
 
   useEffect(() => {
     const loadDataSourceOptions = async () => {
       if (!dbType) {
-        setSourceDataSourceOptions([]);
+        setDataSourceOptions([]);
         return;
       }
 
@@ -76,10 +97,10 @@ export function useSourcePanelLogic({
           value: String(item?.value),
           dbType: item?.dbType,
         }));
-        setSourceDataSourceOptions(options);
+        setDataSourceOptions(options);
       } catch (error) {
         console.error("load data source options error", error);
-        setSourceDataSourceOptions([]);
+        setDataSourceOptions([]);
       }
     };
 
@@ -87,10 +108,10 @@ export function useSourcePanelLogic({
   }, [dbType]);
 
   useEffect(() => {
-    if (!sourceDataSourceId || sourceDataSourceOptions.length === 0) return;
+    if (!dataSourceId || dataSourceOptions.length === 0) return;
 
-    const matched = sourceDataSourceOptions.find(
-      (item: any) => String(item.value) === String(sourceDataSourceId)
+    const matched = dataSourceOptions.find(
+      (item: any) => String(item.value) === String(dataSourceId)
     );
 
     if (!matched) return;
@@ -102,22 +123,22 @@ export function useSourcePanelLogic({
       return;
     }
 
-    updateNode({
+    updateNode(undefined, {
       title: nextTitle,
       dbType: nextDbType,
     });
-  }, [sourceDataSourceId, sourceDataSourceOptions, nodeData, updateNode]);
+  }, [dataSourceId, dataSourceOptions, nodeData, updateNode]);
 
   useEffect(() => {
     const loadTableOptions = async () => {
-      if (!sourceDataSourceId) {
+      if (!dataSourceId) {
         setTableOptions([]);
         return;
       }
 
       setTableLoading(true);
       try {
-        const res = await dataSourceCatalogApi.listTable(sourceDataSourceId);
+        const res = await dataSourceCatalogApi.listTable(dataSourceId);
         const list = Array.isArray(res?.data) ? res.data : [];
 
         const options = list.map((item: any) => {
@@ -153,12 +174,10 @@ export function useSourcePanelLogic({
         setTableOptions(options);
 
         if (
-          sourceTable &&
-          !options.some(
-            (item: any) => String(item.value) === String(sourceTable)
-          )
+          table &&
+          !options.some((item: any) => String(item.value) === String(table))
         ) {
-          updateNode({ sourceTable: undefined });
+          updateNode({ table: undefined });
         }
       } catch (error) {
         console.error("load table options error", error);
@@ -169,48 +188,62 @@ export function useSourcePanelLogic({
     };
 
     loadTableOptions();
-  }, [sourceDataSourceId]);
+  }, [dataSourceId, table, updateNode]);
 
   const handleDataSourceChange = useCallback(
     (value: string, option: any) => {
       setSelectedSqlTable(undefined);
       setResolvedSqlPreview("");
+      setSqlPopoverOpen(false);
+      setResolvePopoverOpen(false);
 
-      updateNode({
-        title: option?.label || nodeData?.title,
-        dbType: option?.dbType || nodeData?.dbType || "MYSQL",
-        config: {
-          sourceDataSourceId: value,
-          sourceTable: "",
+      updateNode(
+        {
+          dataSourceId: value,
+          table: undefined,
           sql: "",
         },
-        meta: {
-          outputSchema: [],
-          schemaStatus: "idle",
-          schemaError: "",
+        {
+          title: option?.label || nodeData?.title,
+          dbType: option?.dbType || nodeData?.dbType || "MYSQL",
         },
-      });
+        resetSchemaMeta
+      );
     },
     [nodeData, updateNode]
   );
 
+  const handleReadModeChange = useCallback(
+    (value: string) => {
+      updateNode(
+        {
+          readMode: value,
+          ...(value === "table" ? { sql: "" } : { table: undefined }),
+        },
+        undefined,
+        resetSchemaMeta
+      );
+    },
+    [updateNode]
+  );
+
   const resolveSourceOutputSchema = useCallback(async () => {
-    const sourceId = sourceDataSourceId;
-    const readModeValue = readMode;
-    const tablePath = sourceTable;
+    const currentDataSourceId = dataSourceId;
+    const currentReadMode = readMode;
+    const currentTable = table;
     const sqlText = sql?.trim();
 
-    if (!sourceId) {
+    if (!currentDataSourceId) {
       message.warning("请先选择来源数据源");
       return [];
     }
 
-    if (readModeValue === "table" && !tablePath) {
+    if (currentReadMode === "table" && !currentTable) {
       message.warning("请先选择来源表");
       return [];
     }
 
-    if (readModeValue === "sql" && !sqlText) {
+    if (currentReadMode === "sql" && !sqlText) {
       message.warning("请先输入 SQL");
       return [];
     }
@@ -218,31 +251,38 @@ export function useSourcePanelLogic({
     try {
       setTableLoading(true);
 
-      updateNode({
-        meta: {
+      updateNode(
+        undefined,
+        undefined,
+        {
           schemaStatus: "loading",
           schemaError: "",
-        },
-      });
+        }
+      );
 
       const params = {
-        read_mode: readModeValue,
-        table_path: readModeValue === "table" ? tablePath : "",
-        query: readModeValue === "sql" ? sqlText : "",
+        read_mode: currentReadMode,
+        table_path: currentReadMode === "table" ? currentTable : "",
+        query: currentReadMode === "sql" ? sqlText : "",
       };
 
-      const resp = await dataSourceCatalogApi.listColumn(sourceId, params);
+      const resp = await dataSourceCatalogApi.listColumn(
+        currentDataSourceId,
+        params
+      );
 
       if (resp?.code !== 0) {
         const errorMsg = resp?.message || "字段解析失败";
 
-        updateNode({
-          meta: {
+        updateNode(
+          undefined,
+          undefined,
+          {
             outputSchema: [],
             schemaStatus: "error",
             schemaError: errorMsg,
-          },
-        });
+          }
+        );
 
         message.error(errorMsg);
         return [];
@@ -251,75 +291,55 @@ export function useSourcePanelLogic({
       const rawColumns = resp?.data || [];
 
       const outputSchema = rawColumns.map((item: any) => ({
-        type: item?.fieldType  || "",
+        type: item?.fieldType || "",
         nullable: item?.isNullable,
         comment: item?.fieldComment || "",
         originFieldName: item?.fieldName || "",
       }));
 
-      updateNode({
-        meta: {
+      updateNode(
+        undefined,
+        undefined,
+        {
           outputSchema,
           schemaStatus: "success",
           schemaError: "",
-        },
-      });
+        }
+      );
 
       return outputSchema;
     } catch (error: any) {
-      updateNode({
-        meta: {
+      updateNode(
+        undefined,
+        undefined,
+        {
           outputSchema: [],
           schemaStatus: "error",
           schemaError: "字段解析失败",
-        },
-      });
+        }
+      );
 
       message.error("字段解析失败");
       return [];
     } finally {
       setTableLoading(false);
     }
-  }, [
-    sourceDataSourceId,
-    readMode,
-    sourceTable,
-    sql,
-    updateNode,
-    setTableLoading,
-  ]);
-
-  const handleReadModeChange = useCallback(
-    (value: string) => {
-      updateNode({
-        config: {
-          readMode: value,
-          ...(value === "table" ? { sql: "" } : { sourceTable: "" }),
-        },
-        meta: {
-          outputSchema: [],
-          schemaStatus: "idle",
-          schemaError: "",
-        },
-      });
-    },
-    [updateNode]
-  );
+  }, [dataSourceId, readMode, table, sql, updateNode]);
 
   const handlePreview = useCallback(async () => {
-    if (!sourceDataSourceId) {
+    if (!dataSourceId) {
       message.warning("请选择数据源");
       return;
     }
 
     const getRequestParams = () => ({
       read_mode: readMode,
-      ...(readMode === "table" ? { table_path: sourceTable } : { query: sql }),
+      ...(readMode === "table" ? { table_path: table } : { query: sql }),
       extra_params: extraParams,
     });
 
     try {
-      if (readMode === "table" && !sourceTable) {
+      if (readMode === "table" && !table) {
         message.warning("请选择来源表");
         return;
       }
@@ -332,7 +352,7 @@ export function useSourcePanelLogic({
       setViewLoading(true);
 
       const data = await dataSourceCatalogApi.getTop20Data(
-        sourceDataSourceId,
+        dataSourceId,
         getRequestParams()
       );
 
@@ -347,28 +367,21 @@ export function useSourcePanelLogic({
     } finally {
       setViewLoading(false);
     }
-  }, [
-    sourceDataSourceId,
-    readMode,
-    sourceTable,
-    sql,
-    extraParams,
-    qualityDetailRef,
-  ]);
+  }, [dataSourceId, readMode, table, sql, extraParams, qualityDetailRef]);
 
   const handleStatistics = useCallback(() => {
     console.log("statistics source data", {
       nodeId,
-      sourceDataSourceId,
+      dataSourceId,
       readMode,
-      sourceTable,
+      table,
       sql,
       extraParams,
     });
-  }, [nodeId, sourceDataSourceId, readMode, sourceTable, sql, extraParams]);
+  }, [nodeId, dataSourceId, readMode, table, sql, extraParams]);
 
   const handleGenerateSql = useCallback(async () => {
-    if (!sourceDataSourceId) {
+    if (!dataSourceId) {
       message.warning("请先选择数据源");
       return;
     }
@@ -381,13 +394,10 @@ export function useSourcePanelLogic({
     try {
       setGenerateSqlLoading(true);
 
-      const res = await dataSourceCatalogApi.buildSqlTemplate(
-        sourceDataSourceId,
-        {
-          read_mode: readMode,
-          table_path: selectedSqlTable,
-        }
-      );
+      const res = await dataSourceCatalogApi.buildSqlTemplate(dataSourceId, {
+        read_mode: "table",
+        table_path: selectedSqlTable,
+      });
 
       if (res?.code !== 0) {
         message.error(res?.message || "SQL 生成失败");
@@ -400,7 +410,7 @@ export function useSourcePanelLogic({
         return;
       }
 
-      updateNode({ sql: nextSql });
+      updateNode({ sql: nextSql }, undefined, resetSchemaMeta);
       setSqlPopoverOpen(false);
       message.success("SQL 生成成功");
     } catch (error) {
@@ -409,10 +419,10 @@ export function useSourcePanelLogic({
     } finally {
       setGenerateSqlLoading(false);
     }
-  }, [sourceDataSourceId, selectedSqlTable, updateNode]);
+  }, [dataSourceId, selectedSqlTable, updateNode]);
 
   const handleResolveSqlPreview = useCallback(async () => {
-    if (!sourceDataSourceId) {
+    if (!dataSourceId) {
       message.warning("请先选择数据源");
       return;
     }
@@ -425,7 +435,7 @@ export function useSourcePanelLogic({
     try {
       setResolveSqlLoading(true);
 
-      const res = await dataSourceCatalogApi.resolveSql(sourceDataSourceId, {
+      const res = await dataSourceCatalogApi.resolveSql(dataSourceId, {
         query: sql,
       });
 
@@ -441,7 +451,7 @@ export function useSourcePanelLogic({
     } finally {
       setResolveSqlLoading(false);
     }
-  }, [sourceDataSourceId, sql]);
+  }, [dataSourceId, sql]);
 
   const handleOpenResolvePopover = useCallback(
     async (open: boolean) => {
@@ -459,17 +469,18 @@ export function useSourcePanelLogic({
 
   return {
     nodeData,
+    meta,
     title,
     dbType,
     description,
-    sourceDataSourceId,
+    dataSourceId,
     readMode,
-    sourceTable,
+    table,
     sql,
     extraParams,
     currentDataSource,
 
-    sourceDataSourceOptions,
+    dataSourceOptions,
     tableOptions,
     tableLoading,
 
@@ -491,7 +502,6 @@ export function useSourcePanelLogic({
     handleGenerateSql,
     handleResolveSqlPreview,
     handleOpenResolvePopover,
-
     handleResolveColumns,
   };
 }

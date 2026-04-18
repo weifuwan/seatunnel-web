@@ -1,15 +1,25 @@
 import { ArrowLeftOutlined } from "@ant-design/icons";
 import { Button, Col, Form, message, Popover, Row, Space } from "antd";
-import { Blocks, Braces, Database, Eye, PlayCircle, Upload } from "lucide-react";
+import {
+  Blocks,
+  Braces,
+  Database,
+  Eye,
+  PlayCircle,
+  Upload,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { ReactFlowProvider } from "reactflow";
 import { seatunnelJobDefinitionApi } from "../api";
 import FlowCanvas from "./FlowCanvas";
 import RightConfigPanel from "./RightConfigPanel";
+import { CheckListPopover } from "./components/CheckListPopover";
 import {
   BasicConfig,
   ScheduleConfig,
 } from "./components/ScheduleConfigContent/types";
+import { useFlowChecks } from "./hooks/useFlowChecks";
+import "./index.less";
 import CodeBlockWithCopy from "./operator/CodeBlockWithCopy";
 
 interface WorkflowProps {
@@ -54,6 +64,10 @@ export default function Workflow({
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewContent, setPreviewContent] = useState("");
   const [previewLoading, setPreviewLoading] = useState(false);
+
+  const { checkList, checkStat, checkGroups } = useFlowChecks(
+    workflowGraph.nodes || []
+  );
 
   useEffect(() => {
     const handleMouseMove = (event: MouseEvent) => {
@@ -197,16 +211,11 @@ export default function Workflow({
                       <PlayCircle size={15} strokeWidth={1.9} />
                       <span className="ml-1">运行</span>
                     </div>
-
-                    <div
-                      className={actionChipClass}
-                      onClick={handleSave}
-                      role="button"
-                      tabIndex={0}
-                    >
-                      <Upload size={15} strokeWidth={1.9} />
-                      <span className="ml-1">发布</span>
-                    </div>
+                    <CheckListPopover
+                      checkStat={checkStat}
+                      checkGroups={checkGroups}
+                      triggerClassName={actionChipClass}
+                    />
 
                     <Popover
                       open={previewOpen}
@@ -230,12 +239,24 @@ export default function Workflow({
                         role="button"
                         tabIndex={0}
                       >
-                        <Eye size={15} strokeWidth={1.9} />
-                        <span className="ml-1">
-                          {previewLoading ? "生成中..." : "预览"}
-                        </span>
+                        <Eye
+                          size={15}
+                          strokeWidth={1.9}
+                          className={previewLoading ? "animate-spin" : ""}
+                        />
+                        <span className="ml-1">预览</span>
                       </div>
                     </Popover>
+
+                    <div
+                      className={actionChipClass}
+                      onClick={handleSave}
+                      role="button"
+                      tabIndex={0}
+                    >
+                      <Upload size={15} strokeWidth={1.9} />
+                      <span className="ml-1">发布</span>
+                    </div>
                   </Space>
                 </div>
 

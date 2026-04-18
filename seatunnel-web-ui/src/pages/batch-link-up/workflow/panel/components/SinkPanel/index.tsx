@@ -19,18 +19,18 @@ function SinkPanel({ selectedNode, onClose, onNodeDataChange }: Props) {
     dbType,
     description,
 
-    sinkDataSourceId,
+    dataSourceId,
     autoCreateTable,
     writeMode,
-    sinkReadMode,
-    sinkTable,
-    sinkTableName,
-    sinkSql,
+    targetMode,
+    table,
+    targetTableName,
+    sql,
     primaryKey,
     batchSize,
     extraParams,
 
-    sinkDataSourceOptions,
+    dataSourceOptions,
     tableOptions,
     tableLoading,
 
@@ -44,8 +44,8 @@ function SinkPanel({ selectedNode, onClose, onNodeDataChange }: Props) {
     handleDataSourceChange,
     handleAutoCreateTableChange,
     handleWriteModeChange,
-    handleSinkReadModeChange,
-    handleGenerateSinkSql,
+    handleTargetModeChange,
+    handleGenerateSql,
   } = useSinkPanelLogic({
     selectedNode,
     onNodeDataChange,
@@ -83,9 +83,9 @@ function SinkPanel({ selectedNode, onClose, onNodeDataChange }: Props) {
               <Database size={16} />
             </div>
             <Select
-              value={sinkDataSourceId}
+              value={dataSourceId}
               onChange={handleDataSourceChange}
-              options={sinkDataSourceOptions}
+              options={dataSourceOptions}
               placeholder="请选择目标数据源"
               showSearch
               optionFilterProp="label"
@@ -126,11 +126,10 @@ function SinkPanel({ selectedNode, onClose, onNodeDataChange }: Props) {
           <div className="workflow-panel__field workflow-panel__field--full">
             {autoCreateTable ? (
               <div className="workflow-panel__field workflow-panel__field--full">
-                {/* <div className="workflow-panel__label">目标表</div> */}
                 <Input
-                  value={sinkTableName}
+                  value={targetTableName}
                   onChange={(e) =>
-                    updateNode({ sinkTableName: e.target.value })
+                    updateNode({ targetTableName: e.target.value })
                   }
                   placeholder="请输入目标表名"
                   className="workflow-panel__antd-input"
@@ -141,11 +140,9 @@ function SinkPanel({ selectedNode, onClose, onNodeDataChange }: Props) {
                 <div className="workflow-panel__field workflow-panel__field--full">
                   <Segmented
                     block
-                    value={sinkReadMode}
+                    value={targetMode}
                     style={{ marginBottom: 12 }}
-                    onChange={(value) =>
-                      handleSinkReadModeChange(String(value))
-                    }
+                    onChange={(value) => handleTargetModeChange(String(value))}
                     options={[
                       {
                         label: (
@@ -169,11 +166,11 @@ function SinkPanel({ selectedNode, onClose, onNodeDataChange }: Props) {
                   />
                 </div>
 
-                {sinkReadMode === "table" ? (
+                {targetMode === "table" ? (
                   <div className="workflow-panel__field workflow-panel__field--full">
                     <Select
-                      value={sinkTable}
-                      onChange={(value) => updateNode({ sinkTable: value })}
+                      value={table}
+                      onChange={(value) => updateNode({ table: value })}
                       options={tableOptions}
                       loading={tableLoading}
                       placeholder="请选择目标表"
@@ -186,16 +183,16 @@ function SinkPanel({ selectedNode, onClose, onNodeDataChange }: Props) {
                   </div>
                 ) : (
                   <SinkSqlEditorSection
-                    sinkDataSourceId={sinkDataSourceId}
-                    sql={sinkSql}
+                    dataSourceId={dataSourceId}
+                    sql={sql}
                     tableOptions={tableOptions}
                     sqlPopoverOpen={sqlPopoverOpen}
                     setSqlPopoverOpen={setSqlPopoverOpen}
                     selectedSqlTable={selectedSqlTable}
                     setSelectedSqlTable={setSelectedSqlTable}
                     generateSqlLoading={generateSqlLoading}
-                    onSqlChange={(value) => updateNode({ sinkSql: value })}
-                    onGenerateSql={handleGenerateSinkSql}
+                    onSqlChange={(value) => updateNode({ sql: value })}
+                    onGenerateSql={handleGenerateSql}
                   />
                 )}
               </>
@@ -243,7 +240,9 @@ function SinkPanel({ selectedNode, onClose, onNodeDataChange }: Props) {
 
               {writeMode === "upsert" ? (
                 <div className="workflow-panel__field">
-                  <div className="workflow-panel__label" style={{marginTop: 12}}>主键字段</div>
+                  <div className="workflow-panel__label" style={{ marginTop: 12 }}>
+                    主键字段
+                  </div>
                   <Input
                     value={primaryKey}
                     onChange={(e) => updateNode({ primaryKey: e.target.value })}
@@ -255,16 +254,6 @@ function SinkPanel({ selectedNode, onClose, onNodeDataChange }: Props) {
                 <div />
               )}
             </div>
-
-            {/* <div className="workflow-panel__field">
-              <div className="workflow-panel__label">批量提交</div>
-              <Input
-                value={batchSize}
-                onChange={(e) => updateNode({ batchSize: e.target.value })}
-                placeholder="例如：1000"
-                className="workflow-panel__antd-input"
-              />
-            </div> */}
           </div>
         </div>
 

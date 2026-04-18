@@ -17,27 +17,28 @@ export function useSinkPanelLogic({
 }: SinkPanelLogicProps) {
   const nodeId = selectedNode?.id;
   const nodeData = selectedNode?.data || {};
+  const config = nodeData?.config || {};
 
   const title = nodeData?.title || "MYSQL";
   const dbType = nodeData?.dbType || "MYSQL";
   const description = nodeData?.description || "写入目标端数据";
 
-  const sinkDataSourceId = nodeData?.sinkDataSourceId
-    ? String(nodeData.sinkDataSourceId)
+  const dataSourceId = config?.dataSourceId
+    ? String(config.dataSourceId)
     : undefined;
 
-  const autoCreateTable = Boolean(nodeData?.autoCreateTable);
-  const writeMode = nodeData?.writeMode || "append";
-  const sinkReadMode = nodeData?.sinkReadMode || "table";
+  const autoCreateTable = Boolean(config?.autoCreateTable);
+  const writeMode = config?.writeMode || "append";
+  const targetMode = config?.targetMode || "table";
 
-  const sinkTable = nodeData?.sinkTable;
-  const sinkTableName = nodeData?.sinkTableName || "";
-  const sinkSql = nodeData?.sinkSql || "";
-  const primaryKey = nodeData?.primaryKey || "";
-  const batchSize = nodeData?.batchSize || "";
-  const extraParams = nodeData?.extraParams || [];
+  const table = config?.table;
+  const targetTableName = config?.targetTableName || "";
+  const sql = config?.sql || "";
+  const primaryKey = config?.primaryKey || "";
+  const batchSize = config?.batchSize || "";
+  const extraParams = config?.extraParams || [];
 
-  const [sinkDataSourceOptions, setSinkDataSourceOptions] = useState<any[]>([]);
+  const [dataSourceOptions, setDataSourceOptions] = useState<any[]>([]);
   const [tableOptions, setTableOptions] = useState<any[]>([]);
   const [tableLoading, setTableLoading] = useState(false);
 
@@ -46,26 +47,31 @@ export function useSinkPanelLogic({
   const [generateSqlLoading, setGenerateSqlLoading] = useState(false);
 
   const updateNode = useCallback(
-    (patch: Record<string, any>) => {
+    (patch: Record<string, any>, extraNodeDataPatch?: Record<string, any>) => {
       if (!nodeId) return;
+
       onNodeDataChange(nodeId, {
         ...nodeData,
-        ...patch,
+        ...(extraNodeDataPatch || {}),
+        config: {
+          ...(nodeData?.config || {}),
+          ...patch,
+        },
       });
     },
     [nodeId, nodeData, onNodeDataChange]
   );
 
   const currentDataSource = useMemo(() => {
-    return sinkDataSourceOptions.find(
-      (item: any) => String(item.value) === String(sinkDataSourceId)
+    return dataSourceOptions.find(
+      (item: any) => String(item.value) === String(dataSourceId)
     );
-  }, [sinkDataSourceId, sinkDataSourceOptions]);
+  }, [dataSourceId, dataSourceOptions]);
 
   useEffect(() => {
     const loadDataSourceOptions = async () => {
       if (!dbType) {
-        setSinkDataSourceOptions([]);
+        setDataSourceOptions([]);
         return;
       }
 
@@ -77,10 +83,10 @@ export function useSinkPanelLogic({
           value: String(item?.value),
           dbType: item?.dbType,
         }));
-        setSinkDataSourceOptions(options);
+        setDataSourceOptions(options);
       } catch (error) {
         console.error("load sink data source options error", error);
-        setSinkDataSourceOptions([]);
+        setDataSourceOptions([]);
       }
     };
 
@@ -88,10 +94,10 @@ export function useSinkPanelLogic({
   }, [dbType]);
 
   useEffect(() => {
-    if (!sinkDataSourceId || sinkDataSourceOptions.length === 0) return;
+    if (!dataSourceId || dataSourceOptions.length === 0) return;
 
-    const matched = sinkDataSourceOptions.find(
-      (item: any) => String(item.value) === String(sinkDataSourceId)
+    const matched = dataSourceOptions.find(
+      (item: any) => String(item.value) === String(dataSourceId)
     );
 
     if (!matched) return;
@@ -103,22 +109,19 @@ export function useSinkPanelLogic({
       return;
     }
 
-    updateNode({
-      title: nextTitle,
-      dbType: nextDbType,
-    });
-  }, [sinkDataSourceId, sinkDataSourceOptions, nodeData, updateNode]);
+    updateNode({}, { title: nextTitle, dbType: nextDbType });
+  }, [dataSourceId, dataSourceOptions, nodeData, updateNode]);
 
   useEffect(() => {
     const loadTableOptions = async () => {
-      if (!sinkDataSourceId || autoCreateTable) {
+      if (!dataSourceId || autoCreateTable) {
         setTableOptions([]);
         return;
       }
 
       setTableLoading(true);
       try {
-        const res = await dataSourceCatalogApi.listTable(sinkDataSourceId);
+        const res = await dataSourceCatalogApi.listTable(dataSourceId);
         const list = Array.isArray(res?.data) ? res.data : [];
 
         const options = list.map((item: any) => {
@@ -154,10 +157,10 @@ export function useSinkPanelLogic({
         setTableOptions(options);
 
         if (
-          sinkTable &&
-          !options.some((item: any) => String(item.value) === String(sinkTable))
+          table &&
+          !options.some((item: any) => String(item.value) === String(table))
         ) {
-          updateNode({ sinkTable: undefined });
+          updateNode({ table: undefined });
         }
       } catch (error) {
         console.error("load sink table options error", error);
@@ -168,22 +171,26 @@ export function useSinkPanelLogic({
     };
 
     loadTableOptions();
-  }, [sinkDataSourceId, autoCreateTable, sinkTable, updateNode]);
+  }, [dataSourceId, autoCreateTable, table, updateNode]);
 
   const handleDataSourceChange = useCallback(
     (value: string, option: any) => {
       setSelectedSqlTable(undefined);
       setSqlPopoverOpen(false);
 
-      updateNode({
-        sinkDataSourceId: value,
-        title: option?.label || nodeData?.title,
-        dbType: option?.dbType || nodeData?.dbType || "MYSQL",
-        sinkTable: undefined,
-        sinkTableName: "",
-        sinkSql: "",
-        primaryKey: "",
-      });
+      updateNode(
+        {
+          dataSourceId: value,
+          table: undefined,
+          targetTableName: "",
+          sql: "",
+          primaryKey: "",
+        },
+        {
+          title: option?.label || nodeData?.title,
+          dbType: option?.dbType || nodeData?.dbType || "MYSQL",
+        }
+      );
     },
     [nodeData, updateNode]
   );
@@ -195,10 +202,10 @@ export function useSinkPanelLogic({
 
       updateNode({
         autoCreateTable: checked,
-        sinkReadMode: "table",
-        sinkTable: undefined,
-        sinkTableName: "",
-        sinkSql: "",
+        targetMode: "table",
+        table: undefined,
+        targetTableName: "",
+        sql: "",
       });
     },
     [updateNode]
@@ -217,18 +224,18 @@ export function useSinkPanelLogic({
     [updateNode]
   );
 
-  const handleSinkReadModeChange = useCallback(
+  const handleTargetModeChange = useCallback(
     (value: string) => {
       updateNode({
-        sinkReadMode: value,
-        ...(value === "table" ? { sinkSql: "" } : { sinkTable: undefined }),
+        targetMode: value,
+        ...(value === "table" ? { sql: "" } : { table: undefined }),
       });
     },
     [updateNode]
   );
 
-  const handleGenerateSinkSql = useCallback(async () => {
-    if (!sinkDataSourceId) {
+  const handleGenerateSql = useCallback(async () => {
+    if (!dataSourceId) {
       message.warning("请先选择目标数据源");
       return;
     }
@@ -241,13 +248,10 @@ export function useSinkPanelLogic({
     try {
       setGenerateSqlLoading(true);
 
-      const res = await dataSourceCatalogApi.buildSqlTemplate(
-        sinkDataSourceId,
-        {
-          read_mode: "table",
-          table_path: selectedSqlTable,
-        }
-      );
+      const res = await dataSourceCatalogApi.buildSqlTemplate(dataSourceId, {
+        read_mode: "table",
+        table_path: selectedSqlTable,
+      });
 
       if (res?.code !== 0) {
         message.error(res?.message || "SQL 生成失败");
@@ -260,7 +264,7 @@ export function useSinkPanelLogic({
         return;
       }
 
-      updateNode({ sinkSql: nextSql });
+      updateNode({ sql: nextSql });
       setSqlPopoverOpen(false);
       message.success("SQL 生成成功");
     } catch (error) {
@@ -269,26 +273,26 @@ export function useSinkPanelLogic({
     } finally {
       setGenerateSqlLoading(false);
     }
-  }, [sinkDataSourceId, selectedSqlTable, updateNode]);
+  }, [dataSourceId, selectedSqlTable, updateNode]);
 
   return {
     title,
     dbType,
     description,
 
-    sinkDataSourceId,
+    dataSourceId,
     autoCreateTable,
     writeMode,
-    sinkReadMode,
-    sinkTable,
-    sinkTableName,
-    sinkSql,
+    targetMode,
+    table,
+    targetTableName,
+    sql,
     primaryKey,
     batchSize,
     extraParams,
 
     currentDataSource,
-    sinkDataSourceOptions,
+    dataSourceOptions,
     tableOptions,
     tableLoading,
 
@@ -302,7 +306,7 @@ export function useSinkPanelLogic({
     handleDataSourceChange,
     handleAutoCreateTableChange,
     handleWriteModeChange,
-    handleSinkReadModeChange,
-    handleGenerateSinkSql,
+    handleTargetModeChange,
+    handleGenerateSql,
   };
 }

@@ -4,7 +4,7 @@ import { Sparkles, Wand2 } from "lucide-react";
 const { TextArea } = Input;
 
 interface Props {
-  sinkDataSourceId?: string;
+  dataSourceId?: string;
   sql: string;
   tableOptions: any[];
   sqlPopoverOpen: boolean;
@@ -18,7 +18,7 @@ interface Props {
 
 export default function SinkSqlEditorSection(props: Props) {
   const {
-    sinkDataSourceId,
+    dataSourceId,
     sql,
     tableOptions,
     sqlPopoverOpen,
@@ -56,7 +56,7 @@ export default function SinkSqlEditorSection(props: Props) {
             type="primary"
             size="small"
             loading={generateSqlLoading}
-            disabled={!sinkDataSourceId || !selectedSqlTable}
+            disabled={!dataSourceId || !selectedSqlTable}
             onClick={onGenerateSql}
           >
             生成 SQL
@@ -113,7 +113,7 @@ export default function SinkSqlEditorSection(props: Props) {
           <Button
             size="small"
             type="text"
-            disabled={!sinkDataSourceId}
+            disabled={!dataSourceId}
             icon={<Wand2 size={14} />}
           />
         </Popover>

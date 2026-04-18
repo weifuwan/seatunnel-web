@@ -35,7 +35,7 @@ export function useFlowPublish(nodes: any[], edges: any[], baseForm: any) {
             id: idFromUrl
         };
 
-        const data = await seatunnelJobDefinitionApi.saveOrUpdate( httpParams);
+        const data = await seatunnelJobDefinitionApi.saveOrUpdateGuideMulti( httpParams);
         if (data?.code === 0) {
             message.success("发布成功");
         }

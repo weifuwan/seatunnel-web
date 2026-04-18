@@ -77,7 +77,7 @@ export default function SqlEditorSection(props: Props) {
   );
 
   const resolvePopoverContent = (
-    <div style={{ width: 460 }}>
+    <div style={{ width: 460 }} >
       <Space direction="vertical" style={{ width: "100%" }} size={12}>
         <div style={{ fontSize: 13, color: "#667085" }}>
           这里展示的是当前 SQL 模板解析后的预览结果，不会替换原始 SQL。
@@ -156,6 +156,7 @@ export default function SqlEditorSection(props: Props) {
           <Popover
             content={resolvePopoverContent}
             title="变量解析预览"
+            
             placement="leftTop"
             trigger="click"
             open={resolvePopoverOpen}

@@ -13,23 +13,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConfigKeys.AUTO_CREATE_TABLE;
-import static org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConfigKeys.BATCH_SIZE;
-import static org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConfigKeys.CONFIG;
-import static org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConfigKeys.DATABASE;
-import static org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConfigKeys.EXTRA_PARAMS;
-import static org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConfigKeys.GENERATE_SINK_SQL;
-import static org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConfigKeys.KEY;
-import static org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConfigKeys.PRIMARY_KEY;
-import static org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConfigKeys.QUERY;
-import static org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConfigKeys.READ_MODE;
-import static org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConfigKeys.SCHEMA;
-import static org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConfigKeys.SQL;
-import static org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConfigKeys.TABLE;
-import static org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConfigKeys.TABLE_PATH;
-import static org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConfigKeys.TARGET_MODE;
-import static org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConfigKeys.TARGET_TABLE_NAME;
-import static org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConfigKeys.VALUE;
+import static org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConfigKeys.*;
 
 public abstract class AbstractJdbcBatchBuilder extends AbstractJdbcHoconBuilder
         implements DataSourceHoconBuilder {
@@ -254,7 +238,7 @@ public abstract class AbstractJdbcBatchBuilder extends AbstractJdbcHoconBuilder
                 + "    user = \"root\"\n"
                 + "    password = \"******\"\n"
                 + "    driver = \"" + defaultDriver() + "\"\n"
-                + "    table = \"target_table\"\n"
+                + "    table = \"sink_table\"\n"
                 + "    generate_sink_sql = true\n"
                 + "    data_save_mode = \"APPEND_DATA\"\n"
                 + "    schema_save_mode = \"CREATE_SCHEMA_WHEN_NOT_EXIST\"\n"

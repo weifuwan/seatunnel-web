@@ -34,15 +34,16 @@ public class JdbcSinkBuilder implements SinkNodeConfigBuilder {
 
     @Override
     public Config build(Config data) {
-        Long dataSourceId = parseDataSourceId(data);
+        Config config = resolveNodeConfig(data);
+        Long dataSourceId = parseDataSourceId(config);
         DataSource dataSource = getRequiredDataSource(dataSourceId);
-        DbType dbType = parseDbType(data);
+        DbType dbType = parseDbType(config);
 
-        String pluginName = getRequiredPluginName(data);
+        String pluginName = getRequiredPluginName(config);
 
         DataSourceProcessor processor = DataSourceUtils.getDatasourceProcessor(dbType);
         Config sinkConfig = processor.getQueryBuilder(pluginName)
-                .buildSinkHocon(dataSource.getConnectionParams(), data);
+                .buildSinkHocon(dataSource.getConnectionParams(), config);
 
         validateSinkConfig(processor, sinkConfig);
         return sinkConfig;
@@ -63,6 +64,7 @@ public class JdbcSinkBuilder implements SinkNodeConfigBuilder {
     }
 
     private Long parseDataSourceId(Config config) {
+
         String value = getTrimmedString(config, KEY_DATA_SOURCE_ID);
         if (StringUtils.isBlank(value)) {
             throw new IllegalArgumentException(

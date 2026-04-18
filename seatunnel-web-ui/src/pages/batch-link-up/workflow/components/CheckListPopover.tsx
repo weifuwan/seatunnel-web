@@ -129,8 +129,8 @@ export const CheckListPopover = ({
             {checkStat.total}
           </div>
         ) : (
-          <div className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full border border-white bg-emerald-600 text-white shadow-sm">
-            <CheckCheck size={9} strokeWidth={2.4} />
+          <div className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full border border-white bg-emerald-500 text-white shadow-sm">
+            <CheckCheck size={10} strokeWidth={2.4} />
           </div>
         )}
       </div>

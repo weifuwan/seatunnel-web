@@ -1,6 +1,8 @@
 package org.apache.seatunnel.web.api.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -18,6 +20,7 @@ import org.apache.seatunnel.web.dao.repository.SeaTunnelClientDao;
 import org.apache.seatunnel.web.engine.client.rest.SeaTunnelRestClient;
 import org.apache.seatunnel.web.spi.bean.dto.ClientDatasourceVerifyDTO;
 import org.apache.seatunnel.web.spi.bean.dto.SeaTunnelClientDTO;
+import org.apache.seatunnel.web.spi.bean.dto.SeaTunnelClientPageDTO;
 import org.apache.seatunnel.web.spi.bean.vo.ClientDatasourceVerifyVO;
 import org.apache.seatunnel.web.spi.bean.vo.OptionVO;
 import org.apache.seatunnel.web.spi.bean.vo.SeaTunnelClientMetricsVO;
@@ -135,6 +138,18 @@ public class SeaTunnelClientServiceImpl implements SeaTunnelClientService {
         } catch (Exception e) {
             throw new ServiceException(Status.INTERNAL_SERVER_ERROR_ARGS, e.getMessage());
         }
+    }
+
+    @Override
+    public IPage<SeaTunnelClient> page(SeaTunnelClientPageDTO dto) {
+        int pageNo = dto == null || dto.getPageNo() == null || dto.getPageNo() <= 0 ? 1 : dto.getPageNo();
+        int pageSize = dto == null || dto.getPageSize() == null || dto.getPageSize() <= 0 ? 10 : dto.getPageSize();
+
+        LambdaQueryWrapper<SeaTunnelClient> wrapper = new LambdaQueryWrapper<>();
+
+        wrapper.orderByDesc(SeaTunnelClient::getCreateTime);
+
+        return seaTunnelClientDao.selectPage(new Page<>(pageNo, pageSize), wrapper);
     }
 
     @Override

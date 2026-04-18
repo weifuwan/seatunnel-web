@@ -368,7 +368,7 @@ function LoginPage() {
       alert("Login successful! Welcome, Erik!");
     } else {
       setError("Invalid email or password. Please try again.");
-      console.log("❌ Login failed");
+      // console.log("❌ Login failed");
     }
 
     setIsLoading(false);

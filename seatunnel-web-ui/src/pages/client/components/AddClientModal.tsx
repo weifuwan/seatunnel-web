@@ -1,7 +1,7 @@
 import ZetaIcon from "@/pages/batch-link-up/workflow/sider/icon/ZetaIcon";
 import { SmileOutlined } from "@ant-design/icons";
 import { Button, Form, Input, Modal, Select } from "antd";
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 
 const { TextArea } = Input;
 
@@ -56,9 +56,49 @@ const remarkPresets = [
   "新的客户端已接入，期待它接下来的表现 🌟",
 ];
 
-const getRandomRemark = () => {
-  const index = Math.floor(Math.random() * remarkPresets.length);
-  return remarkPresets[index];
+
+const clientNamePresets = [
+  "九阴真经",
+  "九阳神功",
+  "太玄经",
+  "易筋经",
+  "神照经",
+  "北冥神功",
+  "小无相功",
+  "凌波微步",
+  "斗转星移",
+  "乾坤大挪移",
+  "降龙十八掌",
+  "独孤九剑",
+  "六脉神剑",
+  "黯然销魂掌",
+  "玉女心经",
+  "左右互搏术",
+  "蛤蟆功",
+  "弹指神通",
+  "空明拳",
+  "龙象般若功",
+];
+
+/** 通用随机：尽量避免与上一次相同 */
+const getRandomItem = (list: string[], lastValue?: string) => {
+  if (!list.length) return "";
+  if (list.length === 1) return list[0];
+
+  let next = list[Math.floor(Math.random() * list.length)];
+  while (next === lastValue) {
+    next = list[Math.floor(Math.random() * list.length)];
+  }
+  return next;
+};
+
+const getRandomRemark = (lastValue?: string) => {
+  return getRandomItem(remarkPresets, lastValue);
+};
+
+const getRandomClientName = (lastValue?: string) => {
+  const preset = getRandomItem(clientNamePresets, lastValue);
+  return `ZETA-${preset}`;
 };
 
 const AddClientModal: React.FC<AddClientModalProps> = ({
@@ -68,14 +108,25 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
   onCancel,
   onSubmit,
 }) => {
+  const lastRemarkRef = useRef<string>();
+  const lastClientNameRef = useRef<string>();
+
   useEffect(() => {
     if (!open) return;
+
+    const nextRemark = getRandomRemark(lastRemarkRef.current);
+    const nextClientName = getRandomClientName(
+      lastClientNameRef.current?.replace(/^ZETA-/, "")
+    );
+
+    lastRemarkRef.current = nextRemark;
+    lastClientNameRef.current = nextClientName;
 
     form.setFieldsValue({
       engineType: "ZETA",
       clientPort: 8080,
-      remark: getRandomRemark(),
-      clientName: "ZETA-"
+      remark: nextRemark,
+      clientName: nextClientName,
     });
   }, [open, form]);
 
@@ -224,7 +275,7 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
             rules={[{ required: true, message: "请输入 Client Name" }]}
           >
             <Input
-              placeholder="例如：Prod Cluster A"
+              placeholder="例如：ZETA-独孤九剑"
               style={{ height: 32, borderRadius: 16 }}
             />
           </Form.Item>

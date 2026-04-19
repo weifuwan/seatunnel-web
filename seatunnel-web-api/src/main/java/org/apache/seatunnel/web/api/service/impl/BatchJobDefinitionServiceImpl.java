@@ -19,7 +19,14 @@ import org.apache.seatunnel.web.dao.entity.JobDefinitionEntity;
 import org.apache.seatunnel.web.dao.entity.JobSchedule;
 import org.apache.seatunnel.web.dao.repository.JobDefinitionContentDao;
 import org.apache.seatunnel.web.dao.repository.JobDefinitionDao;
-import org.apache.seatunnel.web.spi.bean.dto.*;
+import org.apache.seatunnel.web.spi.bean.dto.BatchJobDefinitionQueryDTO;
+import org.apache.seatunnel.web.spi.bean.dto.GuideMultiJobSaveCommand;
+import org.apache.seatunnel.web.spi.bean.dto.GuideSingleJobSaveCommand;
+import org.apache.seatunnel.web.spi.bean.dto.JobBasicConfig;
+import org.apache.seatunnel.web.spi.bean.dto.JobDefinitionEditDTO;
+import org.apache.seatunnel.web.spi.bean.dto.JobDefinitionSaveCommand;
+import org.apache.seatunnel.web.spi.bean.dto.JobScheduleConfig;
+import org.apache.seatunnel.web.spi.bean.dto.ScriptJobSaveCommand;
 import org.apache.seatunnel.web.spi.bean.entity.PaginationResult;
 import org.apache.seatunnel.web.spi.bean.vo.BatchJobDefinitionVO;
 import org.apache.seatunnel.web.spi.enums.Status;
@@ -51,6 +58,12 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
     @Resource
     private BatchJobInstanceService jobInstanceService;
 
+    @Resource
+    private BatchJobDefinitionQueryService definitionQueryService;
+
+    /**
+     * Save or update batch job definition.
+     */
     @Transactional(rollbackFor = Exception.class)
     protected Long doSaveOrUpdate(JobDefinitionSaveCommand command) {
         validateBase(command);
@@ -119,6 +132,9 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
         return doSaveOrUpdate(command);
     }
 
+    /**
+     * Build hocon config.
+     */
     protected String doBuildHoconConfig(JobDefinitionSaveCommand command) {
         validateBase(command);
 
@@ -149,36 +165,9 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
         return doBuildHoconConfig(command);
     }
 
-    private void validateBase(JobDefinitionSaveCommand command) {
-        if (command == null) {
-            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "command");
-        }
-        if (command.getBasic() == null) {
-            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "basic");
-        }
-        if (command.getMode() == null) {
-            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "mode");
-        }
-        if (StringUtils.isBlank(command.getBasic().getJobName())) {
-            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "jobName");
-        }
-    }
-
     @Override
     public BatchJobDefinitionVO selectById(Long id) {
-        validateId(id);
-
-        try {
-            JobDefinitionEntity entity = getDefinitionOrThrow(id);
-            BatchJobDefinitionVO vo = ConvertUtil.sourceToTarget(entity, BatchJobDefinitionVO.class);
-            fillScheduleFields(id, vo);
-            return vo;
-        } catch (ServiceException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("Query batch job definition by id failed, id={}", id, e);
-            throw new ServiceException(Status.QUERY_BATCH_JOB_DEFINITION_ERROR);
-        }
+        return definitionQueryService.selectById(id);
     }
 
     @Override
@@ -211,7 +200,7 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
     public Boolean delete(Long jobDefinitionId) {
         validateId(jobDefinitionId);
 
-        JobDefinitionEntity definition = getDefinitionOrThrow(jobDefinitionId);
+        JobDefinitionEntity definition = definitionQueryService.getDefinitionOrThrow(jobDefinitionId);
         validateDelete(definition.getId());
 
         try {
@@ -232,7 +221,7 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
         validateId(id);
 
         try {
-            JobDefinitionEntity definition = getDefinitionOrThrow(id);
+            JobDefinitionEntity definition = definitionQueryService.getDefinitionOrThrow(id);
             JobDefinitionContentEntity latestContent =
                     jobDefinitionContentDao.queryLatestByJobDefinitionId(id);
 
@@ -258,6 +247,9 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
         }
     }
 
+    /**
+     * Build basic config.
+     */
     private JobBasicConfig buildBasicConfig(JobDefinitionEntity definition) {
         JobBasicConfig basic = new JobBasicConfig();
         basic.setId(definition.getId());
@@ -270,6 +262,9 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
         return basic;
     }
 
+    /**
+     * Build schedule config.
+     */
     private JobScheduleConfig buildScheduleConfig(Long definitionId) {
         JobSchedule schedule = scheduleApplicationService.getByTaskDefinitionId(definitionId);
         if (schedule == null) {
@@ -300,6 +295,53 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
         return config;
     }
 
+    /**
+     * Fill schedule fields for page result.
+     */
+    private void fillScheduleFields(Long definitionId, BatchJobDefinitionVO vo) {
+        if (definitionId == null || vo == null) {
+            return;
+        }
+
+        try {
+            JobSchedule schedule = scheduleApplicationService.getByTaskDefinitionId(definitionId);
+            if (schedule == null) {
+                return;
+            }
+
+            vo.setCronExpression(schedule.getCronExpression());
+            if (schedule.getScheduleStatus() != null) {
+                vo.setScheduleStatus(schedule.getScheduleStatus());
+            }
+            if (StringUtils.isNotBlank(schedule.getScheduleConfig())) {
+                vo.setScheduleConfig(schedule.getScheduleConfig());
+            }
+        } catch (Exception e) {
+            log.warn("Fill schedule fields failed, definitionId={}", definitionId, e);
+        }
+    }
+
+    /**
+     * Validate save request base fields.
+     */
+    private void validateBase(JobDefinitionSaveCommand command) {
+        if (command == null) {
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "command");
+        }
+        if (command.getBasic() == null) {
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "basic");
+        }
+        if (command.getMode() == null) {
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "mode");
+        }
+        if (StringUtils.isBlank(command.getBasic().getJobName())) {
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "jobName");
+        }
+    }
+
+    /**
+     * Validate paging request.
+     */
     private void validatePagingRequest(BatchJobDefinitionQueryDTO dto) {
         if (dto == null) {
             throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "dto");
@@ -312,20 +354,18 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
         }
     }
 
+    /**
+     * Validate id.
+     */
     private void validateId(Long id) {
         if (id == null || id <= 0) {
             throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "id");
         }
     }
 
-    private JobDefinitionEntity getDefinitionOrThrow(Long id) {
-        JobDefinitionEntity entity = jobDefinitionDao.queryById(id);
-        if (entity == null) {
-            throw new ServiceException(Status.BATCH_JOB_DEFINITION_NOT_EXIST);
-        }
-        return entity;
-    }
-
+    /**
+     * Validate delete condition.
+     */
     private void validateDelete(Long id) {
         if (jobInstanceService.existsRunningInstance(id)) {
             throw new ServiceException(Status.DELETE_BATCH_JOB_DEFINITION_ERROR, "running instance exists");
@@ -336,22 +376,6 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
                 && schedule.getScheduleStatus() != null
                 && schedule.getScheduleStatus().shouldStartQuartz()) {
             throw new ServiceException(Status.DELETE_BATCH_JOB_DEFINITION_ERROR, "schedule is still active");
-        }
-    }
-
-    private void fillScheduleFields(Long definitionId, BatchJobDefinitionVO vo) {
-        if (definitionId == null || vo == null) {
-            return;
-        }
-
-        try {
-            JobSchedule schedule = scheduleApplicationService.getByTaskDefinitionId(definitionId);
-            if (schedule != null) {
-                vo.setCronExpression(schedule.getCronExpression());
-                vo.setScheduleStatus(schedule.getScheduleStatus());
-            }
-        } catch (Exception e) {
-            log.warn("Fill batch job definition schedule fields failed, definitionId={}", definitionId, e);
         }
     }
 }

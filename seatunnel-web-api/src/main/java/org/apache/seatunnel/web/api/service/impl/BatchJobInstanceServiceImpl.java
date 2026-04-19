@@ -1,11 +1,11 @@
 package org.apache.seatunnel.web.api.service.impl;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.seatunnel.web.api.exceptions.ServiceException;
-import org.apache.seatunnel.web.api.service.BatchJobDefinitionService;
 import org.apache.seatunnel.web.api.service.BatchJobInstanceService;
 import org.apache.seatunnel.web.api.service.support.JobInstanceFactory;
 import org.apache.seatunnel.web.api.service.support.JobInstanceStatusReconcileService;
@@ -39,7 +39,7 @@ import java.nio.file.Paths;
 public class BatchJobInstanceServiceImpl implements BatchJobInstanceService {
 
     @Resource
-    private BatchJobDefinitionService batchJobDefinitionService;
+    private BatchJobDefinitionQueryService batchJobDefinitionQueryService;
 
     @Resource
     private JobInstanceDao jobInstanceDao;
@@ -89,7 +89,7 @@ public class BatchJobInstanceServiceImpl implements BatchJobInstanceService {
         validatePagingRequest(dto);
 
         try {
-            var pageResult = jobInstanceDao.pageWithDefinition(dto);
+            IPage<JobInstanceVO> pageResult = jobInstanceDao.pageWithDefinition(dto);
 
             if (pageResult.getRecords() != null) {
                 pageResult.getRecords().forEach(this::maskSensitiveFields);
@@ -239,9 +239,12 @@ public class BatchJobInstanceServiceImpl implements BatchJobInstanceService {
         }
     }
 
+    /**
+     * Load definition data without depending on BatchJobDefinitionService.
+     */
     private BaseJobDefinitionCommand loadDefinition(Long jobDefineId) {
         try {
-            BatchJobDefinitionVO batchVo = batchJobDefinitionService.selectById(jobDefineId);
+            BatchJobDefinitionVO batchVo = batchJobDefinitionQueryService.selectById(jobDefineId);
             return ConvertUtil.sourceToTarget(batchVo, SeatunnelBatchJobDefinitionDTO.class);
         } catch (ServiceException e) {
             throw e;
@@ -251,6 +254,9 @@ public class BatchJobInstanceServiceImpl implements BatchJobInstanceService {
         }
     }
 
+    /**
+     * Build job instance entity.
+     */
     private JobInstance buildJobInstance(BaseJobDefinitionCommand definitionDTO, RunMode runMode) {
         Long id = generateInstanceId();
         String runtimeConfig = buildJobConfig(definitionDTO);
@@ -264,6 +270,9 @@ public class BatchJobInstanceServiceImpl implements BatchJobInstanceService {
         );
     }
 
+    /**
+     * Generate instance id.
+     */
     private Long generateInstanceId() {
         try {
             return CodeGenerateUtils.getInstance().genCode();
@@ -273,12 +282,18 @@ public class BatchJobInstanceServiceImpl implements BatchJobInstanceService {
         }
     }
 
+    /**
+     * Build log file path.
+     */
     private String buildLogPath(Long id) {
         return System.getProperty("user.dir")
                 + File.separator
                 + Paths.get(baseLogDir, "job-" + id + ".log");
     }
 
+    /**
+     * Query instance by id or throw exception.
+     */
     private JobInstance getJobInstanceOrThrow(Long id) {
         JobInstance entity = jobInstanceDao.queryById(id);
         if (entity == null) {
@@ -287,24 +302,36 @@ public class BatchJobInstanceServiceImpl implements BatchJobInstanceService {
         return entity;
     }
 
+    /**
+     * Validate definition id.
+     */
     private void validateDefinitionId(Long jobDefineId) {
         if (jobDefineId == null || jobDefineId <= 0) {
             throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "jobDefineId");
         }
     }
 
+    /**
+     * Validate instance id.
+     */
     private void validateInstanceId(Long instanceId) {
         if (instanceId == null || instanceId <= 0) {
             throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "instanceId");
         }
     }
 
+    /**
+     * Validate run mode.
+     */
     private void validateRunMode(RunMode runMode) {
         if (runMode == null) {
             throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "runMode");
         }
     }
 
+    /**
+     * Validate paging request.
+     */
     private void validatePagingRequest(SeaTunnelJobInstanceDTO dto) {
         if (dto == null) {
             throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "dto");
@@ -317,12 +344,18 @@ public class BatchJobInstanceServiceImpl implements BatchJobInstanceService {
         }
     }
 
+    /**
+     * Validate definition command.
+     */
     private void validateDefinitionCommand(BaseJobDefinitionCommand dto) {
         if (dto == null) {
             throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "jobDefinition");
         }
     }
 
+    /**
+     * Mask sensitive fields before return.
+     */
     private void maskSensitiveFields(JobInstanceVO vo) {
         if (vo == null) {
             return;

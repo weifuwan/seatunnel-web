@@ -26,11 +26,6 @@ public class JobDefinitionEditDTO {
     private Map<String, Object> workflow;
 
     /**
-     * 脚本模式下的脚本内容
-     */
-    private String scriptContent;
-
-    /**
      * 调度配置，来自 job_schedule 表
      */
     private JobScheduleConfig schedule;

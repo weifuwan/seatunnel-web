@@ -146,7 +146,7 @@ public class BatchJobDefinitionController {
      */
     @GetMapping("/{id}/edit-detail")
     @Operation(summary = "查询任务编辑详情")
-    public Result<JobDefinitionEditDTO> selectEditDetail(@PathVariable Long id) {
+    public Result<JobDefinitionEditDTO> selectEditDetail(@PathVariable("id") Long id) {
         return Result.buildSuc(batchJobDefinitionService.selectEditDetail(id));
     }
 }

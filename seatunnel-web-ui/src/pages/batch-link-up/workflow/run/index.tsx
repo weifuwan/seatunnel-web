@@ -1,17 +1,19 @@
-// RunLog.tsx（核心片段，你可以直接替换整个文件也行）
 import { Client } from "@stomp/stompjs";
 import { message } from "antd";
-import type { FC } from "react";
-import { memo, useEffect, useRef, useState } from "react";
-import { useReactFlow } from "reactflow";
+import type { FC, ReactNode } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import SockJS from "sockjs-client";
-import { useLocation } from "umi";
+import CloseIcon from "../icon/CloseIcon";
 import { seatunnelJobDefinitionApi, seatunnelJobExecuteApi } from "../../api";
-import { Footer } from "./components/Footer";
-import { Header } from "./components/Header";
-import { LogList } from "./components/LogList";
-import { MetricsSummary } from "./components/MetricsSummary";
 import "./index.less";
+
+interface RunLogProps {
+  setRunVisible: (value: boolean) => void;
+  runVisible?: boolean;
+  footer?: ReactNode;
+  baseForm?: any;
+  params?: any;
+}
 
 type SeatunnelJobMetricsPO = {
   pipelineId: number;
@@ -19,69 +21,84 @@ type SeatunnelJobMetricsPO = {
   writeRowCount: number;
   readQps: number;
   writeQps: number;
-  recordDelay: number;
-  readBytes: number;
-  writeBytes: number;
-  readBps: number;
-  writeBps: number;
-  intermediateQueueSize: number;
-  lagCount: number;
-  lossRate: number;
-  avgRowSize: number;
+  recordDelay?: number;
+  readBytes?: number;
+  writeBytes?: number;
+  readBps?: number;
+  writeBps?: number;
+  intermediateQueueSize?: number;
+  lagCount?: number;
+  lossRate?: number;
+  avgRowSize?: number;
   status?: string;
 };
 
-export type MetricsMessage = {
+type MetricsMessage = {
   type: "METRICS";
   instanceId: number;
   engineId: string;
-  timestamp: number;
+  timestamp?: number;
   metrics: Record<string, SeatunnelJobMetricsPO>;
 };
 
+type JobStatusMessage = {
+  type: "JOB_STATUS";
+  instanceId: number;
+  engineId: string;
+  status: "RUNNING" | "FINISHED" | "FAILED" | string;
+  timestamp?: number;
+};
+
 type LogEntryType = "log" | "metric" | "error";
+
 type LogEntry = {
   id: number;
   content: string;
   timestamp: string;
   type: LogEntryType;
-  data?: MetricsMessage;
   sortKey: number;
+  data?: MetricsMessage;
 };
 
-interface RunLogProps {
-  setRunVisible: (value: boolean) => void;
-  nodes?: any;
-  edges?: any;
-  runVisible?: boolean;
-  baseForm?: any;
-}
+const CONNECT_TIMEOUT = 5000;
+const WS_URL = "http://127.0.0.1:9527/ws";
+const WS_TOPIC = "/topic/log/test";
 
-const RunLog: FC<RunLogProps> = ({ setRunVisible, runVisible, nodes, baseForm, edges }) => {
-  const location = useLocation();
-  const query = new URLSearchParams(location.search);
-  const idFromUrl = query.get("id");
-
-  const [logEntries, setLogEntries] = useState<LogEntry[]>([]);
-  const [panelHeight, setPanelHeight] = useState(500);
+const RunLog: FC<RunLogProps> = ({
+  setRunVisible,
+  runVisible,
+  footer,
+  baseForm,
+  params,
+}) => {
+  const [panelHeight, setPanelHeight] = useState(460);
   const [isDragging, setIsDragging] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState("C");
+  const [logEntries, setLogEntries] = useState<LogEntry[]>([]);
+  const [connectionStatus, setConnectionStatus] = useState("未连接");
 
-  const { getViewport } = useReactFlow();
-  const stompClientRef = useRef<Client | null>(null);
   const logsContainerRef = useRef<HTMLDivElement>(null);
+  const stompClientRef = useRef<Client | null>(null);
+  const connectTimerRef = useRef<number | null>(null);
+  const metricsCacheRef = useRef<
+    Map<number, { data: MetricsMessage; timestamp: number }>
+  >(new Map());
 
-  const metricsCacheRef = useRef<Map<number, { data: MetricsMessage; timestamp: number }>>(new Map());
+  const panelStyle = useMemo(
+    () => ({
+      height: `${panelHeight}px`,
+    }),
+    [panelHeight]
+  );
 
-  const prepareDataForBackend = () => {
-    const currentViewport = getViewport();
-    return { nodes, edges, viewport: currentViewport };
-  };
-
-  const addLogEntry = (content: string, type: LogEntryType = "log", data?: MetricsMessage) => {
+  const addLogEntry = (
+    content: string,
+    type: LogEntryType = "log",
+    data?: MetricsMessage
+  ) => {
     const now = Date.now();
+
     const newEntry: LogEntry = {
-      id: now,
+      id: now + Math.floor(Math.random() * 1000),
       content,
       timestamp: new Date().toLocaleTimeString(),
       type,
@@ -93,16 +110,18 @@ const RunLog: FC<RunLogProps> = ({ setRunVisible, runVisible, nodes, baseForm, e
       if (type === "metric" && data?.instanceId != null) {
         metricsCacheRef.current.set(data.instanceId, { data, timestamp: now });
       }
-      return [newEntry, ...prev].slice(0, 200);
+      return [...prev, newEntry].slice(-200);
     });
   };
 
-  const getFirstPipeline = (metrics?: Record<string, SeatunnelJobMetricsPO>) => {
+  const getFirstPipeline = (
+    metrics?: Record<string, SeatunnelJobMetricsPO>
+  ): SeatunnelJobMetricsPO | null => {
     if (!metrics) return null;
     const keys = Object.keys(metrics);
     if (!keys.length) return null;
-    const k = keys.sort()[0];
-    return metrics[k] || null;
+    const firstKey = keys.sort()[0];
+    return metrics[firstKey] || null;
   };
 
   const isDuplicateMetric = (data: MetricsMessage) => {
@@ -122,71 +141,117 @@ const RunLog: FC<RunLogProps> = ({ setRunVisible, runVisible, nodes, baseForm, e
 
   const handleMetricsData = (data: MetricsMessage) => {
     const now = Date.now();
-    const payload: MetricsMessage = { ...data, timestamp: now };
+    const payload: MetricsMessage = {
+      ...data,
+      timestamp: now,
+    };
 
     if (isDuplicateMetric(payload)) {
-      metricsCacheRef.current.set(payload.instanceId, { data: payload, timestamp: now });
+      metricsCacheRef.current.set(payload.instanceId, {
+        data: payload,
+        timestamp: now,
+      });
       return;
     }
 
-    const p = getFirstPipeline(payload.metrics);
-    if (!p) {
-      addLogEntry(`METRICS received but metrics map empty: ${JSON.stringify(payload)}`, "error");
+    const pipeline = getFirstPipeline(payload.metrics);
+
+    if (!pipeline) {
+      addLogEntry(
+        `METRICS received but metrics map empty: ${JSON.stringify(payload)}`,
+        "error"
+      );
       return;
     }
 
     addLogEntry(
-      `Instance ${payload.instanceId} - Pipeline ${p.pipelineId}: ` +
-        `Read ${p.readRowCount} (${p.readQps} QPS), ` +
-        `Write ${p.writeRowCount} (${p.writeQps} QPS), ` +
-        `Queue ${p.intermediateQueueSize};`,
+      `Instance ${payload.instanceId} - Pipeline ${pipeline.pipelineId}: Read ${
+        pipeline.readRowCount ?? 0
+      } (${pipeline.readQps ?? 0} QPS), Write ${
+        pipeline.writeRowCount ?? 0
+      } (${pipeline.writeQps ?? 0} QPS), Queue ${
+        pipeline.intermediateQueueSize ?? 0
+      };`,
       "metric",
       payload
     );
   };
 
-  const scrollToBottom = () => {
-    if (logsContainerRef.current) {
-      logsContainerRef.current.scrollTop = logsContainerRef.current.scrollHeight;
+  const clearConnectTimer = () => {
+    if (connectTimerRef.current) {
+      window.clearTimeout(connectTimerRef.current);
+      connectTimerRef.current = null;
     }
   };
 
-  const CONNECT_TIMEOUT = 5000;
-  let connectTimer: any = null;
+  const disconnect = () => {
+    clearConnectTimer();
 
-  const connect = () => {
-    setConnectionStatus("Connecting...");
+    if (stompClientRef.current) {
+      addLogEntry("Disconnecting WebSocket connection.", "log");
+      void stompClientRef.current.deactivate();
+      stompClientRef.current = null;
+    }
+
+    setConnectionStatus("已断开");
+    addLogEntry("WebSocket Disconnected", "log");
+    metricsCacheRef.current.clear();
+  };
+
+  const connect = async () => {
+    if (!params?.id) {
+      message.warning("缺少任务ID，请先发布任务");
+      addLogEntry("Missing job definition id.", "error");
+      return;
+    }
+
+    setLogEntries([]);
+    metricsCacheRef.current.clear();
+    setConnectionStatus("连接中");
     addLogEntry("Connecting WebSocket Server...", "log");
 
-    const socket = new SockJS("http://127.0.0.1:9527/ws");
+    const socket = new SockJS(WS_URL);
 
     const stompClient = new Client({
       webSocketFactory: () => socket as any,
+      reconnectDelay: 0,
 
-      onConnect: () => {
-        if (connectTimer) clearTimeout(connectTimer);
+      onConnect: async () => {
+        clearConnectTimer();
 
-        setConnectionStatus("Connected");
+        setConnectionStatus("已连接");
         addLogEntry("WebSocket Connected", "log");
 
-        void prepareDataForBackend();
-        void (baseForm?.getFieldsValue?.() || {});
+        try {
+          void (baseForm?.getFieldsValue?.() || {});
 
-        seatunnelJobDefinitionApi.selectById(idFromUrl).then((resp) => {
-          if (resp?.code !== 0) {
+          const detailResp = await seatunnelJobDefinitionApi.selectById(
+            params?.id
+          );
+
+          if (detailResp?.code !== 0) {
             message.error("请先发布");
             addLogEntry("Job definition not published.", "error");
             return;
           }
 
-          seatunnelJobExecuteApi.execute(idFromUrl).then((execResp) => {
-            if (execResp?.code !== 0) {
-              addLogEntry(`Backend execute error: ${execResp?.message || "unknown"}`, "error");
-            }
-          });
+          const execResp = await seatunnelJobExecuteApi.execute(params?.id);
 
-          stompClient.subscribe("/topic/log/test", (msg) => {
+          if (execResp?.code !== 0) {
+            addLogEntry(
+              `Backend execute error: ${
+                execResp?.msg || execResp?.msg || "unknown"
+              }`,
+              "error"
+            );
+            return;
+          }
+
+          addLogEntry(`Task submitted successfully. jobId=${params?.id}`, "log");
+
+          stompClient.subscribe(WS_TOPIC, (msg) => {
             let data: any;
+
             try {
               data = JSON.parse(msg.body);
             } catch {
@@ -197,61 +262,83 @@ const RunLog: FC<RunLogProps> = ({ setRunVisible, runVisible, nodes, baseForm, e
             try {
               if (data?.type === "METRICS") {
                 handleMetricsData(data as MetricsMessage);
+              } else if (data?.type === "JOB_STATUS") {
+                const status = (data as JobStatusMessage)?.status;
+
+                if (status === "FINISHED") {
+                  setConnectionStatus("已完成");
+                  addLogEntry("Task finished successfully.", "log");
+                } else if (status === "FAILED") {
+                  setConnectionStatus("失败");
+                  addLogEntry("Task finished with failure.", "error");
+                } else if (status === "RUNNING") {
+                  setConnectionStatus("运行中");
+                } else {
+                  addLogEntry(JSON.stringify(data), "log");
+                }
+              } else if (typeof data === "string") {
+                addLogEntry(data, "log");
               } else {
-                addLogEntry(JSON.stringify(data, null, 2), "log");
+                addLogEntry(JSON.stringify(data), "log");
               }
             } catch (e: any) {
-              addLogEntry(`Handle message failed: ${e?.message || String(e)}`, "error");
+              addLogEntry(
+                `Handle message failed: ${e?.message || String(e)}`,
+                "error"
+              );
             }
           });
-        });
+        } catch (error: any) {
+          addLogEntry(
+            `Initialize run failed: ${error?.message || "unknown error"}`,
+            "error"
+          );
+        }
       },
 
       onStompError: (error) => {
-        if (connectTimer) clearTimeout(connectTimer);
-        setConnectionStatus("Connection error");
-        addLogEntry(`STOMP Error: ${error.headers?.message || "unknown"}`, "error");
+        clearConnectTimer();
+        setConnectionStatus("连接异常");
+        addLogEntry(
+          `STOMP Error: ${error.headers?.message || "unknown"}`,
+          "error"
+        );
       },
 
       onWebSocketClose: () => {
-        if (connectTimer) clearTimeout(connectTimer);
-        setConnectionStatus("Disconnected");
+        clearConnectTimer();
+        setConnectionStatus("已断开");
         addLogEntry("WebSocket Closed", "log");
       },
     });
 
-    connectTimer = setTimeout(() => {
+    connectTimerRef.current = window.setTimeout(() => {
       addLogEntry("WebSocket Connection timeout", "error");
       message.error("WebSocket Connection timeout");
-      setConnectionStatus("Connection timeout");
-      stompClient.deactivate();
+      setConnectionStatus("连接超时");
+      void stompClient.deactivate();
     }, CONNECT_TIMEOUT);
 
     stompClient.activate();
     stompClientRef.current = stompClient;
   };
 
-  const disconnect = () => {
-    if (stompClientRef.current) {
-      addLogEntry("Disconnecting WebSocket connection...", "log");
-      stompClientRef.current.deactivate();
-      stompClientRef.current = null;
-      setConnectionStatus("Disconnected");
-      addLogEntry("WebSocket Disconnected", "log");
-      metricsCacheRef.current.clear();
-    }
-  };
-
   useEffect(() => {
-    if (runVisible === true) connect();
+    if (!runVisible) return;
+
+    void connect();
+
     return () => {
-      if (stompClientRef.current) disconnect();
+      disconnect();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [runVisible]);
+  }, [runVisible, params?.id]);
 
   useEffect(() => {
-    scrollToBottom();
+    if (logsContainerRef.current) {
+      logsContainerRef.current.scrollTop =
+        logsContainerRef.current.scrollHeight;
+    }
   }, [logEntries]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -261,7 +348,7 @@ const RunLog: FC<RunLogProps> = ({ setRunVisible, runVisible, nodes, baseForm, e
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
       const deltaY = startY - moveEvent.clientY;
-      const newHeight = Math.max(100, Math.min(600, startHeight + deltaY));
+      const newHeight = Math.max(280, Math.min(720, startHeight + deltaY));
       setPanelHeight(newHeight);
     };
 
@@ -275,67 +362,126 @@ const RunLog: FC<RunLogProps> = ({ setRunVisible, runVisible, nodes, baseForm, e
     document.addEventListener("mouseup", handleMouseUp);
   };
 
-  const getLatestMetrics = (): MetricsMessage | null => {
-    const metricEntries = logEntries.filter((e) => e.type === "metric" && e.data);
-    if (!metricEntries.length) return null;
-    return [...metricEntries].sort((a, b) => b.sortKey - a.sortKey)[0].data || null;
+  const getLogBadgeText = (type: LogEntryType) => {
+    if (type === "metric") return "METRIC";
+    if (type === "error") return "ERROR";
+    return "LOG";
   };
 
-  const sortedLogEntries = [...logEntries].sort((a, b) => b.sortKey - a.sortKey);
-  const latestMetrics = getLatestMetrics();
+  const getLogItemClassName = (type: LogEntryType) => {
+    if (type === "metric") {
+      return "run-log__log-item run-log__log-item--metric";
+    }
+    if (type === "error") {
+      return "run-log__log-item run-log__log-item--error";
+    }
+    return "run-log__log-item run-log__log-item--log";
+  };
+
+  const latestMetricData = Array.from(metricsCacheRef.current.values())
+    .sort((a, b) => b.timestamp - a.timestamp)[0]?.data;
+
+  const latestPipeline = getFirstPipeline(latestMetricData?.metrics);
+
+  const totalSynced = latestPipeline
+    ? latestPipeline.writeRowCount ?? latestPipeline.readRowCount ?? 0
+    : "--";
+
+  const readQps = latestPipeline?.readQps ?? 0;
+  const writeQps = latestPipeline?.writeQps ?? 0;
+  const qpsText = latestPipeline ? `${readQps}/${writeQps}` : "--/--";
+
+  if (!runVisible) {
+    return null;
+  }
 
   return (
-    <div tabIndex={-1} className="runLog">
-      <div className="runLog-container">
-        <div style={{ position: "relative", height: "100%" }}>
-          <div style={{ height: `calc(100% - ${panelHeight}px)`, background: "transparent" }} />
-
-          <div
-            style={{
-              height: "1px",
-              background: isDragging ? "#1890ff" : "#e8e8e8",
-              cursor: "row-resize",
-              position: "relative",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-            onMouseDown={handleMouseDown}
-          >
-            <div
-              style={{
-                width: "20px",
-                height: "4px",
-                background: isDragging ? "#1890ff" : "#999",
-                borderRadius: "2px",
-              }}
-            />
-          </div>
-
-          <div
-            style={{
-              height: `${panelHeight}px`,
-              padding: "12px",
-              background: "#fff",
-              overflow: "hidden",
-              display: "flex",
-              flexDirection: "column",
-            }}
-          >
-            <Header
-              connectionStatus={connectionStatus}
-              latestMetrics={latestMetrics || undefined}
-              onClose={() => setRunVisible(false)}
-            />
-
-            {/* ✅ 没数据就不渲染，避免 Header/MetricsSummary 内 Object.values 崩 */}
-            {latestMetrics ? <MetricsSummary data={latestMetrics} /> : null}
-
-            <LogList logs={sortedLogEntries as any} containerRef={logsContainerRef} />
-
-            <Footer total={sortedLogEntries.length} metricCount={metricsCacheRef.current.size} />
-          </div>
+    <div className="run-log">
+      <div className="run-log__container">
+        <div
+          className={`run-log__resize-bar ${
+            isDragging ? "run-log__resize-bar--active" : ""
+          }`}
+          onMouseDown={handleMouseDown}
+        >
+          <div className="run-log__resize-handle" />
         </div>
+
+        <section className="run-log__drawer" style={panelStyle}>
+          <header className="run-log__header">
+            <div className="run-log__header-main">
+              <div className="run-log__header-meta">
+                <div className="run-log__header-icon">志</div>
+
+                <div className="run-log__header-text">
+                  <div className="run-log__header-title">运行日志</div>
+                  <div className="run-log__header-subtitle">
+                    {connectionStatus}
+                  </div>
+                </div>
+              </div>
+
+              <div className="run-log__header-stats">
+                <div className="run-log__header-stat">
+                  <span className="run-log__header-stat-label">同步总量</span>
+                  <span className="run-log__header-stat-value">
+                    {totalSynced}
+                  </span>
+                </div>
+
+                <div className="run-log__header-stat">
+                  <span className="run-log__header-stat-label">QPS</span>
+                  <span className="run-log__header-stat-value">{qpsText}</span>
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              className="run-log__close"
+              onClick={() => setRunVisible(false)}
+              aria-label="关闭运行日志面板"
+            >
+              <CloseIcon />
+            </button>
+          </header>
+
+          <div className="run-log__body">
+            <div className="run-log__section">
+              <div className="run-log__log-wrap" ref={logsContainerRef}>
+                {logEntries.length === 0 ? (
+                  <div className="run-log__log-empty">
+                    <div className="run-log__log-empty-title">暂无日志</div>
+                    <div className="run-log__log-empty-desc">
+                      等待任务启动后显示运行输出
+                    </div>
+                  </div>
+                ) : (
+                  logEntries.map((entry) => (
+                    <div
+                      key={entry.id}
+                      className={getLogItemClassName(entry.type)}
+                    >
+                      <span className="run-log__log-badge">
+                        {getLogBadgeText(entry.type)}
+                      </span>
+                      <span className="run-log__log-time">
+                        [{entry.timestamp}]
+                      </span>
+                      <span className="run-log__log-text" title={entry.content}>
+                        {entry.content}
+                      </span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+
+          {footer ? (
+            <footer className="run-log__footer">{footer}</footer>
+          ) : null}
+        </section>
       </div>
     </div>
   );

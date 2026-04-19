@@ -2,6 +2,7 @@ package org.apache.seatunnel.web.spi.bean.vo;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.*;
+import org.apache.seatunnel.web.common.enums.JobDefinitionMode;
 import org.apache.seatunnel.web.common.enums.JobMode;
 import org.apache.seatunnel.web.common.enums.RunMode;
 import org.apache.seatunnel.web.common.enums.ScheduleStatusEnum;
@@ -22,6 +23,20 @@ public class BatchJobDefinitionVO {
 
     private String jobDesc;
 
+    /**
+     * SCRIPT / GUIDE_SINGLE / GUIDE_MULTI
+     */
+    private JobDefinitionMode mode;
+
+    /**
+     * BATCH / STREAMING
+     */
+    private JobMode jobType;
+
+    private Long clientId;
+
+    private Integer parallelism;
+
     private Long duration;
 
     private Long qps;
@@ -30,16 +45,8 @@ public class BatchJobDefinitionVO {
 
     private Integer jobVersion;
 
-    private Long clientId;
-
-    private boolean wholeSync;
-
-    private int parallelism;
-
     private String sourceType;
     private String sourceTable;
-
-    private JobMode jobType;
 
     private SyncModeEnum syncMode;
 
@@ -58,7 +65,6 @@ public class BatchJobDefinitionVO {
     private Long writeQps;
     private Long recordDelay;
 
-
     @JsonFormat(pattern = "yyyy/MM/dd HH:mm:ss", timezone = "GMT+8")
     private Date createTime;
 
@@ -68,10 +74,12 @@ public class BatchJobDefinitionVO {
     private String scheduleId;
     private String cronExpression;
     private ScheduleStatusEnum scheduleStatus;
+
     @JsonFormat(pattern = "yyyy/MM/dd HH:mm:ss", timezone = "GMT+8")
     private Date lastScheduleTime;
+
     @JsonFormat(pattern = "yyyy/MM/dd HH:mm:ss", timezone = "GMT+8")
     private Date nextScheduleTime;
-    private String scheduleConfig;
 
+    private String scheduleConfig;
 }

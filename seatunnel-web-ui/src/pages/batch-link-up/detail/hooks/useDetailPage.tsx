@@ -167,17 +167,17 @@ export default function useDetailPage() {
         );
 
         if (currentMode === "GUIDE_SINGLE") {
-          history.push(`/sync/batch-link-up/${id}/config/single`);
+          history.push(`/sync/batch-link-up/${id}/config/single?scene=create`);
           return;
         }
 
         if (currentMode === "GUIDE_MULTI") {
-          history.push(`/sync/batch-link-up/${id}/config/multi`);
+          history.push(`/sync/batch-link-up/${id}/config/multi?scene=create`);
           return;
         }
 
         if (currentMode === "SCRIPT") {
-          history.push(`/sync/batch-link-up/${id}/config/script`);
+          history.push(`/sync/batch-link-up/${id}/config/script?scene=create`);
           return;
         }
       }

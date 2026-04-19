@@ -43,15 +43,29 @@ export default function useFlowBuilder({ form, params }: Props) {
   const didFitViewRef = useRef(false);
 
   useEffect(() => {
-    if (params?.jobDefinitionInfo !== undefined) {
-      form.setFieldsValue({
-        jobName: params?.jobName,
-        jobDesc: params?.jobDesc,
-        clientId: params?.clientId,
-        syncMode: "DAG",
-      });
+    if (!params) return;
 
-      const contentInfo = JSON.parse(params?.jobDefinitionInfo || "{}");
+    form.setFieldsValue({
+      jobName: params?.jobName,
+      jobDesc: params?.jobDesc,
+      clientId: params?.clientId,
+      syncMode: "DAG",
+    });
+
+    // 1. 编辑模式优先使用后端返回的 workflow
+    if (params?.workflow) {
+      setNodes(params.workflow?.nodes || []);
+      setEdges(params.workflow?.edges || []);
+      return;
+    }
+
+    // 2. 兼容旧结构：jobDefinitionInfo
+    if (params?.jobDefinitionInfo !== undefined) {
+      const contentInfo =
+        typeof params.jobDefinitionInfo === "string"
+          ? JSON.parse(params.jobDefinitionInfo || "{}")
+          : params.jobDefinitionInfo || {};
+
       setNodes(contentInfo?.nodes || []);
       setEdges(contentInfo?.edges || []);
     }

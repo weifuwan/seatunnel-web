@@ -111,12 +111,25 @@ public class JobMetricsMonitor {
                     persistMetrics(instanceId, finalMetrics.values());
                 }
 
+                sendFinalEvent(instanceId, context.getEngineId(), "FINISHED");
             } catch (Exception e) {
                 log.warn("Failed to fetch final metrics for instance {}", instanceId, e);
+                sendFinalEvent(instanceId, context.getEngineId(), "FAILED");
             }
         }
 
         cleanup(instanceId);
+    }
+
+    private void sendFinalEvent(Long instanceId, Long engineId, String status) {
+        Map<String, Object> message = new HashMap<>();
+        message.put("type", "JOB_STATUS");
+        message.put("instanceId", instanceId);
+        message.put("engineId", engineId);
+        message.put("status", status); // SUCCESS / FAILED / FINISHED
+        message.put("timestamp", Instant.now().toEpochMilli());
+
+        webSocketService.sendMessage(buildChannel(instanceId, engineId), message);
     }
 
     private void persistMetrics(Long instanceId, Collection<JobMetrics> metricsList) {

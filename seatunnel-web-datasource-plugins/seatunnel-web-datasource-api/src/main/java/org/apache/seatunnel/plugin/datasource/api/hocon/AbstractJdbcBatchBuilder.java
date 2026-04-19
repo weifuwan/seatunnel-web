@@ -163,9 +163,21 @@ public abstract class AbstractJdbcBatchBuilder extends AbstractJdbcHoconBuilder
     protected void appendSinkSaveMode(Config config, Map<String, Object> map) {
         boolean autoCreateTable = JdbcConfigReaders.getBoolean(config, AUTO_CREATE_TABLE, false);
 
-        String dataSaveMode = JdbcConfigReaders.getString(config, "dataSaveMode", "");
-        map.put("data_save_mode",
-                StringUtils.isNotBlank(dataSaveMode) ? dataSaveMode : "APPEND_DATA");
+        String writeMode = JdbcConfigReaders.getString(config, "writeMode", "append");
+        String dataSaveMode;
+
+        switch (writeMode.toLowerCase()) {
+            case "overwrite":
+                dataSaveMode = "DROP_DATA";
+                break;
+            case "append":
+            case "upsert":
+            default:
+                dataSaveMode = "APPEND_DATA";
+                break;
+        }
+
+        map.put("data_save_mode", dataSaveMode);
 
         String schemaSaveMode = JdbcConfigReaders.getString(config, "schemaSaveMode", "");
         map.put("schema_save_mode",
@@ -180,22 +192,26 @@ public abstract class AbstractJdbcBatchBuilder extends AbstractJdbcHoconBuilder
      * Appends sink upsert and primary key settings.
      */
     protected void appendSinkUpsertOptions(Config config, Map<String, Object> map) {
+        String writeMode = JdbcConfigReaders.getString(config, "writeMode", "append");
         String primaryKey = JdbcConfigReaders.getString(config, PRIMARY_KEY, "");
 
-        // Enable upsert explicitly or infer it from primary keys.
-        if (config.hasPath("enableUpsert")) {
-            map.put("enable_upsert", config.getValue("enableUpsert").unwrapped());
-        } else {
-            map.put("enable_upsert", StringUtils.isNotBlank(primaryKey));
+        boolean upsert = "upsert".equalsIgnoreCase(writeMode);
+        map.put("enable_upsert", upsert);
+
+        if (!upsert) {
+            return;
         }
 
-        if (StringUtils.isNotBlank(primaryKey)) {
-            List<String> primaryKeys = parsePrimaryKeys(primaryKey);
-            if (!primaryKeys.isEmpty()) {
-                map.put("primary_keys", primaryKeys);
-                map.put("field_ide", String.join(",", primaryKeys));
-            }
+        if (StringUtils.isBlank(primaryKey)) {
+            throw new IllegalArgumentException("Primary key is required when writeMode is upsert");
         }
+
+        List<String> primaryKeys = parsePrimaryKeys(primaryKey);
+        if (primaryKeys.isEmpty()) {
+            throw new IllegalArgumentException("Primary key is required when writeMode is upsert");
+        }
+
+        map.put("primary_keys", primaryKeys);
     }
 
     /**

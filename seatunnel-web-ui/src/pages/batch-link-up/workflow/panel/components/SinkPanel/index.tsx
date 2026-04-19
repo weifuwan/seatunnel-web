@@ -1,4 +1,4 @@
-import { Input, Segmented, Select, Switch } from "antd";
+import { Input, Segmented, Select, Switch, Tooltip } from "antd";
 import { Database, FileCode2, Save, Table2, UploadCloud } from "lucide-react";
 import { memo } from "react";
 import PanelShell from "../PanelShell";
@@ -220,8 +220,12 @@ function SinkPanel({ selectedNode, onClose, onNodeDataChange }: Props) {
                   {
                     label: (
                       <div className="workflow-panel__segmented-item">
-                        <Save size={14} />
-                        <span>覆盖写入</span>
+                        <Tooltip title="覆盖写入：会先清空目标表中的已有数据，再执行本次同步。">
+                          <div className="workflow-panel__segmented-item">
+                            <Save size={14} />
+                            <span>覆盖写入</span>
+                          </div>
+                        </Tooltip>
                       </div>
                     ),
                     value: "overwrite",
@@ -240,7 +244,10 @@ function SinkPanel({ selectedNode, onClose, onNodeDataChange }: Props) {
 
               {writeMode === "upsert" ? (
                 <div className="workflow-panel__field">
-                  <div className="workflow-panel__label" style={{ marginTop: 12 }}>
+                  <div
+                    className="workflow-panel__label"
+                    style={{ marginTop: 12 }}
+                  >
                     主键字段
                   </div>
                   <Input

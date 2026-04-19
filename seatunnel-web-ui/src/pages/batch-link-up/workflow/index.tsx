@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { ReactFlowProvider } from "reactflow";
-import { seatunnelJobDefinitionApi, seatunnelJobExecuteApi } from "../api";
+import { seatunnelJobDefinitionApi } from "../api";
 import FlowCanvas from "./FlowCanvas";
 import RightConfigPanel from "./RightConfigPanel";
 import { CheckListPopover } from "./components/CheckListPopover";
@@ -21,6 +21,8 @@ import {
 import { useFlowChecks } from "./hooks/useFlowChecks";
 import "./index.less";
 import CodeBlockWithCopy from "./operator/CodeBlockWithCopy";
+
+import RunLog from "./run";
 
 interface WorkflowProps {
   params: any;
@@ -66,6 +68,8 @@ export default function Workflow({
   const [previewContent, setPreviewContent] = useState("");
   const [previewLoading, setPreviewLoading] = useState(false);
 
+  const [runVisible, setRunVisible] = useState(false);
+
   // 发布 / 运行状态
   const [publishedJobDefineId, setPublishedJobDefineId] = useState<
     number | undefined
@@ -87,6 +91,23 @@ export default function Workflow({
     : isDirty
     ? "当前内容已变更，请重新发布后再执行"
     : "";
+
+  const validateChecklistBeforeAction = () => {
+    const total =
+      (checkStat as any)?.total ??
+      (checkStat as any)?.count ??
+      (checkStat as any)?.checklistCount ??
+      0;
+
+    console.log(checkStat);
+
+    if (total !== 0) {
+      message.warning("请先完成 Checklist 检查后，再进行预览或同步");
+      return false;
+    }
+
+    return true;
+  };
 
   useEffect(() => {
     const handleMouseMove = (event: MouseEvent) => {
@@ -173,6 +194,9 @@ export default function Workflow({
 
   const handlePreview = async () => {
     try {
+      if (!validateChecklistBeforeAction()) {
+        return;
+      }
       setPreviewLoading(true);
 
       const finalPayload = buildFinalPayload();
@@ -191,6 +215,9 @@ export default function Workflow({
 
   const handleSave = async () => {
     try {
+      if (!validateChecklistBeforeAction()) {
+        return;
+      }
       setPublishLoading(true);
 
       const finalPayload = buildFinalPayload();
@@ -203,10 +230,10 @@ export default function Workflow({
       if (jobDefineId) {
         setPublishedJobDefineId(jobDefineId);
         setIsDirty(false);
-        setParams((prev: any) => ({
-          ...prev,
-          id: jobDefineId,
-        }));
+        // setParams((prev: any) => ({
+        //   ...prev,
+        //   id: jobDefineId,
+        // }));
       }
 
       message.success("发布成功");
@@ -218,6 +245,10 @@ export default function Workflow({
   };
 
   const handleRun = async () => {
+    if (!validateChecklistBeforeAction()) {
+      return;
+    }
+
     if (!publishedJobDefineId) {
       message.warning("请先发布任务，再执行");
       return;
@@ -228,17 +259,7 @@ export default function Workflow({
       return;
     }
 
-    try {
-      setRunLoading(true);
-
-      await seatunnelJobExecuteApi.execute(publishedJobDefineId);
-
-      message.success("任务已提交执行");
-    } catch (error: any) {
-      message.error(error?.message || "运行失败");
-    } finally {
-      setRunLoading(false);
-    }
+    setRunVisible(true);
   };
 
   const actionChipClass =
@@ -436,6 +457,16 @@ export default function Workflow({
                   </Row>
                 </div>
               </div>
+              {runVisible && (
+                <RunLog
+                  runVisible={runVisible}
+                  setRunVisible={setRunVisible}
+                  nodes={workflowGraph.nodes}
+                  edges={workflowGraph.edges}
+                  baseForm={form}
+                  params={params}
+                />
+              )}
             </div>
 
             <div

@@ -49,6 +49,15 @@ export const seatunnelJobDefinitionApi = {
     return HttpUtils.get(`${apiPrefix}/${id}`);
   },
 
+  /**
+  * 编辑页详情查询
+  */
+  selectEditDetail: (
+    id: any,
+  ): Promise<{ code: number; data: any; message?: string; msg?: string }> => {
+    return HttpUtils.get(`${apiPrefix}/${id}/edit-detail`);
+  },
+
   getUniqueId: (): Promise<{ code: number; data: SeatunnelJobDefinition; message?: string }> => {
     return HttpUtils.get(`${apiPrefix}/get-unique-id`);
   },
@@ -79,7 +88,7 @@ export const seatunnelJobDefinitionApi = {
     return HttpUtils.post(`${apiPrefix}/guide-multi/build-config`, data);
   },
 
-  
+
   /**
    * SCRIPT 模式预览 HOCON
    */

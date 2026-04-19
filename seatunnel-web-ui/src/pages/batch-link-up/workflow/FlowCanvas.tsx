@@ -44,6 +44,13 @@ function buildInitialGraph(
   nodes: Node[];
   edges: Edge[];
 } {
+  if (params?.workflow?.nodes?.length) {
+    return {
+      nodes: params.workflow.nodes || [],
+      edges: params.workflow.edges || [],
+    };
+  }
+
   const timestamp = Date.now();
   const sourceId = `source-${timestamp}`;
   const sinkId = `sink-${timestamp}`;

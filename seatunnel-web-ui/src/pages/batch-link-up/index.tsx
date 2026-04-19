@@ -2,8 +2,8 @@ import { message } from "antd";
 import { useState } from "react";
 import { history } from "umi";
 import { seatunnelJobDefinitionApi } from "./api";
-import SyncTaskList from "./SyncTaskList";
 import DataSyncHeader from "./components/DataSyncHeader";
+import SyncTaskList from "./SyncTaskList";
 
 const App = () => {
   const [sourceType, setSourceType] = useState<any>({
@@ -18,8 +18,11 @@ const App = () => {
     pluginName: "JDBC-MYSQL",
   });
 
-  const goDetail = (id?: string, record?: any) => {
-  if (id === undefined) {
+  /**
+   * 新增场景：
+   * 先申请唯一ID，继续沿用缓存方式进入详情页
+   */
+  const goDetail = () => {
     seatunnelJobDefinitionApi.getUniqueId().then((data) => {
       if (data?.code === 0) {
         const returnId = data?.data;
@@ -35,18 +38,46 @@ const App = () => {
 
         history.push(`/sync/batch-link-up/${returnId}/detail`);
       } else {
-        message.error(data?.message);
+        message.error(data?.message || "获取任务ID失败");
       }
     });
-  } else {
-    sessionStorage.setItem(
-      `batch-link-up-detail-${id}`,
-      JSON.stringify(record)
-    );
+  };
 
-    history.push(`/sync/batch-link-up/${id}/detail`);
-  }
-};
+  /**
+   * 编辑场景：
+   * 不再进入 DetailPage，而是先查编辑详情，根据 mode 直接跳转到对应配置页
+   */
+  const goEdit = async (id: string, item: any) => {
+    if (!id) {
+      message.warning("任务ID不能为空");
+      return;
+    }
+
+    console.log(item);
+
+    try {
+      const mode = item?.mode;
+
+      if (mode === "GUIDE_SINGLE") {
+        history.push(`/sync/batch-link-up/${id}/config/single?scene=edit`);
+        return;
+      }
+
+      if (mode === "GUIDE_MULTI") {
+        history.push(`/sync/batch-link-up/${id}/config/multi?scene=edit`);
+        return;
+      }
+
+      if (mode === "SCRIPT") {
+        history.push(`/sync/batch-link-up/${id}/config/script?scene=edit`);
+        return;
+      }
+
+      message.error("未知任务模式，无法进入编辑页");
+    } catch (error) {
+      message.error("获取编辑详情失败");
+    }
+  };
 
   return (
     <div>
@@ -59,7 +90,7 @@ const App = () => {
       />
 
       <div>
-        <SyncTaskList goDetail={goDetail} />
+        <SyncTaskList goDetail={goEdit} />
       </div>
     </div>
   );

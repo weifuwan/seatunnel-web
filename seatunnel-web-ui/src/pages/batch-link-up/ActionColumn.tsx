@@ -36,10 +36,9 @@ const ActionColumn: React.FC<ActionColumnProps> = ({
     if (executionId !== undefined) {
       taskExecutionApi.cancel(executionId).then((data) => {
         if (data?.code === 0) {
-          message.success(data?.data);
           cbk();
         } else {
-          message.error(data?.message);
+          message.error(data?.msg);
           cbk();
         }
       });
@@ -98,10 +97,10 @@ const ActionColumn: React.FC<ActionColumnProps> = ({
   const doDeleteTask = async (id: string) => {
     const response = await seatunnelJobDefinitionApi.delete(id);
     if (response.code === 0) {
-      message.success(response.message);
+      message.success(response.msg);
       cbk();
     } else {
-      message.error(response.message);
+      message.error(response.msg);
     }
   };
 
@@ -184,7 +183,7 @@ const ActionColumn: React.FC<ActionColumnProps> = ({
                   cbk();
                   setRunOpen(false);
                 } else {
-                  message.error(data?.message);
+                  message.error(data?.msg);
                 }
               } finally {
                 setRunLoading(false);
@@ -228,7 +227,7 @@ const ActionColumn: React.FC<ActionColumnProps> = ({
                     }),
                   );
                 } else {
-                  message.error(response?.message);
+                  message.error(response?.msg);
                 }
               } else {
                 message.error(
@@ -275,7 +274,7 @@ const ActionColumn: React.FC<ActionColumnProps> = ({
                     }),
                   );
                 } else {
-                  message.error(response?.message);
+                  message.error(response?.msg);
                 }
               } else {
                 message.error(

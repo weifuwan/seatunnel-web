@@ -32,6 +32,7 @@ public class JobInstanceFactory {
                 .runtimeConfig(runtimeConfig)
                 .logPath(logPath)
                 .submitTime(now)
+                .startTime(now)
                 .createTime(now)
                 .updateTime(now)
                 .build();

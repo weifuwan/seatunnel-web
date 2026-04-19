@@ -12,40 +12,89 @@ const DataSourceSyncPlan: React.FC<DataSourceSyncPlanProps> = ({ record }) => {
     animation: "float 2s ease-in-out infinite",
   };
 
-  const safeParse = (jsonStr: any) => {
-    if (!jsonStr) return null;
+  const safeParse = (value: any) => {
+    if (!value) return null;
 
-    if (typeof jsonStr === "object") return jsonStr;
-
-    // try {
-    //   return JSON.parse(jsonStr);
-    // } catch (e) {
-    //   // console.warn("JSON parse failed:", jsonStr);
-    //   return null;
-    // }
-    return {};
-  };
-
-  const formatTables = (tableStr: any) => {
-    const tableObj = safeParse(tableStr);
-    if (!tableObj || typeof tableObj !== "object") return "-";
-
-    const allTables: string[] = [];
-
-    Object.values(tableObj).forEach((value: any) => {
-      if (Array.isArray(value)) {
-        allTables.push(...value);
-      }
-    });
-
-    if (allTables.length === 0) return "-";
-
-    if (allTables.length === 1) {
-      return allTables[0];
+    if (typeof value === "object") {
+      return value;
     }
 
-    return `${allTables[0]} +${allTables.length - 1} more`;
+    if (typeof value === "string") {
+      try {
+        return JSON.parse(value);
+      } catch {
+        return null;
+      }
+    }
+
+    return null;
   };
+
+  const formatTables = (tableValue: any, fallback?: string) => {
+    if (!tableValue) return fallback || "-";
+
+    if (typeof tableValue === "string") {
+      const trimmed = tableValue.trim();
+
+      if (!trimmed) return fallback || "-";
+
+      // 普通单表名，直接返回
+      if (!trimmed.startsWith("{") && !trimmed.startsWith("[")) {
+        return trimmed;
+      }
+
+      const parsed = safeParse(trimmed);
+      if (!parsed) return fallback || trimmed;
+      tableValue = parsed;
+    }
+
+    // 数组格式：["t1", "t2"]
+    if (Array.isArray(tableValue)) {
+      if (tableValue.length === 0) return fallback || "-";
+      if (tableValue.length === 1) return tableValue[0];
+      return `${tableValue[0]} +${tableValue.length - 1} more`;
+    }
+
+    // 对象格式：{schema1:["t1","t2"], schema2:["t3"]}
+    if (typeof tableValue === "object") {
+      const allTables: string[] = [];
+
+      Object.values(tableValue).forEach((value: any) => {
+        if (Array.isArray(value)) {
+          allTables.push(...value);
+        } else if (typeof value === "string" && value.trim()) {
+          allTables.push(value.trim());
+        }
+      });
+
+      if (allTables.length === 0) return fallback || "-";
+      if (allTables.length === 1) return allTables[0];
+      return `${allTables[0]} +${allTables.length - 1} more`;
+    }
+
+    return fallback || "-";
+  };
+
+  const getPlanTitle = () => {
+    if (record?.jobType === "BATCH") {
+      if (record?.mode === "GUIDE_SINGLE") return "Single Table";
+      if (record?.mode === "GUIDE_MULTI") return "Multi Table";
+      if (record?.mode === "SCRIPT") return "Script Mode";
+      return "Batch Sync";
+    }
+
+    return "Data Sync";
+  };
+
+  const sourceTableText = formatTables(
+    record?.sourceTable,
+    record?.mode === "GUIDE_SINGLE" ? "Single Table" : "Not Configured"
+  );
+
+  const sinkTableText = formatTables(
+    record?.sinkTable,
+    record?.mode === "GUIDE_SINGLE" ? "Single Table" : "Not Configured"
+  );
 
   return (
     <div style={{ color: "rgba(0,0,0,0.74)", fontWeight: 500 }}>
@@ -59,29 +108,26 @@ const DataSourceSyncPlan: React.FC<DataSourceSyncPlanProps> = ({ record }) => {
       </style>
 
       <div>
-        <span>
-          {record?.wholeSync === true
-            ? "Full DB Sync / Multi-Table Sync"
-            : "Batch Sync"}
-        </span>
+        <span>{getPlanTitle()}</span>
       </div>
 
       <div style={{ margin: "4px 0" }}>
         {/* SOURCE */}
         <div style={{ display: "flex", alignItems: "center" }}>
-          {record?.sourceType && (
+          {record?.sourceType ? (
             <>
               <DatabaseIcons
-                dbType={record?.sourceType}
+                dbType={record.sourceType}
                 width="24"
                 height="24"
               />
-              &nbsp;&nbsp;
-              <a>{record?.sourceType}</a>
+              <span style={{ marginLeft: 8 }}>{record.sourceType}</span>
             </>
+          ) : (
+            <span>-</span>
           )}
 
-          <span style={{ margin: "0 4px", color: "green" }}>·</span>
+          <span style={{ margin: "0 6px", color: "green" }}>·</span>
 
           <span
             style={{
@@ -91,9 +137,9 @@ const DataSourceSyncPlan: React.FC<DataSourceSyncPlanProps> = ({ record }) => {
               whiteSpace: "nowrap",
               display: "inline-block",
             }}
-            title={JSON.stringify(record?.sourceTable)}
+            title={String(sourceTableText)}
           >
-            {formatTables(record?.sourceTable)}
+            {sourceTableText}
           </span>
         </div>
 
@@ -104,15 +150,20 @@ const DataSourceSyncPlan: React.FC<DataSourceSyncPlanProps> = ({ record }) => {
 
         {/* SINK */}
         <div style={{ display: "flex", alignItems: "center" }}>
-          {record?.sinkType && (
+          {record?.sinkType ? (
             <>
-              <DatabaseIcons dbType={record?.sinkType} width="24" height="24" />
-              &nbsp;&nbsp;
-              <a>{record?.sinkType}</a>
+              <DatabaseIcons
+                dbType={record.sinkType}
+                width="24"
+                height="24"
+              />
+              <span style={{ marginLeft: 8 }}>{record.sinkType}</span>
             </>
+          ) : (
+            <span>-</span>
           )}
 
-          <span style={{ margin: "0 4px" }}>·</span>
+          <span style={{ margin: "0 6px" }}>·</span>
 
           <span
             style={{
@@ -122,9 +173,9 @@ const DataSourceSyncPlan: React.FC<DataSourceSyncPlanProps> = ({ record }) => {
               whiteSpace: "nowrap",
               display: "inline-block",
             }}
-            title={JSON.stringify(record?.sinkTable)}
+            title={String(sinkTableText)}
           >
-            {formatTables(record?.sinkTable)}
+            {sinkTableText}
           </span>
         </div>
       </div>

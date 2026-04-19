@@ -461,8 +461,6 @@ export default function Workflow({
                 <RunLog
                   runVisible={runVisible}
                   setRunVisible={setRunVisible}
-                  nodes={workflowGraph.nodes}
-                  edges={workflowGraph.edges}
                   baseForm={form}
                   params={params}
                 />

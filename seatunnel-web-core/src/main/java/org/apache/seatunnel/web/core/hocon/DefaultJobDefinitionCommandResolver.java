@@ -1,6 +1,6 @@
 package org.apache.seatunnel.web.core.hocon;
 
-
+import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.seatunnel.web.common.enums.JobDefinitionMode;
@@ -10,12 +10,11 @@ import org.apache.seatunnel.web.dao.entity.JobDefinitionContentEntity;
 import org.apache.seatunnel.web.dao.entity.JobDefinitionEntity;
 import org.apache.seatunnel.web.dao.repository.JobDefinitionContentDao;
 import org.apache.seatunnel.web.dao.repository.JobDefinitionDao;
-import org.apache.seatunnel.web.spi.bean.dto.GuideMultiJobSaveCommand;
-import org.apache.seatunnel.web.spi.bean.dto.GuideSingleJobSaveCommand;
-import org.apache.seatunnel.web.spi.bean.dto.JobDefinitionSaveCommand;
-import org.apache.seatunnel.web.spi.bean.dto.ScriptJobSaveCommand;
+import org.apache.seatunnel.web.spi.bean.dto.*;
 import org.apache.seatunnel.web.spi.enums.Status;
 import org.springframework.stereotype.Component;
+
+import java.util.Map;
 
 /**
  * Resolve persisted definition data into specific save command.
@@ -56,7 +55,7 @@ public class DefaultJobDefinitionCommandResolver implements JobDefinitionCommand
                 throw new ServiceException(Status.BATCH_JOB_DEFINITION_NOT_EXIST, "definition mode not found");
             }
 
-            return parseCommand(mode, latestContent.getDefinitionContent());
+            return buildCommand(definition, latestContent.getDefinitionContent(), definition.getClientId());
         } catch (ServiceException e) {
             throw e;
         } catch (Exception e) {
@@ -66,18 +65,59 @@ public class DefaultJobDefinitionCommandResolver implements JobDefinitionCommand
     }
 
     /**
-     * Parse latest definition content into specific save command.
+     * Build concrete save command from definition entity and persisted content.
      */
-    private JobDefinitionSaveCommand parseCommand(JobDefinitionMode mode, String definitionContent) {
+    private JobDefinitionSaveCommand buildCommand(JobDefinitionEntity definition, String definitionContent, Long clientId) {
+        JobDefinitionMode mode = definition.getMode();
+
         switch (mode) {
             case SCRIPT:
-                return JSONUtils.parseObject(definitionContent, ScriptJobSaveCommand.class);
+                return buildScriptCommand(definition, definitionContent);
             case GUIDE_SINGLE:
-                return JSONUtils.parseObject(definitionContent, GuideSingleJobSaveCommand.class);
+                return buildGuideSingleCommand(definition, definitionContent);
             case GUIDE_MULTI:
-                return JSONUtils.parseObject(definitionContent, GuideMultiJobSaveCommand.class);
+                return buildGuideMultiCommand(definition, definitionContent);
             default:
                 throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "unsupported mode: " + mode);
         }
+    }
+
+    private ScriptJobSaveCommand buildScriptCommand(JobDefinitionEntity definition, String definitionContent) {
+        ScriptJobSaveCommand command = new ScriptJobSaveCommand();
+        command.setBasic(buildBasic(definition));
+        return command;
+    }
+
+    private GuideSingleJobSaveCommand buildGuideSingleCommand(JobDefinitionEntity definition, String definitionContent) {
+        GuideSingleJobSaveCommand command = new GuideSingleJobSaveCommand();
+        command.setBasic(buildBasic(definition));
+        command.setWorkflow(JSONUtils.parseObject(
+                definitionContent,
+                new TypeReference<Map<String, Object>>() {
+                }
+        ));
+        command.setId(definition.getId());
+        return command;
+    }
+
+    private GuideMultiJobSaveCommand buildGuideMultiCommand(JobDefinitionEntity definition, String ff) {
+        GuideMultiJobSaveCommand command = new GuideMultiJobSaveCommand();
+        command.setBasic(buildBasic(definition));
+        return command;
+    }
+
+    /**
+     * Build basic config from persisted definition entity.
+     */
+    private JobBasicConfig buildBasic(JobDefinitionEntity definition) {
+        JobBasicConfig basic = new JobBasicConfig();
+        basic.setId(definition.getId());
+        basic.setMode(definition.getMode());
+        basic.setJobMode(definition.getJobType());
+        basic.setJobName(definition.getJobName());
+        basic.setJobDesc(definition.getJobDesc());
+        basic.setClientId(definition.getClientId());
+        basic.setParallelism(definition.getParallelism());
+        return basic;
     }
 }

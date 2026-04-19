@@ -26,6 +26,7 @@ public class JobInstanceFactory {
                 .jobDefinitionId(dto.getId())
                 .runMode(runMode)
                 .jobStatus(JobStatus.RUNNING)
+                .clientId(dto.getBasic().getClientId())
                 .triggerSource(resolveTriggerSource(runMode))
                 .retryCount(0)
                 .runtimeConfig(runtimeConfig)

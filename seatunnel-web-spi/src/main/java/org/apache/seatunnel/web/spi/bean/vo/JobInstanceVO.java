@@ -35,6 +35,8 @@ public class JobInstanceVO {
      */
     private Long jobDefinitionId;
 
+    private Long clientId;
+
     /**
      * Job name snapshot.
      */

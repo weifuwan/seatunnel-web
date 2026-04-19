@@ -45,6 +45,8 @@ public class JobInstance {
      */
     private Integer retryCount;
 
+    private Long clientId;
+
     /**
      * Engine-side job id
      */

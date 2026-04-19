@@ -21,10 +21,10 @@ interface Props {
   targetLabel: string;
   sourceClientId?: string;
   targetClientId?: string;
-  bridgeClientId: any;
+  clientId: any;
   setSourceClientId: (id?: string) => void;
   setTargetClientId: (id?: string) => void;
-  setBridgeClientId: (ids: string) => void;
+  setClientId: (ids: string) => void;
   handleSourceChange: (value: string, option: any) => void;
   handleTargetChange: (value: string, option: any) => void;
 
@@ -166,8 +166,8 @@ const ClientLinkSection: React.FC<Props> = ({
   targetType,
   sourceLabel,
   targetLabel,
-  bridgeClientId,
-  setBridgeClientId,
+  clientId,
+  setClientId,
   handleSourceChange,
   handleTargetChange,
   sectionRef,
@@ -189,10 +189,10 @@ const ClientLinkSection: React.FC<Props> = ({
   const [targetDataSources, setTargetDataSources] = useState<any[]>([]);
   const [sourceLoading, setSourceLoading] = useState(false);
   const [targetLoading, setTargetLoading] = useState(false);
-  const [bridgeClientOptions, setBridgeClientOptions] = useState<
+  const [clientOptions, setClientOptions] = useState<
     { label: string; value: string }[]
   >([]);
-  const [bridgeClientLoading, setBridgeClientLoading] = useState(false);
+  const [clientLoading, setClientLoading] = useState(false);
 
   const resetSourceTestStatus = () => {
     setSourceTestStatus("idle");
@@ -257,9 +257,9 @@ const ClientLinkSection: React.FC<Props> = ({
   }, [targetType?.dbType, form, setTargetDataSourceId]);
 
   useEffect(() => {
-    const loadBridgeClientOptions = async () => {
+    const loadClientOptions = async () => {
       try {
-        setBridgeClientLoading(true);
+        setClientLoading(true);
         const res = await seatunnelClientApi.option();
 
         const options = Array.isArray(res?.data)
@@ -269,26 +269,26 @@ const ClientLinkSection: React.FC<Props> = ({
             }))
           : [];
 
-        setBridgeClientOptions(options);
+        setClientOptions(options);
       } catch (error) {
         console.error("加载客户端节点失败:", error);
-        setBridgeClientOptions([]);
+        setClientOptions([]);
         message.error("加载客户端节点失败");
       } finally {
-        setBridgeClientLoading(false);
+        setClientLoading(false);
       }
     };
 
-    loadBridgeClientOptions();
+    loadClientOptions();
   }, []);
 
   useEffect(() => {
-    if (!bridgeClientOptions.length) return;
+    if (!clientOptions.length) return;
 
-    if (!bridgeClientId) {
-      setBridgeClientId(bridgeClientOptions[0].value);
+    if (!clientId) {
+      setClientId(clientOptions[0].value);
     }
-  }, [bridgeClientOptions, bridgeClientId, setBridgeClientId]);
+  }, [clientOptions, clientId, setClientId]);
 
   const sourceOptions = useMemo(
     () =>
@@ -353,7 +353,7 @@ const ClientLinkSection: React.FC<Props> = ({
       targetType: targetType?.dbType,
       sourceId: sourceDataSourceId,
       targetId: targetDataSourceId,
-      bridgeClientId,
+      clientId,
     });
   }, [
     form,
@@ -361,14 +361,14 @@ const ClientLinkSection: React.FC<Props> = ({
     targetType,
     sourceDataSourceId,
     targetDataSourceId,
-    bridgeClientId,
+    clientId,
   ]);
 
   const runConnectivityTest = async (
     type: "source" | "target",
     datasourceId?: string | number
   ) => {
-const clientId = bridgeClientId;
+
 
     if (!clientId) {
       message.warning("请先选择客户端节点");
@@ -473,7 +473,7 @@ const clientId = bridgeClientId;
                   runConnectivityTest("source", sourceDataSourceId)
                 }
                 loading={sourceTestStatus === "loading"}
-                disabled={!sourceDataSourceId || !bridgeClientId}
+                disabled={!sourceDataSourceId || !clientId}
                 type="primary"
               >
                 测试连通性
@@ -527,23 +527,23 @@ const clientId = bridgeClientId;
                   客户端节点
                 </div>
                 <Select
-                  value={bridgeClientId}
+                  value={clientId}
                   onChange={(values) => {
-                    setBridgeClientId(values);
+                    setClientId(values);
                     resetSourceTestStatus();
                     resetTargetTestStatus();
                   }}
                   className="w-full"
                   showSearch
                   placeholder="请选择Zeta客户端节点"
-                  loading={bridgeClientLoading}
-                  options={bridgeClientOptions}
+                  loading={clientLoading}
+                  options={clientOptions}
                 />
               </div>
 
               <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-4">
                 <div className="text-sm font-medium text-slate-800">
-                  当前已选择 {bridgeClientId ? "1" : "0"} 个节点
+                  当前已选择 {clientId ? "1" : "0"} 个节点
                 </div>
                 <div className="mt-1 text-xs text-slate-500">
                   任务会在你选中的客户端节点上运行，我们会用它来做连接测试和正式执行。
@@ -562,7 +562,7 @@ const clientId = bridgeClientId;
                   runConnectivityTest("target", targetDataSourceId)
                 }
                 loading={targetTestStatus === "loading"}
-                disabled={!targetDataSourceId || !bridgeClientId}
+                disabled={!targetDataSourceId || !clientId}
                 type="primary"
               >
                 测试连通性

@@ -43,7 +43,7 @@ const defaultScheduleConfig: ScheduleConfig = {
 const defaultBasicConfig: BasicConfig = {
   jobName: "",
   description: "",
-  bridgeClientId: "",
+  clientId: "",
   mode: "GUIDE_MULTI",
   sourceType: "SOURCE",
   targetType: "SINK",
@@ -79,7 +79,7 @@ const buildInitialBasicConfig = (rawData?: any): BasicConfig => {
     ...defaultBasicConfig,
     jobName: rawData?.jobName || "",
     description: rawData?.description || "",
-    bridgeClientId: rawData?.bridgeClientId || "",
+    clientId: rawData?.clientId || "",
     mode: rawData?.mode || "GUIDE_MULTI",
     sourceType: rawData?.sourceType?.dbType || "SOURCE",
     targetType: rawData?.targetType?.dbType || "SINK",

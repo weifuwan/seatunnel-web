@@ -29,7 +29,7 @@ export default function BasicConfigContent({
   const targetType = value?.targetType || "SINK";
   const jobName = value?.jobName || "";
   const description = value?.description || "";
-  const bridgeClientId = value?.bridgeClientId || "-";
+  const clientId = value?.clientId || "-";
   const modeLabel = getModeLabel(value?.mode);
 
   const handleFieldChange = (field: string, fieldValue: any) => {
@@ -121,7 +121,7 @@ export default function BasicConfigContent({
             <div className="text-[12px] text-slate-400">Zeta</div>
             <div className="mt-1 flex items-center gap-2">
               <span className="text-[15px] font-semibold leading-none text-slate-700">
-                #{bridgeClientId}
+                #{clientId}
               </span>
               <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-600">
                 已绑定

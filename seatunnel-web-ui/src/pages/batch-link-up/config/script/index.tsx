@@ -47,7 +47,7 @@ const defaultBasicConfig: BasicConfig & {
 } = {
   jobName: "",
   description: "",
-  bridgeClientId: "",
+  clientId: "",
   mode: "SCRIPT",
   sourceType: "SOURCE",
   targetType: "SINK",
@@ -85,7 +85,7 @@ const buildInitialBasicConfig = (rawData?: any) => {
     ...defaultBasicConfig,
     jobName: rawData?.jobName || "",
     description: rawData?.description || "",
-    bridgeClientId: rawData?.bridgeClientId || "",
+    clientId: rawData?.clientId || "",
     mode: rawData?.mode || "SCRIPT",
     sourceType: rawData?.sourceType?.dbType || "SOURCE",
     targetType: rawData?.targetType?.dbType || "SINK",

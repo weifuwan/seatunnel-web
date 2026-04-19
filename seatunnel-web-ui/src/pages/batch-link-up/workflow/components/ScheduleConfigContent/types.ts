@@ -7,7 +7,7 @@ export interface ParamRow {
 export interface BasicConfig {
     jobName: string;
     description: string;
-    bridgeClientId: string;
+    clientId: string;
     mode: string;
     sourceType: string;
     targetType: string;

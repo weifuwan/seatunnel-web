@@ -66,7 +66,7 @@ const buildInitialScheduleConfig = (rawData?: any): ScheduleConfig => {
 const defaultBasicConfig: BasicConfig = {
   jobName: "",
   description: "",
-  bridgeClientId: "",
+  clientId: "",
   mode: "GUIDE_SINGLE",
   sourceType: "SOURCE",
   targetType: "SINK",
@@ -79,7 +79,7 @@ const buildInitialBasicConfig = (rawData?: any): BasicConfig => {
     ...defaultBasicConfig,
     jobName: rawData?.jobName || "",
     description: rawData?.description || "",
-    bridgeClientId: rawData?.bridgeClientId || "",
+    clientId: rawData?.clientId || "",
     mode: rawData?.mode || "GUIDE_SINGLE",
     sourceType: rawData?.sourceType?.dbType || "SOURCE",
     targetType: rawData?.targetType?.dbType || "SINK",
@@ -108,6 +108,7 @@ export default function SingleConfigPage() {
     if (!cache) return;
 
     const data = JSON.parse(cache);
+    console.log(data);
     setParams(data);
     setSourceType(data?.sourceType || null);
     setTargetType(data?.targetType || null);

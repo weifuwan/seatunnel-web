@@ -26,12 +26,6 @@ export const mockSourceClients: ClientItem[] = [
   { id: "s2", name: "InfluxDB-Client-02", type: "InfluxDB", status: "untested" },
 ];
 
-export const mockBridgeClients: ClientItem[] = [
-  { id: "b1", name: "Client-Bridge-A", type: "执行客户端", status: "online" },
-  { id: "b2", name: "Client-Bridge-B", type: "执行客户端", status: "online" },
-  { id: "b3", name: "Client-Bridge-C", type: "执行客户端", status: "untested" },
-];
-
 export const mockTargetClients: ClientItem[] = [
   { id: "t1", name: "ClickHouse-Client-01", type: "ClickHouse", status: "online" },
   { id: "t2", name: "ClickHouse-Client-02", type: "ClickHouse", status: "untested" },

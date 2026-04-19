@@ -29,7 +29,7 @@ export default function useDetailPage() {
 
   const [sourceClientId, setSourceClientId] = useState<string>();
   const [targetClientId, setTargetClientId] = useState<string>();
-  const [bridgeClientId, setBridgeClientId] = useState<string>();
+  const [clientId, setClientId] = useState<string>();
 
   const [mode, setMode] = useState<any>("GUIDE_SINGLE");
 
@@ -69,7 +69,7 @@ export default function useDetailPage() {
 
     setSourceClientId(data?.sourceClientId);
     setTargetClientId(data?.targetClientId);
-    setBridgeClientId(data?.bridgeClientId);
+    setClientId(data?.clientId);
   }, [id, form]);
 
   const sourceLabel = useMemo(() => getDbLabel(sourceType), [sourceType]);
@@ -153,7 +153,7 @@ export default function useDetailPage() {
         targetType,
         sourceClientId,
         targetClientId,
-        bridgeClientId,
+        clientId,
         sourceDataSourceId,
         targetDataSourceId,
         sourceTestStatus,
@@ -196,7 +196,7 @@ export default function useDetailPage() {
     activeStep,
     sourceClientId,
     targetClientId,
-    bridgeClientId,
+    clientId,
     sourceLabel,
     targetLabel,
     mode,
@@ -206,7 +206,7 @@ export default function useDetailPage() {
     setActiveStep,
     setSourceClientId,
     setTargetClientId,
-    setBridgeClientId,
+    setClientId,
     handleSourceChange,
     handleTargetChange,
     handleModeChange,

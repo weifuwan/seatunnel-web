@@ -37,7 +37,7 @@ export type DetailPageState = {
   activeStep: StepKey;
   sourceClientId?: string;
   targetClientId?: string;
-  bridgeClientIds: string[];
+  clientIds: string[];
 };
 
 export type UseDetailPageReturn = {
@@ -48,7 +48,7 @@ export type UseDetailPageReturn = {
   activeStep: StepKey;
   sourceClientId?: string;
   targetClientId?: string;
-  bridgeClientIds: string[];
+  clientIds: string[];
   sourceLabel: string;
   targetLabel: string;
   mode?: SyncMode;
@@ -57,7 +57,7 @@ export type UseDetailPageReturn = {
   clientSectionRef: React.RefObject<HTMLDivElement | null>;
   setSourceClientId: (id?: string) => void;
   setTargetClientId: (id?: string) => void;
-  setBridgeClientIds: (ids: string[]) => void;
+  setClientIds: (ids: string[]) => void;
   handleSourceChange: (value: string, option: any) => void;
   handleTargetChange: (value: string, option: any) => void;
   goBack: () => void;

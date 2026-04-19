@@ -3,6 +3,7 @@ package org.apache.seatunnel.web.api.service;
 import org.apache.seatunnel.web.common.enums.RunMode;
 import org.apache.seatunnel.web.dao.entity.JobInstance;
 import org.apache.seatunnel.web.spi.bean.dto.BaseJobDefinitionCommand;
+import org.apache.seatunnel.web.spi.bean.dto.JobDefinitionSaveCommand;
 import org.apache.seatunnel.web.spi.bean.dto.SeaTunnelJobInstanceDTO;
 import org.apache.seatunnel.web.spi.bean.entity.PaginationResult;
 import org.apache.seatunnel.web.spi.bean.vo.JobInstanceVO;
@@ -13,10 +14,7 @@ public interface BatchJobInstanceService {
 
     PaginationResult<JobInstanceVO> paging(SeaTunnelJobInstanceDTO dto);
 
-    String buildJobConfig(BaseJobDefinitionCommand dto);
-
-    String buildHoconConfig(BaseJobDefinitionCommand dto);
-
+    String buildJobConfig(JobDefinitionSaveCommand dto);
 
     JobInstanceVO selectById(Long id);
 
@@ -26,7 +24,6 @@ public interface BatchJobInstanceService {
 
     void removeAllByDefinitionId(Long definitionId);
 
-    void reconcileUnfinishedInstanceStatuses();
 
     void updateById(JobInstance po);
 }

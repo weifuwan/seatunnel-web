@@ -4,12 +4,11 @@ import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.seatunnel.web.api.exceptions.ServiceException;
 import org.apache.seatunnel.web.api.service.BatchJobDefinitionService;
 import org.apache.seatunnel.web.api.service.BatchJobInstanceService;
 import org.apache.seatunnel.web.api.service.application.JobScheduleApplicationService;
-import org.apache.seatunnel.web.common.utils.ConvertUtil;
 import org.apache.seatunnel.web.common.utils.JSONUtils;
+import org.apache.seatunnel.web.core.exceptions.ServiceException;
 import org.apache.seatunnel.web.core.job.assembler.JobDefinitionAssembler;
 import org.apache.seatunnel.web.core.job.handler.JobDefinitionModeHandler;
 import org.apache.seatunnel.web.core.job.model.JobDefinitionAnalysisResult;
@@ -71,9 +70,7 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
         try {
             Date now = new Date();
 
-            JobDefinitionModeHandler handler = handlerRegistry.getHandler(command.getMode());
-            handler.validate(command);
-
+            JobDefinitionModeHandler handler = getAndValidateHandler(command);
             JobDefinitionAnalysisResult analysis = handler.analyze(command);
             String definitionContent = handler.serializeDefinition(command);
 
@@ -139,9 +136,7 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
         validateBase(command);
 
         try {
-            JobDefinitionModeHandler handler = handlerRegistry.getHandler(command.getMode());
-            handler.validate(command);
-            return handler.buildHoconConfig(command);
+            return buildHoconConfigInternal(command);
         } catch (ServiceException e) {
             throw e;
         } catch (Exception e) {
@@ -245,6 +240,29 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
             log.error("Query job definition edit detail failed, id={}", id, e);
             throw new ServiceException(Status.QUERY_BATCH_JOB_DEFINITION_ERROR);
         }
+    }
+
+    /**
+     * Build hocon config internally.
+     */
+    private String buildHoconConfigInternal(JobDefinitionSaveCommand command) {
+        JobDefinitionModeHandler handler = getAndValidateHandler(command);
+        String hocon = handler.buildHoconConfig(command);
+
+        if (StringUtils.isBlank(hocon)) {
+            throw new ServiceException(Status.BUILD_BATCH_JOB_HOCON_CONFIG_ERROR, "hocon config is empty");
+        }
+        return hocon;
+    }
+
+    /**
+     * Get handler and validate command.
+     */
+    private JobDefinitionModeHandler getAndValidateHandler(JobDefinitionSaveCommand command) {
+        validateBase(command);
+        JobDefinitionModeHandler handler = handlerRegistry.getHandler(command.getMode());
+        handler.validate(command);
+        return handler;
     }
 
     /**

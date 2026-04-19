@@ -8,7 +8,6 @@ import org.apache.seatunnel.web.common.enums.RunMode;
 import org.apache.seatunnel.web.spi.bean.vo.JobInstanceVO;
 import org.springframework.stereotype.Service;
 
-
 @Service
 @Slf4j
 public class BatchJobExecutorServiceImpl implements BatchJobExecutorService {
@@ -22,29 +21,23 @@ public class BatchJobExecutorServiceImpl implements BatchJobExecutorService {
         this.jobSubmitter = jobSubmitter;
     }
 
-
     @Override
     public Long jobExecute(Long jobDefineId, RunMode runMode) {
-
         JobInstanceVO instance = instanceService.create(jobDefineId, runMode);
 
-        Long instanceId = instance.getId();
-        String runtimeConfig = instance.getRuntimeConfig();
-
         log.info("Job execute requested: jobDefineId={}, runMode={}, instanceId={}",
-                jobDefineId, runMode, instanceId);
+                jobDefineId, runMode, instance.getId());
 
-        jobSubmitter.submit(instanceId, runtimeConfig);
+        jobSubmitter.submit(instance);
 
-        return instanceId;
-
+        return instance.getId();
     }
 
     @Override
     public Long jobPause(Long jobInstanceId) {
-        // TODO: 你后面要做 pause/stop，需要对接 restClient stopJob/savepoint 等
+        // TODO: integrate restClient stopJob / savepoint later
         JobInstanceVO jobInstance = instanceService.selectById(jobInstanceId);
-        return jobInstanceId;
+        return jobInstance.getId();
     }
 
     @Override

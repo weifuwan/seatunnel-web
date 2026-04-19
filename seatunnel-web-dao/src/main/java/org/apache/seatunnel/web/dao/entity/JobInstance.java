@@ -4,10 +4,8 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.*;
-import org.apache.seatunnel.web.common.enums.JobMode;
 import org.apache.seatunnel.web.common.enums.JobStatus;
 import org.apache.seatunnel.web.common.enums.RunMode;
-import org.apache.seatunnel.web.common.enums.SyncModeEnum;
 
 import java.util.Date;
 
@@ -22,55 +20,67 @@ public class JobInstance {
     @TableId(type = IdType.INPUT)
     private Long id;
 
+    /**
+     * Associated job definition id
+     */
     private Long jobDefinitionId;
 
-    private JobMode jobType;
-
-    private SyncModeEnum syncMode;
-
+    /**
+     * Run mode, such as MANUAL / SCHEDULE / RETRY
+     */
     private RunMode runMode;
 
+    /**
+     * Current job execution status
+     */
     private JobStatus jobStatus;
 
     /**
-     * Executable runtime config snapshot
+     * Trigger source description
+     */
+    private String triggerSource;
+
+    /**
+     * Retry count of current instance
+     */
+    private Integer retryCount;
+
+    /**
+     * Engine-side job id
+     */
+    private Long engineJobId;
+
+    /**
+     * Runtime config used by this execution
      */
     private String runtimeConfig;
 
     /**
-     * Engine-side job id, keep string for compatibility
+     * Log file path
      */
-    private Long engineJobId;
-
-    private String engineType;
-
-    private String engineEndpoint;
-
     private String logPath;
 
+    /**
+     * Error summary message
+     */
     private String errorMessage;
 
-    private String triggerSource;
+    /**
+     * Submit time to engine
+     */
+    private Date submitTime;
 
-    private Integer retryCount;
+    /**
+     * Actual start time
+     */
+    private Date startTime;
 
-    private Integer configVersion;
-
-    private String configChecksum;
+    /**
+     * Finish time
+     */
+    private Date endTime;
 
     private Date createTime;
 
-    private Date submitTime;
-
-    private Date startTime;
-
-    private Date lastHeartbeatTime;
-
-    private Date lastStatusSyncTime;
-
-    private Date endTime;
-
     private Date updateTime;
-
-    private String extraInfo;
 }

@@ -1,4 +1,4 @@
-package org.apache.seatunnel.web.api.exceptions;
+package org.apache.seatunnel.web.core.exceptions;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;

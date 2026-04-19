@@ -1,11 +1,23 @@
 package org.apache.seatunnel.web.spi.bean.vo;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import lombok.*;
-import org.apache.seatunnel.web.common.enums.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
+import org.apache.seatunnel.web.common.enums.JobMode;
+import org.apache.seatunnel.web.common.enums.JobStatus;
+import org.apache.seatunnel.web.common.enums.RunMode;
+import org.apache.seatunnel.web.common.enums.SyncModeEnum;
 
 import java.util.Date;
 
+/**
+ * Job instance view object.
+ *
+ * Keep this VO focused on instance-level fields only.
+ */
 @Data
 @Builder
 @AllArgsConstructor
@@ -13,34 +25,75 @@ import java.util.Date;
 @ToString
 public class JobInstanceVO {
 
+    /**
+     * Instance id.
+     */
     private Long id;
 
+    /**
+     * Related job definition id.
+     */
     private Long jobDefinitionId;
 
+    /**
+     * Job name snapshot.
+     */
     private String jobName;
-    private String jobDesc;
-    private Integer jobVersion;
-    private String sourceType;
-    private String sinkType;
-    private Integer parallelism;
 
+    /**
+     * Job description snapshot.
+     */
+    private String jobDesc;
+
+    /**
+     * Job config version snapshot.
+     */
+    private Integer jobVersion;
+
+    /**
+     * Sync mode snapshot.
+     */
     private SyncModeEnum syncMode;
 
     /**
-     * Executable runtime config snapshot
+     * Job type.
+     */
+    private JobMode jobType;
+
+    /**
+     * Run mode.
+     */
+    private RunMode runMode;
+
+    /**
+     * Current job status.
+     */
+    private JobStatus jobStatus;
+
+    /**
+     * Executable runtime config snapshot.
      */
     private String runtimeConfig;
 
     /**
-     * Engine-side job id, keep string for compatibility
+     * Engine-side job id.
      */
-    private String engineJobId;
+    private Long engineJobId;
 
-    private String engineType;
-
-    private String engineEndpoint;
-
+    /**
+     * Job log path.
+     */
     private String logPath;
+
+    /**
+     * Failure reason if execution failed.
+     */
+    private String errorMessage;
+
+    /**
+     * Retry count.
+     */
+    private Integer retryCount;
 
     @JsonFormat(pattern = "yyyy/MM/dd HH:mm:ss", timezone = "GMT+8")
     private Date startTime;
@@ -48,25 +101,9 @@ public class JobInstanceVO {
     @JsonFormat(pattern = "yyyy/MM/dd HH:mm:ss", timezone = "GMT+8")
     private Date endTime;
 
-    private RunMode runMode;
-    private String jobEngineId;
-    private JobMode jobType;
-    private JobStatus jobStatus;
-    private String errorMessage;
+    @JsonFormat(pattern = "yyyy/MM/dd HH:mm:ss", timezone = "GMT+8")
+    private Date createTime;
 
-    private Long readRowCount;
-    private Long writeRowCount;
-    private Long readQps;
-    private Long writeQps;
-    private Long recordDelay;
-    private String metricsStatus;
-    private String sourceTable;
-    private String sinkTable;
-
-    private String cronExpression;
-    private ScheduleStatusEnum scheduleStatus;
-    private Date lastScheduleTime;
-    private Date nextScheduleTime;
-
+    @JsonFormat(pattern = "yyyy/MM/dd HH:mm:ss", timezone = "GMT+8")
+    private Date updateTime;
 }
-

@@ -1,11 +1,11 @@
 package org.apache.seatunnel.web.api.metrics;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.seatunnel.web.common.enums.JobSubmitStage;
 import org.apache.seatunnel.web.common.exception.JobSubmitException;
-import org.apache.seatunnel.web.dao.entity.JobInstance;
-import org.apache.seatunnel.web.dao.repository.JobInstanceDao;
 import org.apache.seatunnel.web.engine.client.rest.SeaTunnelRestClient;
+import org.apache.seatunnel.web.spi.bean.vo.JobInstanceVO;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
@@ -20,25 +20,34 @@ public class JobSubmitter {
     private final JobMetricsMonitor metricsMonitor;
     private final JobResultWatcher resultWatcher;
     private final JobResultHandler resultHandler;
-    private final JobInstanceDao jobInstanceDao;
 
     public JobSubmitter(JobConfigFileService configFileService,
                         SeaTunnelRestClient restClient,
                         JobMetricsMonitor metricsMonitor,
                         JobResultWatcher resultWatcher,
-                        JobResultHandler resultHandler,
-                        JobInstanceDao jobInstanceDao) {
+                        JobResultHandler resultHandler) {
         this.configFileService = configFileService;
         this.restClient = restClient;
         this.metricsMonitor = metricsMonitor;
         this.resultWatcher = resultWatcher;
         this.resultHandler = resultHandler;
-        this.jobInstanceDao = jobInstanceDao;
     }
 
-    public void submit(Long instanceId, String hoconConfig) {
-        JobInstance instancePO = jobInstanceDao.queryById(instanceId);
-        String logPath = instancePO.getLogPath();
+    public void submit(JobInstanceVO instance) {
+        if (instance == null) {
+            throw new IllegalArgumentException("Job instance must not be null");
+        }
+
+        Long instanceId = instance.getId();
+        String hoconConfig = instance.getRuntimeConfig();
+        String logPath = instance.getLogPath();
+
+        if (instanceId == null) {
+            throw new IllegalArgumentException("Job instance id must not be null");
+        }
+        if (StringUtils.isBlank(logPath)) {
+            throw new IllegalArgumentException("Job log path must not be blank");
+        }
 
         JobFileLogger jobLogger = new JobFileLogger(logPath);
         jobLogger.info("=== Job Submit Start (REST API) ===");
@@ -54,7 +63,8 @@ public class JobSubmitter {
 
             jobLogger.info("Submitting job via REST API...");
             String filename = "job-" + instanceId + ".conf";
-            Map resp = restClient.submitJobUpload(1L,
+            Map<?, ?> resp = restClient.submitJobUpload(
+                    1L,
                     (hoconConfig == null ? "" : hoconConfig).getBytes(StandardCharsets.UTF_8),
                     filename
             );
@@ -115,7 +125,7 @@ public class JobSubmitter {
                 : new JobSubmitException(JobSubmitStage.SUBMIT, "Submit job failed", e);
     }
 
-    private Long extractJobId(Map resp) {
+    private Long extractJobId(Map<?, ?> resp) {
         Object jobIdObj = resp == null ? null : resp.get("jobId");
         if (jobIdObj == null) {
             throw new IllegalStateException("REST submit response missing jobId, resp=" + resp);

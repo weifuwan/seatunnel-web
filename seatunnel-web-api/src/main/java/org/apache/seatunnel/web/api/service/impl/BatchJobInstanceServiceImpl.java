@@ -5,7 +5,6 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.seatunnel.web.api.exceptions.ServiceException;
 import org.apache.seatunnel.web.api.service.BatchJobInstanceService;
 import org.apache.seatunnel.web.api.service.support.JobInstanceFactory;
 import org.apache.seatunnel.web.api.service.support.JobInstanceStatusReconcileService;
@@ -13,14 +12,15 @@ import org.apache.seatunnel.web.api.utils.HoconSensitiveMaskUtil;
 import org.apache.seatunnel.web.common.enums.RunMode;
 import org.apache.seatunnel.web.common.utils.CodeGenerateUtils;
 import org.apache.seatunnel.web.common.utils.ConvertUtil;
+import org.apache.seatunnel.web.core.exceptions.ServiceException;
+import org.apache.seatunnel.web.core.hocon.JobDefinitionCommandResolver;
+import org.apache.seatunnel.web.core.hocon.JobDefinitionHoconBuilder;
 import org.apache.seatunnel.web.dao.entity.JobInstance;
 import org.apache.seatunnel.web.dao.repository.JobInstanceDao;
 import org.apache.seatunnel.web.dao.repository.JobMetricsDao;
-import org.apache.seatunnel.web.spi.bean.dto.BaseJobDefinitionCommand;
+import org.apache.seatunnel.web.spi.bean.dto.JobDefinitionSaveCommand;
 import org.apache.seatunnel.web.spi.bean.dto.SeaTunnelJobInstanceDTO;
-import org.apache.seatunnel.web.spi.bean.dto.SeatunnelBatchJobDefinitionDTO;
 import org.apache.seatunnel.web.spi.bean.entity.PaginationResult;
-import org.apache.seatunnel.web.spi.bean.vo.BatchJobDefinitionVO;
 import org.apache.seatunnel.web.spi.bean.vo.JobInstanceVO;
 import org.apache.seatunnel.web.spi.enums.Status;
 import org.springframework.beans.factory.annotation.Value;
@@ -39,9 +39,6 @@ import java.nio.file.Paths;
 public class BatchJobInstanceServiceImpl implements BatchJobInstanceService {
 
     @Resource
-    private BatchJobDefinitionQueryService batchJobDefinitionQueryService;
-
-    @Resource
     private JobInstanceDao jobInstanceDao;
 
     @Resource
@@ -52,6 +49,12 @@ public class BatchJobInstanceServiceImpl implements BatchJobInstanceService {
 
     @Resource
     private JobInstanceStatusReconcileService jobInstanceStatusReconcileService;
+
+    @Resource
+    private JobDefinitionHoconBuilder jobDefinitionHoconBuilder;
+
+    @Resource
+    private JobDefinitionCommandResolver jobDefinitionCommandResolver;
 
     @Value("${seatunnel.job.log-dir:logs}")
     private String baseLogDir;
@@ -69,8 +72,8 @@ public class BatchJobInstanceServiceImpl implements BatchJobInstanceService {
         try {
             log.info("Creating batch job instance, jobDefineId={}, runMode={}", jobDefineId, runMode);
 
-            BaseJobDefinitionCommand definitionDTO = loadDefinition(jobDefineId);
-            JobInstance instance = buildJobInstance(definitionDTO, runMode);
+            JobDefinitionSaveCommand command = loadDefinitionCommand(jobDefineId);
+            JobInstance instance = buildJobInstance(command, runMode);
 
             jobInstanceDao.insert(instance);
 
@@ -105,29 +108,15 @@ public class BatchJobInstanceServiceImpl implements BatchJobInstanceService {
     }
 
     @Override
-    public String buildJobConfig(BaseJobDefinitionCommand dto) {
-        validateDefinitionCommand(dto);
+    public String buildJobConfig(JobDefinitionSaveCommand command) {
+        validateDefinitionCommand(command);
 
         try {
-            return "";
+            return jobDefinitionHoconBuilder.build(command);
         } catch (ServiceException e) {
             throw e;
         } catch (Exception e) {
-            log.error("Build batch job config failed, dto={}", dto, e);
-            throw new ServiceException(Status.BUILD_JOB_INSTANCE_CONFIG_ERROR);
-        }
-    }
-
-    @Override
-    public String buildHoconConfig(BaseJobDefinitionCommand dto) {
-        validateDefinitionCommand(dto);
-
-        try {
-            return "";
-        } catch (ServiceException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("Build batch hocon config failed, dto={}", dto, e);
+            log.error("Build batch job config failed, command={}", command, e);
             throw new ServiceException(Status.BUILD_JOB_INSTANCE_CONFIG_ERROR);
         }
     }
@@ -212,18 +201,6 @@ public class BatchJobInstanceServiceImpl implements BatchJobInstanceService {
     }
 
     @Override
-    public void reconcileUnfinishedInstanceStatuses() {
-        try {
-            jobInstanceStatusReconcileService.reconcileUnfinishedInstanceStatuses();
-        } catch (ServiceException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("Reconcile unfinished batch job instance statuses failed", e);
-            throw new ServiceException(Status.UPDATE_BATCH_JOB_INSTANCE_ERROR);
-        }
-    }
-
-    @Override
     public void updateById(JobInstance po) {
         if (po == null || po.getId() == null || po.getId() <= 0) {
             throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "jobInstance");
@@ -240,29 +217,21 @@ public class BatchJobInstanceServiceImpl implements BatchJobInstanceService {
     }
 
     /**
-     * Load definition data without depending on BatchJobDefinitionService.
+     * Load persisted definition command for instance creation.
      */
-    private BaseJobDefinitionCommand loadDefinition(Long jobDefineId) {
-        try {
-            BatchJobDefinitionVO batchVo = batchJobDefinitionQueryService.selectById(jobDefineId);
-            return ConvertUtil.sourceToTarget(batchVo, SeatunnelBatchJobDefinitionDTO.class);
-        } catch (ServiceException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("Load batch job definition failed, jobDefineId={}", jobDefineId, e);
-            throw new ServiceException(Status.JOB_DEFINITION_NOT_EXIST);
-        }
+    private JobDefinitionSaveCommand loadDefinitionCommand(Long jobDefineId) {
+        return jobDefinitionCommandResolver.resolve(jobDefineId);
     }
 
     /**
      * Build job instance entity.
      */
-    private JobInstance buildJobInstance(BaseJobDefinitionCommand definitionDTO, RunMode runMode) {
+    private JobInstance buildJobInstance(JobDefinitionSaveCommand command, RunMode runMode) {
         Long id = generateInstanceId();
-        String runtimeConfig = buildJobConfig(definitionDTO);
+        String runtimeConfig = buildJobConfig(command);
 
         return jobInstanceFactory.create(
-                definitionDTO,
+                command,
                 id,
                 runtimeConfig,
                 runMode,
@@ -347,8 +316,8 @@ public class BatchJobInstanceServiceImpl implements BatchJobInstanceService {
     /**
      * Validate definition command.
      */
-    private void validateDefinitionCommand(BaseJobDefinitionCommand dto) {
-        if (dto == null) {
+    private void validateDefinitionCommand(JobDefinitionSaveCommand command) {
+        if (command == null) {
             throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "jobDefinition");
         }
     }

@@ -6,7 +6,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.seatunnel.web.api.exceptions.ServiceException;
+import org.apache.seatunnel.web.core.exceptions.ServiceException;
 import org.apache.seatunnel.web.api.service.DataSourceService;
 import org.apache.seatunnel.web.api.service.SeaTunnelClientService;
 import org.apache.seatunnel.web.common.enums.SeaTunnelClientHealthStatusEnum;

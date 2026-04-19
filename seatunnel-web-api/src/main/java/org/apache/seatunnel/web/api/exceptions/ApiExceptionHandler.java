@@ -1,6 +1,7 @@
 package org.apache.seatunnel.web.api.exceptions;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.seatunnel.web.core.exceptions.ServiceException;
 import org.apache.seatunnel.web.spi.bean.entity.Result;
 import org.apache.seatunnel.web.spi.enums.Status;
 import org.springframework.web.bind.annotation.ExceptionHandler;

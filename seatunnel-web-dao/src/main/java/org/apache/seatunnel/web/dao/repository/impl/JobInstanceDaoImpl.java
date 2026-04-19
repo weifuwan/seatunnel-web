@@ -71,7 +71,6 @@ public class JobInstanceDaoImpl
         LambdaUpdateWrapper<JobInstance> wrapper = new LambdaUpdateWrapper<>();
         wrapper.eq(JobInstance::getId, instanceId)
                 .set(JobInstance::getJobStatus, status)
-                .set(JobInstance::getLastStatusSyncTime, now)
                 .set(JobInstance::getUpdateTime, now);
 
         if (errorMessage != null && !errorMessage.isBlank()) {
@@ -92,7 +91,6 @@ public class JobInstanceDaoImpl
         LambdaUpdateWrapper<JobInstance> wrapper = new LambdaUpdateWrapper<>();
         wrapper.eq(JobInstance::getId, instanceId)
                 .set(JobInstance::getJobStatus, status)
-                .set(JobInstance::getLastStatusSyncTime, now)
                 .set(JobInstance::getUpdateTime, now);
 
         if (engineJobId != null && !engineJobId.isBlank()) {
@@ -112,7 +110,6 @@ public class JobInstanceDaoImpl
         update.setEngineJobId(engineJobId);
         update.setJobStatus(submitStatus);
         update.setSubmitTime(submitTime);
-        update.setLastStatusSyncTime(submitTime);
         update.setUpdateTime(new Date());
 
         if (JobStatus.RUNNING.equals(submitStatus)

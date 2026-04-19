@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.seatunnel.web.api.exceptions.ServiceException;
+import org.apache.seatunnel.web.core.exceptions.ServiceException;
 import org.apache.seatunnel.web.api.service.ConnectorParamMetaService;
 import org.apache.seatunnel.web.dao.entity.ConnectorParamMetaEntity;
 import org.apache.seatunnel.web.dao.repository.ConnectorParamMetaDao;

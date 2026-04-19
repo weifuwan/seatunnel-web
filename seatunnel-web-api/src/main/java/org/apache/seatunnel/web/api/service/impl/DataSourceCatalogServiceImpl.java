@@ -7,7 +7,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcCatalog;
 import org.apache.seatunnel.plugin.datasource.api.modal.DataSourceTableColumn;
 import org.apache.seatunnel.plugin.datasource.api.utils.DataSourceUtils;
-import org.apache.seatunnel.web.api.exceptions.ServiceException;
+import org.apache.seatunnel.web.core.exceptions.ServiceException;
 import org.apache.seatunnel.web.api.service.DataSourceCatalogService;
 import org.apache.seatunnel.web.api.service.DataSourceService;
 import org.apache.seatunnel.web.common.QueryResult;

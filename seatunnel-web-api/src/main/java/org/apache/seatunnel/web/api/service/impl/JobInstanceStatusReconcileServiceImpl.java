@@ -80,7 +80,6 @@ public class JobInstanceStatusReconcileServiceImpl implements JobInstanceStatusR
         JobStatus actualStatus = queryActualJobStatus(engineJobId);
 
         instance.setJobStatus(actualStatus);
-        instance.setLastStatusSyncTime(new Date());
         instance.setUpdateTime(new Date());
 
         if (actualStatus != null && actualStatus.isEndState()) {

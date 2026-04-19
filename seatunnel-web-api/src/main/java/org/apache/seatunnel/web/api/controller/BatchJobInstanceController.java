@@ -8,7 +8,7 @@ import jakarta.annotation.Resource;
 import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.seatunnel.web.api.exceptions.ApiException;
-import org.apache.seatunnel.web.api.service.JobInstanceService;
+import org.apache.seatunnel.web.api.service.BatchJobInstanceService;
 import org.apache.seatunnel.web.spi.bean.dto.SeaTunnelJobInstanceDTO;
 import org.apache.seatunnel.web.spi.bean.entity.PaginationResult;
 import org.apache.seatunnel.web.spi.bean.entity.Result;
@@ -31,7 +31,7 @@ import static org.apache.seatunnel.web.spi.enums.Status.QUERY_BATCH_JOB_INSTANCE
 public class BatchJobInstanceController {
 
     @Resource
-    private JobInstanceService seatunnelJobInstanceService;
+    private BatchJobInstanceService seatunnelJobInstanceService;
 
     /**
      * Performs pagination query for batch job instances.

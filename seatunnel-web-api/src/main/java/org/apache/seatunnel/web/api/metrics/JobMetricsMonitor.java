@@ -2,7 +2,7 @@ package org.apache.seatunnel.web.api.metrics;
 
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.seatunnel.web.api.service.JobInstanceService;
+import org.apache.seatunnel.web.api.service.BatchJobInstanceService;
 import org.apache.seatunnel.web.api.service.JobMetricsService;
 import org.apache.seatunnel.web.api.websocket.WorkflowWebSocketService;
 import org.apache.seatunnel.web.common.utils.CodeGenerateUtils;
@@ -34,7 +34,7 @@ public class JobMetricsMonitor {
     private JobMetricsService metricsService;
 
     @Resource
-    private JobInstanceService instanceService;
+    private BatchJobInstanceService instanceService;
 
     @Resource
     private WorkflowWebSocketService webSocketService;

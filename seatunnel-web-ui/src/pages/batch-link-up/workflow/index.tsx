@@ -1,5 +1,5 @@
 import { ArrowLeftOutlined } from "@ant-design/icons";
-import { Button, Col, Form, message, Popover, Row, Space } from "antd";
+import { Button, Col, Form, message, Popover, Row, Space, Tooltip } from "antd";
 import {
   Blocks,
   Braces,
@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { ReactFlowProvider } from "reactflow";
-import { seatunnelJobDefinitionApi } from "../api";
+import { seatunnelJobDefinitionApi, seatunnelJobExecuteApi } from "../api";
 import FlowCanvas from "./FlowCanvas";
 import RightConfigPanel from "./RightConfigPanel";
 import { CheckListPopover } from "./components/CheckListPopover";
@@ -44,6 +44,7 @@ export default function Workflow({
   basicConfig,
   setBasicConfig,
   scheduleConfig,
+  setParams,
   setScheduleConfig,
 }: WorkflowProps) {
   const [form] = Form.useForm();
@@ -65,9 +66,27 @@ export default function Workflow({
   const [previewContent, setPreviewContent] = useState("");
   const [previewLoading, setPreviewLoading] = useState(false);
 
-  const { checkList, checkStat, checkGroups } = useFlowChecks(
-    workflowGraph.nodes || []
-  );
+  // 发布 / 运行状态
+  const [publishedJobDefineId, setPublishedJobDefineId] = useState<
+    number | undefined
+  >(params?.id);
+  const [publishLoading, setPublishLoading] = useState(false);
+  const [runLoading, setRunLoading] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+
+  // 跳过首次自动回填导致的“误标脏”
+  const initializedRef = useRef(false);
+
+  const { checkStat, checkGroups } = useFlowChecks(workflowGraph.nodes || []);
+
+  const canRun =
+    !!publishedJobDefineId && !isDirty && !publishLoading && !runLoading;
+
+  const runDisabledReason = !publishedJobDefineId
+    ? "请先发布任务，再执行"
+    : isDirty
+    ? "当前内容已变更，请重新发布后再执行"
+    : "";
 
   useEffect(() => {
     const handleMouseMove = (event: MouseEvent) => {
@@ -94,6 +113,23 @@ export default function Workflow({
       window.removeEventListener("mouseup", handleMouseUp);
     };
   }, []);
+
+  // params 异步回填后，同步已发布 id
+  useEffect(() => {
+    if (params?.id) {
+      setPublishedJobDefineId(params.id);
+    }
+  }, [params?.id]);
+
+  // 用户修改内容后，重新标记为“未重新发布”
+  useEffect(() => {
+    if (!initializedRef.current) {
+      initializedRef.current = true;
+      return;
+    }
+
+    setIsDirty(true);
+  }, [basicConfig, scheduleConfig, workflowGraph]);
 
   const handleResizeStart = () => {
     draggingRef.current = true;
@@ -124,6 +160,7 @@ export default function Workflow({
 
   const buildFinalPayload = () => {
     return {
+      id: params?.id ?? publishedJobDefineId,
       basic: buildBasicData(),
       workflow: buildWorkflowData(),
       schedule: buildScheduleData(),
@@ -132,16 +169,6 @@ export default function Workflow({
         parallelism: 1,
       },
     };
-  };
-
-  const handleSave = async () => {
-    try {
-      const finalPayload = buildFinalPayload();
-      console.log(finalPayload);
-
-      await seatunnelJobDefinitionApi.saveOrUpdateGuideSingle(finalPayload);
-      message.success("保存成功");
-    } catch (error: any) {}
   };
 
   const handlePreview = async () => {
@@ -153,11 +180,64 @@ export default function Workflow({
         finalPayload
       );
 
-      setPreviewContent(res.data || "");
+      setPreviewContent(res?.data || "");
       setPreviewOpen(true);
     } catch (error: any) {
+      message.error(error?.message || "预览生成失败");
     } finally {
       setPreviewLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      setPublishLoading(true);
+
+      const finalPayload = buildFinalPayload();
+      const res = await seatunnelJobDefinitionApi.saveOrUpdateGuideSingle(
+        finalPayload
+      );
+
+      const jobDefineId = res?.data?.id ?? res?.data ?? finalPayload.id;
+
+      if (jobDefineId) {
+        setPublishedJobDefineId(jobDefineId);
+        setIsDirty(false);
+        setParams((prev: any) => ({
+          ...prev,
+          id: jobDefineId,
+        }));
+      }
+
+      message.success("发布成功");
+    } catch (error: any) {
+      message.error(error?.message || "发布失败");
+    } finally {
+      setPublishLoading(false);
+    }
+  };
+
+  const handleRun = async () => {
+    if (!publishedJobDefineId) {
+      message.warning("请先发布任务，再执行");
+      return;
+    }
+
+    if (isDirty) {
+      message.warning("当前内容已变更，请重新发布后再执行");
+      return;
+    }
+
+    try {
+      setRunLoading(true);
+
+      await seatunnelJobExecuteApi.execute(publishedJobDefineId);
+
+      message.success("任务已提交执行");
+    } catch (error: any) {
+      message.error(error?.message || "运行失败");
+    } finally {
+      setRunLoading(false);
     }
   };
 
@@ -207,10 +287,19 @@ export default function Workflow({
                   </div>
 
                   <Space size={10}>
-                    <div className={actionChipClass}>
-                      <PlayCircle size={15} strokeWidth={1.9} />
-                      <span className="ml-1">运行</span>
-                    </div>
+                    <Tooltip title={runDisabledReason}>
+                      <Button
+                        type="default"
+                        icon={<PlayCircle size={15} strokeWidth={1.9} />}
+                        onClick={handleRun}
+                        loading={runLoading}
+                        disabled={!canRun}
+                        className="!inline-flex !h-[34px] !items-center !justify-center !rounded-full !border !border-slate-200 !bg-slate-50 !px-3.5 !text-[13px] !font-medium !text-slate-500 transition-colors duration-200 hover:!border-slate-300 hover:!bg-white/80 hover:!text-slate-700 hover:!shadow-[0_4px_12px_rgba(15,23,42,0.05)] disabled:!cursor-not-allowed disabled:!border-slate-200 disabled:!bg-slate-100 disabled:!text-slate-400 disabled:!shadow-none"
+                      >
+                        运行
+                      </Button>
+                    </Tooltip>
+
                     <CheckListPopover
                       checkStat={checkStat}
                       checkGroups={checkGroups}
@@ -248,15 +337,15 @@ export default function Workflow({
                       </div>
                     </Popover>
 
-                    <div
-                      className={actionChipClass}
+                    <Button
+                      type="default"
+                      icon={<Upload size={15} strokeWidth={1.9} />}
                       onClick={handleSave}
-                      role="button"
-                      tabIndex={0}
+                      loading={publishLoading}
+                      className="!inline-flex !h-[34px] !items-center !justify-center !rounded-full !border !border-slate-200 !bg-slate-50 !px-3.5 !text-[13px] !font-medium !text-slate-500 transition-colors duration-200 hover:!border-slate-300 hover:!bg-white/80 hover:!text-slate-700 hover:!shadow-[0_4px_12px_rgba(15,23,42,0.05)]"
                     >
-                      <Upload size={15} strokeWidth={1.9} />
-                      <span className="ml-1">发布</span>
-                    </div>
+                      发布
+                    </Button>
                   </Space>
                 </div>
 

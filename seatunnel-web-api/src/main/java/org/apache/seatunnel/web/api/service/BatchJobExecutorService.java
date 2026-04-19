@@ -7,7 +7,7 @@ import org.apache.seatunnel.web.common.enums.RunMode;
  * <p>
  * Provides capabilities to execute, pause, store, and run ad-hoc jobs.
  */
-public interface JobExecutorService {
+public interface BatchJobExecutorService {
 
     /**
      * Execute a SeaTunnel job based on the job definition ID.

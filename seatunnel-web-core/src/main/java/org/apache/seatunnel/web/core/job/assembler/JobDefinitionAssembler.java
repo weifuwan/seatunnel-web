@@ -28,7 +28,11 @@ public class JobDefinitionAssembler {
                 .sourceTable(analysis.getSourceTable())
                 .sinkTable(analysis.getSinkTable())
                 .build();
-        build.initInsert();
+        if (build.getId() == null) {
+            build.initInsert();
+        } else {
+            build.initInsertWithNoId();
+        }
         return build;
     }
 

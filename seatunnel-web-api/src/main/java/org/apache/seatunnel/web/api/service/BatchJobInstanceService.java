@@ -7,7 +7,7 @@ import org.apache.seatunnel.web.spi.bean.dto.SeaTunnelJobInstanceDTO;
 import org.apache.seatunnel.web.spi.bean.entity.PaginationResult;
 import org.apache.seatunnel.web.spi.bean.vo.JobInstanceVO;
 
-public interface JobInstanceService {
+public interface BatchJobInstanceService {
 
     JobInstanceVO create(Long jobDefineId, RunMode runMode);
 

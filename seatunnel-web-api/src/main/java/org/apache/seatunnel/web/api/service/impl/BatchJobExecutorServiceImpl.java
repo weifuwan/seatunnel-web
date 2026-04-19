@@ -2,8 +2,8 @@ package org.apache.seatunnel.web.api.service.impl;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.seatunnel.web.api.metrics.JobSubmitter;
-import org.apache.seatunnel.web.api.service.JobExecutorService;
-import org.apache.seatunnel.web.api.service.JobInstanceService;
+import org.apache.seatunnel.web.api.service.BatchJobExecutorService;
+import org.apache.seatunnel.web.api.service.BatchJobInstanceService;
 import org.apache.seatunnel.web.common.enums.RunMode;
 import org.apache.seatunnel.web.spi.bean.vo.JobInstanceVO;
 import org.springframework.stereotype.Service;
@@ -11,13 +11,13 @@ import org.springframework.stereotype.Service;
 
 @Service
 @Slf4j
-public class JobExecutorServiceImpl implements JobExecutorService {
+public class BatchJobExecutorServiceImpl implements BatchJobExecutorService {
 
-    private final JobInstanceService instanceService;
+    private final BatchJobInstanceService instanceService;
     private final JobSubmitter jobSubmitter;
 
-    public JobExecutorServiceImpl(JobInstanceService instanceService,
-                                  JobSubmitter jobSubmitter) {
+    public BatchJobExecutorServiceImpl(BatchJobInstanceService instanceService,
+                                       JobSubmitter jobSubmitter) {
         this.instanceService = instanceService;
         this.jobSubmitter = jobSubmitter;
     }

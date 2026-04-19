@@ -6,7 +6,7 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.seatunnel.web.api.exceptions.ServiceException;
 import org.apache.seatunnel.web.api.service.BatchJobDefinitionService;
-import org.apache.seatunnel.web.api.service.JobInstanceService;
+import org.apache.seatunnel.web.api.service.BatchJobInstanceService;
 import org.apache.seatunnel.web.api.service.application.JobScheduleApplicationService;
 import org.apache.seatunnel.web.common.utils.ConvertUtil;
 import org.apache.seatunnel.web.common.utils.JSONUtils;
@@ -49,7 +49,7 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
     private JobScheduleApplicationService scheduleApplicationService;
 
     @Resource
-    private JobInstanceService jobInstanceService;
+    private BatchJobInstanceService jobInstanceService;
 
     @Transactional(rollbackFor = Exception.class)
     protected Long doSaveOrUpdate(JobDefinitionSaveCommand command) {

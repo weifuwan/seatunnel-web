@@ -7,7 +7,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.seatunnel.web.api.exceptions.ApiException;
-import org.apache.seatunnel.web.api.service.JobExecutorService;
+import org.apache.seatunnel.web.api.service.BatchJobExecutorService;
 import org.apache.seatunnel.web.common.enums.RunMode;
 import org.apache.seatunnel.web.spi.bean.entity.Result;
 import org.springframework.web.bind.annotation.*;
@@ -18,10 +18,10 @@ import static org.apache.seatunnel.web.spi.enums.Status.JOB_DEFINITION_EXECUTE_E
 @RestController
 @Tag(name = "JOB_EXECUTOR_TAG")
 @RequestMapping("/api/v1/executor")
-public class JobExecutorController {
+public class BatchJobExecutorController {
 
     @Resource
-    private JobExecutorService jobExecutorService;
+    private BatchJobExecutorService jobExecutorService;
 
     /**
      * Executes a SeaTunnel job by job definition ID.

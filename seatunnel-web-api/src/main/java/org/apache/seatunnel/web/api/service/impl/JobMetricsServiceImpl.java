@@ -52,8 +52,9 @@ public class JobMetricsServiceImpl implements JobMetricsService {
      * Fetch real-time metrics map from engine by jobEngineId.
      */
     @Override
-    public Map<Integer, JobMetrics> getJobMetricsFromEngineMap(@NonNull Long jobEngineId) {
-        Map<String, Object> jobInfo = engineRestClient.jobInfo(jobEngineId);
+    public Map<Integer, JobMetrics> getJobMetricsFromEngineMap(@NonNull Long clientId,
+                                                               @NonNull Long jobEngineId) {
+        Map<String, Object> jobInfo = engineRestClient.jobInfo(clientId, jobEngineId);
         if (jobInfo == null) {
             return new ConcurrentHashMap<>();
         }

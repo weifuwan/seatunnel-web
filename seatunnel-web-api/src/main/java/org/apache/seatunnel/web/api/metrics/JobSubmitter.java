@@ -74,7 +74,7 @@ public class JobSubmitter {
 
             resultHandler.updateEngineId(instanceId, engineId);
 
-            JobRuntimeContext ctx = new JobRuntimeContext(instanceId, engineId, configFile);
+            JobRuntimeContext ctx = new JobRuntimeContext(instanceId, engineId, configFile, instance.getClientId());
 
             try {
                 metricsMonitor.register(ctx);

@@ -31,4 +31,6 @@ public class JobRuntimeContext {
      * Used when submitting or reloading job execution parameters.
      */
     private String configFile;
+
+    private Long clientId;
 }

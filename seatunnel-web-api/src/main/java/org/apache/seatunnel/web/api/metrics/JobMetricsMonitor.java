@@ -23,7 +23,7 @@ public class JobMetricsMonitor {
      * Key: job instance ID
      * Value: engine ID
      */
-    private final Map<Long, Long> monitoringJobs = new ConcurrentHashMap<>();
+    private final Map<Long, JobRuntimeContext> monitoringJobs = new ConcurrentHashMap<>();
 
     /**
      * Dedicated file logger per job instance.
@@ -44,9 +44,7 @@ public class JobMetricsMonitor {
      */
     public void register(JobRuntimeContext context) {
         Long instanceId = context.getInstanceId();
-        Long engineId = context.getEngineId();
-
-        monitoringJobs.put(instanceId, engineId);
+        monitoringJobs.put(instanceId, context);
 
         String logPath = instanceService.selectById(instanceId).getLogPath();
         loggers.put(instanceId, new JobFileLogger(logPath));
@@ -61,22 +59,23 @@ public class JobMetricsMonitor {
      */
     @Scheduled(fixedDelayString = "${seatunnel.metrics.interval-ms:2000}")
     public void reportAllWebSocket() {
-        monitoringJobs.forEach((instanceId, engineId) -> {
+        monitoringJobs.forEach((instanceId, context) -> {
             try {
+                Long engineId = context.getEngineId();
+                Long clientId = context.getClientId();
+
                 Map<Integer, JobMetrics> metrics =
-                        metricsService.getJobMetricsFromEngineMap(engineId);
+                        metricsService.getJobMetricsFromEngineMap(clientId, engineId);
 
                 if (metrics == null || metrics.isEmpty()) {
                     return;
                 }
 
-                // Write snapshot to job log file
                 JobFileLogger logger = loggers.get(instanceId);
                 if (logger != null) {
                     logger.info(formatMetrics(metrics.values()));
                 }
 
-                // Push metrics snapshot to WebSocket
                 webSocketService.sendMessage(
                         buildChannel(instanceId, engineId),
                         buildPayload(instanceId, engineId, metrics)
@@ -92,22 +91,23 @@ public class JobMetricsMonitor {
      * Persist final metrics to database.
      */
     public void finalizeAndPersist(Long instanceId) {
-        Long engineId = monitoringJobs.get(instanceId);
+        JobRuntimeContext context = monitoringJobs.get(instanceId);
 
-        if (engineId != null) {
+        if (context != null) {
             try {
                 Map<Integer, JobMetrics> finalMetrics =
-                        metricsService.getJobMetricsFromEngineMap(engineId);
+                        metricsService.getJobMetricsFromEngineMap(
+                                context.getClientId(),
+                                context.getEngineId()
+                        );
 
                 if (finalMetrics != null && !finalMetrics.isEmpty()) {
-                    // Write final snapshot to log
                     JobFileLogger logger = loggers.get(instanceId);
                     if (logger != null) {
                         logger.info("Final Metrics Snapshot:");
                         logger.info(formatMetrics(finalMetrics.values()));
                     }
 
-                    // Persist to database
                     persistMetrics(instanceId, finalMetrics.values());
                 }
 

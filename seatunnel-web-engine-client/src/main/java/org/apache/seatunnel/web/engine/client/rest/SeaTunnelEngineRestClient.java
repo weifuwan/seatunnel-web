@@ -6,13 +6,19 @@ import org.springframework.stereotype.Component;
 import java.util.Map;
 
 @Component
-@SuppressWarnings({"rawtypes","unchecked"})
+@SuppressWarnings({"rawtypes", "unchecked"})
 public class SeaTunnelEngineRestClient {
 
     @Resource
     private SeaTunnelRestClient seatunnelRestClient;
 
-    public Map<String, Object> jobInfo(Long jobEngineId) {
-        return seatunnelRestClient.jobInfo(1L,jobEngineId);
+    public Map<String, Object> jobInfo(Long clientId, Long jobEngineId) {
+        if (clientId == null) {
+            throw new IllegalArgumentException("clientId must not be null");
+        }
+        if (jobEngineId == null) {
+            throw new IllegalArgumentException("jobEngineId must not be null");
+        }
+        return seatunnelRestClient.jobInfo(clientId, jobEngineId);
     }
 }

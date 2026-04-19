@@ -37,6 +37,7 @@ public interface JobMetricsService {
      * @return map of metrics indexed by metric identifier
      */
     Map<Integer, JobMetrics> getJobMetricsFromEngineMap(
+            @NonNull Long clientId,
             @NonNull Long jobEngineId
     );
 

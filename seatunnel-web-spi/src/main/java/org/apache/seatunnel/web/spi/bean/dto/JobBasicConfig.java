@@ -6,12 +6,7 @@ import org.apache.seatunnel.web.common.enums.JobMode;
 
 @Data
 public class JobBasicConfig {
-
-    /**
-     * 编辑时有值，新增时为空
-     */
-    private Long id;
-
+    
     /**
      * SCRIPT / GUIDE_SINGLE / GUIDE_MULTI
      */

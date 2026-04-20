@@ -111,7 +111,6 @@ public class DefaultJobDefinitionCommandResolver implements JobDefinitionCommand
      */
     private JobBasicConfig buildBasic(JobDefinitionEntity definition) {
         JobBasicConfig basic = new JobBasicConfig();
-        basic.setId(definition.getId());
         basic.setMode(definition.getMode());
         basic.setJobMode(definition.getJobType());
         basic.setJobName(definition.getJobName());

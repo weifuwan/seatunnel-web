@@ -270,7 +270,6 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
      */
     private JobBasicConfig buildBasicConfig(JobDefinitionEntity definition) {
         JobBasicConfig basic = new JobBasicConfig();
-        basic.setId(definition.getId());
         basic.setMode(definition.getMode());
         basic.setJobMode(definition.getJobType());
         basic.setJobName(definition.getJobName());
@@ -351,6 +350,9 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
         }
         if (command.getMode() == null) {
             throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "mode");
+        }
+        if (command.getId() == null) {
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "id");
         }
         if (StringUtils.isBlank(command.getBasic().getJobName())) {
             throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "jobName");

@@ -12,28 +12,12 @@ interface TaskDetailPanelProps {
 const BasicInfoSection: React.FC<TaskDetailPanelProps> = ({ item }) => {
   const intl = useIntl();
 
-  const labelStyle = { color: "rgba(128,128,128,1)" };
-
   return (
-    <div
-      style={{
-        margin: 16,
-        padding: 16,
-        background: "#fff",
-        borderRadius: 4,
-        boxShadow: "0 2px 6px #0000000d",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
+    <div className="m-4 rounded bg-white p-4 shadow-[0_2px_6px_#0000000d]">
+      <div className="flex items-center justify-between">
         <Header
           title={
-            <span style={{ fontSize: 14 }}>
+            <span className="text-sm">
               {intl.formatMessage({
                 id: "pages.job.detail.basicInfo",
                 defaultMessage: "Basic Info",
@@ -42,130 +26,83 @@ const BasicInfoSection: React.FC<TaskDetailPanelProps> = ({ item }) => {
           }
         />
 
-        <div style={{ width: 150 }}>{/* reserved actions */}</div>
+        <div className="w-[150px]">{/* reserved actions */}</div>
       </div>
 
-      <Descriptions column={2}>
-        {/* Job Code */}
+      <Descriptions
+        column={2}
+        labelStyle={{ color: "rgba(128,128,128,1)" }}
+      >
         <Descriptions.Item
-          label={
-            <span style={labelStyle}>
-              {intl.formatMessage({
-                id: "pages.job.detail.jobCode",
-                defaultMessage: "Job Code",
-              })}
-            </span>
-          }
+          label={intl.formatMessage({
+            id: "pages.job.detail.jobCode",
+            defaultMessage: "Job Code",
+          })}
         >
-          <span style={{ color: "#000", paddingLeft: 12 }}>
-            {item?.id || "-"}
-          </span>
+          <span className="pl-3 text-black">{item?.id || "-"}</span>
         </Descriptions.Item>
 
-        {/* Sync Plan */}
         <Descriptions.Item
-          label={
-            <span style={labelStyle}>
-              {intl.formatMessage({
-                id: "pages.job.detail.syncPlan",
-                defaultMessage: "Sync Plan",
-              })}
-            </span>
-          }
+          label={intl.formatMessage({
+            id: "pages.job.detail.syncPlan",
+            defaultMessage: "Sync Plan",
+          })}
         >
-          <div
-            style={{
-              color: "#000",
-              paddingLeft: 12,
-              display: "flex",
-              alignItems: "center",
-            }}
-          >
+          <div className="flex items-center pl-3 text-black">
             {item?.sourceType && (
               <DatabaseIcons dbType={item?.sourceType} width="24" height="24" />
             )}
 
-            &nbsp;&nbsp;&nbsp;
-            {item?.sourceType}
-            &nbsp;&nbsp;&nbsp;
+            <span className="mx-3">{item?.sourceTable || "-"}</span>
 
             <IconRightArrow />
 
-            &nbsp;&nbsp;&nbsp;
-
             {item?.sinkType && (
-              <DatabaseIcons dbType={item?.sinkType} width="24" height="24" />
+              <span className="ml-3 flex items-center">
+                <DatabaseIcons dbType={item?.sinkType} width="24" height="24" />
+              </span>
             )}
 
-            &nbsp;&nbsp;&nbsp;
-            {item?.sinkType}
+            <span className="mx-3">{item?.sinkTable || "-"}</span>
           </div>
         </Descriptions.Item>
 
-        {/* Start Time */}
         <Descriptions.Item
-          label={
-            <span style={labelStyle}>
-              {intl.formatMessage({
-                id: "pages.job.detail.startTime",
-                defaultMessage: "Start Time",
-              })}
-            </span>
-          }
+          label={intl.formatMessage({
+            id: "pages.job.detail.startTime",
+            defaultMessage: "Start Time",
+          })}
         >
-          <span style={{ color: "#000", paddingLeft: 12 }}>
-            {item?.startTime || "-"}
-          </span>
+          <span className="pl-3 text-black">{item?.startTime || "-"}</span>
         </Descriptions.Item>
 
-        {/* End Time */}
         <Descriptions.Item
           span={4}
-          label={
-            <span style={labelStyle}>
-              {intl.formatMessage({
-                id: "pages.job.detail.endTime",
-                defaultMessage: "End Time",
-              })}
-            </span>
-          }
+          label={intl.formatMessage({
+            id: "pages.job.detail.endTime",
+            defaultMessage: "End Time",
+          })}
         >
-          <span style={{ color: "#000", paddingLeft: 12 }}>
-            {item?.endTime || "-"}
-          </span>
+          <span className="pl-3 text-black">{item?.endTime || "-"}</span>
         </Descriptions.Item>
 
-        {/* Job Version */}
         <Descriptions.Item
-          label={
-            <span style={labelStyle}>
-              {intl.formatMessage({
-                id: "pages.job.detail.jobVersion",
-                defaultMessage: "Job Version",
-              })}
-            </span>
-          }
+          label={intl.formatMessage({
+            id: "pages.job.detail.jobVersion",
+            defaultMessage: "Job Version",
+          })}
         >
-          <span style={{ color: "#000", paddingLeft: 12 }}>
-            {item?.jobVersion || "-"}
-          </span>
+          <span className="pl-3 text-black">{item?.jobVersion || "-"}</span>
         </Descriptions.Item>
 
-        {/* Job Description */}
         <Descriptions.Item
           span={4}
-          label={
-            <span style={labelStyle}>
-              {intl.formatMessage({
-                id: "pages.job.detail.jobDescription",
-                defaultMessage: "Job Description",
-              })}
-            </span>
-          }
+          label={intl.formatMessage({
+            id: "pages.job.detail.jobDescription",
+            defaultMessage: "Job Description",
+          })}
         >
-          <span style={{ color: "#000", paddingLeft: 12 }}>
-            {item?.jobDesc || "-"}
-          </span>
+          <span className="pl-3 text-black">{item?.jobDesc || "-"}</span>
         </Descriptions.Item>
       </Descriptions>
     </div>

@@ -54,8 +54,12 @@ public class GuideSingleWorkflowAnalyzer {
         Map<String, Object> config = WorkflowNodeHelper.safeMap(data.get("config"));
 
         String sourceTable = WorkflowNodeHelper.firstNonBlank(
+                WorkflowNodeHelper.getString(data, "sourceTable"),
                 WorkflowNodeHelper.getString(config, "sourceTable"),
-                WorkflowNodeHelper.getString(data, "sourceTable")
+                WorkflowNodeHelper.getString(data, "table"),
+                WorkflowNodeHelper.getString(config, "table"),
+                WorkflowNodeHelper.getString(data, "sourceTableName"),
+                WorkflowNodeHelper.getString(config, "sourceTableName")
         );
         if (!sourceTable.isEmpty()) {
             return sourceTable;
@@ -79,6 +83,8 @@ public class GuideSingleWorkflowAnalyzer {
         String sinkTable = WorkflowNodeHelper.firstNonBlank(
                 WorkflowNodeHelper.getString(data, "sinkTableName"),
                 WorkflowNodeHelper.getString(config, "sinkTableName"),
+                WorkflowNodeHelper.getString(data, "targetTableName"),
+                WorkflowNodeHelper.getString(config, "targetTableName"),
                 WorkflowNodeHelper.getString(data, "table"),
                 WorkflowNodeHelper.getString(config, "table"),
                 WorkflowNodeHelper.getString(data, "targetTable"),

@@ -27,6 +27,25 @@ CREATE TABLE `t_connector_param_meta`
     KEY              `idx_param_name` (`param_name`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='连接器参数元数据表';
 
+INSERT INTO seatunnel_web.t_connector_param_meta
+(id, `type`, connector_name, connector_type, param_name, param_desc, param_type, required_flag, default_value, example_value, param_context, remark, create_time, update_time, deleted)
+VALUES(1, 'connector', 'Jdbc', 'source', 'fetch.size', '控制单次从数据库拉取结果集的批量大小，用于平衡查询效率、网络传输与内存占用。', 'number', 0, '1024', '2048', '{
+  "summary": "控制 JDBC 结果集读取时的单次抓取批量。",
+  "coreMeaning": "影响结果集分批拉取节奏，不等于返回总条数。",
+  "processingLogic": [
+    "值小：单批更轻，但往返更多。",
+    "值大：往返更少，但单批压力更高。"
+  ],
+  "recommendationHints": [
+    "大结果集、轻量行数据可适当调大。",
+    "宽表、大字段、内存敏感场景应谨慎调大。",
+    "稳定性优先时，可适当调小。"
+  ],
+  "cautions": [
+    "不等于 limit。",
+    "不是越大越好。"
+  ]
+}', '用于AI参数推荐', '2026-04-09 20:48:01', '2026-04-10 10:23:36', 0);
 
 -- seatunnel_web.t_seatunnel_cdc_server_ids definition
 

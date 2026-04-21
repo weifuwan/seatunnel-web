@@ -8,7 +8,7 @@ import { useRef } from "react";
 
 import FlinkIcon from "../batch-link-up/workflow/sider/icon/FlinkIcon";
 import { SeatunnelClient, seatunnelClientApi } from "./api";
-import HealthState from "./components/HealthState";
+
 import {
   clientStatusTextMap,
   healthStatusTextMap,
@@ -100,10 +100,7 @@ const ClusterList = ({ list, clusterLoading, onRefresh }: ClusterListProps) => {
       healthStatusTextMap[itemData.healthStatus || 0] ||
       "-";
 
-    const clientStatusText =
-      itemData.clientStatusName ||
-      clientStatusTextMap[itemData.clientStatus || 0] ||
-      "-";
+   
 
     const handleEnable = async (itemData: SeatunnelClient) => {
       try {

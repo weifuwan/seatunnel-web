@@ -1,6 +1,6 @@
 import { seatunnelClientApi } from "@/pages/client/api";
+import AddClientModal from "@/pages/client/components/AddClientModal";
 import { fetchDataSourceOptions } from "@/pages/data-source/service";
-import { openPrettyNotification } from "@/utils/prettyNotification";
 import {
   CheckCircleOutlined,
   CloseCircleOutlined,
@@ -183,7 +183,7 @@ const ClientLinkSection: React.FC<Props> = ({
   setTargetTestStatus,
 }) => {
   const [form] = Form.useForm();
-
+  const [clientForm] = Form.useForm();
   const dataSourceTypeOptions = useMemo(() => generateDataSourceOptions(), []);
   const [sourceDataSources, setSourceDataSources] = useState<any[]>([]);
   const [targetDataSources, setTargetDataSources] = useState<any[]>([]);
@@ -193,13 +193,37 @@ const ClientLinkSection: React.FC<Props> = ({
     { label: string; value: string }[]
   >([]);
   const [clientLoading, setClientLoading] = useState(false);
+  const [openAddModal, setOpenAddModal] = useState(false);
 
+  const [confirmLoading, setConfirmLoading] = useState(false);
   const resetSourceTestStatus = () => {
     setSourceTestStatus("idle");
   };
 
   const resetTargetTestStatus = () => {
     setTargetTestStatus("idle");
+  };
+
+  const handleCreateClient = async () => {
+    try {
+      const values = await clientForm.validateFields();
+      setConfirmLoading(true);
+
+      const res = await seatunnelClientApi.saveOrUpdate(values);
+      if (res.code !== 0) {
+        message.error(res.msg || res.msg || "创建 Client 失败");
+        return;
+      }
+
+      message.success("Client 创建成功");
+      setOpenAddModal(false);
+      clientForm.resetFields();
+    } catch (error: any) {
+      if (error?.errorFields) return;
+      message.error(error?.message || "创建 Client 失败");
+    } finally {
+      setConfirmLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -368,8 +392,6 @@ const ClientLinkSection: React.FC<Props> = ({
     type: "source" | "target",
     datasourceId?: string | number
   ) => {
-
-
     if (!clientId) {
       message.warning("请先选择客户端节点");
       return;
@@ -404,7 +426,6 @@ const ClientLinkSection: React.FC<Props> = ({
       } else {
         setTargetTestStatus(success ? "success" : "error");
       }
-
     } catch (error) {
       console.error("连通性测试失败:", error);
 
@@ -419,193 +440,207 @@ const ClientLinkSection: React.FC<Props> = ({
   };
 
   return (
-    <div ref={sectionRef} className="bg-white px-8 py-8">
-      <div className="mx-auto space-y-6">
-        <div className="rounded-[28px] border border-slate-200 bg-gradient-to-b from-slate-50 to-white px-6 py-5 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
-          <div className="flex items-center justify-between gap-4 text-sm text-slate-700">
-            <div className="flex min-w-0 flex-1 items-center justify-center gap-4">
-              <span className="shrink-0 font-medium text-slate-900">
-                {sourceLabel || "数据来源"}
-              </span>
+    <>
+      <div ref={sectionRef} className="bg-white px-8 py-8">
+        <div className="mx-auto space-y-6">
+          <div className="rounded-[28px] border border-slate-200 bg-gradient-to-b from-slate-50 to-white px-6 py-5 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
+            <div className="flex items-center justify-between gap-4 text-sm text-slate-700">
+              <div className="flex min-w-0 flex-1 items-center justify-center gap-4">
+                <span className="shrink-0 font-medium text-slate-900">
+                  {sourceLabel || "数据来源"}
+                </span>
 
-              <div className="flex items-center gap-3">
-                <div className="h-px w-10 bg-slate-300" />
-                <LinkStatusAction
-                  status={sourceTestStatus}
-                  onTest={() =>
-                    runConnectivityTest("source", sourceDataSourceId)
-                  }
-                />
-                <div className="h-px w-10 bg-slate-300" />
+                <div className="flex items-center gap-3">
+                  <div className="h-px w-10 bg-slate-300" />
+                  <LinkStatusAction
+                    status={sourceTestStatus}
+                    onTest={() =>
+                      runConnectivityTest("source", sourceDataSourceId)
+                    }
+                  />
+                  <div className="h-px w-10 bg-slate-300" />
+                </div>
+
+                <span className="shrink-0 font-medium text-slate-900">
+                  我的客户端
+                </span>
+
+                <div className="flex items-center gap-3">
+                  <div className="h-px w-10 bg-slate-300" />
+                  <LinkStatusAction
+                    status={targetTestStatus}
+                    onTest={() =>
+                      runConnectivityTest("target", targetDataSourceId)
+                    }
+                    reverse
+                  />
+                  <div className="h-px w-10 bg-slate-300" />
+                </div>
+
+                <span className="shrink-0 font-medium text-slate-900">
+                  {targetLabel || "数据去向"}
+                </span>
               </div>
-
-              <span className="shrink-0 font-medium text-slate-900">
-                我的客户端
-              </span>
-
-              <div className="flex items-center gap-3">
-                <div className="h-px w-10 bg-slate-300" />
-                <LinkStatusAction
-                  status={targetTestStatus}
-                  onTest={() =>
-                    runConnectivityTest("target", targetDataSourceId)
-                  }
-                  reverse
-                />
-                <div className="h-px w-10 bg-slate-300" />
-              </div>
-
-              <span className="shrink-0 font-medium text-slate-900">
-                {targetLabel || "数据去向"}
-              </span>
             </div>
           </div>
-        </div>
 
-        <div className="flex gap-6">
-          <SectionCard
-            title="来源"
-            status={sourceTestStatus}
-            footer={
-              <Button
-                className="w-full !rounded-full"
-                onClick={() =>
-                  runConnectivityTest("source", sourceDataSourceId)
-                }
-                loading={sourceTestStatus === "loading"}
-                disabled={!sourceDataSourceId || !clientId}
-                type="primary"
-              >
-                测试连通性
-              </Button>
-            }
-          >
-            <Form form={form} layout="vertical">
+          <div className="flex gap-6">
+            <SectionCard
+              title="来源"
+              status={sourceTestStatus}
+              footer={
+                <Button
+                  className="w-full !rounded-full"
+                  onClick={() =>
+                    runConnectivityTest("source", sourceDataSourceId)
+                  }
+                  loading={sourceTestStatus === "loading"}
+                  disabled={!sourceDataSourceId || !clientId}
+                  type="primary"
+                >
+                  测试连通性
+                </Button>
+              }
+            >
+              <Form form={form} layout="vertical">
+                <div className="space-y-4">
+                  <Form.Item name="sourceType" label="数据源类型" required>
+                    <Select
+                      value={sourceType?.dbType}
+                      onChange={(value, option) => {
+                        handleSourceChange(value, option);
+                        setSourceDataSourceId(undefined);
+                        resetSourceTestStatus();
+                      }}
+                      className="w-full"
+                      showSearch
+                      placeholder="请选择来源类型"
+                      options={dataSourceTypeOptions}
+                    />
+                  </Form.Item>
+
+                  <Form.Item name="sourceId" label="数据源名称" required>
+                    <Select
+                      value={sourceDataSourceId}
+                      onChange={(value) => {
+                        setSourceDataSourceId(value);
+                        resetSourceTestStatus();
+                      }}
+                      className="w-full"
+                      placeholder="请选择来源数据源"
+                      loading={sourceLoading}
+                      showSearch
+                      options={sourceOptions}
+                    />
+                  </Form.Item>
+                </div>
+              </Form>
+            </SectionCard>
+
+            <SectionCard
+              title="客户端"
+              footer={
+                <Button className="w-full !rounded-full" onClick={() => {
+                  setOpenAddModal(true);
+                }}>新建客户端</Button>
+              }
+            >
               <div className="space-y-4">
-                <Form.Item name="sourceType" label="数据源类型" required>
+                <div>
+                  <div className="mb-2 text-sm font-medium text-slate-700">
+                    客户端节点
+                  </div>
                   <Select
-                    value={sourceType?.dbType}
-                    onChange={(value, option) => {
-                      handleSourceChange(value, option);
-                      setSourceDataSourceId(undefined);
+                    value={clientId}
+                    onChange={(values) => {
+                      setClientId(values);
                       resetSourceTestStatus();
-                    }}
-                    className="w-full"
-                    showSearch
-                    placeholder="请选择来源类型"
-                    options={dataSourceTypeOptions}
-                  />
-                </Form.Item>
-
-                <Form.Item name="sourceId" label="数据源名称" required>
-                  <Select
-                    value={sourceDataSourceId}
-                    onChange={(value) => {
-                      setSourceDataSourceId(value);
-                      resetSourceTestStatus();
-                    }}
-                    className="w-full"
-                    placeholder="请选择来源数据源"
-                    loading={sourceLoading}
-                    showSearch
-                    options={sourceOptions}
-                  />
-                </Form.Item>
-              </div>
-            </Form>
-          </SectionCard>
-
-          <SectionCard
-            title="客户端"
-            footer={
-              <Button className="w-full !rounded-full">新建客户端</Button>
-            }
-          >
-            <div className="space-y-4">
-              <div>
-                <div className="mb-2 text-sm font-medium text-slate-700">
-                  客户端节点
-                </div>
-                <Select
-                  value={clientId}
-                  onChange={(values) => {
-                    setClientId(values);
-                    resetSourceTestStatus();
-                    resetTargetTestStatus();
-                  }}
-                  className="w-full"
-                  showSearch
-                  placeholder="请选择Zeta客户端节点"
-                  loading={clientLoading}
-                  options={clientOptions}
-                />
-              </div>
-
-              <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-4">
-                <div className="text-sm font-medium text-slate-800">
-                  当前已选择 {clientId ? "1" : "0"} 个节点
-                </div>
-                <div className="mt-1 text-xs text-slate-500">
-                  任务会在你选中的客户端节点上运行，我们会用它来做连接测试和正式执行。
-                </div>
-              </div>
-            </div>
-          </SectionCard>
-
-          <SectionCard
-            title="去向"
-            status={targetTestStatus}
-            footer={
-              <Button
-                className="w-full !rounded-full"
-                onClick={() =>
-                  runConnectivityTest("target", targetDataSourceId)
-                }
-                loading={targetTestStatus === "loading"}
-                disabled={!targetDataSourceId || !clientId}
-                type="primary"
-              >
-                测试连通性
-              </Button>
-            }
-          >
-            <Form form={form} layout="vertical">
-              <div className="space-y-4">
-                <Form.Item name="targetType" label="数据去向类型" required>
-                  <Select
-                    value={targetType?.dbType}
-                    onChange={(value, option) => {
-                      handleTargetChange(value, option);
-                      setTargetDataSourceId(undefined);
                       resetTargetTestStatus();
                     }}
                     className="w-full"
                     showSearch
-                    placeholder="请选择去向类型"
-                    options={dataSourceTypeOptions}
+                    placeholder="请选择Zeta客户端节点"
+                    loading={clientLoading}
+                    options={clientOptions}
                   />
-                </Form.Item>
+                </div>
 
-                <Form.Item name="targetId" label="数据源名称" required>
-                  <Select
-                    value={targetDataSourceId}
-                    onChange={(value) => {
-                      setTargetDataSourceId(value);
-                      resetTargetTestStatus();
-                    }}
-                    showSearch
-                    className="w-full"
-                    loading={targetLoading}
-                    placeholder="请选择目标数据源"
-                    options={targetOptions}
-                  />
-                </Form.Item>
+                <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-4">
+                  <div className="text-sm font-medium text-slate-800">
+                    当前已选择 {clientId ? "1" : "0"} 个节点
+                  </div>
+                  <div className="mt-1 text-xs text-slate-500">
+                    任务会在你选中的客户端节点上运行，我们会用它来做连接测试和正式执行。
+                  </div>
+                </div>
               </div>
-            </Form>
-          </SectionCard>
+            </SectionCard>
+
+            <SectionCard
+              title="去向"
+              status={targetTestStatus}
+              footer={
+                <Button
+                  className="w-full !rounded-full"
+                  onClick={() =>
+                    runConnectivityTest("target", targetDataSourceId)
+                  }
+                  loading={targetTestStatus === "loading"}
+                  disabled={!targetDataSourceId || !clientId}
+                  type="primary"
+                >
+                  测试连通性
+                </Button>
+              }
+            >
+              <Form form={form} layout="vertical">
+                <div className="space-y-4">
+                  <Form.Item name="targetType" label="数据去向类型" required>
+                    <Select
+                      value={targetType?.dbType}
+                      onChange={(value, option) => {
+                        handleTargetChange(value, option);
+                        setTargetDataSourceId(undefined);
+                        resetTargetTestStatus();
+                      }}
+                      className="w-full"
+                      showSearch
+                      placeholder="请选择去向类型"
+                      options={dataSourceTypeOptions}
+                    />
+                  </Form.Item>
+
+                  <Form.Item name="targetId" label="数据源名称" required>
+                    <Select
+                      value={targetDataSourceId}
+                      onChange={(value) => {
+                        setTargetDataSourceId(value);
+                        resetTargetTestStatus();
+                      }}
+                      showSearch
+                      className="w-full"
+                      loading={targetLoading}
+                      placeholder="请选择目标数据源"
+                      options={targetOptions}
+                    />
+                  </Form.Item>
+                </div>
+              </Form>
+            </SectionCard>
+          </div>
         </div>
       </div>
-    </div>
+      <AddClientModal
+        open={openAddModal}
+        form={clientForm}
+        confirmLoading={confirmLoading}
+        onCancel={() => {
+          setOpenAddModal(false);
+          clientForm.resetFields();
+        }}
+        onSubmit={handleCreateClient}
+      />
+    </>
   );
 };
 

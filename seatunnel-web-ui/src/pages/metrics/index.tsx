@@ -1,10 +1,18 @@
-import { message, Select, Segmented, Spin } from "antd";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { message, Segmented, Select, Spin } from "antd";
 import { motion } from "framer-motion";
+import {
+  Activity,
+  BarChart3,
+  Clock3,
+  Database,
+  Layers3,
+  Target,
+} from "lucide-react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { fetchChartData, fetchSummaryData } from "./api";
 import BarChart from "./BarChart";
-import LineChart from "./LineChart";
 import "./index.less";
+import LineChart from "./LineChart";
 import { ChartData, SummaryData, TaskType, TimeRange } from "./types";
 import { transformChartData } from "./utils";
 
@@ -91,7 +99,7 @@ const App: React.FC = () => {
       await Promise.all([refreshSummaryData(), refreshChartData()]);
       setPageReady(true);
     } catch (error: any) {
-      message.error(error?.message || "Load data failed");
+      message.error(error?.message || "加载数据失败");
     } finally {
       setLoading(false);
     }
@@ -103,124 +111,62 @@ const App: React.FC = () => {
 
   const successRate = useMemo(() => {
     if (!summaryData.totalTasks) return 0;
-    return Math.round((summaryData.successTasks / summaryData.totalTasks) * 100);
+    return Math.round(
+      (summaryData.successTasks / summaryData.totalTasks) * 100
+    );
   }, [summaryData.totalTasks, summaryData.successTasks]);
 
   const statCards = [
     {
-      title: "Total Syncs",
+      title: "同步总量",
       value: summaryData.totalRecords || 0,
-      subText: `Unit: ${summaryData.totalRecordsUnit || "-"}`,
+      subText: `单位：${summaryData.totalRecordsUnit || "-"}`,
       iconBg: "bg-blue-500/10",
       iconColor: "text-blue-500",
-      icon: (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={2}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="h-4 w-4"
-        >
-          <path d="M3 3v16a2 2 0 0 0 2 2h16" />
-          <path d="M18 17V9" />
-          <path d="M13 17V5" />
-          <path d="M8 17v-3" />
-        </svg>
-      ),
+      icon: <BarChart3 size={18} strokeWidth={2} />,
     },
     {
-      title: "Total Sync Volume",
+      title: "同步数据量",
       value: summaryData.totalBytes || 0,
-      subText: `Unit: ${summaryData.totalBytesUnit || "-"}`,
+      subText: `单位：${summaryData.totalBytesUnit || "-"}`,
       iconBg: "bg-emerald-500/10",
       iconColor: "text-emerald-500",
-      icon: (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={2}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="h-4 w-4"
-        >
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-          <polyline points="7 10 12 15 17 10" />
-          <line x1="12" x2="12" y1="15" y2="3" />
-        </svg>
-      ),
+      icon: <Database size={18} strokeWidth={2} />,
     },
     {
-      title: "Total Executions",
+      title: "执行任务数",
       value: summaryData.totalTasks || 0,
-      subText: "Unit: times",
+      subText: "单位：次",
       iconBg: "bg-amber-500/10",
       iconColor: "text-amber-500",
-      icon: (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={2}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="h-4 w-4"
-        >
-          <circle cx="12" cy="12" r="10" />
-          <polyline points="12 6 12 12 16 14" />
-        </svg>
-      ),
+      icon: <Clock3 size={18} strokeWidth={2} />,
     },
     {
-      title: "Success Rate",
+      title: "成功率",
       value: `${successRate}%`,
-      subText: `${summaryData.successTasks || 0} successful tasks`,
+      subText: `成功任务 ${summaryData.successTasks || 0} 个`,
       iconBg: "bg-violet-500/10",
       iconColor: "text-violet-500",
-      icon: (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={2}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="h-4 w-4"
-        >
-          <circle cx="12" cy="12" r="10" />
-          <circle cx="12" cy="12" r="6" />
-          <circle cx="12" cy="12" r="2" />
-        </svg>
-      ),
+      icon: <Target size={18} strokeWidth={2} />,
     },
   ];
 
   const summaryList = [
     {
-      title: "Overview",
-      content: `A total of ${summaryData.totalTasks || 0} tasks were executed in the selected time range.`,
+      title: "整体概览",
+      content: `所选时间范围内，共执行 ${summaryData.totalTasks || 0} 个任务。`,
     },
     {
-      title: "Volume",
-      content: `Processed ${summaryData.totalBytes || 0} ${summaryData.totalBytesUnit || "-"} of data.`,
+      title: "数据规模",
+      content: `累计处理 ${summaryData.totalBytes || 0} ${
+        summaryData.totalBytesUnit || "-"
+      } 数据。`,
     },
     {
-      title: "Reliability",
-      content: `Current success rate is ${successRate}% with ${summaryData.successTasks || 0} successful tasks.`,
+      title: "执行稳定性",
+      content: `当前任务成功率为 ${successRate}%，成功任务 ${
+        summaryData.successTasks || 0
+      } 个。`,
     },
   ];
 
@@ -267,7 +213,7 @@ const App: React.FC = () => {
                     任务洞察
                   </h1>
                   <p className="mt-1 text-sm text-gray-500">
-                    Track sync performance and execution trends
+                    关注同步规模、执行表现与趋势变化
                   </p>
                 </div>
 
@@ -275,9 +221,25 @@ const App: React.FC = () => {
                   <Segmented
                     value={taskType}
                     onChange={(value) => setTaskType(value as TaskType)}
+                    className="task-type-segmented"
                     options={[
-                      { label: "Batch", value: "BATCH" },
-                      { label: "Streaming", value: "STREAMING" },
+                      {
+                        label: (
+                          <div className="task-type-option">
+                            <Layers3 size={14} /> 批同步
+                          </div>
+                        ),
+                        value: "BATCH",
+                      },
+                      {
+                        label: (
+                          <div className="task-type-option">
+                            <Activity size={14} />
+                            实时同步
+                          </div>
+                        ),
+                        value: "STREAMING",
+                      },
                     ]}
                   />
                   <Select
@@ -285,12 +247,12 @@ const App: React.FC = () => {
                     onChange={(value) => setTimeRange(value)}
                     style={{ width: 140 }}
                     options={[
-                      { label: "Last 1 hour", value: "H1" },
-                      { label: "Last 6 hours", value: "H6" },
-                      { label: "Last 12 hours", value: "H12" },
-                      { label: "Last 24 hours", value: "H24" },
-                      { label: "Last 7 days", value: "D7" },
-                      { label: "Last 30 days", value: "D30" },
+                      { label: "近 1 小时", value: "H1" },
+                      { label: "近 6 小时", value: "H6" },
+                      { label: "近 12 小时", value: "H12" },
+                      { label: "近 24 小时", value: "H24" },
+                      { label: "近 7 天", value: "D7" },
+                      { label: "近 30 天", value: "D30" },
                     ]}
                   />
                 </div>
@@ -333,16 +295,16 @@ const App: React.FC = () => {
                 <motion.section variants={fadeUp} className="mb-8">
                   <div className="mb-3 flex items-center justify-between">
                     <h2 className="text-lg font-semibold text-slate-900">
-                      Sync Overview
+                      同步概览
                     </h2>
                   </div>
                   <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
                     <motion.div variants={fadeUp}>
-                      <ChartCard title="Number of Syncs">
+                      <ChartCard title="同步记录量趋势">
                         <BarChart
                           data={chartData.recordsTrend.data}
                           xAxisData={chartData.recordsTrend.xAxis}
-                          title="Number of Syncs"
+                          title="同步记录量趋势"
                           unit={String(summaryData.totalRecordsUnit || "")}
                           loading={loading}
                         />
@@ -350,11 +312,11 @@ const App: React.FC = () => {
                     </motion.div>
 
                     <motion.div variants={fadeUp}>
-                      <ChartCard title="Number of Sync Bytes">
+                      <ChartCard title="同步数据量趋势">
                         <BarChart
                           data={chartData.bytesTrend.data}
                           xAxisData={chartData.bytesTrend.xAxis}
-                          title="Number of Sync Bytes"
+                          title="同步数据量趋势"
                           unit={String(summaryData.totalBytesUnit || "")}
                           loading={loading}
                         />
@@ -366,16 +328,16 @@ const App: React.FC = () => {
                 <motion.section variants={fadeUp} className="mb-8">
                   <div className="mb-3 flex items-center justify-between">
                     <h2 className="text-lg font-semibold text-slate-900">
-                      Performance Trend
+                      性能趋势
                     </h2>
                   </div>
                   <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
                     <motion.div variants={fadeUp}>
-                      <ChartCard title="Sync Rate (Number of Syncs)">
+                      <ChartCard title="记录处理速率">
                         <LineChart
                           data={chartData.recordsSpeedTrend.data}
                           xAxisData={chartData.recordsSpeedTrend.xAxis}
-                          title="Sync Rate (Number of Syncs)"
+                          title="记录处理速率"
                           unit="records/s"
                           loading={loading}
                         />
@@ -383,11 +345,11 @@ const App: React.FC = () => {
                     </motion.div>
 
                     <motion.div variants={fadeUp}>
-                      <ChartCard title="Sync Rate (Bytes)">
+                      <ChartCard title="数据处理速率">
                         <LineChart
                           data={chartData.bytesSpeedTrend.data}
                           xAxisData={chartData.bytesSpeedTrend.xAxis}
-                          title="Sync Rate (Bytes)"
+                          title="数据处理速率"
                           unit="MB/s"
                           loading={loading}
                         />
@@ -399,7 +361,7 @@ const App: React.FC = () => {
                 <motion.section variants={fadeUp}>
                   <div className="mb-3 flex items-center justify-between">
                     <h2 className="text-lg font-semibold text-slate-900">
-                      Summary
+                      摘要分析
                     </h2>
                   </div>
 

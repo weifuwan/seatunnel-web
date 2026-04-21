@@ -315,7 +315,7 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
             <div style={{ display: "flex", gap: 10 }}>
               <Button
                 onClick={handleTestConnection}
-                style={{ height: 38, borderRadius: 10 }}
+                style={{ height: 32, borderRadius: 16 }}
               >
                 连接测试
               </Button>
@@ -323,7 +323,7 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
               <Button
                 type="primary"
                 onClick={handleSubmit}
-                style={{ height: 38, borderRadius: 10, paddingInline: 18 }}
+                style={{ height: 32, borderRadius: 16, paddingInline: 18 }}
               >
                 完成
               </Button>

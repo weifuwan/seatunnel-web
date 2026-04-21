@@ -292,7 +292,7 @@ public class JobMetricsServiceImpl implements JobMetricsService {
                 return new Scale(100_000_000d, "100M");
 
             if (value >= 10_000L)
-                return new Scale(10_000d, "10K");
+                return new Scale(10_000d, "万");
 
             return new Scale(1d, "");
         }
@@ -375,7 +375,7 @@ public class JobMetricsServiceImpl implements JobMetricsService {
      * Determine proper display scale based on max value.
      * <p>
      * Example:
-     * - Records → 10K / 100M / records
+     * - Records → 万 / 100M / records
      * - Bytes → KB / MB / GB / TB
      */
     private Scale pickScale(UnitKind kind, List<Map<String, Object>> rows) {
@@ -391,7 +391,7 @@ public class JobMetricsServiceImpl implements JobMetricsService {
                 return new Scale(100_000_000d, "100M records");
 
             if (max >= 10_000L)
-                return new Scale(10_000d, "10K records");
+                return new Scale(10_000d, "万 records");
 
             return new Scale(1d, "records");
         }

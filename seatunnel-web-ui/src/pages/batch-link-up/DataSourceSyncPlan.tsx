@@ -107,19 +107,22 @@ const DataSourceSyncPlan: React.FC<DataSourceSyncPlanProps> = ({ record }) => {
         `}
       </style>
 
-      <div style={{marginBottom: 12}}>
+      <div style={{ marginBottom: 12 }}>
         <span
-  className="
+          className="
     inline-flex items-center gap-1.5 rounded-full
     border border-violet-100 bg-violet-50/70
-    px-3 py-1 text-[13px] font-medium 
+    px-3 py-1 text-[11px] font-medium 
     shadow-sm shadow-violet-100/40
   "
-  style={{color: "hsl(231 48% 48%)"}}
->
-  <span className="h-1.5 w-1.5 rounded-full " style={{backgroundColor: "hsl(231 48% 48%)"}}/>
-  {getPlanTitle()}
-</span>
+          style={{ color: "hsl(231 48% 48%)" }}
+        >
+          <span
+            className="h-1 w-1 rounded-full "
+            style={{ backgroundColor: "hsl(231 48% 48%)" }}
+          />
+          {getPlanTitle()}
+        </span>
       </div>
 
       <div style={{ margin: "4px 0" }}>

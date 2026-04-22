@@ -43,6 +43,11 @@ public class MySQLDataSourceProcessor extends AbstractDataSourceProcessor {
     }
 
     @Override
+    public boolean acceptsURL(String url) {
+        return url.startsWith("jdbc:mysql:");
+    }
+
+    @Override
     public DataSourceProcessor create() {
         return new MySQLDataSourceProcessor();
     }

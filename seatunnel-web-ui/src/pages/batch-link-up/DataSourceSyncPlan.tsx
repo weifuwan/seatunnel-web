@@ -77,13 +77,13 @@ const DataSourceSyncPlan: React.FC<DataSourceSyncPlanProps> = ({ record }) => {
 
   const getPlanTitle = () => {
     if (record?.jobType === "BATCH") {
-      if (record?.mode === "GUIDE_SINGLE") return "Single Table";
-      if (record?.mode === "GUIDE_MULTI") return "Multi Table";
-      if (record?.mode === "SCRIPT") return "Script Mode";
+      if (record?.mode === "GUIDE_SINGLE") return "单表同步";
+      if (record?.mode === "GUIDE_MULTI") return "多表同步";
+      if (record?.mode === "SCRIPT") return "脚本模式";
       return "Batch Sync";
     }
 
-    return "Data Sync";
+    return "数据同步";
   };
 
   const sourceTableText = formatTables(
@@ -107,8 +107,19 @@ const DataSourceSyncPlan: React.FC<DataSourceSyncPlanProps> = ({ record }) => {
         `}
       </style>
 
-      <div>
-        <span>{getPlanTitle()}</span>
+      <div style={{marginBottom: 12}}>
+        <span
+  className="
+    inline-flex items-center gap-1.5 rounded-full
+    border border-violet-100 bg-violet-50/70
+    px-3 py-1 text-[13px] font-medium 
+    shadow-sm shadow-violet-100/40
+  "
+  style={{color: "hsl(231 48% 48%)"}}
+>
+  <span className="h-1.5 w-1.5 rounded-full " style={{backgroundColor: "hsl(231 48% 48%)"}}/>
+  {getPlanTitle()}
+</span>
       </div>
 
       <div style={{ margin: "4px 0" }}>
@@ -152,11 +163,7 @@ const DataSourceSyncPlan: React.FC<DataSourceSyncPlanProps> = ({ record }) => {
         <div style={{ display: "flex", alignItems: "center" }}>
           {record?.sinkType ? (
             <>
-              <DatabaseIcons
-                dbType={record.sinkType}
-                width="24"
-                height="24"
-              />
+              <DatabaseIcons dbType={record.sinkType} width="24" height="24" />
               <span style={{ marginLeft: 8 }}>{record.sinkType}</span>
             </>
           ) : (

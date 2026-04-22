@@ -63,4 +63,11 @@ public interface DataSourceProcessor {
 
         return ReflectionFormGenerator.generate(param.getClass());
     }
+
+    /**
+     * Whether this processor supports the given JDBC url.
+     */
+    default boolean acceptsURL(String url) {
+        return false;
+    }
 }

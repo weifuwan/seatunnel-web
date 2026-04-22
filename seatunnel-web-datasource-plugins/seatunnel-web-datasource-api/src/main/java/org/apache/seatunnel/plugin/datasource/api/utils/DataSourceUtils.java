@@ -1,6 +1,7 @@
 package org.apache.seatunnel.plugin.datasource.api.utils;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.seatunnel.plugin.datasource.api.jdbc.DataSourceProcessor;
 import org.apache.seatunnel.plugin.datasource.api.plugin.DataSourceProcessorProvider;
 import org.apache.seatunnel.web.spi.datasource.BaseConnectionParam;
@@ -54,5 +55,31 @@ public class DataSourceUtils {
             throw new IllegalArgumentException("Illegal datasource type: " + dbType.name());
         }
         return dataSourceProcessorMap.get(dbType.name());
+    }
+
+    /**
+     * Resolve database type by jdbc url.
+     */
+    public static DbType resolveDbTypeByJdbcUrl(String jdbcUrl) {
+        if (StringUtils.isBlank(jdbcUrl)) {
+            return null;
+        }
+
+        Map<String, DataSourceProcessor> processorMap =
+                DataSourceProcessorProvider.getDataSourceProcessorMap();
+
+        for (DataSourceProcessor processor : processorMap.values()) {
+            try {
+                if (processor.acceptsURL(jdbcUrl)) {
+                    return processor.getDbType();
+                }
+            } catch (Exception e) {
+                log.debug("Match jdbc url failed, dbType={}, url={}",
+                        processor.getDbType(), jdbcUrl, e);
+            }
+        }
+
+        log.warn("Can not resolve dbType by jdbc url: {}", jdbcUrl);
+        return null;
     }
 }

@@ -43,6 +43,11 @@ public class PgSQLDataSourceProcessor extends AbstractDataSourceProcessor {
     }
 
     @Override
+    public boolean acceptsURL(String url) {
+        return url.startsWith("jdbc:postgresql:");
+    }
+
+    @Override
     public DataSourceProcessor create() {
         return new PgSQLDataSourceProcessor();
     }

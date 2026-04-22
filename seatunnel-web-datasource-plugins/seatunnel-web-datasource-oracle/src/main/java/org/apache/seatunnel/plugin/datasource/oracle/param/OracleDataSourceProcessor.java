@@ -43,6 +43,11 @@ public class OracleDataSourceProcessor extends AbstractDataSourceProcessor {
     }
 
     @Override
+    public boolean acceptsURL(String url) {
+        return url.startsWith("jdbc:oracle:thin:");
+    }
+
+    @Override
     public DataSourceProcessor create() {
         return new OracleDataSourceProcessor();
     }

@@ -212,7 +212,7 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
     }
 
     @Override
-    public JobDefinitionEditDTO selectEditDetail(Long id) {
+    public JobDefinitionSaveCommand selectEditDetail(Long id) {
         validateId(id);
 
         try {
@@ -224,16 +224,14 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
                 throw new ServiceException(Status.BATCH_JOB_DEFINITION_NOT_EXIST, "definition content not found");
             }
 
-            JobDefinitionEditDTO dto = new JobDefinitionEditDTO();
-            dto.setId(definition.getId());
-            dto.setMode(definition.getMode());
-            dto.setBasic(buildBasicConfig(definition));
-            dto.setSchedule(buildScheduleConfig(id));
-
             JobDefinitionModeHandler handler = handlerRegistry.getHandler(definition.getMode());
-            handler.fillEditDTO(latestContent.getDefinitionContent(), dto);
+            JobDefinitionSaveCommand command = handler.buildEditCommand(
+                    definition,
+                    latestContent.getDefinitionContent(),
+                    buildScheduleConfig(id)
+            );
 
-            return dto;
+            return command;
         } catch (ServiceException e) {
             throw e;
         } catch (Exception e) {
@@ -265,19 +263,7 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
         return handler;
     }
 
-    /**
-     * Build basic config.
-     */
-    private JobBasicConfig buildBasicConfig(JobDefinitionEntity definition) {
-        JobBasicConfig basic = new JobBasicConfig();
-        basic.setMode(definition.getMode());
-        basic.setJobMode(definition.getJobType());
-        basic.setJobName(definition.getJobName());
-        basic.setJobDesc(definition.getJobDesc());
-        basic.setClientId(definition.getClientId());
-        basic.setParallelism(definition.getParallelism());
-        return basic;
-    }
+
 
     /**
      * Build schedule config.

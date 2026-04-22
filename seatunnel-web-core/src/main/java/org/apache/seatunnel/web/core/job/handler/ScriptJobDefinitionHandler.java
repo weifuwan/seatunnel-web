@@ -4,9 +4,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.seatunnel.web.common.enums.JobDefinitionMode;
 import org.apache.seatunnel.web.common.utils.JSONUtils;
 import org.apache.seatunnel.web.core.job.model.JobDefinitionAnalysisResult;
-import org.apache.seatunnel.web.spi.bean.dto.JobDefinitionEditDTO;
-import org.apache.seatunnel.web.spi.bean.dto.JobDefinitionSaveCommand;
-import org.apache.seatunnel.web.spi.bean.dto.ScriptJobSaveCommand;
+import org.apache.seatunnel.web.dao.entity.JobDefinitionEntity;
+import org.apache.seatunnel.web.spi.bean.dto.*;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -51,7 +50,16 @@ public class ScriptJobDefinitionHandler implements JobDefinitionModeHandler {
     }
 
     @Override
-    public void fillEditDTO(String definitionContent, JobDefinitionEditDTO dto) {
+    public JobDefinitionSaveCommand buildEditCommand(
+            JobDefinitionEntity definition,
+            String definitionContent,
+            JobScheduleConfig scheduleConfig) {
 
+        ScriptJobSaveCommand cmd = new ScriptJobSaveCommand();
+        cmd.setId(definition.getId());
+        cmd.setBasic(buildBasicConfig(definition));
+        cmd.setSchedule(scheduleConfig);
+        cmd.setContent(JSONUtils.parseObject(definitionContent, ScriptJobContent.class));
+        return cmd;
     }
 }

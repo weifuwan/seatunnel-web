@@ -3,9 +3,8 @@ package org.apache.seatunnel.web.core.job.handler;
 import org.apache.seatunnel.web.common.enums.JobDefinitionMode;
 import org.apache.seatunnel.web.common.utils.JSONUtils;
 import org.apache.seatunnel.web.core.job.model.JobDefinitionAnalysisResult;
-import org.apache.seatunnel.web.spi.bean.dto.GuideMultiJobSaveCommand;
-import org.apache.seatunnel.web.spi.bean.dto.JobDefinitionEditDTO;
-import org.apache.seatunnel.web.spi.bean.dto.JobDefinitionSaveCommand;
+import org.apache.seatunnel.web.dao.entity.JobDefinitionEntity;
+import org.apache.seatunnel.web.spi.bean.dto.*;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -39,7 +38,20 @@ public class GuideMultiJobDefinitionHandler implements JobDefinitionModeHandler 
     }
 
     @Override
-    public void fillEditDTO(String definitionContent, JobDefinitionEditDTO dto) {
+    public JobDefinitionSaveCommand buildEditCommand(
+            JobDefinitionEntity definition,
+            String definitionContent,
+            JobScheduleConfig scheduleConfig) {
 
+        GuideMultiJobSaveCommand cmd = new GuideMultiJobSaveCommand();
+        cmd.setId(definition.getId());
+        cmd.setBasic(buildBasicConfig(definition));
+        cmd.setSchedule(scheduleConfig);
+
+        GuideMultiJobContent content =
+                JSONUtils.parseObject(definitionContent, GuideMultiJobContent.class);
+        cmd.setContent(content);
+
+        return cmd;
     }
 }

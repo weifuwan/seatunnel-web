@@ -2,8 +2,10 @@ package org.apache.seatunnel.web.core.job.handler;
 
 import org.apache.seatunnel.web.common.enums.JobDefinitionMode;
 import org.apache.seatunnel.web.core.job.model.JobDefinitionAnalysisResult;
-import org.apache.seatunnel.web.spi.bean.dto.JobDefinitionEditDTO;
+import org.apache.seatunnel.web.dao.entity.JobDefinitionEntity;
+import org.apache.seatunnel.web.spi.bean.dto.JobBasicConfig;
 import org.apache.seatunnel.web.spi.bean.dto.JobDefinitionSaveCommand;
+import org.apache.seatunnel.web.spi.bean.dto.JobScheduleConfig;
 
 public interface JobDefinitionModeHandler {
 
@@ -17,8 +19,28 @@ public interface JobDefinitionModeHandler {
 
     String buildHoconConfig(JobDefinitionSaveCommand command);
 
+
+    JobDefinitionSaveCommand buildEditCommand(
+            JobDefinitionEntity definition,
+            String definitionContent,
+            JobScheduleConfig scheduleConfig
+    );
+
     /**
-     * 将 definitionContent 反序列化到编辑态 DTO
+     * 构建基础配置
      */
-    void fillEditDTO(String definitionContent, JobDefinitionEditDTO dto);
+    default JobBasicConfig buildBasicConfig(JobDefinitionEntity definition) {
+        if (definition == null) {
+            return null;
+        }
+
+        JobBasicConfig basic = new JobBasicConfig();
+        basic.setMode(definition.getMode());
+        basic.setJobMode(definition.getJobType());
+        basic.setJobName(definition.getJobName());
+        basic.setJobDesc(definition.getJobDesc());
+        basic.setClientId(definition.getClientId());
+        basic.setParallelism(definition.getParallelism());
+        return basic;
+    }
 }

@@ -25,7 +25,7 @@ public interface BatchJobDefinitionService {
 
     String buildHoconConfig(GuideMultiJobSaveCommand command);
 
-    JobDefinitionEditDTO selectEditDetail(Long id);
+    JobDefinitionSaveCommand  selectEditDetail(Long id);
 
 
 }

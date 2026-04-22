@@ -8,17 +8,13 @@ import java.util.Map;
 public class ScriptJobContent {
 
     /**
-     * 比如 HOCON / SQL / DSL
+     * 比如 HOCON
      */
     private String scriptType;
 
     /**
      * 脚本文本
      */
-    private String scriptText;
+    private String hoconContent;
 
-    /**
-     * 额外参数
-     */
-    private Map<String, Object> params;
 }

@@ -1,11 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import { Button, Empty, Input } from 'antd';
 import { SearchOutlined } from '@ant-design/icons';
-import { useIntl } from '@umijs/max';
 import DatabaseIcons from '../icon/DatabaseIcons';
 import { COMMON_DB_OPTIONS } from '../constants';
 import type { DataSourceGroup } from '../types';
-import './index.less';
+import './source.less';
 
 interface DataSourceTypeSelectorProps {
   dataSourceGroups: DataSourceGroup[];
@@ -16,7 +15,6 @@ const DataSourceTypeSelector: React.FC<DataSourceTypeSelectorProps> = ({
   dataSourceGroups,
   onSelect,
 }) => {
-  const intl = useIntl();
   const [query, setQuery] = useState('');
   const [selectedGroupName, setSelectedGroupName] = useState<string | null>(null);
 
@@ -32,7 +30,9 @@ const DataSourceTypeSelector: React.FC<DataSourceTypeSelectorProps> = ({
       .map((group) => ({
         groupName: group.groupName,
         datasourceList: group.datasourceList.filter((item) =>
-          item.dbType.toLowerCase().includes(keyword),
+          `${item.dbType} ${item.connectorType || ''} ${item.type || ''}`
+            .toLowerCase()
+            .includes(keyword),
         ),
       }))
       .filter((group) => group.datasourceList.length > 0);
@@ -55,120 +55,106 @@ const DataSourceTypeSelector: React.FC<DataSourceTypeSelectorProps> = ({
     <div className="lf-ds-selector">
       <div className="lf-ds-selector__section">
         <div className="lf-ds-selector__section-header">
-          <div className="lf-ds-selector__title">
-            {intl.formatMessage({
-              id: 'pages.datasource.filter.commonDb',
-              defaultMessage: 'Common DB',
-            })}
-          </div>
-          <div className="lf-ds-selector__subtitle">
-            {intl.formatMessage({
-              id: 'pages.datasource.filter.commonDb.desc',
-              defaultMessage: 'Quickly choose a commonly used datasource type',
-            })}
+          <div>
+            <div className="lf-ds-selector__title">常用数据库</div>
+            <div className="lf-ds-selector__subtitle">可快速选择常见的数据源类型</div>
           </div>
         </div>
 
         <div className="lf-ds-selector__common-grid">
           {COMMON_DB_OPTIONS.map((item) => (
-            <div
+            <button
               key={item.value}
+              type="button"
               className="lf-ds-selector__common-card"
               onClick={() => onSelect(item.value)}
             >
               <div className="lf-ds-selector__common-icon">
-                <DatabaseIcons dbType={item.label} width="" height="" />
+                <DatabaseIcons dbType={item.label} width="18px" height="18px" />
               </div>
-              <div className="lf-ds-selector__common-label">{item.label}</div>
-            </div>
+              <div className="lf-ds-selector__common-content">
+                <div className="lf-ds-selector__common-label">{item.label}</div>
+                <div className="lf-ds-selector__common-desc">快速选择</div>
+              </div>
+            </button>
           ))}
         </div>
       </div>
 
       <div className="lf-ds-selector__filter-panel">
-        <div className="lf-ds-selector__filter-top">
-          <div className="lf-ds-selector__chip-list">
-            <Button
-              type={selectedGroupName === null ? 'primary' : 'default'}
-              size="small"
-              className="lf-ds-selector__chip"
-              onClick={() => handleToggleGroup(null)}
-            >
-              {intl.formatMessage({
-                id: 'pages.datasource.filter.all',
-                defaultMessage: 'All',
-              })}
-              <span className="lf-ds-selector__chip-count">{totalDatasourceCount}</span>
-            </Button>
-
-            {dataSourceGroups.map((group) => (
+        <div className="lf-ds-selector__toolbar">
+          <div className="lf-ds-selector__toolbar-left">
+            <div className="lf-ds-selector__chip-list">
               <Button
-                key={group.groupName}
-                type={selectedGroupName === group.groupName ? 'primary' : 'default'}
+                type={selectedGroupName === null ? 'primary' : 'default'}
                 size="small"
                 className="lf-ds-selector__chip"
-                onClick={() => handleToggleGroup(group.groupName)}
+                onClick={() => handleToggleGroup(null)}
               >
-                {group.groupName}
-                <span className="lf-ds-selector__chip-count">{group.datasourceList.length}</span>
+                全部
+                <span className="lf-ds-selector__chip-count">{totalDatasourceCount}</span>
               </Button>
-            ))}
+
+              {dataSourceGroups.map((group) => (
+                <Button
+                  key={group.groupName}
+                  type={selectedGroupName === group.groupName ? 'primary' : 'default'}
+                  size="small"
+                  className="lf-ds-selector__chip"
+                  onClick={() => handleToggleGroup(group.groupName)}
+                >
+                  {group.groupName}
+                  <span className="lf-ds-selector__chip-count">{group.datasourceList.length}</span>
+                </Button>
+              ))}
+            </div>
           </div>
 
           <Input
             allowClear
             prefix={<SearchOutlined />}
-            placeholder={intl.formatMessage({
-              id: 'pages.datasource.filter.inputPlaceholder',
-              defaultMessage: 'Search datasource type...',
-            })}
+            placeholder="请输入数据源类型"
             value={query}
             className="lf-ds-selector__search"
             onChange={(event) => setQuery(event.target.value)}
           />
         </div>
 
-        <div className="lf-ds-selector__result-header">
-          <div className="lf-ds-selector__result-title">
-            {intl.formatMessage({
-              id: 'pages.datasource.filter.resultTitle',
-              defaultMessage: 'All datasource types',
-            })}
-          </div>
-          <div className="lf-ds-selector__result-count">{flatDatasourceList.length}</div>
-        </div>
+        
 
         {flatDatasourceList.length === 0 ? (
           <div className="lf-ds-selector__empty">
-            <Empty
-              image={Empty.PRESENTED_IMAGE_SIMPLE}
-              description={intl.formatMessage({
-                id: 'pages.datasource.filter.empty',
-                defaultMessage: 'No datasource type found',
-              })}
-            />
+            <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="未找到匹配的数据源类型" />
           </div>
         ) : (
           <div className="lf-ds-selector__grid">
             {flatDatasourceList.map((item) => (
-              <div
+              <button
                 key={`${item.groupName}-${item.dbType}`}
+                type="button"
                 className="lf-ds-selector__card"
                 onClick={() => onSelect(item.dbType)}
               >
-                <div className="lf-ds-selector__card-top">
+                <div className="lf-ds-selector__card-main">
                   <div className="lf-ds-selector__icon-wrap">
-                    <DatabaseIcons dbType={item.dbType} width="" height="" />
+                    <DatabaseIcons dbType={item.dbType} width="16px" height="16px" />
                   </div>
-                  <div className="lf-ds-selector__badge">{item.groupName}</div>
+
+                  <div className="lf-ds-selector__card-content">
+                    <div className="lf-ds-selector__card-name" title={item.dbType}>
+                      {item.dbType}
+                    </div>
+
+                    <div className="lf-ds-selector__card-meta">
+                      {item.connectorType || item.type || '数据源'}
+                    </div>
+                  </div>
                 </div>
 
-                <div className="lf-ds-selector__card-name">{item.dbType}</div>
-
-                <div className="lf-ds-selector__card-meta">
-                  {item.connectorType || item.type || 'Datasource'}
+                <div className="lf-ds-selector__badge" title={item.groupName}>
+                  {item.groupName}
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         )}

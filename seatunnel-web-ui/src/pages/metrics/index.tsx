@@ -226,7 +226,7 @@ const App: React.FC = () => {
                       {
                         label: (
                           <div className="task-type-option">
-                            <Layers3 size={14} /> 批同步
+                            <Layers3 size={14} /> 离线同步
                           </div>
                         ),
                         value: "BATCH",
@@ -238,6 +238,7 @@ const App: React.FC = () => {
                             实时同步
                           </div>
                         ),
+                        disabled: true,
                         value: "STREAMING",
                       },
                     ]}

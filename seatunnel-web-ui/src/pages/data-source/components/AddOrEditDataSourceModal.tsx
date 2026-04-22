@@ -205,6 +205,7 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
           background: "#F8FAFC",
           maxHeight: "72vh",
           overflowY: "auto",
+          minHeight: "60vh"
         },
         footer: {
           padding: "14px 24px 18px",
@@ -296,7 +297,7 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
               isCreateMode ? (
                 <Button
                   onClick={handleBackToTypeSelection}
-                  style={{ height: 38, borderRadius: 10 }}
+                  style={{ height: 32, borderRadius: 16 }}
                 >
                   上一步
                 </Button>
@@ -304,7 +305,7 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
             ) : (
               <Button
                 onClick={handleClose}
-                style={{ height: 38, borderRadius: 10 }}
+                style={{ height: 32, borderRadius: 16 }}
               >
                 取消
               </Button>

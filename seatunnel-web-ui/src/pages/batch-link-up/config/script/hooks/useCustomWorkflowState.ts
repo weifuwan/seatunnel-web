@@ -5,26 +5,43 @@ import { hoconTemplateApi } from "../hoconTemplateApi";
 
 interface UseCustomWorkflowStateProps {
   params: any;
+  setParams: React.Dispatch<React.SetStateAction<any>>;
   basicConfig: any;
   scheduleConfig: any;
 }
 
 export function useCustomWorkflowState({
   params,
+  setParams,
   basicConfig,
   scheduleConfig,
 }: UseCustomWorkflowStateProps) {
   const [activeTab, setActiveTab] = useState<any>("basic");
   const [hoconContent, setHoconContent] = useState<string>("");
+
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewContent, setPreviewContent] = useState("");
   const [previewLoading, setPreviewLoading] = useState(false);
   const [templateLoading, setTemplateLoading] = useState(false);
 
+  const [publishedJobDefineId, setPublishedJobDefineId] = useState<
+    number | string | undefined
+  >(params?.id);
+  const [publishLoading, setPublishLoading] = useState(false);
+  const [runLoading, setRunLoading] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+
   const initializedRef = useRef(false);
+  const contentInitializedRef = useRef(false);
 
   useEffect(() => {
-    if (initializedRef.current) return;
+    if (params?.id) {
+      setPublishedJobDefineId(params.id);
+    }
+  }, [params?.id]);
+
+  useEffect(() => {
+    if (contentInitializedRef.current) return;
     if (!params) return;
 
     const initialContent =
@@ -35,13 +52,22 @@ export function useCustomWorkflowState({
 
     if (initialContent?.trim()) {
       setHoconContent(initialContent);
+      contentInitializedRef.current = true;
+      return;
+    }
+
+    contentInitializedRef.current = true;
+    void loadTemplate();
+  }, [params]);
+
+  useEffect(() => {
+    if (!initializedRef.current) {
       initializedRef.current = true;
       return;
     }
 
-    initializedRef.current = true;
-    void loadTemplate();
-  }, [params]);
+    setIsDirty(true);
+  }, [basicConfig, scheduleConfig, hoconContent]);
 
   const loadTemplate = async () => {
     const sourceDbType = basicConfig?.sourceType;
@@ -79,6 +105,7 @@ export function useCustomWorkflowState({
 
   const buildFinalPayload = () => {
     return {
+      id: params?.id ?? publishedJobDefineId,
       basic: {
         ...basicConfig,
         mode: "SCRIPT",
@@ -137,12 +164,36 @@ export function useCustomWorkflowState({
       const pass = await validateBeforeSubmit();
       if (!pass) return;
 
+      setPublishLoading(true);
+
       const finalPayload = buildFinalPayload();
-      await seatunnelJobDefinitionApi.saveOrUpdateScript(finalPayload);
-      message.success("保存成功");
+      const res = await seatunnelJobDefinitionApi.saveOrUpdateScript(
+        finalPayload
+      );
+
+      const jobDefineId = res?.data?.id ?? res?.data ?? finalPayload.id;
+
+      if (jobDefineId) {
+        setPublishedJobDefineId(jobDefineId);
+        setIsDirty(false);
+
+        setParams((prev: any) => ({
+          ...(prev || {}),
+          id: jobDefineId,
+          workflow: {
+            ...(prev?.workflow || {}),
+            hoconContent,
+          },
+          hoconContent,
+        }));
+      }
+
+      message.success("发布成功");
     } catch (error) {
       console.error(error);
-      message.error("保存失败");
+      message.error("发布失败");
+    } finally {
+      setPublishLoading(false);
     }
   };
 
@@ -165,18 +216,56 @@ export function useCustomWorkflowState({
     }
   };
 
+  const canRun =
+    !!publishedJobDefineId && !isDirty && !publishLoading && !runLoading;
+
+  const runDisabledReason = !publishedJobDefineId
+    ? "请先发布任务，再执行"
+    : isDirty
+    ? "当前内容已变更，请重新发布后再执行"
+    : "";
+
+  const handleRun = async () => {
+    const pass = await validateBeforeSubmit();
+    if (!pass) return;
+
+    if (!publishedJobDefineId) {
+      message.warning("请先发布任务，再执行");
+      return;
+    }
+
+    if (isDirty) {
+      message.warning("当前内容已变更，请重新发布后再执行");
+      return;
+    }
+
+    // 这里先占位，后续接你的 RunLog / execute API
+    message.success("运行校验通过，可继续接入执行逻辑");
+  };
+
   return {
     activeTab,
     setActiveTab,
+
     hoconContent,
     setHoconContent,
+
     previewOpen,
     setPreviewOpen,
     previewContent,
     previewLoading,
     templateLoading,
+
+    publishedJobDefineId,
+    publishLoading,
+    runLoading,
+    isDirty,
+    canRun,
+    runDisabledReason,
+
     handleSave,
     handlePreview,
     handleReloadTemplate,
+    handleRun,
   };
 }

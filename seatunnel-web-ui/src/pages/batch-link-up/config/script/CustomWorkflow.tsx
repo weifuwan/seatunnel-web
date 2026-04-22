@@ -1,15 +1,15 @@
 import { ArrowLeftOutlined, SendOutlined } from "@ant-design/icons";
-import { Button, Space, Upload } from "antd";
+import { Button, Space, Tooltip } from "antd";
 import { FileCode2, PlayCircle } from "lucide-react";
 
 import RightConfigPanel from "../../workflow/RightConfigPanel";
-
 import { useResizablePanel } from "../multi/hooks/useResizablePanel";
 import HoconEditorPanel from "./HoconEditorPanel";
 import { useCustomWorkflowState } from "./hooks/useCustomWorkflowState";
 
 interface CustomWorkflowProps {
   params: any;
+  setParams: React.Dispatch<React.SetStateAction<any>>;
   goBack: () => void;
   basicConfig: any;
   setBasicConfig: (value: any) => void;
@@ -19,6 +19,7 @@ interface CustomWorkflowProps {
 
 export default function CustomWorkflow({
   params,
+  setParams,
   goBack,
   basicConfig,
   setBasicConfig,
@@ -32,14 +33,14 @@ export default function CustomWorkflow({
     setActiveTab,
     hoconContent,
     setHoconContent,
-    previewOpen,
-    setPreviewOpen,
-    previewContent,
-    previewLoading,
+    publishLoading,
+    canRun,
+    runDisabledReason,
     handleSave,
-    handlePreview,
+    handleRun,
   } = useCustomWorkflowState({
     params,
+    setParams,
     basicConfig,
     scheduleConfig,
   });
@@ -87,20 +88,27 @@ export default function CustomWorkflow({
                   </div>
 
                   <Space size={10}>
-                    <div className="inline-flex h-[34px] cursor-pointer select-none items-center justify-center rounded-full border border-slate-200 bg-slate-50 px-3.5 text-[13px] font-medium leading-none text-slate-500 transition-colors duration-200 hover:border-slate-300 hover:bg-white/80 hover:text-slate-700 hover:shadow-[0_4px_12px_rgba(15,23,42,0.05)] active:translate-y-0">
-                      <PlayCircle size={15} strokeWidth={1.9} />
-                      <span className="ml-1">运行</span>
-                    </div>
+                    <Tooltip title={runDisabledReason}>
+                      <Button
+                        type="default"
+                        icon={<PlayCircle size={15} strokeWidth={1.9} />}
+                        onClick={handleRun}
+                        disabled={!canRun}
+                        className="!inline-flex !h-[34px] !items-center !justify-center !rounded-full !border !border-slate-200 !bg-slate-50 !px-3.5 !text-[13px] !font-medium !text-slate-500 transition-colors duration-200 hover:!border-slate-300 hover:!bg-white/80 hover:!text-slate-700 hover:!shadow-[0_4px_12px_rgba(15,23,42,0.05)] disabled:!cursor-not-allowed disabled:!border-slate-200 disabled:!bg-slate-100 disabled:!text-slate-400 disabled:!shadow-none"
+                      >
+                        运行
+                      </Button>
+                    </Tooltip>
 
-                    <div
-                      className="inline-flex h-[34px] cursor-pointer select-none items-center justify-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3.5 text-[13px] font-medium leading-none text-slate-500 transition-colors duration-200 hover:border-slate-300 hover:bg-white/80 hover:text-slate-700 hover:shadow-[0_4px_12px_rgba(15,23,42,0.05)] active:translate-y-0"
+                    <Button
+                      type="default"
+                      icon={<SendOutlined />}
                       onClick={handleSave}
-                      role="button"
-                      tabIndex={0}
+                      loading={publishLoading}
+                      className="!inline-flex !h-[34px] !items-center !justify-center !rounded-full !border !border-slate-200 !bg-slate-50 !px-3.5 !text-[13px] !font-medium !text-slate-500 transition-colors duration-200 hover:!border-slate-300 hover:!bg-white/80 hover:!text-slate-700 hover:!shadow-[0_4px_12px_rgba(15,23,42,0.05)]"
                     >
-                      <SendOutlined />
-                      <span>发布</span>
-                    </div>
+                      发布
+                    </Button>
                   </Space>
                 </div>
 

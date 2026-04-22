@@ -20,7 +20,7 @@ public class ScriptJobDefinitionHandler implements JobDefinitionModeHandler {
     @Override
     public void validate(JobDefinitionSaveCommand command) {
         ScriptJobSaveCommand cmd = (ScriptJobSaveCommand) command;
-        if (cmd.getContent() == null || StringUtils.isBlank(cmd.getContent().getScriptText())) {
+        if (cmd.getContent() == null || StringUtils.isBlank(cmd.getContent().getHoconContent())) {
             throw new IllegalArgumentException("scriptText can not be blank");
         }
     }
@@ -47,7 +47,7 @@ public class ScriptJobDefinitionHandler implements JobDefinitionModeHandler {
     @Override
     public String buildHoconConfig(JobDefinitionSaveCommand command) {
         ScriptJobSaveCommand cmd = (ScriptJobSaveCommand) command;
-        return cmd.getContent().getScriptText();
+        return cmd.getContent().getHoconContent();
     }
 
     @Override

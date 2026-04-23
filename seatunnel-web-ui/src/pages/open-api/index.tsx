@@ -9,6 +9,7 @@ import React, { useMemo, useState } from "react";
 import MethodSegmented from "./MethodSegmented";
 import { HttpMethod, useOpenApiData } from "./openapi-parser";
 import "./index.less";
+import {history} from "umi";
 
 type FilterMethod = "ALL" | HttpMethod;
 
@@ -89,6 +90,9 @@ const ApiManagementPage: React.FC = () => {
           <Button
             type="text"
             icon={<ArrowLeftOutlined />}
+            onClick={() => {
+              history.push("/data-source");
+            }}
             className="!h-10 !rounded-full !border !border-[#D0D5DD] !bg-white !px-4 !text-[#344054] shadow-sm hover:!border-[#B2DDFF] hover:!text-[#1570EF]"
           >
             返回

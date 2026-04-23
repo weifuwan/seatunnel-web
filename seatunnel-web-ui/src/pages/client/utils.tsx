@@ -337,3 +337,48 @@ export const buildCriticalAlerts = (client: ClientMonitoring): string[] => {
 
   return result;
 };
+
+
+export const formatPercent = (value?: number | string) => {
+  if (value === undefined || value === null || value === "") return "--";
+  const n = Number(value);
+  if (Number.isNaN(n)) return String(value);
+  return `${Math.round(n)}%`;
+};
+
+export const getSafeNumber = (value?: number | string) => {
+  const n = Number(value);
+  return Number.isNaN(n) ? 0 : n;
+};
+
+export const formatText = (value?: string | number | null) => {
+  if (value === undefined || value === null || value === "") return "--";
+  return String(value);
+};
+
+export const getHealthMeta = (healthStatus?: number) => {
+  if (healthStatus === 1) {
+    return {
+      dot: "bg-emerald-500",
+      badge: "border-emerald-200 bg-emerald-50 text-emerald-700",
+      label: "Healthy",
+      desc: "节点运行正常，可用于任务提交与监控。",
+    };
+  }
+
+  if (healthStatus === 2) {
+    return {
+      dot: "bg-amber-500",
+      badge: "border-amber-200 bg-amber-50 text-amber-700",
+      label: "Warning",
+      desc: "节点当前存在轻微异常，建议关注运行状态。",
+    };
+  }
+
+  return {
+    dot: "bg-rose-500",
+    badge: "border-rose-200 bg-rose-50 text-rose-700",
+    label: "Down",
+    desc: "节点当前不可用，请检查地址、进程或网络连接。",
+  };
+};

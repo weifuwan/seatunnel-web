@@ -1,4 +1,4 @@
-import { QuestionCircleOutlined, ReadOutlined } from "@ant-design/icons";
+import { ApiOutlined, QuestionCircleOutlined, ReadOutlined } from "@ant-design/icons";
 import { SelectLang as UmiSelectLang } from "@umijs/max";
 import { history } from "umi";
 import "./index.less";
@@ -50,6 +50,25 @@ export const Knowledge: React.FC = () => {
       }}
     >
       <ReadOutlined />
+    </div>
+  );
+};
+
+export const OpenAPI: React.FC = () => {
+  return (
+    <div
+      style={{
+        display: "inline-flex",
+        padding: "4px",
+        fontSize: "18px",
+        color: "inherit",
+        cursor: "pointer",
+      }}
+      onClick={() => {
+        history.push("/open-api");
+      }}
+    >
+      <ApiOutlined />
     </div>
   );
 };

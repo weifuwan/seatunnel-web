@@ -70,7 +70,13 @@ export default [
     component: './knowledge-management',
     hideInMenu: true,
   },
-
+  {
+    icon: 'read',
+    name: 'open-api',
+    path: '/open-api',
+    component: './open-api',
+    hideInMenu: true,
+  },
 
   {
     name: 'Login',

@@ -3,6 +3,11 @@ server:
   tomcat:
     accept-count: 1000
     max-connections: 10000
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
 
 spring:
   profiles:

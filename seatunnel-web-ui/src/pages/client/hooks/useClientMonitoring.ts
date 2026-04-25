@@ -17,10 +17,6 @@ export const useClientMonitoring = () => {
         pageSize: 10,
       });
 
-      if (res.code !== 0) {
-        message.error(res.message || "获取 Client 列表失败");
-        return;
-      }
 
       const records = res?.data?.records || res?.data?.list || [];
       setClients(records);
@@ -32,7 +28,6 @@ export const useClientMonitoring = () => {
         return records?.[0]?.id;
       });
     } catch (error: any) {
-      message.error(error?.message || "获取 Client 列表失败");
     } finally {
       setLoading(false);
     }

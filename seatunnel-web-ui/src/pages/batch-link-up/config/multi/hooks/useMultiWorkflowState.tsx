@@ -1,28 +1,66 @@
 import { FormInstance, message } from "antd";
 import { debounce } from "lodash";
-import { useCallback, useEffect, useMemo, useState } from "react";
-
-import { dataSourceCatalogApi, fetchDataSourceOptions } from "@/pages/data-source/service";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
-  buildDataSourceOptions,
+  dataSourceCatalogApi,
+  fetchDataSourceOptions,
+} from "@/pages/data-source/service";
+
+import { seatunnelJobDefinitionApi } from "@/pages/batch-link-up/api";
+import {
   buildTableItems,
   DEFAULT_DB_TYPE,
   DEFAULT_FORM_VALUES,
 } from "../config";
 import { DbTypeValue, RightPanelTab, TableItem } from "../types";
-import { seatunnelJobDefinitionApi } from "@/pages/batch-link-up/api";
 
 interface UseMultiWorkflowStateProps {
   form: FormInstance;
   params: any;
+  setParams: React.Dispatch<React.SetStateAction<any>>;
   basicConfig: any;
   scheduleConfig: any;
 }
 
+const resolveWorkflow = (params?: any) => {
+  return params?.workflow || params?.content || params?.jobDefinitionInfo || {};
+};
+
+const resolveSourceType = (params?: any, fallback?: any) => {
+  const workflow = resolveWorkflow(params);
+  return (
+    params?.sourceType ||
+    workflow?.sourceType ||
+    {
+      dbType: workflow?.source?.dbType,
+      connectorType: workflow?.source?.connectorType,
+      pluginName: workflow?.source?.pluginName,
+    } ||
+    fallback ||
+    DEFAULT_DB_TYPE
+  );
+};
+
+const resolveTargetType = (params?: any, fallback?: any) => {
+  const workflow = resolveWorkflow(params);
+  return (
+    params?.targetType ||
+    workflow?.targetType ||
+    {
+      dbType: workflow?.target?.dbType,
+      connectorType: workflow?.target?.connectorType,
+      pluginName: workflow?.target?.pluginName,
+    } ||
+    fallback ||
+    DEFAULT_DB_TYPE
+  );
+};
+
 export function useMultiWorkflowState({
   form,
   params,
+  setParams,
   basicConfig,
   scheduleConfig,
 }: UseMultiWorkflowStateProps) {
@@ -30,8 +68,12 @@ export function useMultiWorkflowState({
 
   const [loading, setLoading] = useState(false);
 
-  const [sourceType] = useState<DbTypeValue>(params?.sourceType || DEFAULT_DB_TYPE);
-  const [targetType] = useState<DbTypeValue>(params?.targetType || DEFAULT_DB_TYPE);
+  const [sourceType] = useState<DbTypeValue>(
+    resolveSourceType(params, DEFAULT_DB_TYPE)
+  );
+  const [targetType] = useState<DbTypeValue>(
+    resolveTargetType(params, DEFAULT_DB_TYPE)
+  );
 
   const [sourceOption, setSourceOption] = useState<any[]>([]);
   const [targetOption, setTargetOption] = useState<any[]>([]);
@@ -40,48 +82,83 @@ export function useMultiWorkflowState({
   const [tableData, setTableData] = useState<TableItem[]>([]);
   const [readOnlyTables, setReadOnlyTables] = useState<TableItem[]>([]);
   const [multiTableList, setMultiTableList] = useState<string[]>([]);
-  const [matchMode, setMatchMode] = useState<string>(DEFAULT_FORM_VALUES.matchMode);
+  const [matchMode, setMatchMode] = useState<string>(
+    DEFAULT_FORM_VALUES.matchMode
+  );
   const [tableKeyword, setTableKeyword] = useState("");
 
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewContent, setPreviewContent] = useState("");
   const [previewLoading, setPreviewLoading] = useState(false);
 
+  const [publishedJobDefineId, setPublishedJobDefineId] = useState<
+    number | string | undefined
+  >(params?.id);
+  const [publishLoading, setPublishLoading] = useState(false);
+  const [runLoading, setRunLoading] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+
+  const initializedRef = useRef(false);
+
+  useEffect(() => {
+    if (params?.id) {
+      setPublishedJobDefineId(params.id);
+    }
+  }, [params?.id]);
+
+  useEffect(() => {
+    if (!initializedRef.current) {
+      initializedRef.current = true;
+      return;
+    }
+
+    setIsDirty(true);
+  }, [
+    basicConfig,
+    scheduleConfig,
+    matchMode,
+    tableKeyword,
+    multiTableList,
+  ]);
+
   const fetchDataSourceOptionsU = useCallback(async (dbType: string) => {
     const res = await fetchDataSourceOptions(dbType);
     if (res?.code === 0 && Array.isArray(res?.data)) {
-      return buildDataSourceOptions(res.data);
+      return res.data;
     }
     return [];
   }, []);
 
-  const fetchTables = useCallback(async (dataSourceId: string, mode?: string) => {
-    if (!dataSourceId) return;
+  const fetchTables = useCallback(
+    async (dataSourceId: string, mode?: string) => {
+      if (!dataSourceId) return;
 
-    try {
-      setLoading(true);
-      setCurrentSourceId(dataSourceId);
+      try {
+        setLoading(true);
+        setCurrentSourceId(dataSourceId);
 
-      const res = await dataSourceCatalogApi.listTable(dataSourceId);
-      if (res?.code === 0) {
-        const nextTables = buildTableItems(res.data || []);
-        setTableData(nextTables);
+        const res = await dataSourceCatalogApi.listTable(dataSourceId);
+        if (res?.code === 0) {
+          const nextTables = buildTableItems(res.data || []);
+          setTableData(nextTables);
 
-        if (mode === "4") {
-          setMultiTableList(nextTables.map((item) => item.key));
-        } else if (mode === "1") {
-          setMultiTableList([]);
+          if (mode === "4") {
+            setMultiTableList(nextTables.map((item) => item.key));
+          } else if (mode === "1") {
+            setMultiTableList([]);
+          }
+        } else {
+          message.error(res?.message || "获取表列表失败");
         }
-      } else {
-        message.error(res?.message || "获取表列表失败");
+      } catch (error) {
+        console.error(error);
+        message.error("获取表列表失败");
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error(error);
-      message.error("获取表列表失败");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+    []
+  );
 
   const fetchReferenceTables = useCallback(
     async (dataSourceId: string, mode: string, keyword?: string) => {
@@ -122,8 +199,13 @@ export function useMultiWorkflowState({
     let mounted = true;
 
     const init = async () => {
-      const sourceDbType = params?.sourceType?.dbType || sourceType.dbType || "MYSQL";
-      const targetDbType = params?.targetType?.dbType || targetType.dbType || "MYSQL";
+      const workflow = resolveWorkflow(params);
+
+      const nextSourceType = resolveSourceType(params, sourceType);
+      const nextTargetType = resolveTargetType(params, targetType);
+
+      const sourceDbType = nextSourceType?.dbType || "MYSQL";
+      const targetDbType = nextTargetType?.dbType || "MYSQL";
 
       const [sourceOptions, targetOptions] = await Promise.all([
         fetchDataSourceOptionsU(sourceDbType),
@@ -135,23 +217,25 @@ export function useMultiWorkflowState({
       setSourceOption(sourceOptions);
       setTargetOption(targetOptions);
 
-      const rawWorkflow = params?.workflow || params?.jobDefinitionInfo || null;
-
-      const sourceId =
+      const sourceId = Number(
         params?.sourceDataSourceId ||
-        params?.sourceId ||
-        sourceOptions?.[0]?.value ||
-        "";
+          workflow?.sourceDataSourceId ||
+          workflow?.sourceId ||
+          workflow?.source?.datasourceId
+      );
 
-      const sinkId =
+      const sinkId = Number(
         params?.targetDataSourceId ||
-        params?.targetId ||
-        targetOptions?.[0]?.value ||
-        "";
+          workflow?.targetDataSourceId ||
+          workflow?.targetId ||
+          workflow?.target?.datasourceId
+      );
 
-      const nextMatchMode = rawWorkflow?.tableMatch?.mode || DEFAULT_FORM_VALUES.matchMode;
-      const nextKeyword = rawWorkflow?.tableMatch?.keyword || "";
-      const nextMultiTableList = rawWorkflow?.tableMatch?.tables || [];
+      const nextMatchMode =
+        workflow?.tableMatch?.mode || DEFAULT_FORM_VALUES.matchMode;
+
+      const nextKeyword = workflow?.tableMatch?.keyword || "";
+      const nextMultiTableList = workflow?.tableMatch?.tables || [];
 
       setMatchMode(nextMatchMode);
       setTableKeyword(nextKeyword);
@@ -162,16 +246,28 @@ export function useMultiWorkflowState({
         sinkId,
         matchMode: nextMatchMode,
         sourceTable: nextKeyword,
-        fetchSize: rawWorkflow?.source?.fetchSize ?? DEFAULT_FORM_VALUES.fetchSize,
-        splitSize: rawWorkflow?.source?.splitSize ?? DEFAULT_FORM_VALUES.splitSize,
+
+        fetchSize:
+          workflow?.source?.fetchSize ?? DEFAULT_FORM_VALUES.fetchSize,
+
+        splitSize:
+          workflow?.source?.splitSize ?? DEFAULT_FORM_VALUES.splitSize,
+
         schemaSaveMode:
-          rawWorkflow?.target?.schemaSaveMode ?? DEFAULT_FORM_VALUES.schemaSaveMode,
+          workflow?.target?.schemaSaveMode ??
+          DEFAULT_FORM_VALUES.schemaSaveMode,
+
         dataSaveMode:
-          rawWorkflow?.target?.dataSaveMode ?? DEFAULT_FORM_VALUES.dataSaveMode,
-        batchSize: rawWorkflow?.target?.batchSize ?? DEFAULT_FORM_VALUES.batchSize,
+          workflow?.target?.dataSaveMode ?? DEFAULT_FORM_VALUES.dataSaveMode,
+
+        batchSize:
+          workflow?.target?.batchSize ?? DEFAULT_FORM_VALUES.batchSize,
+
         enableUpsert:
-          rawWorkflow?.target?.enableUpsert ?? DEFAULT_FORM_VALUES.enableUpsert,
-        fieldIde: rawWorkflow?.target?.fieldIde ?? DEFAULT_FORM_VALUES.fieldIde,
+          workflow?.target?.enableUpsert ?? DEFAULT_FORM_VALUES.enableUpsert,
+
+        fieldIde:
+          workflow?.target?.fieldIde ?? DEFAULT_FORM_VALUES.fieldIde,
       });
 
       if (sourceId) {
@@ -182,10 +278,16 @@ export function useMultiWorkflowState({
           await fetchTables(String(sourceId), "4");
         } else if (nextMatchMode === "2" || nextMatchMode === "3") {
           if (nextKeyword) {
-            await fetchReferenceTables(String(sourceId), nextMatchMode, nextKeyword);
+            await fetchReferenceTables(
+              String(sourceId),
+              nextMatchMode,
+              nextKeyword
+            );
           }
         }
       }
+
+      setIsDirty(false);
     };
 
     init();
@@ -197,8 +299,8 @@ export function useMultiWorkflowState({
   }, [
     params,
     form,
-    sourceType.dbType,
-    targetType.dbType,
+    sourceType,
+    targetType,
     fetchDataSourceOptionsU,
     fetchTables,
     fetchReferenceTables,
@@ -207,6 +309,7 @@ export function useMultiWorkflowState({
 
   const handleSourceIdChange = async (value: string) => {
     setCurrentSourceId(value);
+    setIsDirty(true);
 
     if (matchMode === "1" || matchMode === "4") {
       await fetchTables(value, matchMode);
@@ -221,6 +324,7 @@ export function useMultiWorkflowState({
 
   const handleMatchModeChange = async (value: string) => {
     setMatchMode(value);
+    setIsDirty(true);
     form.setFieldValue("matchMode", value);
 
     if (!currentSourceId) return;
@@ -243,7 +347,9 @@ export function useMultiWorkflowState({
 
   const handleKeywordChange = (value: string) => {
     const keyword = value.trim();
+
     setTableKeyword(keyword);
+    setIsDirty(true);
 
     if (!keyword) {
       setReadOnlyTables([]);
@@ -280,14 +386,17 @@ export function useMultiWorkflowState({
       },
       tableMatch: {
         mode: matchMode,
-        tables: matchMode === "1" || matchMode === "4" ? multiTableList : undefined,
-        keyword: matchMode === "2" || matchMode === "3" ? tableKeyword : undefined,
+        tables:
+          matchMode === "1" || matchMode === "4" ? multiTableList : undefined,
+        keyword:
+          matchMode === "2" || matchMode === "3" ? tableKeyword : undefined,
       },
     };
   };
 
   const buildFinalPayload = () => {
     return {
+      id: params?.id ?? publishedJobDefineId,
       basic: {
         ...basicConfig,
         mode: "GUIDE_MULTI",
@@ -327,12 +436,40 @@ export function useMultiWorkflowState({
       const pass = await validateBeforeSubmit();
       if (!pass) return;
 
-      const finalPayload = buildFinalPayload();
-      await seatunnelJobDefinitionApi.saveOrUpdateGuideMulti(finalPayload);
-      message.success("保存成功");
+      setPublishLoading(true);
+
+      const workflowData = buildWorkflowData();
+      const finalPayload = {
+        ...buildFinalPayload(),
+        content: workflowData,
+      };
+
+      const res = await seatunnelJobDefinitionApi.saveOrUpdateGuideMulti(
+        finalPayload
+      );
+
+      const jobDefineId = res?.data?.id ?? res?.data ?? finalPayload.id;
+
+      if (jobDefineId) {
+        setPublishedJobDefineId(jobDefineId);
+        setIsDirty(false);
+
+        setParams((prev: any) => ({
+          ...(prev || {}),
+          id: jobDefineId,
+          workflow: workflowData,
+          content: workflowData,
+          sourceDataSourceId: workflowData.source.datasourceId,
+          targetDataSourceId: workflowData.target.datasourceId,
+        }));
+      }
+
+      message.success("发布成功");
     } catch (error) {
       console.error(error);
-      message.error("保存失败");
+      message.error("发布失败");
+    } finally {
+      setPublishLoading(false);
     }
   };
 
@@ -342,14 +479,57 @@ export function useMultiWorkflowState({
       if (!pass) return;
 
       setPreviewLoading(true);
+
       const finalPayload = buildFinalPayload();
-      const res = await seatunnelJobDefinitionApi.buildGuideMultiConfig(finalPayload);
+      const res = await seatunnelJobDefinitionApi.buildGuideMultiConfig(
+        finalPayload
+      );
+
       setPreviewContent(res?.data || "");
       setPreviewOpen(true);
     } catch (error) {
       console.error(error);
+      message.error("预览失败");
     } finally {
       setPreviewLoading(false);
+    }
+  };
+
+  const canRun =
+    !!publishedJobDefineId && !isDirty && !publishLoading && !runLoading;
+
+  const runDisabledReason = !publishedJobDefineId
+    ? "请先发布任务，再执行"
+    : isDirty
+    ? "当前内容已变更，请重新发布后再执行"
+    : "";
+
+  const handleRun = async () => {
+    const pass = await validateBeforeSubmit();
+    if (!pass) return;
+
+    if (!publishedJobDefineId) {
+      message.warning("请先发布任务，再执行");
+      return;
+    }
+
+    if (isDirty) {
+      message.warning("当前内容已变更，请重新发布后再执行");
+      return;
+    }
+
+    try {
+      setRunLoading(true);
+
+      // 这里先和脚本模式保持一致，后续接你的 execute / runLog API。
+      // await seatunnelJobDefinitionApi.execute(publishedJobDefineId);
+
+      message.success("运行校验通过，可继续接入执行逻辑");
+    } catch (error) {
+      console.error(error);
+      message.error("运行失败");
+    } finally {
+      setRunLoading(false);
     }
   };
 
@@ -375,10 +555,18 @@ export function useMultiWorkflowState({
     previewContent,
     previewLoading,
 
+    publishedJobDefineId,
+    publishLoading,
+    runLoading,
+    isDirty,
+    canRun,
+    runDisabledReason,
+
     handleSourceIdChange,
     handleMatchModeChange,
     handleKeywordChange,
     handleSave,
     handlePreview,
+    handleRun,
   };
 }

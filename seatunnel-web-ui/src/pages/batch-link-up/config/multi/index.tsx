@@ -1,7 +1,8 @@
-import { history, useParams } from "@umijs/max";
-import { Empty } from "antd";
+import { history, useLocation, useParams } from "@umijs/max";
+import { Empty, message, Spin } from "antd";
 import { useEffect, useState } from "react";
 import MultiWorkflow from "./MultiWorkflow";
+import { seatunnelJobDefinitionApi } from "../../api";
 import {
   BasicConfig,
   ScheduleConfig,
@@ -51,30 +52,36 @@ const defaultBasicConfig: BasicConfig = {
   targetDataSourceId: "",
 };
 
-const buildInitialScheduleConfig = (rawData?: any): ScheduleConfig => {
+const mergeScheduleConfig = (schedule?: any): ScheduleConfig => {
   return {
     ...defaultScheduleConfig,
-    ...(rawData?.scheduleConfig || {}),
+    ...(schedule || {}),
     hourlyRangeValue: {
       ...defaultScheduleConfig.hourlyRangeValue,
-      ...(rawData?.scheduleConfig?.hourlyRangeValue || {}),
+      ...(schedule?.hourlyRangeValue || {}),
     },
     hourlyAppointValue: {
       ...defaultScheduleConfig.hourlyAppointValue,
-      ...(rawData?.scheduleConfig?.hourlyAppointValue || {}),
+      ...(schedule?.hourlyAppointValue || {}),
     },
     dailyValue: {
       ...defaultScheduleConfig.dailyValue,
-      ...(rawData?.scheduleConfig?.dailyValue || {}),
+      ...(schedule?.dailyValue || {}),
     },
     weeklyValue: {
       ...defaultScheduleConfig.weeklyValue,
-      ...(rawData?.scheduleConfig?.weeklyValue || {}),
+      ...(schedule?.weeklyValue || {}),
     },
   };
 };
 
-const buildInitialBasicConfig = (rawData?: any): BasicConfig => {
+const buildInitialScheduleConfigForCreate = (
+  rawData?: any
+): ScheduleConfig => {
+  return mergeScheduleConfig(rawData?.scheduleConfig);
+};
+
+const buildInitialBasicConfigForCreate = (rawData?: any): BasicConfig => {
   return {
     ...defaultBasicConfig,
     jobName: rawData?.jobName || "",
@@ -88,8 +95,110 @@ const buildInitialBasicConfig = (rawData?: any): BasicConfig => {
   };
 };
 
+const buildInitialScheduleConfigForEdit = (
+  editData?: any
+): ScheduleConfig => {
+  return mergeScheduleConfig(editData?.schedule);
+};
+
+const buildInitialBasicConfigForEdit = (editData?: any): BasicConfig => {
+  const basic = editData?.basic || {};
+  const workflow = editData?.workflow || {};
+  const content = editData?.content || {};
+
+  const source = workflow?.source || content?.source || {};
+  const target = workflow?.target || content?.target || {};
+
+  return {
+    ...defaultBasicConfig,
+    jobName: basic?.jobName || "",
+    description: basic?.jobDesc || basic?.description || "",
+    clientId: basic?.clientId ? String(basic.clientId) : "",
+    mode: basic?.mode || editData?.mode || "GUIDE_MULTI",
+
+    sourceType:
+      workflow?.sourceType?.dbType ||
+      source?.dbType ||
+      editData?.sourceType?.dbType ||
+      "SOURCE",
+
+    targetType:
+      workflow?.targetType?.dbType ||
+      target?.dbType ||
+      editData?.targetType?.dbType ||
+      "SINK",
+
+    sourceDataSourceId:
+      workflow?.sourceDataSourceId ||
+      workflow?.sourceId ||
+      source?.datasourceId ||
+      "",
+
+    targetDataSourceId:
+      workflow?.targetDataSourceId ||
+      workflow?.targetId ||
+      target?.datasourceId ||
+      "",
+  };
+};
+
+const buildPageParamsForEdit = (editData?: any) => {
+  const basic = editData?.basic || {};
+  const workflow = editData?.workflow || {};
+  const content = editData?.content || {};
+  const schedule = editData?.schedule || {};
+
+  const source = workflow?.source || content?.source || {};
+  const target = workflow?.target || content?.target || {};
+
+  return {
+    id: editData?.id,
+    mode: editData?.mode || basic?.mode || "GUIDE_MULTI",
+    jobName: basic?.jobName || "",
+    description: basic?.jobDesc || basic?.description || "",
+    clientId: basic?.clientId || "",
+
+    sourceType:
+      workflow?.sourceType ||
+      editData?.sourceType || {
+        dbType: source?.dbType,
+        connectorType: source?.connectorType,
+        pluginName: source?.pluginName,
+      },
+
+    targetType:
+      workflow?.targetType ||
+      editData?.targetType || {
+        dbType: target?.dbType,
+        connectorType: target?.connectorType,
+        pluginName: target?.pluginName,
+      },
+
+    sourceDataSourceId:
+      workflow?.sourceDataSourceId ||
+      workflow?.sourceId ||
+      source?.datasourceId ||
+      "",
+
+    targetDataSourceId:
+      workflow?.targetDataSourceId ||
+      workflow?.targetId ||
+      target?.datasourceId ||
+      "",
+
+    scheduleConfig: schedule,
+    workflow: {
+      ...workflow,
+      ...content,
+    },
+    basic,
+    content,
+  };
+};
+
 export default function MultiConfigPage() {
   const { id } = useParams<{ id: string }>();
+  const location = useLocation();
 
   const [params, setParams] = useState<any>(null);
   const [scheduleConfig, setScheduleConfig] = useState<ScheduleConfig>(
@@ -97,27 +206,100 @@ export default function MultiConfigPage() {
   );
   const [basicConfig, setBasicConfig] =
     useState<BasicConfig>(defaultBasicConfig);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!id) return;
 
-    const cache = sessionStorage.getItem(`batch-link-up-detail-${id}`);
-    if (!cache) return;
+    const searchParams = new URLSearchParams(location.search);
+    const scene = searchParams.get("scene");
+    const cacheKey = `batch-link-up-detail-${id}`;
 
-    const data = JSON.parse(cache);
-    setParams(data);
-    setBasicConfig(buildInitialBasicConfig(data));
-    setScheduleConfig(buildInitialScheduleConfig(data));
-  }, [id]);
+    const initCreate = () => {
+      const cache = sessionStorage.getItem(cacheKey);
+      if (!cache) {
+        setParams(null);
+        return;
+      }
+
+      try {
+        const data = JSON.parse(cache);
+        setParams(data);
+        setBasicConfig(buildInitialBasicConfigForCreate(data));
+        setScheduleConfig(buildInitialScheduleConfigForCreate(data));
+      } catch (error) {
+        console.error("解析缓存失败:", error);
+        message.error("读取缓存配置失败");
+        setParams(null);
+      }
+    };
+
+    const initEdit = async () => {
+      try {
+        setLoading(true);
+
+        const res = await seatunnelJobDefinitionApi.selectEditDetail(id);
+        if (res?.code !== 0 || !res?.data) {
+          message.error(res?.message || res?.msg || "获取编辑详情失败");
+          setParams(null);
+          return;
+        }
+
+        const data = res.data;
+        setParams(buildPageParamsForEdit(data));
+        setBasicConfig(buildInitialBasicConfigForEdit(data));
+        setScheduleConfig(buildInitialScheduleConfigForEdit(data));
+      } catch (error) {
+        console.error(error);
+        message.error("获取编辑详情失败");
+        setParams(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (scene === "edit") {
+      initEdit();
+      return;
+    }
+
+    if (scene === "create") {
+      initCreate();
+      return;
+    }
+
+    const cache = sessionStorage.getItem(cacheKey);
+    if (cache) {
+      initCreate();
+    } else {
+      initEdit();
+    }
+  }, [id, location.search]);
 
   const goBack = () => {
+    const searchParams = new URLSearchParams(location.search);
+    const scene = searchParams.get("scene");
+
+    if (scene === "edit") {
+      history.push("/sync/batch-link-up");
+      return;
+    }
+
     history.push(`/sync/batch-link-up/${id}/detail`);
   };
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC]">
+        <Spin />
+      </div>
+    );
+  }
 
   if (!params) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC]">
-        <Empty description="未找到配置数据，请先完成上一步配置" />
+        <Empty description="未找到配置数据，请检查任务是否存在" />
       </div>
     );
   }
@@ -126,6 +308,7 @@ export default function MultiConfigPage() {
     <div className="min-h-screen bg-[#ffffff]">
       <MultiWorkflow
         params={params}
+        setParams={setParams}
         goBack={goBack}
         basicConfig={basicConfig}
         setBasicConfig={setBasicConfig}

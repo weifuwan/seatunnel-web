@@ -37,7 +37,7 @@ export const FIELD_IDE_OPTIONS = [
 export const buildDataSourceOptions = (list: any[] = []) => {
   return list.map((item) => ({
     label: item.name || item.dataSourceName || item.id,
-    value: String(item.id),
+    value: item.id,
     ...item,
   }));
 };

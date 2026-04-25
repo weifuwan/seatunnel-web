@@ -1,6 +1,6 @@
-import { ArrowLeftOutlined } from "@ant-design/icons";
-import { Button, Form, Popover, Space } from "antd";
-import { Blocks, Eye, PlayCircle, Upload } from "lucide-react";
+import { ArrowLeftOutlined, SendOutlined } from "@ant-design/icons";
+import { Button, Form, Popover, Space, Tooltip } from "antd";
+import { Blocks, Eye, PlayCircle } from "lucide-react";
 
 import CodeBlockWithCopy from "../../workflow/operator/CodeBlockWithCopy";
 import RightConfigPanel from "../../workflow/RightConfigPanel";
@@ -12,14 +12,19 @@ import { useMultiWorkflowState } from "./hooks/useMultiWorkflowState";
 import { useResizablePanel } from "./hooks/useResizablePanel";
 import { MultiWorkflowProps } from "./types";
 
+type EnhancedMultiWorkflowProps = MultiWorkflowProps & {
+  setParams: React.Dispatch<React.SetStateAction<any>>;
+};
+
 export default function MultiWorkflow({
   params,
+  setParams,
   goBack,
   basicConfig,
   setBasicConfig,
   scheduleConfig,
   setScheduleConfig,
-}: MultiWorkflowProps) {
+}: EnhancedMultiWorkflowProps) {
   const [form] = Form.useForm();
 
   const { rightWidth, handleResizeStart } = useResizablePanel(380);
@@ -36,24 +41,32 @@ export default function MultiWorkflow({
     setMultiTableList,
     matchMode,
     tableKeyword,
+
     previewOpen,
     setPreviewOpen,
     previewContent,
     previewLoading,
+
+    publishLoading,
+    canRun,
+    runDisabledReason,
+
     handleSourceIdChange,
     handleMatchModeChange,
     handleKeywordChange,
     handleSave,
     handlePreview,
+    handleRun,
   } = useMultiWorkflowState({
     form,
     params,
+    setParams,
     basicConfig,
     scheduleConfig,
   });
 
-  const actionChipClass =
-    "inline-flex h-[34px] cursor-pointer select-none items-center justify-center rounded-full border border-slate-200 bg-slate-50 px-3.5 text-[13px] font-medium leading-none text-slate-500 transition-colors duration-200 hover:border-slate-300 hover:bg-white/80 hover:text-slate-700 hover:shadow-[0_4px_12px_rgba(15,23,42,0.05)] active:translate-y-0";
+  const actionButtonClass =
+    "!inline-flex !h-[34px] !items-center !justify-center !rounded-full !border !border-slate-200 !bg-slate-50 !px-3.5 !text-[13px] !font-medium !text-slate-500 transition-colors duration-200 hover:!border-slate-300 hover:!bg-white/80 hover:!text-slate-700 hover:!shadow-[0_4px_12px_rgba(15,23,42,0.05)] disabled:!cursor-not-allowed disabled:!border-slate-200 disabled:!bg-slate-100 disabled:!text-slate-400 disabled:!shadow-none";
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-white">
@@ -98,20 +111,27 @@ export default function MultiWorkflow({
                   </div>
 
                   <Space size={10}>
-                    <div className={actionChipClass}>
-                      <PlayCircle size={15} strokeWidth={1.9} />
-                      <span className="ml-1">运行</span>
-                    </div>
+                    <Tooltip title={runDisabledReason}>
+                      <Button
+                        type="default"
+                        icon={<PlayCircle size={15} strokeWidth={1.9} />}
+                        onClick={handleRun}
+                        disabled={!canRun}
+                        className={actionButtonClass}
+                      >
+                        运行
+                      </Button>
+                    </Tooltip>
 
-                    <div
-                      className={actionChipClass}
+                    <Button
+                      type="default"
+                      icon={<SendOutlined />}
                       onClick={handleSave}
-                      role="button"
-                      tabIndex={0}
+                      loading={publishLoading}
+                      className={actionButtonClass}
                     >
-                      <Upload size={15} strokeWidth={1.9} />
-                      <span className="ml-1">发布</span>
-                    </div>
+                      发布
+                    </Button>
 
                     <Popover
                       open={previewOpen}
@@ -129,17 +149,15 @@ export default function MultiWorkflow({
                         </div>
                       }
                     >
-                      <div
-                        className={actionChipClass}
+                      <Button
+                        type="default"
+                        icon={<Eye size={15} strokeWidth={1.9} />}
                         onClick={handlePreview}
-                        role="button"
-                        tabIndex={0}
+                        loading={previewLoading}
+                        className={actionButtonClass}
                       >
-                        <Eye size={15} strokeWidth={1.9} />
-                        <span className="ml-1">
-                          {previewLoading ? "生成中..." : "预览"}
-                        </span>
-                      </div>
+                        预览
+                      </Button>
                     </Popover>
                   </Space>
                 </div>

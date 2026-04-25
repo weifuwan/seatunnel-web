@@ -271,7 +271,7 @@ const HoconTab: React.FC<HoconTabProps> = ({ config = "" }) => {
       </div>
 
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-[#FCFDFE]">
-        <div className="h-[540px] overflow-auto">
+        <div className="h-[480px] overflow-auto">
           <div ref={containerRef} />
         </div>
       </div>

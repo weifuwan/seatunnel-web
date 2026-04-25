@@ -11,4 +11,6 @@ public interface JobDefinitionSaveCommand {
     JobBasicConfig getBasic();
 
     JobScheduleConfig getSchedule();
+
+    EnvConfig getEnv();
 }

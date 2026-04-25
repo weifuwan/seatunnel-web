@@ -17,6 +17,8 @@ public class ScriptJobSaveCommand implements JobDefinitionSaveCommand {
 
     private JobScheduleConfig schedule;
 
+    private EnvConfig env;
+
     @Override
     public JobDefinitionMode getMode() {
         return JobDefinitionMode.SCRIPT;

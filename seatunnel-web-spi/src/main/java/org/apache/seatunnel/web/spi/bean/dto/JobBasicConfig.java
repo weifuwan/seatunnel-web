@@ -2,20 +2,11 @@ package org.apache.seatunnel.web.spi.bean.dto;
 
 import lombok.Data;
 import org.apache.seatunnel.web.common.enums.JobDefinitionMode;
-import org.apache.seatunnel.web.common.enums.JobMode;
 
 @Data
 public class JobBasicConfig {
-    
-    /**
-     * SCRIPT / GUIDE_SINGLE / GUIDE_MULTI
-     */
-    private JobDefinitionMode mode;
 
-    /**
-     * BATCH / STREAMING
-     */
-    private JobMode jobMode;
+    private JobDefinitionMode mode;
 
     private String jobName;
 
@@ -23,5 +14,4 @@ public class JobBasicConfig {
 
     private Long clientId;
 
-    private Integer parallelism;
 }

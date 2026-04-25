@@ -19,6 +19,8 @@ public class GuideSingleJobSaveCommand implements JobDefinitionSaveCommand {
 
     private JobScheduleConfig schedule;
 
+    private EnvConfig env;
+
     @Override
     public JobDefinitionMode getMode() {
         return JobDefinitionMode.GUIDE_SINGLE;

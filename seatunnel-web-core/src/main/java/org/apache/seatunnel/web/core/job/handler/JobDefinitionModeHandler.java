@@ -35,12 +35,11 @@ public interface JobDefinitionModeHandler {
         }
 
         JobBasicConfig basic = new JobBasicConfig();
+
         basic.setMode(definition.getMode());
-        basic.setJobMode(definition.getJobType());
         basic.setJobName(definition.getJobName());
         basic.setJobDesc(definition.getJobDesc());
         basic.setClientId(definition.getClientId());
-        basic.setParallelism(definition.getParallelism());
         return basic;
     }
 }

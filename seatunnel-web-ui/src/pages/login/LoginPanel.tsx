@@ -89,14 +89,7 @@ export default function LoginPanel({
       onFire("TILT");
       // message.error(data?.message || "Login failed");
     } catch (error) {
-      console.error(error);
       onFire("SHAKE");
-      message.error(
-        intl.formatMessage({
-          id: "pages.login.failure",
-          defaultMessage: "登录失败，请重试！",
-        })
-      );
     } finally {
       setLoading(false);
     }

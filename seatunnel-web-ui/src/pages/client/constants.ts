@@ -24,7 +24,7 @@ export const iconWrapStyle: React.CSSProperties = {
 
 export const MotionDiv = motion.div;
 
-export const BLUE = "#4F46E5";
+export const BLUE = "hsl(231 48% 48%)";
 export const TEXT_SECONDARY = "#667085";
 export const BORDER_COLOR = "#EAECF0";
 export const PAGE_BG = "#FFFFFF";

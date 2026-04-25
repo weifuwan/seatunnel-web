@@ -38,7 +38,7 @@ const ClientPageHeader: React.FC<Props> = ({ onAdd }) => {
         size="large"
         onClick={onAdd}
         className="h-10 rounded-full px-5 shadow-[0_6px_16px_rgba(63,92,214,0.18)]"
-        style={{ background: BLUE, borderColor: BLUE }}
+        style={{ background: "hsl(231 48% 48%)", borderColor: BLUE }}
       >
         新建 Client
       </Button>

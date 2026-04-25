@@ -4,10 +4,10 @@ import { Blocks, Eye, PlayCircle } from "lucide-react";
 
 import CodeBlockWithCopy from "../../workflow/operator/CodeBlockWithCopy";
 import RightConfigPanel from "../../workflow/RightConfigPanel";
-import ReferenceTablePanel from "./components/ReferenceTablePanel";
-import TableTransferPanel from "./components/TableTransferPanel";
 import WholeSyncForm from "./components/MultiSyncForm";
 import MultiWorkflowParamConfig from "./components/MultiWorkflowParamConfig";
+import ReferenceTablePanel from "./components/ReferenceTablePanel";
+import TableTransferPanel from "./components/TableTransferPanel";
 import { useMultiWorkflowState } from "./hooks/useMultiWorkflowState";
 import { useResizablePanel } from "./hooks/useResizablePanel";
 import { MultiWorkflowProps } from "./types";
@@ -27,7 +27,7 @@ export default function MultiWorkflow({
 }: EnhancedMultiWorkflowProps) {
   const [form] = Form.useForm();
 
-  const { rightWidth, handleResizeStart } = useResizablePanel(380);
+  const { rightWidth, handleResizeStart } = useResizablePanel(520);
 
   const {
     activeTab,
@@ -67,6 +67,9 @@ export default function MultiWorkflow({
 
   const actionButtonClass =
     "!inline-flex !h-[34px] !items-center !justify-center !rounded-full !border !border-slate-200 !bg-slate-50 !px-3.5 !text-[13px] !font-medium !text-slate-500 transition-colors duration-200 hover:!border-slate-300 hover:!bg-white/80 hover:!text-slate-700 hover:!shadow-[0_4px_12px_rgba(15,23,42,0.05)] disabled:!cursor-not-allowed disabled:!border-slate-200 disabled:!bg-slate-100 disabled:!text-slate-400 disabled:!shadow-none";
+
+  const actionChipClass =
+    "inline-flex h-[34px] cursor-pointer select-none items-center justify-center rounded-full border border-slate-200 bg-slate-50 px-3.5 text-[13px] font-medium leading-none text-slate-500 transition-colors duration-200 hover:border-slate-300 hover:bg-white/80 hover:text-slate-700 hover:shadow-[0_4px_12px_rgba(15,23,42,0.05)] active:translate-y-0";
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-white">
@@ -149,15 +152,19 @@ export default function MultiWorkflow({
                         </div>
                       }
                     >
-                      <Button
-                        type="default"
-                        icon={<Eye size={15} strokeWidth={1.9} />}
+                      <div
+                        className={actionChipClass}
                         onClick={handlePreview}
-                        loading={previewLoading}
-                        className={actionButtonClass}
+                        role="button"
+                        tabIndex={0}
                       >
-                        预览
-                      </Button>
+                        <Eye
+                          size={15}
+                          strokeWidth={1.9}
+                          className={previewLoading ? "animate-spin" : ""}
+                        />
+                        <span className="ml-1">预览</span>
+                      </div>
                     </Popover>
                   </Space>
                 </div>

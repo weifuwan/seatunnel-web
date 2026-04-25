@@ -6,12 +6,13 @@ const App: React.FC = () => {
   return (
     <div
       style={{
-        minHeight: "100vh",
-        background: "#f8faff",
+        minHeight: "60vh",
+        background: "#ffffff",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         padding: 24,
+        
       }}
     >
       <div
@@ -43,7 +44,7 @@ const App: React.FC = () => {
             marginBottom: 12,
           }}
         >
-          靓仔靓女暂时还看不到这个页面哦
+          靓仔和靓女暂时还看不到这个页面哦
         </div>
 
         <div

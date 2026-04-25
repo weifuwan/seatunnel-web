@@ -11,6 +11,8 @@ package org.apache.seatunnel.web.core.utils;
  */
 public class SeaTunnelConfigUtil {
 
+    private static final String INDENT = "    ";
+
     /**
      * Base SeaTunnel configuration template.
      *
@@ -54,9 +56,33 @@ public class SeaTunnelConfigUtil {
             String sinks
     ) {
         return CONFIG_TEMPLATE
-                .replace("env_placeholder", env)
-                .replace("source_placeholder", sources)
-                .replace("transform_placeholder", transforms)
-                .replace("sink_placeholder", sinks);
+                .replace("env_placeholder", indentBlock(env))
+                .replace("source_placeholder", indentBlock(sources))
+                .replace("transform_placeholder", indentBlock(transforms))
+                .replace("sink_placeholder", indentBlock(sinks));
+    }
+
+    /**
+     * Add one indentation level to every non-empty line.
+     */
+    private static String indentBlock(String block) {
+        if (block == null || block.trim().isEmpty()) {
+            return "";
+        }
+
+        String normalized = block.replace("\r\n", "\n").replace("\r", "\n");
+        String[] lines = normalized.split("\n", -1);
+
+        StringBuilder builder = new StringBuilder();
+
+        for (String line : lines) {
+            if (line.trim().isEmpty()) {
+                builder.append('\n');
+            } else {
+                builder.append(INDENT).append(line).append('\n');
+            }
+        }
+
+        return builder.toString();
     }
 }

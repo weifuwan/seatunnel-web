@@ -26,7 +26,7 @@ export default function CustomWorkflow({
   scheduleConfig,
   setScheduleConfig,
 }: CustomWorkflowProps) {
-  const { rightWidth, handleResizeStart } = useResizablePanel(380);
+  const { rightWidth, handleResizeStart } = useResizablePanel(520);
 
   const {
     activeTab,
@@ -112,8 +112,8 @@ export default function CustomWorkflow({
                   </Space>
                 </div>
 
-                <div className="min-h-0 flex-1 bg-white p-[18px] [background:radial-gradient(circle_at_top_left,rgba(78,116,248,0.04),transparent_22%),#ffffff]">
-                  <div className="h-full">
+                <div className="min-h-0 flex-1 bg-white [background:radial-gradient(circle_at_top_left,rgba(78,116,248,0.04),transparent_22%),#ffffff]">
+                  <div className="h-full" style={{padding: 16}}>
                     <HoconEditorPanel
                       value={hoconContent}
                       onChange={setHoconContent}

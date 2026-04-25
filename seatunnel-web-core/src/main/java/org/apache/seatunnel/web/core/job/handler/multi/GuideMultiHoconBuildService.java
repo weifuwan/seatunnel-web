@@ -34,6 +34,8 @@ public class GuideMultiHoconBuildService {
     private static final String KEY_SOURCE_TABLE_LIST = "source_table_list";
     private static final String KEY_SINK_TABLE_LIST = "sink_table_list";
 
+    private static final String KEY_TABLE_PATTERN = "tablePattern";
+
     @Resource
     private HoconConfigBuilder hoconConfigBuilder;
 
@@ -151,13 +153,28 @@ public class GuideMultiHoconBuildService {
         putIfNotBlank(config, "connectorType", target.getConnectorType());
         putIfNotBlank(config, "pluginName", target.getPluginName());
 
-        config.put("table", firstSinkTable);
-        config.put("table_path", firstSinkTable);
-        config.put("targetTableName", firstSinkTable);
-
         config.put(KEY_MULTI_TABLE, multiTable);
         config.put(KEY_TABLE_LIST, sinkTables);
         config.put(KEY_SINK_TABLE_LIST, sinkTables);
+
+        if (multiTable) {
+            /*
+             * 多表同步时，sink table 不应该固定为某一个目标表。
+             * 先默认使用官方变量：
+             *
+             *   table = "${table_name}"
+             *
+             * 后续支持前缀/后缀时，可以改为：
+             *
+             *   tablePattern = "${table_name}_test"
+             *   tablePattern = "ods_${table_name}"
+             */
+            config.put(KEY_TABLE_PATTERN, "${table_name}");
+        } else {
+            config.put("table", firstSinkTable);
+            config.put("table_path", firstSinkTable);
+            config.put("targetTableName", firstSinkTable);
+        }
 
         appendEnvConfig(config, env);
 

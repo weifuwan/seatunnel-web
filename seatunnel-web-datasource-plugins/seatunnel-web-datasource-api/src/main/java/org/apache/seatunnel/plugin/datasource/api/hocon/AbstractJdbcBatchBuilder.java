@@ -11,6 +11,7 @@ import org.apache.seatunnel.web.common.enums.HoconBuildStage;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -20,21 +21,41 @@ public abstract class AbstractJdbcBatchBuilder extends AbstractJdbcHoconBuilder
         implements DataSourceHoconBuilder {
 
     private static final String MULTI_TABLE = "multiTable";
+
+    /**
+     * SeaTunnel JDBC source official table-list key.
+     */
     private static final String TABLE_LIST = "table_list";
+
+    /**
+     * Web side compatibility keys.
+     */
     private static final String SOURCE_TABLE_LIST = "source_table_list";
     private static final String SINK_TABLE_LIST = "sink_table_list";
 
     /**
-     * Returns the default JDBC driver class.
+     * Web side compatibility input.
+     * Source official key is table_path, but some UI configs may still pass table.
      */
+    private static final String TABLE = "table";
+    private static final String TABLE_PATH = "table_path";
+    private static final String TARGET_TABLE_NAME = "targetTableName";
+
+    private static final String GENERATE_SINK_SQL = "generate_sink_sql";
+    private static final String AUTO_CREATE_TABLE = "autoCreateTable";
+    private static final String PRIMARY_KEY = "primaryKey";
+    private static final String BATCH_SIZE = "batchSize";
+
+    private static final String DATABASE_NAME_PLACEHOLDER = "${database_name}";
+    private static final String SCHEMA_NAME_PLACEHOLDER = "${schema_name}";
+    private static final String TABLE_NAME_PLACEHOLDER = "${table_name}";
+    private static final String PRIMARY_KEY_PLACEHOLDER = "${primary_key}";
+
     @Override
     protected String defaultDriver() {
         return "com.mysql.cj.jdbc.Driver";
     }
 
-    /**
-     * Builds source HOCON from connection and source config.
-     */
     @Override
     public Config buildSourceHocon(String connectionParam,
                                    Config config,
@@ -51,9 +72,6 @@ public abstract class AbstractJdbcBatchBuilder extends AbstractJdbcHoconBuilder
         return ConfigFactory.parseMap(map);
     }
 
-    /**
-     * Builds sink HOCON from connection and sink config.
-     */
     @Override
     public Config buildSinkHocon(String connectionParam, Config config) {
         Config conn = ConfigFactory.parseString(connectionParam);
@@ -70,63 +88,58 @@ public abstract class AbstractJdbcBatchBuilder extends AbstractJdbcHoconBuilder
     }
 
     /**
-     * Resolves the source read target from SQL or table settings.
+     * Source official behavior:
      *
-     * <p>
+     * 1. query:
+     *    Use query directly.
+     *
+     * 2. table_path:
+     *    Use one full table path.
+     *
+     * 3. table_list:
+     *    Use multiple table paths.
+     *
      * Compatibility:
-     * </p>
      *
-     * <ul>
-     *     <li>Single table: use table directly.</li>
-     *     <li>Multi table: if table is blank, fallback to the first item of table_list/source_table_list.</li>
-     * </ul>
-     *
-     * <p>
-     * Note:
-     * This method still builds a single-table source HOCON.
-     * The multiTable flag is only used to preserve context for later expansion.
-     * </p>
+     * - Web side may pass table.
+     * - Web side may pass source_table_list / table_list as List<String>.
+     * - Final source config should output table_path or table_list, not table.
      */
     protected void buildSourceReadTarget(Config config,
                                          Config conn,
                                          Map<String, Object> map,
                                          HoconBuildStage stage) {
-        String readMode = JdbcConfigReaders.getString(config, READ_MODE, "table");
         String sql = JdbcConfigReaders.getString(config, SQL, "");
-        String table = JdbcConfigReaders.getString(config, TABLE, "");
-
-        boolean multiTable = isMultiTable(config);
-        List<String> tableList = resolveSourceTableList(config);
-
-        if (StringUtils.isBlank(table)) {
-            table = firstTable(tableList);
+        if (StringUtils.isNotBlank(sql)) {
+            map.put(QUERY, handleQueryByStage(sql, stage));
+            return;
         }
 
         String database = JdbcConfigReaders.getString(conn, DATABASE, "");
         String schema = JdbcConfigReaders.getString(conn, SCHEMA, "");
 
-        if (StringUtils.isNotBlank(sql)) {
-            map.put(QUERY, handleQueryByStage(sql, stage));
-            appendMultiTableMetaIfNecessary(map, multiTable, tableList, SOURCE_TABLE_LIST);
+        List<String> sourceTables = resolveSourceTableNames(config);
+        boolean multiTable = isMultiTable(config, sourceTables);
+
+        if (multiTable) {
+            List<Map<String, Object>> tableList = buildSourceTableList(database, schema, sourceTables);
+            if (CollectionUtils.isEmpty(tableList)) {
+                throw new IllegalArgumentException("Missing source table_list, table_list can not be empty");
+            }
+
+            map.put(TABLE_LIST, tableList);
             return;
         }
 
-        if (!"table".equalsIgnoreCase(readMode) && StringUtils.isBlank(table)) {
-            throw new IllegalArgumentException("Unsupported readMode without table: " + readMode);
+        String tablePath = resolveSourceTablePath(config, database, schema, sourceTables);
+        if (StringUtils.isBlank(tablePath)) {
+            throw new IllegalArgumentException(
+                    "Missing source table, one of query/table_path/table/table_list is required");
         }
 
-        if (StringUtils.isBlank(table)) {
-            throw new IllegalArgumentException("Missing source table, table is required when sql is blank");
-        }
-
-        map.put(TABLE_PATH, buildTablePath(database, schema, table));
-
-        appendMultiTableMetaIfNecessary(map, multiTable, tableList, SOURCE_TABLE_LIST);
+        map.put(TABLE_PATH, tablePath);
     }
 
-    /**
-     * Appends source-side advanced options.
-     */
     protected void appendSourceAdvancedOptions(Config config, Map<String, Object> map) {
         Integer fetchSize = JdbcConfigReaders.getInteger(config, "fetchSize", null);
         if (fetchSize != null && fetchSize > 0) {
@@ -139,9 +152,6 @@ public abstract class AbstractJdbcBatchBuilder extends AbstractJdbcHoconBuilder
         }
     }
 
-    /**
-     * Appends dynamic source options from config objects and arrays.
-     */
     protected void appendSourceDynamicOptions(Config config, Map<String, Object> map) {
         JdbcConfigReaders.appendConfigObject(config, CONFIG, map);
         JdbcConfigReaders.parseParamsArray(config, map);
@@ -149,65 +159,58 @@ public abstract class AbstractJdbcBatchBuilder extends AbstractJdbcHoconBuilder
     }
 
     /**
-     * Resolves the sink write target from SQL or table settings.
+     * Sink official behavior:
      *
-     * <p>
-     * Compatibility:
-     * </p>
+     * 1. query:
+     *    Use custom write SQL.
      *
-     * <ul>
-     *     <li>Single table: use targetTableName/table directly.</li>
-     *     <li>Multi table: if both are blank, fallback to the first item of table_list/sink_table_list.</li>
-     * </ul>
+     * 2. database + table / table:
+     *    Generate sink SQL.
+     *
+     * Multiple-table sink should not output table_list.
+     * According to official examples, JDBC sink uses table variables:
+     *
+     *   database = "${database_name}_test"
+     *   table = "${table_name}_test"
+     *
+     * or:
+     *
+     *   database = "${schema_name}_test"
+     *   table = "${table_name}_test"
      */
     protected void buildSinkWriteTarget(Config config,
                                         Config conn,
                                         Map<String, Object> map) {
         String sql = JdbcConfigReaders.getString(config, SQL, "");
-        String targetTableName = JdbcConfigReaders.getString(config, TARGET_TABLE_NAME, "");
-        String table = JdbcConfigReaders.getString(config, TABLE, "");
-
-        boolean multiTable = isMultiTable(config);
-        List<String> tableList = resolveSinkTableList(config);
-
-        String database = JdbcConfigReaders.getString(conn, DATABASE, "");
-        String schema = JdbcConfigReaders.getString(conn, SCHEMA, "");
-
         if (StringUtils.isNotBlank(sql)) {
             map.put(QUERY, sql);
             map.put(GENERATE_SINK_SQL, false);
-            appendMultiTableMetaIfNecessary(map, multiTable, tableList, SINK_TABLE_LIST);
             return;
         }
 
-        String finalTable = StringUtils.isNotBlank(targetTableName) ? targetTableName : table;
+        String database = JdbcConfigReaders.getString(config, DATABASE, "");
+        String table = JdbcConfigReaders.getString(config, TABLE, "");
+        String targetTableName = JdbcConfigReaders.getString(config, TARGET_TABLE_NAME, "");
+
+        List<String> sinkTables = resolveSinkTableNames(config);
+        boolean multiTable = isMultiTable(config, sinkTables);
+
+        String finalTable = resolveSinkTable(config, table, targetTableName, sinkTables, multiTable);
+        String finalDatabase = resolveSinkDatabase(config, conn, database, multiTable);
 
         if (StringUtils.isBlank(finalTable)) {
-            finalTable = firstTable(tableList);
+            throw new IllegalArgumentException(
+                    "Missing sink target, one of query/targetTableName/table is required");
         }
 
-        if (StringUtils.isBlank(finalTable)) {
-            throw new IllegalArgumentException("Missing sink target, neither sql nor targetTableName/table is provided");
+        if (StringUtils.isNotBlank(finalDatabase)) {
+            map.put(DATABASE, finalDatabase);
         }
 
         map.put(TABLE, finalTable);
-
-        if (StringUtils.isNotBlank(database)) {
-            map.put(DATABASE, database);
-        }
-
-        if (StringUtils.isNotBlank(schema)) {
-            map.put(SCHEMA, schema);
-        }
-
         map.put(GENERATE_SINK_SQL, true);
-
-        appendMultiTableMetaIfNecessary(map, multiTable, tableList, SINK_TABLE_LIST);
     }
 
-    /**
-     * Appends sink save mode and schema mode.
-     */
     protected void appendSinkSaveMode(Config config, Map<String, Object> map) {
         boolean autoCreateTable = JdbcConfigReaders.getBoolean(config, AUTO_CREATE_TABLE, false);
 
@@ -225,9 +228,21 @@ public abstract class AbstractJdbcBatchBuilder extends AbstractJdbcHoconBuilder
                 break;
         }
 
-        map.put("data_save_mode", dataSaveMode);
+        String configuredDataSaveMode = JdbcConfigReaders.getString(config, "dataSaveMode", "");
+        if (StringUtils.isBlank(configuredDataSaveMode)) {
+            configuredDataSaveMode = JdbcConfigReaders.getString(config, "data_save_mode", "");
+        }
+
+        map.put("data_save_mode",
+                StringUtils.isNotBlank(configuredDataSaveMode)
+                        ? configuredDataSaveMode
+                        : dataSaveMode);
 
         String schemaSaveMode = JdbcConfigReaders.getString(config, "schemaSaveMode", "");
+        if (StringUtils.isBlank(schemaSaveMode)) {
+            schemaSaveMode = JdbcConfigReaders.getString(config, "schema_save_mode", "");
+        }
+
         map.put("schema_save_mode",
                 StringUtils.isNotBlank(schemaSaveMode)
                         ? schemaSaveMode
@@ -236,58 +251,78 @@ public abstract class AbstractJdbcBatchBuilder extends AbstractJdbcHoconBuilder
                         : "ERROR_WHEN_SCHEMA_NOT_EXIST"));
     }
 
-    /**
-     * Appends sink upsert and primary key settings.
-     */
     protected void appendSinkUpsertOptions(Config config, Map<String, Object> map) {
         String writeMode = JdbcConfigReaders.getString(config, "writeMode", "append");
-        String primaryKey = JdbcConfigReaders.getString(config, PRIMARY_KEY, "");
 
-        boolean upsert = "upsert".equalsIgnoreCase(writeMode);
-        map.put("enable_upsert", upsert);
-
-        if (!upsert) {
-            return;
+        Boolean configuredEnableUpsert = readBooleanObject(config, "enableUpsert");
+        if (configuredEnableUpsert == null) {
+            configuredEnableUpsert = readBooleanObject(config, "enable_upsert");
         }
 
-        if (StringUtils.isBlank(primaryKey)) {
+        List<String> primaryKeys = resolvePrimaryKeys(config);
+
+        /*
+         * 官网语义：
+         * enable_upsert 是可选参数，默认 true。
+         * primary_keys 也是可选参数。
+         *
+         * 不能因为 enable_upsert=true 就强制要求 primary_keys。
+         *
+         * 只有当用户明确选择 writeMode=upsert 时，
+         * 才要求必须有 primary_keys。
+         */
+        boolean writeModeIsUpsert = "upsert".equalsIgnoreCase(writeMode);
+
+        if (writeModeIsUpsert && primaryKeys.isEmpty()) {
             throw new IllegalArgumentException("Primary key is required when writeMode is upsert");
         }
 
-        List<String> primaryKeys = parsePrimaryKeys(primaryKey);
-        if (primaryKeys.isEmpty()) {
-            throw new IllegalArgumentException("Primary key is required when writeMode is upsert");
+        boolean enableUpsert;
+        if (configuredEnableUpsert != null) {
+            enableUpsert = configuredEnableUpsert;
+        } else {
+            /*
+             * 官网默认 enable_upsert = true。
+             */
+            enableUpsert = true;
         }
 
-        map.put("primary_keys", primaryKeys);
+        map.put("enable_upsert", enableUpsert);
+
+        if (!primaryKeys.isEmpty()) {
+            map.put("primary_keys", primaryKeys);
+        }
     }
 
-    /**
-     * Appends sink-side advanced options.
-     */
     protected void appendSinkAdvancedOptions(Config config, Map<String, Object> map) {
         Integer batchSize = JdbcConfigReaders.getInteger(config, BATCH_SIZE, 1000);
         if (batchSize != null && batchSize > 0) {
             map.put("batch_size", batchSize);
         }
 
+        String fieldIde = JdbcConfigReaders.getString(config, "fieldIde", "");
+        if (StringUtils.isBlank(fieldIde)) {
+            fieldIde = JdbcConfigReaders.getString(config, "field_ide", "");
+        }
+        if (StringUtils.isNotBlank(fieldIde)) {
+            map.put("field_ide", fieldIde);
+        }
+
         if (config.hasPath("exactlyOnce")) {
             map.put("is_exactly_once", JdbcConfigReaders.getBoolean(config, "exactlyOnce", false));
         }
+
+        if (config.hasPath("is_exactly_once")) {
+            map.put("is_exactly_once", JdbcConfigReaders.getBoolean(config, "is_exactly_once", false));
+        }
     }
 
-    /**
-     * Appends dynamic sink options from config objects and arrays.
-     */
     protected void appendSinkDynamicOptions(Config config, Map<String, Object> map) {
         JdbcConfigReaders.appendConfigObject(config, CONFIG, map);
         JdbcConfigReaders.parseParamsArray(config, map);
         appendExtraParams(config, map);
     }
 
-    /**
-     * Appends extra key-value parameters into the output map.
-     */
     protected void appendExtraParams(Config config, Map<String, Object> map) {
         if (config == null || !config.hasPath(EXTRA_PARAMS)) {
             return;
@@ -305,9 +340,6 @@ public abstract class AbstractJdbcBatchBuilder extends AbstractJdbcHoconBuilder
         }
     }
 
-    /**
-     * Parses comma-separated primary keys into a list.
-     */
     protected List<String> parsePrimaryKeys(String primaryKey) {
         List<String> keys = new ArrayList<>();
         if (StringUtils.isBlank(primaryKey)) {
@@ -319,71 +351,287 @@ public abstract class AbstractJdbcBatchBuilder extends AbstractJdbcHoconBuilder
                 keys.add(item.trim());
             }
         }
+
         return keys;
     }
 
-    /**
-     * Handles query transformation by build stage.
-     */
     protected String handleQueryByStage(String query, HoconBuildStage stage) {
         return query;
     }
 
-    private boolean isMultiTable(Config config) {
-        if (config == null) {
-            return false;
+    /**
+     * Source side table resolving.
+     */
+    private List<String> resolveSourceTableNames(Config config) {
+        List<String> tables = resolveTableNameList(config, SOURCE_TABLE_LIST);
+        if (CollectionUtils.isNotEmpty(tables)) {
+            return tables;
         }
 
-        boolean explicitMultiTable = JdbcConfigReaders.getBoolean(config, MULTI_TABLE, false);
-        if (explicitMultiTable) {
+        tables = resolveTableNameList(config, TABLE_LIST);
+        if (CollectionUtils.isNotEmpty(tables)) {
+            return tables;
+        }
+
+        String tablePath = JdbcConfigReaders.getString(config, TABLE_PATH, "");
+        if (StringUtils.isNotBlank(tablePath)) {
+            tables.add(tablePath.trim());
+            return tables;
+        }
+
+        String table = JdbcConfigReaders.getString(config, TABLE, "");
+        if (StringUtils.isNotBlank(table)) {
+            tables.add(table.trim());
+        }
+
+        return tables;
+    }
+
+    private String resolveSourceTablePath(
+            Config config,
+            String database,
+            String schema,
+            List<String> sourceTables) {
+
+        String tablePath = JdbcConfigReaders.getString(config, TABLE_PATH, "");
+        if (StringUtils.isNotBlank(tablePath)) {
+            return tablePath.trim();
+        }
+
+        String table = JdbcConfigReaders.getString(config, TABLE, "");
+        if (StringUtils.isBlank(table)) {
+            table = firstTable(sourceTables);
+        }
+
+        if (StringUtils.isBlank(table)) {
+            return "";
+        }
+
+        if (isFullTablePath(table)) {
+            return table.trim();
+        }
+
+        return buildTablePath(database, schema, table);
+    }
+
+    private List<Map<String, Object>> buildSourceTableList(
+            String database,
+            String schema,
+            List<String> sourceTables) {
+
+        List<Map<String, Object>> tableList = new ArrayList<>();
+
+        for (String table : sourceTables) {
+            if (StringUtils.isBlank(table)) {
+                continue;
+            }
+
+            String tablePath = table.trim();
+            if (!isFullTablePath(tablePath)) {
+                tablePath = buildTablePath(database, schema, tablePath);
+            }
+
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put(TABLE_PATH, tablePath);
+            tableList.add(item);
+        }
+
+        return tableList;
+    }
+
+    /**
+     * Sink side table resolving.
+     */
+    private List<String> resolveSinkTableNames(Config config) {
+        List<String> tables = resolveTableNameList(config, SINK_TABLE_LIST);
+        if (CollectionUtils.isNotEmpty(tables)) {
+            return tables;
+        }
+
+        String table = JdbcConfigReaders.getString(config, TABLE, "");
+        if (StringUtils.isNotBlank(table)) {
+            tables.add(table.trim());
+        }
+
+        String targetTableName = JdbcConfigReaders.getString(config, TARGET_TABLE_NAME, "");
+        if (StringUtils.isNotBlank(targetTableName) && !tables.contains(targetTableName.trim())) {
+            tables.add(targetTableName.trim());
+        }
+
+        return tables;
+    }
+
+    private String resolveSinkTable(
+            Config config,
+            String table,
+            String targetTableName,
+            List<String> sinkTables,
+            boolean multiTable) {
+
+        if (multiTable) {
+            String tablePattern = JdbcConfigReaders.getString(config, "tablePattern", "");
+            if (StringUtils.isNotBlank(tablePattern)) {
+                return tablePattern.trim();
+            }
+
+            /*
+             * 多表同步场景下，JDBC sink table 不能取某一个具体表名。
+             *
+             * 官网语义是通过变量承接 source table_list 中的表名：
+             *
+             *   table = "${table_name}"
+             *
+             * 后续如果支持前缀/后缀，可以由前端或转换层传入：
+             *
+             *   tablePattern = "${table_name}_test"
+             *   tablePattern = "ods_${table_name}"
+             */
+            return TABLE_NAME_PLACEHOLDER;
+        }
+
+        if (StringUtils.isNotBlank(targetTableName)) {
+            return targetTableName.trim();
+        }
+
+        if (StringUtils.isNotBlank(table)) {
+            return table.trim();
+        }
+
+        return firstTable(sinkTables);
+    }
+
+    private String resolveSinkDatabase(
+            Config config,
+            Config conn,
+            String database,
+            boolean multiTable) {
+
+        if (StringUtils.isNotBlank(database)) {
+            return database.trim();
+        }
+
+        if (multiTable) {
+            String databasePattern = JdbcConfigReaders.getString(config, "databasePattern", "");
+            if (StringUtils.isNotBlank(databasePattern)) {
+                return databasePattern.trim();
+            }
+
+            String connDatabase = JdbcConfigReaders.getString(conn, DATABASE, "");
+            if (StringUtils.isNotBlank(connDatabase)) {
+                return connDatabase.trim();
+            }
+        }
+
+
+        String targetDatabase = JdbcConfigReaders.getString(conn, DATABASE, "");
+        if (StringUtils.isNotBlank(targetDatabase)) {
+            return targetDatabase.trim();
+        }
+
+        return "";
+    }
+
+    private boolean isMultiTable(Config config, List<String> tables) {
+        if (config != null && JdbcConfigReaders.getBoolean(config, MULTI_TABLE, false)) {
             return true;
         }
 
-        return hasMoreThanOneTable(resolveTableList(config, TABLE_LIST))
-                || hasMoreThanOneTable(resolveTableList(config, SOURCE_TABLE_LIST))
-                || hasMoreThanOneTable(resolveTableList(config, SINK_TABLE_LIST));
+        return CollectionUtils.isNotEmpty(tables) && tables.size() > 1;
     }
 
-    private List<String> resolveSourceTableList(Config config) {
-        List<String> tables = resolveTableList(config, SOURCE_TABLE_LIST);
-        if (CollectionUtils.isNotEmpty(tables)) {
-            return tables;
-        }
-
-        return resolveTableList(config, TABLE_LIST);
-    }
-
-    private List<String> resolveSinkTableList(Config config) {
-        List<String> tables = resolveTableList(config, SINK_TABLE_LIST);
-        if (CollectionUtils.isNotEmpty(tables)) {
-            return tables;
-        }
-
-        return resolveTableList(config, TABLE_LIST);
-    }
-
-    private List<String> resolveTableList(Config config, String path) {
-        if (config == null || !config.hasPath(path)) {
-            return new ArrayList<>();
-        }
-
+    private List<String> resolveTableNameList(Config config, String path) {
         List<String> result = new ArrayList<>();
+        if (config == null || !config.hasPath(path)) {
+            return result;
+        }
+
+        try {
+            List<? extends Config> objectList = config.getConfigList(path);
+            for (Config item : objectList) {
+                String tablePath = JdbcConfigReaders.getString(item, TABLE_PATH, "");
+                if (StringUtils.isNotBlank(tablePath)) {
+                    addDistinct(result, tablePath);
+                    continue;
+                }
+
+                String table = JdbcConfigReaders.getString(item, TABLE, "");
+                if (StringUtils.isNotBlank(table)) {
+                    addDistinct(result, table);
+                }
+            }
+
+            if (CollectionUtils.isNotEmpty(result)) {
+                return result;
+            }
+        } catch (Exception ignored) {
+            // Maybe it is List<String>, continue below.
+        }
 
         try {
             List<String> values = config.getStringList(path);
             for (String value : values) {
-                if (StringUtils.isNotBlank(value)) {
-                    String table = value.trim();
-                    if (!result.contains(table)) {
-                        result.add(table);
-                    }
-                }
+                addDistinct(result, value);
             }
         } catch (Exception ignored) {
-            return new ArrayList<>();
+            return result;
         }
 
         return result;
+    }
+
+    private List<String> resolvePrimaryKeys(Config config) {
+        List<String> primaryKeys = new ArrayList<>();
+
+        try {
+            if (config != null && config.hasPath("primary_keys")) {
+                List<String> values = config.getStringList("primary_keys");
+                for (String value : values) {
+                    addDistinct(primaryKeys, value);
+                }
+            }
+        } catch (Exception ignored) {
+            // Continue to read primaryKey.
+        }
+
+        if (CollectionUtils.isNotEmpty(primaryKeys)) {
+            return primaryKeys;
+        }
+
+        String primaryKey = JdbcConfigReaders.getString(config, PRIMARY_KEY, "");
+        if (StringUtils.isBlank(primaryKey)) {
+            primaryKey = JdbcConfigReaders.getString(config, "primary_keys", "");
+        }
+
+        if (StringUtils.isBlank(primaryKey)) {
+            return primaryKeys;
+        }
+
+        if (PRIMARY_KEY_PLACEHOLDER.equals(primaryKey.trim())) {
+            primaryKeys.add(PRIMARY_KEY_PLACEHOLDER);
+            return primaryKeys;
+        }
+
+        primaryKeys.addAll(parsePrimaryKeys(primaryKey));
+        return primaryKeys;
+    }
+
+    private Boolean readBooleanObject(Config config, String path) {
+        if (config == null || !config.hasPath(path)) {
+            return null;
+        }
+
+        return JdbcConfigReaders.getBoolean(config, path, false);
+    }
+
+    private void addDistinct(List<String> target, String value) {
+        if (StringUtils.isBlank(value)) {
+            return;
+        }
+
+        String cleaned = value.trim();
+        if (!target.contains(cleaned)) {
+            target.add(cleaned);
+        }
     }
 
     private String firstTable(List<String> tables) {
@@ -400,36 +648,24 @@ public abstract class AbstractJdbcBatchBuilder extends AbstractJdbcHoconBuilder
         return "";
     }
 
-    private boolean hasMoreThanOneTable(List<String> tables) {
-        return CollectionUtils.isNotEmpty(tables) && tables.size() > 1;
-    }
-
-    private void appendMultiTableMetaIfNecessary(
-            Map<String, Object> map,
-            boolean multiTable,
-            List<String> tableList,
-            String outputTableListKey) {
-
-        if (!multiTable) {
-            return;
-        }
-
-        map.put(MULTI_TABLE, true);
-
-        if (CollectionUtils.isNotEmpty(tableList)) {
-            map.put(outputTableListKey, tableList);
-            map.put(TABLE_LIST, tableList);
-        }
-    }
-
     /**
-     * Returns the plugin name.
+     * A lightweight guard:
+     *
+     * - db.table
+     * - schema.table
+     * - db.schema.table
+     * - ${schema_name}.${table_name}
      */
+    private boolean isFullTablePath(String table) {
+        if (StringUtils.isBlank(table)) {
+            return false;
+        }
+
+        return table.contains(".");
+    }
+
     public abstract String pluginName();
 
-    /**
-     * Returns the default source template.
-     */
     @Override
     public String sourceTemplate() {
         return ""
@@ -438,14 +674,11 @@ public abstract class AbstractJdbcBatchBuilder extends AbstractJdbcHoconBuilder
                 + "    user = \"root\"\n"
                 + "    password = \"******\"\n"
                 + "    driver = \"" + defaultDriver() + "\"\n"
-                + "    query = \"select * from demo_table\"\n"
+                + "    table_path = \"demo.demo_table\"\n"
                 + "    fetch_size = 1000\n"
                 + "  }\n";
     }
 
-    /**
-     * Returns the default sink template.
-     */
     @Override
     public String sinkTemplate() {
         return ""

@@ -2,7 +2,7 @@ import React from "react";
 import { Button, Divider } from "antd";
 import { PlayCircleOutlined, StopOutlined } from "@ant-design/icons";
 import { useIntl } from "@umijs/max";
-import CustomPagination from "./CustomPagination";
+import CustomPagination from "../../../CustomPagination";
 
 interface BottomActionBarProps {
   onStart: () => void;

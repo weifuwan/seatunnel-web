@@ -1,5 +1,6 @@
+import HandIcon from "@/pages/batch-link-up/icon/HandIcon";
 import { ClockCircleOutlined } from "@ant-design/icons";
-import HandIcon from "./icon/HandIcon";
+
 import { useIntl } from "@umijs/max";
 
 interface ExecutionStatusProps {

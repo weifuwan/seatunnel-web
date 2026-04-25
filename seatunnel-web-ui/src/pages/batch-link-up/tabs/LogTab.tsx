@@ -1,11 +1,6 @@
-import {
-  AppstoreOutlined,
-  BarsOutlined,
-  DownloadOutlined,
-} from "@ant-design/icons";
-import { Card, Segmented } from "antd";
+import { Card } from "antd";
+import { TerminalSquare } from "lucide-react";
 import React from "react";
-import "../index.less";
 
 interface LogTabProps {
   content: string;
@@ -16,49 +11,26 @@ const LogTab: React.FC<LogTabProps> = ({ content, loading }) => {
   return (
     <Card
       size="small"
-      style={{ marginTop: 8, borderRadius: 4 }}
       loading={loading}
+      className="mt-2 !rounded-2xl !border-slate-200 !shadow-[0_1px_3px_rgba(15,23,42,0.04)]"
+      bodyStyle={{ padding: 16 }}
     >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 12
-        }}
-      >
-        <div>
-          <Segmented
-            options={[
-              {
-                value: "List",
-                icon: <BarsOutlined />,
-                label: "SeaTunnel Web Log",
-              },
-              {
-                value: "Kanban",
-                icon: <AppstoreOutlined />,
-                label: "SeaTunnel Log",
-              },
-            ]}
-          />
+      <div className="mb-3 flex items-center gap-2.5">
+        <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-500">
+          <TerminalSquare size={16} strokeWidth={1.9} />
         </div>
-        <div
-          style={{
-            width: 28,
-            height: 28,
-            backgroundColor: "rgba(0,0,0,0.07)",
-            borderRadius: 8,
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          <DownloadOutlined />
+
+        <div>
+          <div className="text-sm font-semibold text-slate-900">运行日志</div>
+          <div className="mt-0.5 text-xs text-slate-400">
+            查看当前运行实例的执行日志
+          </div>
         </div>
       </div>
 
-      <pre className="log-content">{content}</pre>
+      <pre className="max-h-[470px] min-h-[360px] overflow-auto rounded-xl bg-[#1E1E1E] p-4 font-mono text-xs leading-5 text-[#00FF88]" style={{paddingTop: 12}}>
+        {content || "No log available"}
+      </pre>
     </Card>
   );
 };

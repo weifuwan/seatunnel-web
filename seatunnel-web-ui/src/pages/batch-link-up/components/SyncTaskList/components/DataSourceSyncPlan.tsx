@@ -1,6 +1,6 @@
 import { DoubleRightOutlined } from "@ant-design/icons";
 import { CSSProperties } from "react";
-import DatabaseIcons from "../data-source/icon/DatabaseIcons";
+import DatabaseIcons from "../../../../data-source/icon/DatabaseIcons";
 
 interface DataSourceSyncPlanProps {
   record: any;

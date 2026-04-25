@@ -4,7 +4,8 @@ import { useIntl } from "@umijs/max";
 
 import "./sumary.less";
 import TaskDetailPanel from "./TaskDetailPanel";
-import TaskHistoryPanel from "./TaskHistoryPanel";
+import TaskHistoryPanel from "./components/TaskHistoryPanel";
+
 
 interface CreateModalProps {
   onCreate?: (values: any) => void;

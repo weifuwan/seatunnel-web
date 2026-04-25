@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { message, Tabs } from "antd";
 import { useIntl } from "@umijs/max";
+
 import TaskHeader from "./TaskHeader";
 import BasicInfoSection from "./BasicInfoSection";
 import LogTab from "./tabs/LogTab";
@@ -9,7 +10,6 @@ import MetricsTab from "./tabs/MetricsTab";
 import ScheduleTab from "./tabs/ScheduleTab";
 import TableTab from "./tabs/TableTab";
 import { seatunnelJobInstanceApi } from "./api";
-import "./index.less";
 
 interface TaskDetailPanelProps {
   instanceItem: any;
@@ -25,7 +25,9 @@ const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({ instanceItem }) => {
   const fetchLog = async () => {
     try {
       setLogLoading(true);
+
       const res = await seatunnelJobInstanceApi.getLog(instanceItem?.id);
+
       setLogContent(
         res?.data ||
           intl.formatMessage({
@@ -34,19 +36,13 @@ const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({ instanceItem }) => {
           })
       );
     } catch (err) {
-      message.error(
-        intl.formatMessage({
-          id: "pages.job.detail.loadLogFailed",
-          defaultMessage: "Failed to load log",
-        })
-      );
+      const errorText = intl.formatMessage({
+        id: "pages.job.detail.loadLogFailed",
+        defaultMessage: "Failed to load log",
+      });
 
-      setLogContent(
-        intl.formatMessage({
-          id: "pages.job.detail.loadLogFailed",
-          defaultMessage: "Failed to load log",
-        })
-      );
+      message.error(errorText);
+      setLogContent(errorText);
     } finally {
       setLogLoading(false);
     }
@@ -60,18 +56,16 @@ const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({ instanceItem }) => {
 
   if (!instanceItem?.jobStatus) {
     return (
-      <div className="task-detail-empty">
+      <div className="flex h-full items-center justify-center text-base text-slate-400">
         {intl.formatMessage({
           id: "pages.job.detail.empty",
-          defaultMessage: "Please select a run record on the left to view details",
+          defaultMessage:
+            "Please select a run record on the left to view details",
         })}{" "}
         😊
       </div>
     );
   }
-
-  console.log(instanceItem);
-  console.log(instanceItem.runtimeConfig);
 
   const tabs = [
     {
@@ -117,13 +111,13 @@ const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({ instanceItem }) => {
   ];
 
   return (
-    <div>
+    <div className="h-full bg-slate-50">
       <TaskHeader item={instanceItem} />
 
-      <div className="task-detail-content">
+      <div className="h-[calc(100vh-46px)] overflow-y-auto bg-slate-50">
         <BasicInfoSection item={instanceItem} />
 
-        <div className="task-detail-tabs">
+        <div className="m-4 rounded-lg bg-white p-4 shadow-[0_1px_3px_rgba(15,23,42,0.04)]">
           <Tabs
             activeKey={activeKey}
             items={tabs}

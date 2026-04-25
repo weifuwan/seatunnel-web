@@ -24,6 +24,7 @@ export interface DataSource {
     createTime?: string;
     updateBy?: string;
     updateTime?: string;
+    endTime?: string;
     currentVersion?: number;
 }
 
@@ -32,6 +33,7 @@ export interface HistoryItem {
     jobName: string;
     jobStatus: any;
     time: string;
+    endTime?: string;
     startTime: string;
 }
 

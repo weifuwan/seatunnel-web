@@ -1,6 +1,6 @@
 import { Badge, message, Popover } from "antd";
 import { useState } from "react";
-import { seatunnelJobScheduleApi } from "./api";
+import { seatunnelJobScheduleApi } from "../../../api";
 import { useIntl } from "@umijs/max";
 
 interface ExecutionStatusProps {

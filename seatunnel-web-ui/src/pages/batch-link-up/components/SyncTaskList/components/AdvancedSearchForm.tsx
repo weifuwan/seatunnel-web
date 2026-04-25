@@ -18,7 +18,7 @@ import {
 } from "antd";
 import moment from "moment";
 import { useEffect, useMemo, useState } from "react";
-import DatabaseIcons from "../data-source/icon/DatabaseIcons";
+import DatabaseIcons from "../../../../data-source/icon/DatabaseIcons";
 
 interface AdvancedSearchFormProps {
   onSearch: (values: any) => void;

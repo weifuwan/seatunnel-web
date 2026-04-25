@@ -3,7 +3,8 @@ import { useState } from "react";
 import { history } from "umi";
 import { seatunnelJobDefinitionApi } from "./api";
 import DataSyncHeader from "./components/DataSyncHeader";
-import SyncTaskList from "./SyncTaskList";
+import SyncTaskList from "./components/SyncTaskList";
+// import SyncTaskList from "./SyncTaskList";
 
 const App = () => {
   const [sourceType, setSourceType] = useState<any>({

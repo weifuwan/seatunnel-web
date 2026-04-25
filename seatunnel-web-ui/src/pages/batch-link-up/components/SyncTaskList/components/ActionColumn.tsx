@@ -5,9 +5,9 @@ import {
   seatunnelJobDefinitionApi,
   seatunnelJobExecuteApi,
   seatunnelJobScheduleApi,
-} from "./api";
-import TaskViewModal from "./TaskViewModal";
-import { taskExecutionApi } from "./type";
+} from "../../../api";
+import TaskViewModal from "../../../TaskViewModal";
+import { taskExecutionApi } from "../../../type";
 import { useIntl } from "@umijs/max";
 
 interface ActionColumnProps {

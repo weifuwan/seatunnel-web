@@ -1,5 +1,5 @@
+import { Database, GitCompareArrows, MoveRight, Table2 } from "lucide-react";
 import React, { useMemo } from "react";
-import { Database, MoveRight, Table2 } from "lucide-react";
 import TableColumnsPopover from "../components/TableColumnsPopover";
 
 interface TableTabProps {
@@ -83,7 +83,7 @@ const TableNode: React.FC<{
         className={[
           "group flex w-full items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left",
           "bg-white transition-all duration-200 ease-out",
-          " hover:shadow-[0_8px_22px_rgba(15,23,42,0.06)]",
+          "hover:shadow-[0_8px_22px_rgba(15,23,42,0.06)]",
           isSource
             ? "border-blue-100 hover:border-blue-200"
             : "border-emerald-100 hover:border-emerald-200",
@@ -105,7 +105,7 @@ const TableNode: React.FC<{
             {item.table}
           </span>
           <span className="mt-0.5 block text-[11px] text-slate-400">
-            {isSource ? "Source table" : "Sink table"}
+            {isSource ? "来源表" : "目标表"}
           </span>
         </span>
       </button>
@@ -153,7 +153,9 @@ const TableGroup: React.FC<{
         {items.length > 0 ? (
           items.map((item, index) => (
             <TableNode
-              key={`${type}-${item.sourceId || "single"}-${item.table}-${index}`}
+              key={`${type}-${item.sourceId || "single"}-${
+                item.table
+              }-${index}`}
               item={item}
               type={type}
             />
@@ -180,28 +182,30 @@ const TableTab: React.FC<TableTabProps> = ({ instanceItem }) => {
   return (
     <div className="mt-2 rounded-2xl border border-slate-200 bg-slate-50/60 p-4 shadow-[0_1px_3px_rgba(15,23,42,0.04)]">
       <div className="mb-4 flex items-center justify-between gap-4">
-        <div>
-          <div className="text-sm font-semibold text-slate-900">
-            Table Mapping
+        <div className="flex min-w-0 items-center gap-2.5">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm">
+            <GitCompareArrows size={16} strokeWidth={1.9} />
           </div>
-          <div className="mt-0.5 text-xs text-slate-400">
-            View source and sink table relationships for this run instance
-          </div>
-        </div>
 
-        <div className="hidden rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-500 sm:block">
-          {instanceItem?.definitionMode || "-"}
+          <div className="min-w-0">
+            <div className="text-sm font-semibold text-slate-900">
+              表映射关系
+            </div>
+            <div className="mt-0.5 text-xs text-slate-400">
+              查看当前运行实例的来源表与目标表关系
+            </div>
+          </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_56px_minmax(0,1fr)]">
         <TableGroup
           type="source"
-          title="Source"
-          typeLabel="Read from"
+          title="来源端"
+          typeLabel="读取数据"
           dbType={instanceItem?.sourceType}
           items={sourceTableList}
-          emptyText="No source table"
+          emptyText="暂无来源表"
         />
 
         <div className="hidden h-full items-center justify-center xl:flex">
@@ -212,11 +216,11 @@ const TableTab: React.FC<TableTabProps> = ({ instanceItem }) => {
 
         <TableGroup
           type="sink"
-          title="Sink"
-          typeLabel="Write to"
+          title="目标端"
+          typeLabel="写入数据"
           dbType={instanceItem?.sinkType}
           items={sinkTableList}
-          emptyText="No sink table"
+          emptyText="暂无目标表"
         />
       </div>
     </div>

@@ -49,20 +49,20 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ instanceItem }) => {
 
   return (
     <div className="mt-2 space-y-4">
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_1px_3px_rgba(15,23,42,0.04)]">
+      <div className="rounded-2xl border border-slate-200  p-4 shadow-[0_1px_3px_rgba(15,23,42,0.04)]">
         <div className="mb-4 flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-blue-100 bg-blue-50 text-blue-600">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-500">
             <CalendarClock size={16} strokeWidth={1.9} />
           </div>
 
           <div>
             <div className="text-sm font-semibold text-slate-900">
-              {t("pages.job.detail.schedule.title", "Schedule Overview")}
+              {t("pages.job.detail.schedule.title", "调度概览")}
             </div>
             <div className="mt-0.5 text-xs text-slate-400">
               {t(
                 "pages.job.detail.schedule.desc",
-                "View schedule status and trigger time information"
+                "查看当前任务的调度状态与触发时间信息"
               )}
             </div>
           </div>
@@ -71,19 +71,19 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ instanceItem }) => {
         <div className="grid grid-cols-1 gap-3 xl:grid-cols-3">
           <ScheduleInfoItem
             icon={<RadioTower size={16} strokeWidth={1.9} />}
-            label={t("pages.job.detail.schedule.status", "Schedule Status")}
+            label={t("pages.job.detail.schedule.status", "调度状态")}
             value={instanceItem?.scheduleStatus}
           />
 
           <ScheduleInfoItem
             icon={<Clock3 size={16} strokeWidth={1.9} />}
-            label={t("pages.job.detail.schedule.nextTime", "Next Schedule Time")}
+            label={t("pages.job.detail.schedule.nextTime", "下次调度时间")}
             value={instanceItem?.nextScheduleTime}
           />
 
           <ScheduleInfoItem
             icon={<CalendarDays size={16} strokeWidth={1.9} />}
-            label={t("pages.job.detail.schedule.lastTime", "Last Schedule Time")}
+            label={t("pages.job.detail.schedule.lastTime", "最近调度时间")}
             value={instanceItem?.lastScheduleTime}
           />
         </div>
@@ -97,12 +97,12 @@ const ScheduleTab: React.FC<ScheduleTabProps> = ({ instanceItem }) => {
 
           <div>
             <div className="text-sm font-semibold text-slate-900">
-              {t("pages.job.detail.schedule.cron", "Cron Expression")}
+              {t("pages.job.detail.schedule.cron", "Cron 表达式")}
             </div>
             <div className="mt-0.5 text-xs text-slate-400">
               {t(
                 "pages.job.detail.schedule.cronDesc",
-                "Cron rule used to trigger this task"
+                "用于触发当前任务的调度规则"
               )}
             </div>
           </div>

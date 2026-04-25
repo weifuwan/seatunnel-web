@@ -19,8 +19,15 @@ import {
   Typography,
 } from "antd";
 import dayjs from "dayjs";
+import {
+  CalendarClock,
+  CalendarDays,
+  Clock3,
+  SlidersHorizontal,
+} from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { seatunnelJobInstanceApi } from "./api";
+import "./sync.less";
 import { HistoryItem } from "./type";
 
 interface TaskHistoryPanelProps {
@@ -290,11 +297,49 @@ const TaskHistoryPanel: React.FC<TaskHistoryPanelProps> = ({
             onChange={(e) => setKeyword(e.target.value)}
           />
 
-          <Segmented<any>
-            options={["最近一天", "最近三天", "最近一周", "自定义"]}
+          <Segmented
             value={timeRangeType}
-            onChange={setTimeRangeType}
+            onChange={(value) => setTimeRangeType(value as any)}
             block
+            className="time-range-segmented"
+            options={[
+              {
+                label: (
+                  <div className="time-range-option">
+                    <Clock3 size={14} />
+                    <span className="time-range-option__title">最近一天</span>
+                  </div>
+                ),
+                value: "最近一天",
+              },
+              {
+                label: (
+                  <div className="time-range-option">
+                    <CalendarClock size={14} />
+                    <span className="time-range-option__title">最近三天</span>
+                  </div>
+                ),
+                value: "最近三天",
+              },
+              {
+                label: (
+                  <div className="time-range-option">
+                    <CalendarDays size={14} />
+                    <span className="time-range-option__title">最近一周</span>
+                  </div>
+                ),
+                value: "最近一周",
+              },
+              {
+                label: (
+                  <div className="time-range-option">
+                    <SlidersHorizontal size={14} />
+                    <span className="time-range-option__title">自定义</span>
+                  </div>
+                ),
+                value: "自定义",
+              },
+            ]}
           />
 
           {timeRangeType === "自定义" && (

@@ -746,16 +746,6 @@ ol {
     transform 0.28s cubic-bezier(0.22, 1, 0.36, 1) !important;
 }
 
-/* hover 时右移 4px */
-.ant-menu-item:hover .ant-pro-base-menu-inline-item-text {
-  transform: translateX(4px);
-}
-
-/* 选中后固定停在 4px 位置 */
-.ant-menu-item-selected .ant-pro-base-menu-inline-item-text {
-  transform: translateX(4px);
-}
-
 .ant-layout {
   > div:first-child[style*='width'] {
     width: var(--pro-sider-current-width) !important;
@@ -844,7 +834,7 @@ ol {
     > aside.ant-layout-sider.ant-pro-sider {
       .ant-pro-base-menu-inline-item-text {
         opacity: 1 !important;
-        transform: translateX(0);
+        transform: translateX(0) !important;
       }
 
       .ant-menu-submenu-arrow {
@@ -854,6 +844,42 @@ ol {
       .ant-menu-title-content,
       .ant-pro-base-menu-inline-item-title {
         overflow: visible;
+      }
+    }
+  }
+}
+
+/* =========================
+   侧栏菜单：单项 hover 文字轻微右移
+   注意：放在展开动画后面，避免被 transform 覆盖
+   ========================= */
+.ant-layout {
+  > aside.ant-layout-sider.ant-pro-sider {
+    .ant-menu-item,
+    .ant-menu-submenu-title {
+      .ant-pro-base-menu-inline-item-text {
+        transition:
+          opacity 0.22s ease,
+          transform 0.24s cubic-bezier(0.22, 1, 0.36, 1),
+          color 0.2s ease !important;
+        will-change: transform;
+      }
+    }
+  }
+
+  &:has(> aside.ant-layout-sider.ant-pro-sider:hover) {
+    > aside.ant-layout-sider.ant-pro-sider {
+      .ant-menu-item:hover .ant-pro-base-menu-inline-item-text,
+      .ant-menu-submenu-title:hover .ant-pro-base-menu-inline-item-text {
+        transform: translateX(4px) !important;
+      }
+
+      .ant-menu-item-selected .ant-pro-base-menu-inline-item-text {
+        transform: translateX(3px) !important;
+      }
+
+      .ant-menu-item-selected:hover .ant-pro-base-menu-inline-item-text {
+        transform: translateX(5px) !important;
       }
     }
   }

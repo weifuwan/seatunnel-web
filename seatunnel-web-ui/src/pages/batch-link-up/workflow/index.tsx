@@ -467,19 +467,21 @@ export default function Workflow({
               )}
             </div>
 
-            <div
-              className="relative flex w-[20px] shrink-0 cursor-col-resize items-center justify-center bg-transparent transition-colors duration-100 hover:bg-[rgba(49,94,251,0.04)]"
-              onMouseDown={handleResizeStart}
-              role="separator"
-              aria-orientation="vertical"
-              aria-label="调整左右面板宽度"
-            >
-              <div className="h-full w-px bg-slate-200 transition-colors duration-100" />
-              <div className="absolute left-1/2 top-1/2 flex h-[46px] w-5 -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center gap-1 rounded-full border border-slate-200 bg-white opacity-90 shadow-sm transition-all duration-200 hover:scale-100 hover:opacity-100 hover:shadow-[0_10px_28px_rgba(15,23,42,0.1)]">
-                <span className="block h-1 w-1 rounded-full bg-slate-400" />
-                <span className="block h-1 w-1 rounded-full bg-slate-400" />
+            {activeTab && (
+              <div
+                className="relative flex w-[20px] shrink-0 cursor-col-resize items-center justify-center bg-transparent transition-colors duration-100 hover:bg-[rgba(49,94,251,0.04)]"
+                onMouseDown={handleResizeStart}
+                role="separator"
+                aria-orientation="vertical"
+                aria-label="调整左右面板宽度"
+              >
+                <div className="h-full w-px bg-slate-200 transition-colors duration-100" />
+                <div className="absolute left-1/2 top-1/2 flex h-[46px] w-5 -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center gap-1 rounded-full border border-slate-200 bg-white opacity-90 shadow-sm transition-all duration-200 hover:scale-100 hover:opacity-100 hover:shadow-[0_10px_28px_rgba(15,23,42,0.1)]">
+                  <span className="block h-1 w-1 rounded-full bg-slate-400" />
+                  <span className="block h-1 w-1 rounded-full bg-slate-400" />
+                </div>
               </div>
-            </div>
+            )}
 
             <div
               className="h-full shrink-0 overflow-hidden"

@@ -237,7 +237,7 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
             throw e;
         } catch (Exception e) {
             log.error("Query job definition edit detail failed, id={}", id, e);
-            throw new ServiceException(Status.QUERY_BATCH_JOB_DEFINITION_ERROR);
+            throw new ServiceException(e.getMessage());
         }
     }
 

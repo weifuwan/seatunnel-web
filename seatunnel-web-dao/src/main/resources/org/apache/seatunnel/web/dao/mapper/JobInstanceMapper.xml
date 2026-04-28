@@ -82,7 +82,7 @@
         d.job_type AS jobType,
         d.client_id AS definitionClientId,
         d.job_version AS jobVersion,
-        d.status AS definitionStatus,
+        d.release_state AS definitionStatus,
         d.source_type AS sourceType,
         d.sink_type AS sinkType,
         d.source_table AS sourceTable,

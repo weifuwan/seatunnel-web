@@ -1,5 +1,6 @@
 package org.apache.seatunnel.web.common.enums;
 
+import com.baomidou.mybatisplus.annotation.EnumValue;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -7,16 +8,21 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public enum ScheduleStatusEnum {
-    NORMAL,
-    PAUSE,
-    EMPTY;
+    NORMAL(1, "normal"),
+    PAUSE(2, "pause"),
+    EMPTY(3, "empty");
+
+    @EnumValue
+    private final int code;
+    private final String desc;
+
 
     public static ScheduleStatusEnum fromCode(String code) {
         if (code == null || code.trim().isEmpty()) {
             return PAUSE;
         }
         for (ScheduleStatusEnum value : values()) {
-            if (value.name().equalsIgnoreCase(code.trim())) {
+            if (value.getDesc().equalsIgnoreCase(code.trim())) {
                 return value;
             }
         }

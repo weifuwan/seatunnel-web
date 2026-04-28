@@ -17,7 +17,7 @@ public class JobScheduleConfig {
     private String instanceGenerateMode;
 
     /**
-     * 前端统一传：NORMAL / PAUSE / EMPTY
+     * 前端统一传：normal / pause / empty
      */
     private String scheduleRunType;
 

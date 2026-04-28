@@ -1,5 +1,5 @@
-import { useState } from "react";
 import { Settings2 } from "lucide-react";
+import { useState } from "react";
 import { getTabDefinitions } from "./configDefinition";
 import styles from "./index.less";
 import type { TabKey } from "./types";
@@ -12,6 +12,8 @@ interface RightConfigPanelProps {
   setBasicConfig?: React.Dispatch<React.SetStateAction<any>>;
   scheduleConfig?: any;
   setScheduleConfig?: React.Dispatch<React.SetStateAction<any>>;
+  envConfig?: any;
+  setEnvConfig?: React.Dispatch<React.SetStateAction<any>>;
 }
 
 export default function RightConfigPanel({
@@ -22,6 +24,8 @@ export default function RightConfigPanel({
   setBasicConfig,
   scheduleConfig,
   setScheduleConfig,
+  envConfig,
+  setEnvConfig,
 }: RightConfigPanelProps) {
   const [hoveredTab, setHoveredTab] = useState<string | null>(null);
 
@@ -30,7 +34,9 @@ export default function RightConfigPanel({
     basicConfig,
     setBasicConfig,
     scheduleConfig,
-    setScheduleConfig
+    setScheduleConfig,
+    envConfig,
+    setEnvConfig
   );
 
   const currentContent = activeTab
@@ -58,7 +64,10 @@ export default function RightConfigPanel({
         {opened && (
           <div className={styles.sidePanelMain}>
             <div className={styles.sidePanelHeader}>
-              <div className={styles.sidePanelIconTitle} style={{fontWeight: 600,fontSize: 15}}>
+              <div
+                className={styles.sidePanelIconTitle}
+                style={{ fontWeight: 600, fontSize: 15 }}
+              >
                 配置面板
               </div>
             </div>

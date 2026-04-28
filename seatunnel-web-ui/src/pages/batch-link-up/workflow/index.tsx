@@ -8,7 +8,7 @@ import {
   PlayCircle,
   Upload,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ReactFlowProvider } from "reactflow";
 import { seatunnelJobDefinitionApi } from "../api";
 import FlowCanvas from "./FlowCanvas";
@@ -16,12 +16,12 @@ import RightConfigPanel from "./RightConfigPanel";
 import { CheckListPopover } from "./components/CheckListPopover";
 import {
   BasicConfig,
+  EnvConfig,
   ScheduleConfig,
 } from "./components/ScheduleConfigContent/types";
 import { useFlowChecks } from "./hooks/useFlowChecks";
 import "./index.less";
 import CodeBlockWithCopy from "./operator/CodeBlockWithCopy";
-
 import RunLog from "./run";
 
 interface WorkflowProps {
@@ -36,7 +36,38 @@ interface WorkflowProps {
   scheduleConfig: ScheduleConfig;
   setScheduleConfig: (value: any) => void;
   setParams: React.Dispatch<React.SetStateAction<any>>;
+  envConfig: EnvConfig;
+  setEnvConfig: React.Dispatch<React.SetStateAction<EnvConfig>>;
 }
+
+const getInitialWorkflowGraph = (params?: any) => {
+  const workflow = params?.workflow || {};
+
+  return {
+    nodes: Array.isArray(workflow?.nodes) ? workflow.nodes : [],
+    edges: Array.isArray(workflow?.edges) ? workflow.edges : [],
+  };
+};
+
+const buildDirtySignature = (data: {
+  basicConfig: BasicConfig;
+  scheduleConfig: ScheduleConfig;
+  envConfig: EnvConfig;
+  workflowGraph: {
+    nodes: any[];
+    edges: any[];
+  };
+}) => {
+  return JSON.stringify({
+    basic: data.basicConfig,
+    schedule: data.scheduleConfig,
+    env: data.envConfig,
+    workflow: {
+      nodes: data.workflowGraph?.nodes || [],
+      edges: data.workflowGraph?.edges || [],
+    },
+  });
+};
 
 export default function Workflow({
   params,
@@ -48,21 +79,22 @@ export default function Workflow({
   scheduleConfig,
   setParams,
   setScheduleConfig,
+  envConfig,
+  setEnvConfig,
 }: WorkflowProps) {
   const [form] = Form.useForm();
+
   const [rightWidth, setRightWidth] = useState(540);
   const [activeTab, setActiveTab] = useState<
-    "basic" | "schedule" | "mapping" | "advanced" | null
+    "basic" | "schedule" | "mapping" | "env" | null
   >(null);
+
   const draggingRef = useRef(false);
 
   const [workflowGraph, setWorkflowGraph] = useState<{
     nodes: any[];
     edges: any[];
-  }>({
-    nodes: [],
-    edges: [],
-  });
+  }>(() => getInitialWorkflowGraph(params));
 
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewContent, setPreviewContent] = useState("");
@@ -70,16 +102,38 @@ export default function Workflow({
 
   const [runVisible, setRunVisible] = useState(false);
 
-  // 发布 / 运行状态
   const [publishedJobDefineId, setPublishedJobDefineId] = useState<
     number | undefined
   >(params?.id);
+
   const [publishLoading, setPublishLoading] = useState(false);
   const [runLoading, setRunLoading] = useState(false);
-  const [isDirty, setIsDirty] = useState(false);
 
-  // 跳过首次自动回填导致的“误标脏”
-  const initializedRef = useRef(false);
+  const currentSignature = useMemo(() => {
+    return buildDirtySignature({
+      basicConfig,
+      scheduleConfig,
+      envConfig,
+      workflowGraph,
+    });
+  }, [basicConfig, scheduleConfig, envConfig, workflowGraph]);
+
+  /**
+   * baselineSignature 表示“已发布版本”的配置快照。
+   *
+   * 编辑页首次进入：
+   * baseline = 当前回显数据
+   * current = 当前回显数据
+   * 所以 isDirty = false，运行按钮可用。
+   *
+   * 用户修改后：
+   * current !== baseline
+   * 所以 isDirty = true，需要重新发布。
+   */
+  const [baselineSignature, setBaselineSignature] =
+    useState<string>(currentSignature);
+
+  const isDirty = !!publishedJobDefineId && currentSignature !== baselineSignature;
 
   const { checkStat, checkGroups } = useFlowChecks(workflowGraph.nodes || []);
 
@@ -89,8 +143,8 @@ export default function Workflow({
   const runDisabledReason = !publishedJobDefineId
     ? "请先发布任务，再执行"
     : isDirty
-    ? "当前内容已变更，请重新发布后再执行"
-    : "";
+      ? "当前内容已变更，请重新发布后再执行"
+      : "";
 
   const validateChecklistBeforeAction = () => {
     const total =
@@ -98,8 +152,6 @@ export default function Workflow({
       (checkStat as any)?.count ??
       (checkStat as any)?.checklistCount ??
       0;
-
-    console.log(checkStat);
 
     if (total !== 0) {
       message.warning("请先完成 Checklist 检查后，再进行预览或同步");
@@ -135,22 +187,38 @@ export default function Workflow({
     };
   }, []);
 
-  // params 异步回填后，同步已发布 id
+  /**
+   * params.id 变化时，说明进入了一个新的任务上下文。
+   * 这里只同步发布 id 和 workflow 初始数据。
+   */
   useEffect(() => {
-    if (params?.id) {
-      setPublishedJobDefineId(params.id);
-    }
+    if (!params?.id) return;
+
+    setPublishedJobDefineId(params.id);
+
+    const nextWorkflowGraph = getInitialWorkflowGraph(params);
+    setWorkflowGraph(nextWorkflowGraph);
   }, [params?.id]);
 
-  // 用户修改内容后，重新标记为“未重新发布”
+  /**
+   * 关键点：
+   * 编辑页刚进来时，等当前 props + workflowGraph 形成当前快照后，
+   * 把这份快照作为 baseline。
+   *
+   * 不使用 requestAnimationFrame，不做延迟归位，
+   * 避免视觉上的“多渲染一层 / 闪一下”。
+   */
   useEffect(() => {
-    if (!initializedRef.current) {
-      initializedRef.current = true;
-      return;
-    }
+    if (!params?.id) return;
 
-    setIsDirty(true);
-  }, [basicConfig, scheduleConfig, workflowGraph]);
+    setBaselineSignature(currentSignature);
+  }, [params?.id, currentSignature]);
+
+  const buildEnvData = () => {
+    return {
+      ...envConfig,
+    };
+  };
 
   const handleResizeStart = () => {
     draggingRef.current = true;
@@ -168,8 +236,6 @@ export default function Workflow({
   const buildBasicData = () => {
     return {
       ...basicConfig,
-      jobMode: "BATCH",
-      parallelism: 1,
     };
   };
 
@@ -185,10 +251,7 @@ export default function Workflow({
       basic: buildBasicData(),
       workflow: buildWorkflowData(),
       schedule: buildScheduleData(),
-      env: {
-        "job.mode": "BATCH",
-        parallelism: 1,
-      },
+      env: buildEnvData(),
     };
   };
 
@@ -197,6 +260,7 @@ export default function Workflow({
       if (!validateChecklistBeforeAction()) {
         return;
       }
+
       setPreviewLoading(true);
 
       const finalPayload = buildFinalPayload();
@@ -218,6 +282,7 @@ export default function Workflow({
       if (!validateChecklistBeforeAction()) {
         return;
       }
+
       setPublishLoading(true);
 
       const finalPayload = buildFinalPayload();
@@ -229,11 +294,22 @@ export default function Workflow({
 
       if (jobDefineId) {
         setPublishedJobDefineId(jobDefineId);
-        setIsDirty(false);
-        // setParams((prev: any) => ({
-        //   ...prev,
-        //   id: jobDefineId,
-        // }));
+
+        const nextSignature = buildDirtySignature({
+          basicConfig,
+          scheduleConfig,
+          envConfig,
+          workflowGraph,
+        });
+
+        setBaselineSignature(nextSignature);
+
+        // 如果你希望发布后让 params.id 也同步，可以保留这段。
+        // 这里建议打开，避免新建发布后 params 里没有 id。
+        setParams((prev: any) => ({
+          ...prev,
+          id: jobDefineId,
+        }));
       }
 
       message.success("发布成功");
@@ -260,6 +336,29 @@ export default function Workflow({
     }
 
     setRunVisible(true);
+  };
+
+  const handleWorkflowChange = (nextGraph: { nodes: any[]; edges: any[] }) => {
+    setWorkflowGraph((prev) => {
+      const prevSignature = JSON.stringify({
+        nodes: prev?.nodes || [],
+        edges: prev?.edges || [],
+      });
+
+      const nextSignature = JSON.stringify({
+        nodes: nextGraph?.nodes || [],
+        edges: nextGraph?.edges || [],
+      });
+
+      if (prevSignature === nextSignature) {
+        return prev;
+      }
+
+      return {
+        nodes: nextGraph?.nodes || [],
+        edges: nextGraph?.edges || [],
+      };
+    });
   };
 
   const actionChipClass =
@@ -449,7 +548,7 @@ export default function Workflow({
                             goBack={goBack}
                             sourceType={sourceType}
                             targetType={targetType}
-                            onWorkflowChange={setWorkflowGraph}
+                            onWorkflowChange={handleWorkflowChange}
                           />
                         </ReactFlowProvider>
                       </div>
@@ -457,6 +556,7 @@ export default function Workflow({
                   </Row>
                 </div>
               </div>
+
               {runVisible && (
                 <RunLog
                   runVisible={runVisible}
@@ -495,6 +595,8 @@ export default function Workflow({
                 setBasicConfig={setBasicConfig}
                 scheduleConfig={scheduleConfig}
                 setScheduleConfig={setScheduleConfig}
+                envConfig={envConfig}
+                setEnvConfig={setEnvConfig}
               />
             </div>
           </div>

@@ -4,11 +4,9 @@ import org.apache.seatunnel.web.common.enums.JobDefinitionMode;
 import org.apache.seatunnel.web.common.utils.JSONUtils;
 import org.apache.seatunnel.web.core.job.handler.JobDefinitionModeHandler;
 import org.apache.seatunnel.web.core.job.model.JobDefinitionAnalysisResult;
+import org.apache.seatunnel.web.dao.entity.JobDefinitionContentEntity;
 import org.apache.seatunnel.web.dao.entity.JobDefinitionEntity;
-import org.apache.seatunnel.web.spi.bean.dto.GuideMultiJobContent;
-import org.apache.seatunnel.web.spi.bean.dto.GuideMultiJobSaveCommand;
-import org.apache.seatunnel.web.spi.bean.dto.JobDefinitionSaveCommand;
-import org.apache.seatunnel.web.spi.bean.dto.JobScheduleConfig;
+import org.apache.seatunnel.web.spi.bean.dto.*;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -59,15 +57,15 @@ public class GuideMultiJobDefinitionHandler implements JobDefinitionModeHandler 
     @Override
     public JobDefinitionSaveCommand buildEditCommand(
             JobDefinitionEntity definition,
-            String definitionContent,
+            JobDefinitionContentEntity jobDefinitionContentEntity,
             JobScheduleConfig scheduleConfig) {
 
         GuideMultiJobSaveCommand cmd = new GuideMultiJobSaveCommand();
         cmd.setId(definition.getId());
         cmd.setBasic(buildBasicConfig(definition));
         cmd.setSchedule(scheduleConfig);
-        cmd.setContent(JSONUtils.parseObject(definitionContent, GuideMultiJobContent.class));
-
+        cmd.setContent(JSONUtils.parseObject(jobDefinitionContentEntity.getDefinitionContent(), GuideMultiJobContent.class));
+        cmd.setEnv(JSONUtils.parseObject(jobDefinitionContentEntity.getEnvConfig(), EnvConfig.class));
         return cmd;
     }
 

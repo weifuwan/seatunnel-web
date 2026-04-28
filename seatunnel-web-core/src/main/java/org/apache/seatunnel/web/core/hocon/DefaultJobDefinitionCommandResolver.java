@@ -55,7 +55,7 @@ public class DefaultJobDefinitionCommandResolver implements JobDefinitionCommand
                 throw new ServiceException(Status.BATCH_JOB_DEFINITION_NOT_EXIST, "definition mode not found");
             }
 
-            return buildCommand(definition, latestContent.getDefinitionContent(), definition.getClientId());
+            return buildCommand(definition, latestContent, definition.getClientId());
         } catch (ServiceException e) {
             throw e;
         } catch (Exception e) {
@@ -67,7 +67,7 @@ public class DefaultJobDefinitionCommandResolver implements JobDefinitionCommand
     /**
      * Build concrete save command from definition entity and persisted content.
      */
-    private JobDefinitionSaveCommand buildCommand(JobDefinitionEntity definition, String definitionContent, Long clientId) {
+    private JobDefinitionSaveCommand buildCommand(JobDefinitionEntity definition, JobDefinitionContentEntity definitionContent, Long clientId) {
         JobDefinitionMode mode = definition.getMode();
 
         switch (mode) {
@@ -82,27 +82,30 @@ public class DefaultJobDefinitionCommandResolver implements JobDefinitionCommand
         }
     }
 
-    private ScriptJobSaveCommand buildScriptCommand(JobDefinitionEntity definition, String definitionContent) {
+    private ScriptJobSaveCommand buildScriptCommand(JobDefinitionEntity definition, JobDefinitionContentEntity jobDefinitionContentEntity) {
         ScriptJobSaveCommand command = new ScriptJobSaveCommand();
+        command.setContent(JSONUtils.parseObject(jobDefinitionContentEntity.getDefinitionContent(), ScriptJobContent.class));
         command.setBasic(buildBasic(definition));
         return command;
     }
 
-    private GuideSingleJobSaveCommand buildGuideSingleCommand(JobDefinitionEntity definition, String definitionContent) {
+    private GuideSingleJobSaveCommand buildGuideSingleCommand(JobDefinitionEntity definition, JobDefinitionContentEntity jobDefinitionContentEntity) {
         GuideSingleJobSaveCommand command = new GuideSingleJobSaveCommand();
         command.setBasic(buildBasic(definition));
         command.setWorkflow(JSONUtils.parseObject(
-                definitionContent,
+                jobDefinitionContentEntity.getDefinitionContent(),
                 new TypeReference<Map<String, Object>>() {
                 }
         ));
         command.setId(definition.getId());
+        command.setEnv(JSONUtils.parseObject(jobDefinitionContentEntity.getEnvConfig(), EnvConfig.class));
         return command;
     }
 
-    private GuideMultiJobSaveCommand buildGuideMultiCommand(JobDefinitionEntity definition, String ff) {
+    private GuideMultiJobSaveCommand buildGuideMultiCommand(JobDefinitionEntity definition, JobDefinitionContentEntity jobDefinitionContentEntity) {
         GuideMultiJobSaveCommand command = new GuideMultiJobSaveCommand();
         command.setBasic(buildBasic(definition));
+        command.setEnv(JSONUtils.parseObject(jobDefinitionContentEntity.getEnvConfig(), EnvConfig.class));
         return command;
     }
 

@@ -15,6 +15,16 @@ export interface BasicConfig {
     targetDataSourceId: string | number;
 }
 
+export interface EnvConfig {
+  jobMode: "BATCH" | "STREAMING";
+  parallelism: number;
+}
+
+export const defaultEnvConfig: EnvConfig = {
+  jobMode: "BATCH",
+  parallelism: 1,
+};
+
 export interface ScheduleConfig {
     // 调度参数
     paramsList: Array<{

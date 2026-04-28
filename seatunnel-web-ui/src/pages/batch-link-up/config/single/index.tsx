@@ -5,6 +5,8 @@ import { seatunnelJobDefinitionApi } from "../../api";
 import Workflow from "../../workflow";
 import {
   BasicConfig,
+  defaultEnvConfig,
+  EnvConfig,
   ScheduleConfig,
 } from "../../workflow/components/ScheduleConfigContent/types";
 
@@ -166,9 +168,24 @@ export default function SingleConfigPage() {
   const [scheduleConfig, setScheduleConfig] = useState<ScheduleConfig>(
     defaultScheduleConfig
   );
+  const [envConfig, setEnvConfig] = useState<EnvConfig>(defaultEnvConfig);
   const [basicConfig, setBasicConfig] =
     useState<BasicConfig>(defaultBasicConfig);
   const [loading, setLoading] = useState(false);
+
+  const buildInitialEnvConfigForCreate = (rawData?: any): EnvConfig => {
+    return {
+      ...defaultEnvConfig,
+      ...(rawData?.env || rawData?.envConfig || {}),
+    };
+  };
+
+  const buildInitialEnvConfigForEdit = (editData?: any): EnvConfig => {
+    return {
+      ...defaultEnvConfig,
+      ...(editData?.env || {}),
+    };
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -190,6 +207,7 @@ export default function SingleConfigPage() {
       setTargetType(data?.targetType || null);
       setBasicConfig(buildInitialBasicConfigForCreate(data));
       setScheduleConfig(buildInitialScheduleConfigForCreate(data));
+      setEnvConfig(buildInitialEnvConfigForCreate(data));
     };
 
     const initEdit = async () => {
@@ -210,6 +228,7 @@ export default function SingleConfigPage() {
         setTargetType(data?.workflow?.targetType || null);
         setBasicConfig(buildInitialBasicConfigForEdit(data));
         setScheduleConfig(buildInitialScheduleConfigForEdit(data));
+        setEnvConfig(buildInitialEnvConfigForEdit(data));
       } catch (error) {
         message.error("获取编辑详情失败");
         setParams(null);
@@ -279,6 +298,8 @@ export default function SingleConfigPage() {
         setBasicConfig={setBasicConfig}
         scheduleConfig={scheduleConfig}
         setScheduleConfig={setScheduleConfig}
+        envConfig={envConfig}
+        setEnvConfig={setEnvConfig}
       />
     </div>
   );

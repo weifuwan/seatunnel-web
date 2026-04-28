@@ -22,5 +22,6 @@ public class JobDefinitionContentEntity {
     private JobDefinitionMode mode;
     private Integer contentSchemaVersion;
     private String definitionContent;
+    private String envConfig;
     private Date createTime;
 }

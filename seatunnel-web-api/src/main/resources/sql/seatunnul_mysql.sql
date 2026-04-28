@@ -47,17 +47,6 @@ VALUES(1, 'connector', 'Jdbc', 'source', 'fetch.size', '控制单次从数据库
   ]
 }', '用于AI参数推荐', '2026-04-09 20:48:01', '2026-04-10 10:23:36', 0);
 
--- seatunnel_web.t_seatunnel_cdc_server_ids definition
-
-CREATE TABLE `t_seatunnel_cdc_server_ids`
-(
-    `server_id`    int NOT NULL,
-    `job_id`       varchar(64) DEFAULT NULL,
-    `allocated_at` timestamp NULL DEFAULT NULL,
-    PRIMARY KEY (`server_id`),
-    UNIQUE KEY `uq_job_jobid_server` (`job_id`,`server_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
 
 -- seatunnel_web.t_seatunnel_client definition
 

@@ -18,14 +18,7 @@ import org.apache.seatunnel.web.dao.entity.JobDefinitionEntity;
 import org.apache.seatunnel.web.dao.entity.JobSchedule;
 import org.apache.seatunnel.web.dao.repository.JobDefinitionContentDao;
 import org.apache.seatunnel.web.dao.repository.JobDefinitionDao;
-import org.apache.seatunnel.web.spi.bean.dto.BatchJobDefinitionQueryDTO;
-import org.apache.seatunnel.web.spi.bean.dto.GuideMultiJobSaveCommand;
-import org.apache.seatunnel.web.spi.bean.dto.GuideSingleJobSaveCommand;
-import org.apache.seatunnel.web.spi.bean.dto.JobBasicConfig;
-import org.apache.seatunnel.web.spi.bean.dto.JobDefinitionEditDTO;
-import org.apache.seatunnel.web.spi.bean.dto.JobDefinitionSaveCommand;
-import org.apache.seatunnel.web.spi.bean.dto.JobScheduleConfig;
-import org.apache.seatunnel.web.spi.bean.dto.ScriptJobSaveCommand;
+import org.apache.seatunnel.web.spi.bean.dto.*;
 import org.apache.seatunnel.web.spi.bean.entity.PaginationResult;
 import org.apache.seatunnel.web.spi.bean.vo.BatchJobDefinitionVO;
 import org.apache.seatunnel.web.spi.enums.Status;
@@ -97,6 +90,7 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
                     .version(nextVersion)
                     .mode(command.getMode())
                     .contentSchemaVersion(1)
+                    .envConfig(JSONUtils.toJsonString(command.getEnv()))
                     .definitionContent(definitionContent)
                     .createTime(now)
                     .build();
@@ -225,13 +219,12 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
             }
 
             JobDefinitionModeHandler handler = handlerRegistry.getHandler(definition.getMode());
-            JobDefinitionSaveCommand command = handler.buildEditCommand(
+
+            return handler.buildEditCommand(
                     definition,
-                    latestContent.getDefinitionContent(),
+                    latestContent,
                     buildScheduleConfig(id)
             );
-
-            return command;
         } catch (ServiceException e) {
             throw e;
         } catch (Exception e) {
@@ -264,7 +257,6 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
     }
 
 
-
     /**
      * Build schedule config.
      */
@@ -292,7 +284,7 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
             config.setCronExpression(schedule.getCronExpression());
         }
         if (StringUtils.isBlank(config.getScheduleRunType()) && schedule.getScheduleStatus() != null) {
-            config.setScheduleRunType(schedule.getScheduleStatus().name());
+            config.setScheduleRunType(schedule.getScheduleStatus().getDesc());
         }
 
         return config;

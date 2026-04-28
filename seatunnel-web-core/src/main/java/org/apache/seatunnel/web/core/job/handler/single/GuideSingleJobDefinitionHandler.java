@@ -7,11 +7,9 @@ import org.apache.seatunnel.web.common.enums.JobDefinitionMode;
 import org.apache.seatunnel.web.common.utils.JSONUtils;
 import org.apache.seatunnel.web.core.job.handler.JobDefinitionModeHandler;
 import org.apache.seatunnel.web.core.job.model.JobDefinitionAnalysisResult;
+import org.apache.seatunnel.web.dao.entity.JobDefinitionContentEntity;
 import org.apache.seatunnel.web.dao.entity.JobDefinitionEntity;
-import org.apache.seatunnel.web.spi.bean.dto.GuideSingleJobSaveCommand;
-import org.apache.seatunnel.web.spi.bean.dto.JobDefinitionEditDTO;
-import org.apache.seatunnel.web.spi.bean.dto.JobDefinitionSaveCommand;
-import org.apache.seatunnel.web.spi.bean.dto.JobScheduleConfig;
+import org.apache.seatunnel.web.spi.bean.dto.*;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
@@ -65,7 +63,7 @@ public class GuideSingleJobDefinitionHandler implements JobDefinitionModeHandler
     @Override
     public JobDefinitionSaveCommand buildEditCommand(
             JobDefinitionEntity definition,
-            String definitionContent,
+            JobDefinitionContentEntity jobDefinitionContentEntity,
             JobScheduleConfig scheduleConfig) {
 
         GuideSingleJobSaveCommand cmd = new GuideSingleJobSaveCommand();
@@ -73,10 +71,11 @@ public class GuideSingleJobDefinitionHandler implements JobDefinitionModeHandler
         cmd.setBasic(buildBasicConfig(definition));
         cmd.setSchedule(scheduleConfig);
         Map<String, Object> workflow = JSONUtils.parseObject(
-                definitionContent,
+                jobDefinitionContentEntity.getDefinitionContent(),
                 new TypeReference<>() {
                 }
         );
+        cmd.setEnv(JSONUtils.parseObject(jobDefinitionContentEntity.getEnvConfig(), EnvConfig.class));
 
         cmd.setWorkflow(workflow != null ? workflow : Collections.emptyMap());
         return cmd;

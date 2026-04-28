@@ -125,7 +125,7 @@ export function useSinkPanelLogic({
         const list = Array.isArray(res?.data) ? res.data : [];
 
         const options = list.map((item: any) => {
-          const text = item?.label ?? String(item?.value ?? "");
+          const text = item?.value ?? String(item?.value ?? "");
 
           return {
             label: (

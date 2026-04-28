@@ -216,6 +216,9 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
 
         try {
             JobDefinitionEntity definition = definitionQueryService.getDefinitionOrThrow(id);
+
+            validateEditable(definition);
+
             JobDefinitionContentEntity latestContent =
                     jobDefinitionContentDao.queryLatestByJobDefinitionId(id);
 
@@ -281,6 +284,25 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
         }
 
         throw new RuntimeException("Unsupported release state: " + releaseState);
+    }
+
+    /**
+     * Validate whether job definition can be edited.
+     */
+    private void validateEditable(JobDefinitionEntity definition) {
+        if (definition == null) {
+            throw new ServiceException(Status.BATCH_JOB_DEFINITION_NOT_EXIST);
+        }
+
+        if (definition.getReleaseState() == null) {
+            throw new RuntimeException(
+                    "job release state is empty"
+            );
+        }
+
+        if (!definition.getReleaseState().isOffline()) {
+            throw new RuntimeException("only offline job definition can be edited");
+        }
     }
 
     private void updateJobReleaseState(Long jobDefinitionId, ReleaseState releaseState) {

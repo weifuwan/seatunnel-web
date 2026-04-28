@@ -66,6 +66,20 @@ export const seatunnelJobDefinitionApi = {
     return HttpUtils.delete(`${apiPrefix}/${id}`);
   },
 
+  /**
+ * 任务上线
+ */
+  online: (id: string | number): Promise<{ code: number; data: boolean; message?: string; msg?: string }> => {
+    return HttpUtils.put(`${apiPrefix}/${id}/online`);
+  },
+
+  /**
+   * 任务下线
+   */
+  offline: (id: string | number): Promise<{ code: number; data: boolean; message?: string; msg?: string }> => {
+    return HttpUtils.put(`${apiPrefix}/${id}/offline`);
+  },
+
   page: (data: any): Promise<{ code: number; data: any; message?: string }> => {
     return HttpUtils.post(`${apiPrefix}/page`, data);
   },

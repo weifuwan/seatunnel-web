@@ -1,5 +1,6 @@
 package org.apache.seatunnel.web.core.job.assembler;
 
+import org.apache.seatunnel.web.common.enums.ReleaseState;
 import org.apache.seatunnel.web.core.job.model.JobDefinitionAnalysisResult;
 import org.apache.seatunnel.web.dao.entity.JobDefinitionEntity;
 import org.apache.seatunnel.web.spi.bean.dto.EnvConfig;
@@ -23,6 +24,7 @@ public class JobDefinitionAssembler {
                 .mode(command.getMode())
                 .jobType(env.getJobMode())
                 .clientId(basic.getClientId())
+                .releaseState(ReleaseState.OFFLINE)
                 .jobVersion(1)
                 .sourceType(analysis.getSourceType())
                 .sinkType(analysis.getSinkType())
@@ -53,5 +55,6 @@ public class JobDefinitionAssembler {
         entity.setSourceTable(analysis.getSourceTable());
         entity.setSinkTable(analysis.getSinkTable());
         entity.setUpdateTime(now);
+        entity.setReleaseState(ReleaseState.OFFLINE);
     }
 }

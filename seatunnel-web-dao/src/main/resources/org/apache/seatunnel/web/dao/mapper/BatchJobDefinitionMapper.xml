@@ -13,11 +13,11 @@
         d.job_type AS jobType,
         d.client_id AS clientId,
         d.job_version AS jobVersion,
-        d.parallelism AS parallelism,
         d.source_type AS sourceType,
         d.source_table AS sourceTable,
         d.sink_type AS sinkType,
         d.sink_table AS sinkTable,
+        d.release_state AS releaseState,
         d.create_time AS createTime,
         d.update_time AS updateTime,
 

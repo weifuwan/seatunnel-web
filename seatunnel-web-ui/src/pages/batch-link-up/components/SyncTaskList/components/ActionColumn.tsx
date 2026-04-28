@@ -1,14 +1,13 @@
 import { DownOutlined } from "@ant-design/icons";
+import { useIntl } from "@umijs/max";
 import { Dropdown, Modal, Popconfirm, Space, message } from "antd";
 import { useRef, useState } from "react";
 import {
   seatunnelJobDefinitionApi,
   seatunnelJobExecuteApi,
-  seatunnelJobScheduleApi,
 } from "../../../api";
 import TaskViewModal from "../../../TaskViewModal";
 import { taskExecutionApi } from "../../../type";
-import { useIntl } from "@umijs/max";
 
 interface ActionColumnProps {
   record: any;
@@ -31,18 +30,56 @@ const ActionColumn: React.FC<ActionColumnProps> = ({
   const [runOpen, setRunOpen] = useState(false);
   const [runLoading, setRunLoading] = useState(false);
 
+  const isOnline =
+    record?.releaseState === "ONLINE" || record?.releaseState === 1;
+
   const handleStop = () => {
     const executionId = record?.executionId;
+
     if (executionId !== undefined) {
       taskExecutionApi.cancel(executionId).then((data) => {
         if (data?.code === 0) {
           cbk();
         } else {
-          message.error(data?.msg);
+          message.error(data?.msg || "停止失败");
           cbk();
         }
       });
     }
+  };
+
+  const handleOnline = async () => {
+    if (!record?.id) {
+      message.error("任务 ID 不存在");
+      return;
+    }
+
+    const response = await seatunnelJobDefinitionApi.online(record.id);
+
+    if (response?.code === 0) {
+      message.success("上线成功");
+      cbk();
+      return;
+    }
+
+    message.error(response?.msg || response?.message || "上线失败");
+  };
+
+  const handleOffline = async () => {
+    if (!record?.id) {
+      message.error("任务 ID 不存在");
+      return;
+    }
+
+    const response = await seatunnelJobDefinitionApi.offline(record.id);
+
+    if (response?.code === 0) {
+      message.success("下线成功");
+      cbk();
+      return;
+    }
+
+    message.error(response?.msg || response?.message || "下线失败");
   };
 
   const handleDeleteTask = async (record: any) => {
@@ -57,11 +94,12 @@ const ActionColumn: React.FC<ActionColumnProps> = ({
           {intl.formatMessage(
             {
               id: "pages.job.action.delete.confirmContent",
-              defaultMessage: "Are you sure you want to delete the task [{name}]?",
+              defaultMessage:
+                "Are you sure you want to delete the task [{name}]?",
             },
             {
               name: <span style={{ color: "orange" }}>{record.jobName}</span>,
-            },
+            }
           )}
           <br />
         </span>
@@ -87,7 +125,7 @@ const ActionColumn: React.FC<ActionColumnProps> = ({
             intl.formatMessage({
               id: "pages.job.message.idNotExist",
               defaultMessage: "id is not exist",
-            }),
+            })
           );
         }
       },
@@ -96,27 +134,46 @@ const ActionColumn: React.FC<ActionColumnProps> = ({
 
   const doDeleteTask = async (id: string) => {
     const response = await seatunnelJobDefinitionApi.delete(id);
+
     if (response.code === 0) {
-      message.success(response.msg);
+      message.success(response.msg || "删除成功");
       cbk();
     } else {
-      message.error(response.msg);
+      message.error(response.msg || "删除失败");
     }
   };
 
   const handleMenuClick = (info: any, item: any) => {
     info.domEvent.stopPropagation();
+
     if (info?.key === "delete") {
       handleDeleteTask(record);
-    } else if (info?.key === "view") {
-      ref.current.onOpen(true, record, cbk);
-    } else if (info?.key === "edit") {
-      goDetail(item?.id, item);
+      return;
+    }
+
+    if (info?.key === "view") {
+      ref.current?.onOpen(true, record, cbk);
+      return;
+    }
+
+    if (info?.key === "edit") {
+      seatunnelJobDefinitionApi.selectEditDetail(item?.id).then((data) => {
+        if (data?.code === 0) {
+          goDetail(item?.id, item);
+        }
+      });
     }
   };
 
-  const yesText = intl.formatMessage({ id: "pages.common.yes", defaultMessage: "Yes" });
-  const noText = intl.formatMessage({ id: "pages.common.no", defaultMessage: "No" });
+  const yesText = intl.formatMessage({
+    id: "pages.common.yes",
+    defaultMessage: "Yes",
+  });
+
+  const noText = intl.formatMessage({
+    id: "pages.common.no",
+    defaultMessage: "No",
+  });
 
   return (
     <>
@@ -139,12 +196,7 @@ const ActionColumn: React.FC<ActionColumnProps> = ({
             cancelText={noText}
             onConfirm={handleStop}
           >
-            <a style={{ fontWeight: 500 }}>
-              {intl.formatMessage({
-                id: "pages.job.action.stop",
-                defaultMessage: "Stop",
-              })}
-            </a>
+            <a style={{ fontWeight: 500 }}>停止</a>
           </Popconfirm>
         ) : (
           <Popconfirm
@@ -172,126 +224,57 @@ const ActionColumn: React.FC<ActionColumnProps> = ({
             onConfirm={async () => {
               try {
                 setRunLoading(true);
+
                 const data = await seatunnelJobExecuteApi.execute(record?.id);
+
                 if (data?.code === 0) {
                   message.success(
                     intl.formatMessage({
                       id: "pages.common.success",
                       defaultMessage: "Success",
-                    }),
+                    })
                   );
                   cbk();
                   setRunOpen(false);
                 } else {
-                  message.error(data?.msg);
+                  message.error(data?.msg || "运行失败");
                 }
               } finally {
                 setRunLoading(false);
               }
             }}
           >
-            <a style={{ fontWeight: 500 }}>
-              {intl.formatMessage({
-                id: "pages.job.action.run",
-                defaultMessage: "Run",
-              })}
-            </a>
+            <a style={{ fontWeight: 500 }}>运行</a>
           </Popconfirm>
         )}
 
-        {record?.scheduleStatus === "NORMAL" ? (
+        {isOnline ? (
           <Popconfirm
-            title={intl.formatMessage({
-              id: "pages.job.action.schedule.title",
-              defaultMessage: "Scheduled Task",
-            })}
+            title="任务下线"
             description={
               <div style={{ marginRight: 12 }}>
-                {intl.formatMessage({
-                  id: "pages.job.action.schedule.offline.desc",
-                  defaultMessage: "Are you sure offline this scheduled task?",
-                })}
+                下线后任务将不会再被调度触发，确认下线该任务吗？
               </div>
             }
-            okText={yesText}
-            cancelText={noText}
-            onConfirm={async () => {
-              if (record?.scheduleId) {
-                const response = await seatunnelJobScheduleApi.stopSchedule(record?.scheduleId);
-                if (response?.code === 0) {
-                  cbk();
-                  message.success(
-                    intl.formatMessage({
-                      id: "pages.job.action.schedule.offline.success",
-                      defaultMessage: "Offline Success",
-                    }),
-                  );
-                } else {
-                  message.error(response?.msg);
-                }
-              } else {
-                message.error(
-                  intl.formatMessage({
-                    id: "pages.job.message.scheduleIdNotExist",
-                    defaultMessage: "Schedule ID does not exist",
-                  }),
-                );
-              }
-            }}
+            okText="确认"
+            cancelText="取消"
+            onConfirm={handleOffline}
           >
-            <a style={{ fontWeight: 500 }}>
-              {intl.formatMessage({
-                id: "pages.job.action.schedule.disable",
-                defaultMessage: "Disable",
-              })}
-            </a>
+            <a style={{ fontWeight: 500 }}>下线</a>
           </Popconfirm>
         ) : (
           <Popconfirm
-            title={intl.formatMessage({
-              id: "pages.job.action.schedule.title",
-              defaultMessage: "Scheduled Task",
-            })}
+            title="任务上线"
             description={
               <div style={{ marginRight: 12 }}>
-                {intl.formatMessage({
-                  id: "pages.job.action.schedule.online.desc",
-                  defaultMessage: "Are you sure online this scheduled task?",
-                })}
+                上线后任务将恢复可运行状态，并同步恢复调度，确认上线该任务吗？
               </div>
             }
-            okText={yesText}
-            cancelText={noText}
-            onConfirm={async () => {
-              if (record?.scheduleId) {
-                const response = await seatunnelJobScheduleApi.startSchedule(record?.scheduleId);
-                if (response?.code === 0) {
-                  cbk();
-                  message.success(
-                    intl.formatMessage({
-                      id: "pages.job.action.schedule.online.success",
-                      defaultMessage: "Online Success",
-                    }),
-                  );
-                } else {
-                  message.error(response?.msg);
-                }
-              } else {
-                message.error(
-                  intl.formatMessage({
-                    id: "pages.job.message.unknownError",
-                    defaultMessage: "Unknown Error",
-                  }),
-                );
-              }
-            }}
+            okText="确认"
+            cancelText="取消"
+            onConfirm={handleOnline}
           >
-            <a style={{ fontWeight: 500 }}>
-              {intl.formatMessage({
-                id: "pages.job.action.schedule.enable",
-                defaultMessage: "Enable",
-              })}
-            </a>
+            <a style={{ fontWeight: 500 }}>上线</a>
           </Popconfirm>
         )}
 
@@ -304,7 +287,10 @@ const ActionColumn: React.FC<ActionColumnProps> = ({
           }}
         >
           <a style={{ fontWeight: 500 }}>
-            {intl.formatMessage({ id: "pages.job.action.more", defaultMessage: "More" })}{" "}
+            {intl.formatMessage({
+              id: "pages.job.action.more",
+              defaultMessage: "More",
+            })}{" "}
             <DownOutlined style={{ fontSize: 12 }} />
           </a>
         </Dropdown>

@@ -81,7 +81,6 @@
         d.mode AS definitionMode,
         d.job_type AS jobType,
         d.client_id AS definitionClientId,
-        d.parallelism AS parallelism,
         d.job_version AS jobVersion,
         d.status AS definitionStatus,
         d.source_type AS sourceType,

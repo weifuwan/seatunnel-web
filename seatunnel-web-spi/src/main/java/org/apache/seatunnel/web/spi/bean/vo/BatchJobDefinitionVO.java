@@ -2,11 +2,7 @@ package org.apache.seatunnel.web.spi.bean.vo;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.*;
-import org.apache.seatunnel.web.common.enums.JobDefinitionMode;
-import org.apache.seatunnel.web.common.enums.JobMode;
-import org.apache.seatunnel.web.common.enums.RunMode;
-import org.apache.seatunnel.web.common.enums.ScheduleStatusEnum;
-import org.apache.seatunnel.web.common.enums.SyncModeEnum;
+import org.apache.seatunnel.web.common.enums.*;
 
 import java.util.Date;
 
@@ -32,6 +28,8 @@ public class BatchJobDefinitionVO {
      * BATCH / STREAMING
      */
     private JobMode jobType;
+
+    private ReleaseState releaseState;
 
     private Long clientId;
 

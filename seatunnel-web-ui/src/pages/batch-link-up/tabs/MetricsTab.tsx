@@ -428,9 +428,9 @@ const MetricsTab: React.FC<MetricsTabProps> = ({ instanceItem }) => {
     <Card
       size="small"
       className="mt-2 !rounded-2xl !border-slate-200 !shadow-[0_1px_3px_rgba(15,23,42,0.04)]"
-      bodyStyle={{ padding: 16 }}
+      bodyStyle={{ padding: 16,marginBottom: 116 }}
     >
-      <div className="space-y-6" style={{height: "48vh", overflow: "auto"}}>
+      <div className="space-y-6" >
         <section>
           <SectionHeader
             icon={<Gauge size={16} strokeWidth={1.9} />}

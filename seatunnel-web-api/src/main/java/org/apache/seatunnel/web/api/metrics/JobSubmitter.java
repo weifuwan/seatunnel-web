@@ -59,6 +59,8 @@ public class JobSubmitter {
             jobLogger.info("Config file written to: " + configFile);
 
             jobLogger.info("Submitting job via REST API...");
+            log.info("Submitting job to Zeta, instanceId={}, clientId={}", instanceId, clientId);
+
             String filename = "job-" + instanceId + ".conf";
 
             Map<?, ?> resp = restClient.submitJobUpload(
@@ -67,10 +69,8 @@ public class JobSubmitter {
                     filename
             );
 
-            engineId = extractJobId(resp);
-            submitted = true;
-
-            jobLogger.info("Job submitted, engineId(jobId): " + engineId);
+            log.info("Submit job response received, instanceId={}, resp={}", instanceId, resp);
+            jobLogger.info("Submit job response received: " + resp);
 
             resultHandler.updateEngineId(instanceId, engineId);
 

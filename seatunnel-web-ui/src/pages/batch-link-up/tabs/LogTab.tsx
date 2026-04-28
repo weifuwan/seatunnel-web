@@ -13,7 +13,7 @@ const LogTab: React.FC<LogTabProps> = ({ content, loading }) => {
       size="small"
       loading={loading}
       className="mt-2 !rounded-2xl !border-slate-200 !shadow-[0_1px_3px_rgba(15,23,42,0.04)]"
-      bodyStyle={{ padding: 16 }}
+      bodyStyle={{ padding: 16, marginBottom: 116 }}
     >
       <div className="mb-3 flex items-center gap-2.5">
         <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-500">
@@ -28,7 +28,7 @@ const LogTab: React.FC<LogTabProps> = ({ content, loading }) => {
         </div>
       </div>
 
-      <pre className="max-h-[470px] min-h-[360px] overflow-auto rounded-xl bg-[#1E1E1E] p-4 font-mono text-xs leading-5 text-[#00FF88]" style={{paddingTop: 12}}>
+      <pre className=" rounded-xl bg-[#1E1E1E] p-4 font-mono text-xs leading-5 text-[#00FF88]" style={{paddingTop: 12}}>
         {content || "No log available"}
       </pre>
     </Card>

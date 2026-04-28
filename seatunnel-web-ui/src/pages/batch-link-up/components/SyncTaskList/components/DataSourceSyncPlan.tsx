@@ -1,4 +1,5 @@
 import { DoubleRightOutlined } from "@ant-design/icons";
+import { Empty, Popover } from "antd";
 import { CSSProperties } from "react";
 import DatabaseIcons from "../../../../data-source/icon/DatabaseIcons";
 
@@ -96,6 +97,169 @@ const DataSourceSyncPlan: React.FC<DataSourceSyncPlanProps> = ({ record }) => {
     record?.mode === "GUIDE_SINGLE" ? "Single Table" : "Not Configured"
   );
 
+  const getTableCount = (tableValue: any) => {
+    if (!tableValue) return 0;
+
+    let value = tableValue;
+
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+
+      if (!trimmed) return 0;
+
+      if (!trimmed.startsWith("{") && !trimmed.startsWith("[")) {
+        return 1;
+      }
+
+      const parsed = safeParse(trimmed);
+      if (!parsed) return 1;
+
+      value = parsed;
+    }
+
+    if (Array.isArray(value)) {
+      return value.filter((item) => String(item || "").trim()).length;
+    }
+
+    if (typeof value === "object") {
+      return Object.values(value).reduce((total: number, item: any) => {
+        if (Array.isArray(item)) {
+          return total + item.filter((v) => String(v || "").trim()).length;
+        }
+
+        if (typeof item === "string" && item.trim()) {
+          return total + 1;
+        }
+
+        return total;
+      }, 0);
+    }
+
+    return 0;
+  };
+
+  const sourceTableCount = getTableCount(record?.sourceTable);
+  const sinkTableCount = getTableCount(record?.sinkTable);
+
+  const getTableList = (tableValue: any): string[] => {
+    if (!tableValue) return [];
+
+    let value = tableValue;
+
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+
+      if (!trimmed) return [];
+
+      if (!trimmed.startsWith("{") && !trimmed.startsWith("[")) {
+        return [trimmed];
+      }
+
+      const parsed = safeParse(trimmed);
+      if (!parsed) return [trimmed];
+
+      value = parsed;
+    }
+
+    if (Array.isArray(value)) {
+      return value
+        .filter((item) => String(item || "").trim())
+        .map((item) => String(item).trim());
+    }
+
+    if (typeof value === "object") {
+      const tables: string[] = [];
+
+      Object.entries(value).forEach(([schemaName, item]: any) => {
+        if (Array.isArray(item)) {
+          item.forEach((tableName) => {
+            if (String(tableName || "").trim()) {
+              tables.push(
+                schemaName
+                  ? `${schemaName}.${String(tableName).trim()}`
+                  : String(tableName).trim()
+              );
+            }
+          });
+        }
+
+        if (typeof item === "string" && item.trim()) {
+          tables.push(
+            schemaName ? `${schemaName}.${item.trim()}` : item.trim()
+          );
+        }
+      });
+
+      return tables;
+    }
+
+    return [];
+  };
+
+  const sourceTableList = getTableList(record?.sourceTable);
+  const sinkTableList = getTableList(record?.sinkTable);
+
+  const renderTablePopoverContent = (tables: string[]) => {
+    if (!tables.length) {
+      return (
+        <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无表信息" />
+      );
+    }
+
+    return (
+      <div style={{ width: 300, maxHeight: 280, overflowY: "auto" }}>
+        <div
+          style={{
+            marginBottom: 8,
+            color: "rgba(0,0,0,0.45)",
+            fontSize: 12,
+          }}
+        >
+          共 {tables.length} 张表
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          {tables.map((tableName, index) => (
+            <div
+              key={`${tableName}-${index}`}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "6px 8px",
+                borderRadius: 8,
+                background: "#f8fafc",
+                color: "rgba(0,0,0,0.74)",
+                fontSize: 12,
+                lineHeight: "18px",
+              }}
+            >
+              <span
+                style={{
+                  width: 4,
+                  height: 4,
+                  borderRadius: "50%",
+                  background: "rgba(0,0,0,0.7)",
+                  flexShrink: 0,
+                }}
+              />
+              <span
+                style={{
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+                title={tableName}
+              >
+                {tableName}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div style={{ color: "rgba(0,0,0,0.74)", fontWeight: 500 }}>
       <style>
@@ -143,18 +307,43 @@ const DataSourceSyncPlan: React.FC<DataSourceSyncPlanProps> = ({ record }) => {
 
           <span style={{ margin: "0 6px", color: "green" }}>·</span>
 
-          <span
-            style={{
-              maxWidth: 180,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-              display: "inline-block",
-            }}
-            title={String(sourceTableText)}
-          >
-            {sourceTableText}
-          </span>
+          {record?.mode === "GUIDE_MULTI" ? (
+            <Popover
+              placement="rightTop"
+              trigger="hover"
+              title="来源表清单"
+              content={renderTablePopoverContent(sourceTableList)}
+            >
+              <span
+                style={{
+                  maxWidth: 180,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  display: "inline-block",
+                  cursor: "pointer",
+                  color: sourceTableCount > 0 ? "hsl(231 48% 48%)" : "rgba(0,0,0,0.45)",
+                }}
+              >
+                {sourceTableCount > 0
+                  ? `共 ${sourceTableCount} 张表`
+                  : "暂未选择表"}
+              </span>
+            </Popover>
+          ) : (
+            <span
+              style={{
+                maxWidth: 180,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                display: "inline-block",
+              }}
+              title={String(sourceTableText)}
+            >
+              {sourceTableText}
+            </span>
+          )}
         </div>
 
         {/* ARROW */}
@@ -175,18 +364,43 @@ const DataSourceSyncPlan: React.FC<DataSourceSyncPlanProps> = ({ record }) => {
 
           <span style={{ margin: "0 6px" }}>·</span>
 
-          <span
-            style={{
-              maxWidth: 180,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-              display: "inline-block",
-            }}
-            title={String(sinkTableText)}
-          >
-            {sinkTableText}
-          </span>
+          {record?.mode === "GUIDE_MULTI" ? (
+            <Popover
+              placement="rightTop"
+              trigger="hover"
+              title="目标表清单"
+              content={renderTablePopoverContent(sinkTableList)}
+            >
+              <span
+                style={{
+                  maxWidth: 180,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  display: "inline-block",
+                  cursor: "pointer",
+                  color: sinkTableCount > 0 ? "hsl(231 48% 48%)" : "rgba(0,0,0,0.45)",
+                }}
+              >
+                {sinkTableCount > 0
+                  ? `共 ${sinkTableCount} 张表`
+                  : "暂未选择表"}
+              </span>
+            </Popover>
+          ) : (
+            <span
+              style={{
+                maxWidth: 180,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                display: "inline-block",
+              }}
+              title={String(sinkTableText)}
+            >
+              {sinkTableText}
+            </span>
+          )}
         </div>
       </div>
     </div>

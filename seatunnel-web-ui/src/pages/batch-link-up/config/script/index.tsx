@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { seatunnelJobDefinitionApi } from "../../api";
 import {
   BasicConfig,
+  defaultEnvConfig,
+  EnvConfig,
   ScheduleConfig,
 } from "../../workflow/components/ScheduleConfigContent/types";
 import CustomWorkflow from "./CustomWorkflow";
@@ -59,57 +61,10 @@ const defaultBasicConfig: CustomBasicConfig = {
   targetPluginName: "",
 };
 
-const buildInitialScheduleConfigForCreate = (
-  rawData?: any
-): ScheduleConfig => {
+const mergeScheduleConfig = (schedule?: any): ScheduleConfig => {
   return {
     ...defaultScheduleConfig,
-    ...(rawData?.scheduleConfig || {}),
-    hourlyRangeValue: {
-      ...defaultScheduleConfig.hourlyRangeValue,
-      ...(rawData?.scheduleConfig?.hourlyRangeValue || {}),
-    },
-    hourlyAppointValue: {
-      ...defaultScheduleConfig.hourlyAppointValue,
-      ...(rawData?.scheduleConfig?.hourlyAppointValue || {}),
-    },
-    dailyValue: {
-      ...defaultScheduleConfig.dailyValue,
-      ...(rawData?.scheduleConfig?.dailyValue || {}),
-    },
-    weeklyValue: {
-      ...defaultScheduleConfig.weeklyValue,
-      ...(rawData?.scheduleConfig?.weeklyValue || {}),
-    },
-  };
-};
-
-const buildInitialBasicConfigForCreate = (
-  rawData?: any
-): CustomBasicConfig => {
-  return {
-    ...defaultBasicConfig,
-    jobName: rawData?.jobName || "",
-    description: rawData?.description || "",
-    clientId: rawData?.clientId || "",
-    mode: rawData?.mode || "SCRIPT",
-    sourceType: rawData?.sourceType?.dbType || "SOURCE",
-    targetType: rawData?.targetType?.dbType || "SINK",
-    sourcePluginName: rawData?.sourceType?.pluginName || "",
-    targetPluginName: rawData?.targetType?.pluginName || "",
-    sourceDataSourceId: rawData?.sourceDataSourceId || rawData?.sourceId || "",
-    targetDataSourceId: rawData?.targetDataSourceId || rawData?.targetId || "",
-  };
-};
-
-const buildInitialScheduleConfigForEdit = (
-  editData?: any
-): ScheduleConfig => {
-  const schedule = editData?.schedule || {};
-
-  return {
-    ...defaultScheduleConfig,
-    ...schedule,
+    ...(schedule || {}),
     hourlyRangeValue: {
       ...defaultScheduleConfig.hourlyRangeValue,
       ...(schedule?.hourlyRangeValue || {}),
@@ -129,6 +84,53 @@ const buildInitialScheduleConfigForEdit = (
   };
 };
 
+const buildInitialScheduleConfigForCreate = (
+  rawData?: any
+): ScheduleConfig => {
+  return mergeScheduleConfig(rawData?.scheduleConfig || rawData?.schedule);
+};
+
+const buildInitialScheduleConfigForEdit = (
+  editData?: any
+): ScheduleConfig => {
+  return mergeScheduleConfig(editData?.schedule);
+};
+
+const buildInitialEnvConfigForCreate = (rawData?: any): EnvConfig => {
+  return {
+    ...defaultEnvConfig,
+    ...(rawData?.env || rawData?.envConfig || {}),
+  };
+};
+
+const buildInitialEnvConfigForEdit = (editData?: any): EnvConfig => {
+  return {
+    ...defaultEnvConfig,
+    ...(editData?.env || {}),
+  };
+};
+
+const buildInitialBasicConfigForCreate = (
+  rawData?: any
+): CustomBasicConfig => {
+  return {
+    ...defaultBasicConfig,
+    jobName: rawData?.jobName || "",
+    description: rawData?.description || "",
+    clientId: rawData?.clientId ? String(rawData.clientId) : "",
+    mode: "SCRIPT",
+
+    sourceType: rawData?.sourceType?.dbType || "SOURCE",
+    targetType: rawData?.targetType?.dbType || "SINK",
+
+    sourcePluginName: rawData?.sourceType?.pluginName || "",
+    targetPluginName: rawData?.targetType?.pluginName || "",
+
+    sourceDataSourceId: rawData?.sourceDataSourceId || rawData?.sourceId || "",
+    targetDataSourceId: rawData?.targetDataSourceId || rawData?.targetId || "",
+  };
+};
+
 const buildInitialBasicConfigForEdit = (
   editData?: any
 ): CustomBasicConfig => {
@@ -136,28 +138,70 @@ const buildInitialBasicConfigForEdit = (
   const workflow = editData?.workflow || {};
   const content = editData?.content || {};
 
+  const source = workflow?.source || content?.source || {};
+  const target = workflow?.target || content?.target || {};
+
   return {
     ...defaultBasicConfig,
     jobName: basic?.jobName || "",
     description: basic?.jobDesc || basic?.description || "",
     clientId: basic?.clientId ? String(basic.clientId) : "",
-    mode: basic?.mode || editData?.mode || "SCRIPT",
-    sourceType: workflow?.sourceType?.dbType || "SOURCE",
-    targetType: workflow?.targetType?.dbType || "SINK",
-    sourcePluginName: workflow?.sourceType?.pluginName || "",
-    targetPluginName: workflow?.targetType?.pluginName || "",
+    mode: "SCRIPT",
+
+    sourceType:
+      workflow?.sourceType?.dbType ||
+      source?.dbType ||
+      editData?.sourceType?.dbType ||
+      "SOURCE",
+
+    targetType:
+      workflow?.targetType?.dbType ||
+      target?.dbType ||
+      editData?.targetType?.dbType ||
+      "SINK",
+
+    sourcePluginName:
+      workflow?.sourceType?.pluginName ||
+      source?.pluginName ||
+      editData?.sourceType?.pluginName ||
+      "",
+
+    targetPluginName:
+      workflow?.targetType?.pluginName ||
+      target?.pluginName ||
+      editData?.targetType?.pluginName ||
+      "",
+
     sourceDataSourceId:
-      workflow?.sourceDataSourceId || workflow?.sourceId || "",
+      workflow?.sourceDataSourceId ||
+      workflow?.sourceId ||
+      source?.datasourceId ||
+      "",
+
     targetDataSourceId:
-      workflow?.targetDataSourceId || workflow?.targetId || "",
+      workflow?.targetDataSourceId ||
+      workflow?.targetId ||
+      target?.datasourceId ||
+      "",
   };
 };
 
 const buildPageParamsForEdit = (editData?: any) => {
   const basic = editData?.basic || {};
   const workflow = editData?.workflow || {};
-  const schedule = editData?.schedule || {};
   const content = editData?.content || {};
+  const schedule = editData?.schedule || {};
+  const env = editData?.env || {};
+
+  const source = workflow?.source || content?.source || {};
+  const target = workflow?.target || content?.target || {};
+
+  const hoconContent =
+    workflow?.hoconContent ||
+    content?.hoconContent ||
+    editData?.hoconContent ||
+    editData?.jobDefinitionInfo?.hoconContent ||
+    "";
 
   return {
     id: editData?.id,
@@ -165,21 +209,45 @@ const buildPageParamsForEdit = (editData?: any) => {
     jobName: basic?.jobName || "",
     description: basic?.jobDesc || basic?.description || "",
     clientId: basic?.clientId || "",
-    sourceType: workflow?.sourceType || null,
-    targetType: workflow?.targetType || null,
+
+    sourceType:
+      workflow?.sourceType ||
+      editData?.sourceType || {
+        dbType: source?.dbType,
+        connectorType: source?.connectorType,
+        pluginName: source?.pluginName,
+      },
+
+    targetType:
+      workflow?.targetType ||
+      editData?.targetType || {
+        dbType: target?.dbType,
+        connectorType: target?.connectorType,
+        pluginName: target?.pluginName,
+      },
+
     sourceDataSourceId:
-      workflow?.sourceDataSourceId || workflow?.sourceId || "",
+      workflow?.sourceDataSourceId ||
+      workflow?.sourceId ||
+      source?.datasourceId ||
+      "",
+
     targetDataSourceId:
-      workflow?.targetDataSourceId || workflow?.targetId || "",
+      workflow?.targetDataSourceId ||
+      workflow?.targetId ||
+      target?.datasourceId ||
+      "",
+
     scheduleConfig: schedule,
-    workflow,
+    workflow: {
+      ...workflow,
+      ...content,
+      hoconContent,
+    },
     basic,
     content,
-    hoconContent:
-      workflow?.hoconContent ||
-      content?.hoconContent ||
-      editData?.hoconContent ||
-      "",
+    env,
+    hoconContent,
   };
 };
 
@@ -191,6 +259,7 @@ export default function CustomConfigPage() {
   const [scheduleConfig, setScheduleConfig] = useState<ScheduleConfig>(
     defaultScheduleConfig
   );
+  const [envConfig, setEnvConfig] = useState<EnvConfig>(defaultEnvConfig);
   const [basicConfig, setBasicConfig] =
     useState<CustomBasicConfig>(defaultBasicConfig);
   const [loading, setLoading] = useState(false);
@@ -211,9 +280,11 @@ export default function CustomConfigPage() {
 
       try {
         const data = JSON.parse(cache);
+
         setParams(data);
         setBasicConfig(buildInitialBasicConfigForCreate(data));
         setScheduleConfig(buildInitialScheduleConfigForCreate(data));
+        setEnvConfig(buildInitialEnvConfigForCreate(data));
       } catch (error) {
         console.error("解析缓存失败:", error);
         message.error("读取缓存配置失败");
@@ -233,9 +304,11 @@ export default function CustomConfigPage() {
         }
 
         const data = res.data;
+
         setParams(buildPageParamsForEdit(data));
         setBasicConfig(buildInitialBasicConfigForEdit(data));
         setScheduleConfig(buildInitialScheduleConfigForEdit(data));
+        setEnvConfig(buildInitialEnvConfigForEdit(data));
       } catch (error) {
         console.error(error);
         message.error("获取编辑详情失败");
@@ -268,7 +341,7 @@ export default function CustomConfigPage() {
     const scene = searchParams.get("scene");
 
     if (scene === "edit") {
-      history.push(`/sync/batch-link-up`);
+      history.push("/sync/batch-link-up");
       return;
     }
 
@@ -292,7 +365,7 @@ export default function CustomConfigPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#ffffff]">
+    <div className="min-h-screen bg-white">
       <CustomWorkflow
         params={params}
         setParams={setParams}
@@ -301,6 +374,8 @@ export default function CustomConfigPage() {
         setBasicConfig={setBasicConfig}
         scheduleConfig={scheduleConfig}
         setScheduleConfig={setScheduleConfig}
+        envConfig={envConfig}
+        setEnvConfig={setEnvConfig}
       />
     </div>
   );

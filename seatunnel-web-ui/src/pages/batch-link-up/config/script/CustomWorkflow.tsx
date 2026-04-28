@@ -1,7 +1,10 @@
 import { ArrowLeftOutlined, SendOutlined } from "@ant-design/icons";
-import { Button, Space, Tooltip } from "antd";
-import { FileCode2, PlayCircle } from "lucide-react";
+import { Button, Popconfirm, Popover, Space, Tooltip } from "antd";
+import { Eye, FileCode2, PlayCircle, RefreshCw } from "lucide-react";
+import React from "react";
 
+import { EnvConfig } from "../../workflow/components/ScheduleConfigContent/types";
+import CodeBlockWithCopy from "../../workflow/operator/CodeBlockWithCopy";
 import RightConfigPanel from "../../workflow/RightConfigPanel";
 import { useResizablePanel } from "../multi/hooks/useResizablePanel";
 import HoconEditorPanel from "./HoconEditorPanel";
@@ -12,9 +15,11 @@ interface CustomWorkflowProps {
   setParams: React.Dispatch<React.SetStateAction<any>>;
   goBack: () => void;
   basicConfig: any;
-  setBasicConfig: (value: any) => void;
+  setBasicConfig: React.Dispatch<React.SetStateAction<any>>;
   scheduleConfig: any;
-  setScheduleConfig: (value: any) => void;
+  setScheduleConfig: React.Dispatch<React.SetStateAction<any>>;
+  envConfig: EnvConfig;
+  setEnvConfig: React.Dispatch<React.SetStateAction<EnvConfig>>;
 }
 
 export default function CustomWorkflow({
@@ -25,25 +30,45 @@ export default function CustomWorkflow({
   setBasicConfig,
   scheduleConfig,
   setScheduleConfig,
+  envConfig,
+  setEnvConfig,
 }: CustomWorkflowProps) {
   const { rightWidth, handleResizeStart } = useResizablePanel(520);
 
   const {
     activeTab,
     setActiveTab,
+
     hoconContent,
     setHoconContent,
+
+    previewOpen,
+    setPreviewOpen,
+    previewContent,
+    previewLoading,
+    templateLoading,
+
     publishLoading,
     canRun,
     runDisabledReason,
+
     handleSave,
+    handlePreview,
+    handleReloadTemplate,
     handleRun,
   } = useCustomWorkflowState({
     params,
     setParams,
     basicConfig,
     scheduleConfig,
+    envConfig,
   });
+
+  const actionButtonClass =
+    "!inline-flex !h-[34px] !items-center !justify-center !rounded-full !border !border-slate-200 !bg-slate-50 !px-3.5 !text-[13px] !font-medium !text-slate-500 transition-colors duration-200 hover:!border-slate-300 hover:!bg-white/80 hover:!text-slate-700 hover:!shadow-[0_4px_12px_rgba(15,23,42,0.05)] disabled:!cursor-not-allowed disabled:!border-slate-200 disabled:!bg-slate-100 disabled:!text-slate-400 disabled:!shadow-none";
+
+  const actionChipClass =
+    "inline-flex h-[34px] cursor-pointer select-none items-center justify-center rounded-full border border-slate-200 bg-slate-50 px-3.5 text-[13px] font-medium leading-none text-slate-500 transition-colors duration-200 hover:border-slate-300 hover:bg-white/80 hover:text-slate-700 hover:shadow-[0_4px_12px_rgba(15,23,42,0.05)] active:translate-y-0";
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-white">
@@ -59,7 +84,7 @@ export default function CustomWorkflow({
                 自定义编排任务
               </div>
               <div className="text-[14px] leading-6 text-slate-500">
-                通过自定义 HOCON 配置任务内容，并在右侧补充基础信息与调度参数。
+                直接编写 HOCON 配置，并补充基础信息、调度策略与运行参数。
               </div>
             </div>
           </div>
@@ -83,8 +108,13 @@ export default function CustomWorkflow({
             <div className="h-full min-w-0 flex-1 overflow-hidden">
               <div className="flex h-full flex-col overflow-hidden rounded-lg bg-white shadow-[0_4px_18px_rgba(15,23,42,0.03)]">
                 <div className="flex h-14 shrink-0 items-center justify-between border-b border-slate-100 bg-gradient-to-b from-white to-slate-50 px-[18px]">
-                  <div className="text-[15px] font-semibold text-slate-800">
-                    自定义编排
+                  <div>
+                    <div className="text-[15px] font-semibold text-slate-800">
+                      HOCON 编排
+                    </div>
+                    <div className="mt-0.5 text-[12px] text-slate-400">
+                      自定义脚本模式，适合复杂链路与高级参数配置
+                    </div>
                   </div>
 
                   <Space size={10}>
@@ -94,7 +124,7 @@ export default function CustomWorkflow({
                         icon={<PlayCircle size={15} strokeWidth={1.9} />}
                         onClick={handleRun}
                         disabled={!canRun}
-                        className="!inline-flex !h-[34px] !items-center !justify-center !rounded-full !border !border-slate-200 !bg-slate-50 !px-3.5 !text-[13px] !font-medium !text-slate-500 transition-colors duration-200 hover:!border-slate-300 hover:!bg-white/80 hover:!text-slate-700 hover:!shadow-[0_4px_12px_rgba(15,23,42,0.05)] disabled:!cursor-not-allowed disabled:!border-slate-200 disabled:!bg-slate-100 disabled:!text-slate-400 disabled:!shadow-none"
+                        className={actionButtonClass}
                       >
                         运行
                       </Button>
@@ -105,15 +135,84 @@ export default function CustomWorkflow({
                       icon={<SendOutlined />}
                       onClick={handleSave}
                       loading={publishLoading}
-                      className="!inline-flex !h-[34px] !items-center !justify-center !rounded-full !border !border-slate-200 !bg-slate-50 !px-3.5 !text-[13px] !font-medium !text-slate-500 transition-colors duration-200 hover:!border-slate-300 hover:!bg-white/80 hover:!text-slate-700 hover:!shadow-[0_4px_12px_rgba(15,23,42,0.05)]"
+                      className={actionButtonClass}
                     >
                       发布
                     </Button>
+
+                    <Popover
+                      open={previewOpen}
+                      placement="leftTop"
+                      trigger="click"
+                      overlayClassName="st-hocon-popover"
+                      content={
+                        <div className="w-[700px]">
+                          <CodeBlockWithCopy
+                            content={previewContent}
+                            height={670}
+                            title="HOCON Preview"
+                            onClose={() => setPreviewOpen(false)}
+                          />
+                        </div>
+                      }
+                    >
+                      <div
+                        className={actionChipClass}
+                        onClick={handlePreview}
+                        role="button"
+                        tabIndex={0}
+                      >
+                        <Eye
+                          size={15}
+                          strokeWidth={1.9}
+                          className={previewLoading ? "animate-spin" : ""}
+                        />
+                        <span className="ml-1">预览</span>
+                      </div>
+                    </Popover>
+
+                    {hoconContent?.trim() ? (
+                      <Popconfirm
+                        title="重新生成模板"
+                        description="重新生成将覆盖当前编辑器内容，是否继续？"
+                        okText="覆盖"
+                        cancelText="取消"
+                        placement="bottomRight"
+                        onConfirm={handleReloadTemplate}
+                      >
+                        <div
+                          className={actionChipClass}
+                          role="button"
+                          tabIndex={0}
+                        >
+                          <RefreshCw
+                            size={15}
+                            strokeWidth={1.9}
+                            className={templateLoading ? "animate-spin" : ""}
+                          />
+                          <span className="ml-1">模板</span>
+                        </div>
+                      </Popconfirm>
+                    ) : (
+                      <div
+                        className={actionChipClass}
+                        onClick={handleReloadTemplate}
+                        role="button"
+                        tabIndex={0}
+                      >
+                        <RefreshCw
+                          size={15}
+                          strokeWidth={1.9}
+                          className={templateLoading ? "animate-spin" : ""}
+                        />
+                        <span className="ml-1">模板</span>
+                      </div>
+                    )}
                   </Space>
                 </div>
 
-                <div className="min-h-0 flex-1 bg-white [background:radial-gradient(circle_at_top_left,rgba(78,116,248,0.04),transparent_22%),#ffffff]">
-                  <div className="h-full" style={{padding: 16}}>
+                <div className="min-h-0 flex-1 bg-white p-[18px] [background:radial-gradient(circle_at_top_left,rgba(78,116,248,0.04),transparent_22%),#ffffff]">
+                  <div className="h-full overflow-hidden rounded-2xl border border-slate-100 bg-white p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
                     <HoconEditorPanel
                       value={hoconContent}
                       onChange={setHoconContent}
@@ -123,23 +222,25 @@ export default function CustomWorkflow({
               </div>
             </div>
 
-            <div
-              className="relative flex w-[14px] shrink-0 cursor-col-resize items-center justify-center bg-transparent transition-colors duration-200 hover:bg-[rgba(49,94,251,0.04)]"
-              onMouseDown={handleResizeStart}
-              role="separator"
-              aria-orientation="vertical"
-              aria-label="调整左右面板宽度"
-            >
-              <div className="h-full w-px bg-slate-200 transition-colors duration-200" />
-              <div className="absolute left-1/2 top-1/2 flex h-[46px] w-5 -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center gap-1 rounded-full border border-slate-200 bg-white opacity-90 shadow-sm transition-all duration-200 hover:scale-100 hover:opacity-100 hover:shadow-[0_10px_28px_rgba(15,23,42,0.1)]">
-                <span className="block h-1 w-1 rounded-full bg-slate-400" />
-                <span className="block h-1 w-1 rounded-full bg-slate-400" />
+            {activeTab && (
+              <div
+                className="relative flex w-[20px] shrink-0 cursor-col-resize items-center justify-center bg-transparent transition-colors duration-100 hover:bg-[rgba(49,94,251,0.04)]"
+                onMouseDown={handleResizeStart}
+                role="separator"
+                aria-orientation="vertical"
+                aria-label="调整左右面板宽度"
+              >
+                <div className="h-full w-px bg-slate-200 transition-colors duration-100" />
+                <div className="absolute left-1/2 top-1/2 flex h-[46px] w-5 -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center gap-1 rounded-full border border-slate-200 bg-white opacity-90 shadow-sm transition-all duration-200 hover:opacity-100 hover:shadow-[0_10px_28px_rgba(15,23,42,0.1)]">
+                  <span className="block h-1 w-1 rounded-full bg-slate-400" />
+                  <span className="block h-1 w-1 rounded-full bg-slate-400" />
+                </div>
               </div>
-            </div>
+            )}
 
             <div
-              className="h-full min-w-[320px] max-w-[520px] shrink-0 overflow-hidden"
-              style={{ width: rightWidth }}
+              className="h-full shrink-0 overflow-hidden"
+              style={{ width: activeTab ? rightWidth : 58 }}
             >
               <RightConfigPanel
                 activeTab={activeTab}
@@ -149,6 +250,8 @@ export default function CustomWorkflow({
                 setBasicConfig={setBasicConfig}
                 scheduleConfig={scheduleConfig}
                 setScheduleConfig={setScheduleConfig}
+                envConfig={envConfig}
+                setEnvConfig={setEnvConfig}
               />
             </div>
           </div>

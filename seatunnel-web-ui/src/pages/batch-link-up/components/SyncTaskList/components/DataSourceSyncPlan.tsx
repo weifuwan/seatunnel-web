@@ -228,7 +228,7 @@ const DataSourceSyncPlan: React.FC<DataSourceSyncPlanProps> = ({ record }) => {
                 gap: 8,
                 padding: "6px 8px",
                 borderRadius: 8,
-                background: "#f8fafc",
+                background: "#f5f7ff",
                 color: "rgba(0,0,0,0.74)",
                 fontSize: 12,
                 lineHeight: "18px",

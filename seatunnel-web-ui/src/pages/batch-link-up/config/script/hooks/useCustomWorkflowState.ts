@@ -1,5 +1,5 @@
 import { message, Modal } from "antd";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { seatunnelJobDefinitionApi } from "@/pages/batch-link-up/api";
 import { hoconTemplateApi } from "../hoconTemplateApi";
 
@@ -8,15 +8,25 @@ interface UseCustomWorkflowStateProps {
   setParams: React.Dispatch<React.SetStateAction<any>>;
   basicConfig: any;
   scheduleConfig: any;
+  envConfig: any;
 }
+
+const stableStringify = (value: any) => {
+  try {
+    return JSON.stringify(value ?? {});
+  } catch (error) {
+    return "";
+  }
+};
 
 export function useCustomWorkflowState({
   params,
   setParams,
   basicConfig,
   scheduleConfig,
+  envConfig,
 }: UseCustomWorkflowStateProps) {
-  const [activeTab, setActiveTab] = useState<any>("basic");
+  const [activeTab, setActiveTab] = useState<any>(null);
   const [hoconContent, setHoconContent] = useState<string>("");
 
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -27,12 +37,13 @@ export function useCustomWorkflowState({
   const [publishedJobDefineId, setPublishedJobDefineId] = useState<
     number | string | undefined
   >(params?.id);
+
   const [publishLoading, setPublishLoading] = useState(false);
   const [runLoading, setRunLoading] = useState(false);
-  const [isDirty, setIsDirty] = useState(false);
 
-  const initializedRef = useRef(false);
+  const initializingRef = useRef(false);
   const contentInitializedRef = useRef(false);
+  const baselineSignatureRef = useRef("");
 
   useEffect(() => {
     if (params?.id) {
@@ -40,36 +51,7 @@ export function useCustomWorkflowState({
     }
   }, [params?.id]);
 
-  useEffect(() => {
-    if (contentInitializedRef.current) return;
-    if (!params) return;
-
-    const initialContent =
-      params?.workflow?.hoconContent ||
-      params?.jobDefinitionInfo?.hoconContent ||
-      params?.hoconContent ||
-      "";
-
-    if (initialContent?.trim()) {
-      setHoconContent(initialContent);
-      contentInitializedRef.current = true;
-      return;
-    }
-
-    contentInitializedRef.current = true;
-    void loadTemplate();
-  }, [params]);
-
-  useEffect(() => {
-    if (!initializedRef.current) {
-      initializedRef.current = true;
-      return;
-    }
-
-    setIsDirty(true);
-  }, [basicConfig, scheduleConfig, hoconContent]);
-
-  const loadTemplate = async () => {
+  const loadTemplate = useCallback(async () => {
     const sourceDbType = basicConfig?.sourceType;
     const sourcePluginName = basicConfig?.sourcePluginName;
     const targetDbType = basicConfig?.targetType;
@@ -101,9 +83,41 @@ export function useCustomWorkflowState({
     } finally {
       setTemplateLoading(false);
     }
-  };
+  }, [
+    basicConfig?.sourceType,
+    basicConfig?.sourcePluginName,
+    basicConfig?.targetType,
+    basicConfig?.targetPluginName,
+  ]);
 
-  const buildFinalPayload = () => {
+  useEffect(() => {
+    if (contentInitializedRef.current) return;
+    if (!params) return;
+
+    initializingRef.current = true;
+
+    const initialContent =
+      params?.workflow?.hoconContent ||
+      params?.content?.hoconContent ||
+      params?.jobDefinitionInfo?.hoconContent ||
+      params?.hoconContent ||
+      "";
+
+    if (initialContent?.trim()) {
+      setHoconContent(initialContent);
+      contentInitializedRef.current = true;
+      initializingRef.current = false;
+      return;
+    }
+
+    contentInitializedRef.current = true;
+
+    loadTemplate().finally(() => {
+      initializingRef.current = false;
+    });
+  }, [params, loadTemplate]);
+
+  const buildFinalPayload = useCallback(() => {
     return {
       id: params?.id ?? publishedJobDefineId,
       basic: {
@@ -118,17 +132,71 @@ export function useCustomWorkflowState({
         ...scheduleConfig,
       },
       env: {
-        jobMode: "BATCH",
-        parallelism: 1,
+        ...envConfig,
       },
     };
-  };
+  }, [
+    params?.id,
+    publishedJobDefineId,
+    basicConfig,
+    hoconContent,
+    scheduleConfig,
+    envConfig,
+  ]);
+
+  const currentSignature = useMemo(() => {
+    return stableStringify({
+      basic: {
+        ...basicConfig,
+        mode: "SCRIPT",
+      },
+      content: {
+        scriptType: "HOCON",
+        hoconContent,
+      },
+      schedule: scheduleConfig,
+      env: envConfig,
+    });
+  }, [basicConfig, hoconContent, scheduleConfig, envConfig]);
+
+  const isDirty =
+    !!publishedJobDefineId &&
+    !!baselineSignatureRef.current &&
+    currentSignature !== baselineSignatureRef.current;
+
+  useEffect(() => {
+    if (!params?.id && !publishedJobDefineId) {
+      baselineSignatureRef.current = "";
+      return;
+    }
+
+    if (!initializingRef.current && !baselineSignatureRef.current) {
+      baselineSignatureRef.current = currentSignature;
+    }
+  }, [params?.id, publishedJobDefineId, currentSignature]);
+
+  const resetBaseline = useCallback(() => {
+    baselineSignatureRef.current = currentSignature;
+  }, [currentSignature]);
 
   const validateBeforeSubmit = async () => {
+    if (!basicConfig?.jobName?.trim()) {
+      message.warning("请先填写任务名称");
+      setActiveTab("basic");
+      return false;
+    }
+
+    if (!basicConfig?.clientId) {
+      message.warning("请选择运行客户端");
+      setActiveTab("basic");
+      return false;
+    }
+
     if (!hoconContent?.trim()) {
       message.warning("请先填写 HOCON 配置");
       return false;
     }
+
     return true;
   };
 
@@ -140,23 +208,11 @@ export function useCustomWorkflowState({
       !basicConfig?.targetPluginName
     ) {
       message.warning("请先完成来源和目标类型配置");
+      setActiveTab("basic");
       return;
     }
 
-    if (!hoconContent?.trim()) {
-      await loadTemplate();
-      return;
-    }
-
-    Modal.confirm({
-      title: "重新生成模板",
-      content: "重新生成将覆盖当前编辑器内容，是否继续？",
-      okText: "覆盖",
-      cancelText: "取消",
-      onOk: async () => {
-        await loadTemplate();
-      },
-    });
+    await loadTemplate();
   };
 
   const handleSave = async () => {
@@ -175,7 +231,6 @@ export function useCustomWorkflowState({
 
       if (jobDefineId) {
         setPublishedJobDefineId(jobDefineId);
-        setIsDirty(false);
 
         setParams((prev: any) => ({
           ...(prev || {}),
@@ -184,14 +239,23 @@ export function useCustomWorkflowState({
             ...(prev?.workflow || {}),
             hoconContent,
           },
+          content: {
+            ...(prev?.content || {}),
+            scriptType: "HOCON",
+            hoconContent,
+          },
           hoconContent,
+          scheduleConfig,
+          env: envConfig,
         }));
+
+        resetBaseline();
       }
 
       message.success("发布成功");
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      message.error("发布失败");
+      message.error(error?.message || "发布失败");
     } finally {
       setPublishLoading(false);
     }
@@ -203,14 +267,17 @@ export function useCustomWorkflowState({
       if (!pass) return;
 
       setPreviewLoading(true);
+
       const finalPayload = buildFinalPayload();
-      const res = await seatunnelJobDefinitionApi.buildScriptConfig(finalPayload);
+      const res = await seatunnelJobDefinitionApi.buildScriptConfig(
+        finalPayload
+      );
 
       setPreviewContent(res?.data || hoconContent);
       setPreviewOpen(true);
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      message.error("预览失败");
+      message.error(error?.message || "预览失败");
     } finally {
       setPreviewLoading(false);
     }
@@ -222,8 +289,8 @@ export function useCustomWorkflowState({
   const runDisabledReason = !publishedJobDefineId
     ? "请先发布任务，再执行"
     : isDirty
-    ? "当前内容已变更，请重新发布后再执行"
-    : "";
+      ? "当前内容已变更，请重新发布后再执行"
+      : "";
 
   const handleRun = async () => {
     const pass = await validateBeforeSubmit();
@@ -239,8 +306,19 @@ export function useCustomWorkflowState({
       return;
     }
 
-    // 这里先占位，后续接你的 RunLog / execute API
-    message.success("运行校验通过，可继续接入执行逻辑");
+    try {
+      setRunLoading(true);
+
+      // TODO: 后续接入真正执行接口 / RunLog。
+      // await seatunnelJobDefinitionApi.execute(publishedJobDefineId);
+
+      message.success("运行校验通过，可继续接入执行逻辑");
+    } catch (error: any) {
+      console.error(error);
+      message.error(error?.message || "运行失败");
+    } finally {
+      setRunLoading(false);
+    }
   };
 
   return {
@@ -267,5 +345,8 @@ export function useCustomWorkflowState({
     handlePreview,
     handleReloadTemplate,
     handleRun,
+
+    buildFinalPayload,
+    resetBaseline,
   };
 }

@@ -1,7 +1,11 @@
 import { ArrowLeftOutlined, SendOutlined } from "@ant-design/icons";
 import { Button, Form, Popover, Space, Tooltip } from "antd";
 import { Blocks, Eye, PlayCircle } from "lucide-react";
+import React from "react";
 
+import {
+  EnvConfig,
+} from "../../workflow/components/ScheduleConfigContent/types";
 import CodeBlockWithCopy from "../../workflow/operator/CodeBlockWithCopy";
 import RightConfigPanel from "../../workflow/RightConfigPanel";
 import WholeSyncForm from "./components/MultiSyncForm";
@@ -14,6 +18,8 @@ import { MultiWorkflowProps } from "./types";
 
 type EnhancedMultiWorkflowProps = MultiWorkflowProps & {
   setParams: React.Dispatch<React.SetStateAction<any>>;
+  envConfig: EnvConfig;
+  setEnvConfig: React.Dispatch<React.SetStateAction<EnvConfig>>;
 };
 
 export default function MultiWorkflow({
@@ -24,6 +30,8 @@ export default function MultiWorkflow({
   setBasicConfig,
   scheduleConfig,
   setScheduleConfig,
+  envConfig,
+  setEnvConfig,
 }: EnhancedMultiWorkflowProps) {
   const [form] = Form.useForm();
 
@@ -32,6 +40,7 @@ export default function MultiWorkflow({
   const {
     activeTab,
     setActiveTab,
+
     loading,
     sourceOption,
     targetOption,
@@ -63,7 +72,8 @@ export default function MultiWorkflow({
     setParams,
     basicConfig,
     scheduleConfig,
-  });
+    envConfig,
+  } as any);
 
   const actionButtonClass =
     "!inline-flex !h-[34px] !items-center !justify-center !rounded-full !border !border-slate-200 !bg-slate-50 !px-3.5 !text-[13px] !font-medium !text-slate-500 transition-colors duration-200 hover:!border-slate-300 hover:!bg-white/80 hover:!text-slate-700 hover:!shadow-[0_4px_12px_rgba(15,23,42,0.05)] disabled:!cursor-not-allowed disabled:!border-slate-200 disabled:!bg-slate-100 disabled:!text-slate-400 disabled:!shadow-none";
@@ -209,23 +219,25 @@ export default function MultiWorkflow({
               </div>
             </div>
 
-            <div
-              className="relative flex w-[14px] shrink-0 cursor-col-resize items-center justify-center bg-transparent transition-colors duration-200 hover:bg-[rgba(49,94,251,0.04)]"
-              onMouseDown={handleResizeStart}
-              role="separator"
-              aria-orientation="vertical"
-              aria-label="调整左右面板宽度"
-            >
-              <div className="h-full w-px bg-slate-200 transition-colors duration-200" />
-              <div className="absolute left-1/2 top-1/2 flex h-[46px] w-5 -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center gap-1 rounded-full border border-slate-200 bg-white opacity-90 shadow-sm transition-all duration-200 hover:scale-100 hover:opacity-100 hover:shadow-[0_10px_28px_rgba(15,23,42,0.1)]">
-                <span className="block h-1 w-1 rounded-full bg-slate-400" />
-                <span className="block h-1 w-1 rounded-full bg-slate-400" />
+            {activeTab && (
+              <div
+                className="relative flex w-[20px] shrink-0 cursor-col-resize items-center justify-center bg-transparent transition-colors duration-100 hover:bg-[rgba(49,94,251,0.04)]"
+                onMouseDown={handleResizeStart}
+                role="separator"
+                aria-orientation="vertical"
+                aria-label="调整左右面板宽度"
+              >
+                <div className="h-full w-px bg-slate-200 transition-colors duration-100" />
+                <div className="absolute left-1/2 top-1/2 flex h-[46px] w-5 -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center gap-1 rounded-full border border-slate-200 bg-white opacity-90 shadow-sm transition-all duration-200 hover:scale-100 hover:opacity-100 hover:shadow-[0_10px_28px_rgba(15,23,42,0.1)]">
+                  <span className="block h-1 w-1 rounded-full bg-slate-400" />
+                  <span className="block h-1 w-1 rounded-full bg-slate-400" />
+                </div>
               </div>
-            </div>
+            )}
 
             <div
-              className="h-full min-w-[320px] max-w-[520px] shrink-0 overflow-hidden"
-              style={{ width: rightWidth }}
+              className="h-full shrink-0 overflow-hidden"
+              style={{ width: activeTab ? rightWidth : 58 }}
             >
               <RightConfigPanel
                 activeTab={activeTab}
@@ -235,6 +247,8 @@ export default function MultiWorkflow({
                 setBasicConfig={setBasicConfig}
                 scheduleConfig={scheduleConfig}
                 setScheduleConfig={setScheduleConfig}
+                envConfig={envConfig}
+                setEnvConfig={setEnvConfig}
               />
             </div>
           </div>

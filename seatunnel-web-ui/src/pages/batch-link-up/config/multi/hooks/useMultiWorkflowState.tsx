@@ -21,6 +21,7 @@ interface UseMultiWorkflowStateProps {
   setParams: React.Dispatch<React.SetStateAction<any>>;
   basicConfig: any;
   scheduleConfig: any;
+  envConfig: any;
 }
 
 const resolveWorkflow = (params?: any) => {
@@ -29,32 +30,42 @@ const resolveWorkflow = (params?: any) => {
 
 const resolveSourceType = (params?: any, fallback?: any) => {
   const workflow = resolveWorkflow(params);
-  return (
-    params?.sourceType ||
-    workflow?.sourceType ||
-    {
+
+  if (params?.sourceType) return params.sourceType;
+  if (workflow?.sourceType) return workflow.sourceType;
+  if (workflow?.source?.dbType) {
+    return {
       dbType: workflow?.source?.dbType,
       connectorType: workflow?.source?.connectorType,
       pluginName: workflow?.source?.pluginName,
-    } ||
-    fallback ||
-    DEFAULT_DB_TYPE
-  );
+    };
+  }
+
+  return fallback || DEFAULT_DB_TYPE;
 };
 
 const resolveTargetType = (params?: any, fallback?: any) => {
   const workflow = resolveWorkflow(params);
-  return (
-    params?.targetType ||
-    workflow?.targetType ||
-    {
+
+  if (params?.targetType) return params.targetType;
+  if (workflow?.targetType) return workflow.targetType;
+  if (workflow?.target?.dbType) {
+    return {
       dbType: workflow?.target?.dbType,
       connectorType: workflow?.target?.connectorType,
       pluginName: workflow?.target?.pluginName,
-    } ||
-    fallback ||
-    DEFAULT_DB_TYPE
-  );
+    };
+  }
+
+  return fallback || DEFAULT_DB_TYPE;
+};
+
+const stableStringify = (value: any) => {
+  try {
+    return JSON.stringify(value ?? {});
+  } catch (error) {
+    return "";
+  }
 };
 
 export function useMultiWorkflowState({
@@ -63,8 +74,9 @@ export function useMultiWorkflowState({
   setParams,
   basicConfig,
   scheduleConfig,
+  envConfig,
 }: UseMultiWorkflowStateProps) {
-  const [activeTab, setActiveTab] = useState<RightPanelTab>("basic");
+  const [activeTab, setActiveTab] = useState<any>(null);
 
   const [loading, setLoading] = useState(false);
 
@@ -94,32 +106,18 @@ export function useMultiWorkflowState({
   const [publishedJobDefineId, setPublishedJobDefineId] = useState<
     number | string | undefined
   >(params?.id);
+
   const [publishLoading, setPublishLoading] = useState(false);
   const [runLoading, setRunLoading] = useState(false);
-  const [isDirty, setIsDirty] = useState(false);
 
-  const initializedRef = useRef(false);
+  const initializingRef = useRef(false);
+  const baselineSignatureRef = useRef("");
 
   useEffect(() => {
     if (params?.id) {
       setPublishedJobDefineId(params.id);
     }
   }, [params?.id]);
-
-  useEffect(() => {
-    if (!initializedRef.current) {
-      initializedRef.current = true;
-      return;
-    }
-
-    setIsDirty(true);
-  }, [
-    basicConfig,
-    scheduleConfig,
-    matchMode,
-    tableKeyword,
-    multiTableList,
-  ]);
 
   const fetchDataSourceOptionsU = useCallback(async (dbType: string) => {
     const res = await fetchDataSourceOptions(dbType);
@@ -166,6 +164,7 @@ export function useMultiWorkflowState({
 
       try {
         setLoading(true);
+
         const res = await dataSourceCatalogApi.listTableReference(
           dataSourceId,
           mode,
@@ -195,172 +194,7 @@ export function useMultiWorkflowState({
     [fetchReferenceTables]
   );
 
-  useEffect(() => {
-    let mounted = true;
-
-    const init = async () => {
-      const workflow = resolveWorkflow(params);
-
-      const nextSourceType = resolveSourceType(params, sourceType);
-      const nextTargetType = resolveTargetType(params, targetType);
-
-      const sourceDbType = nextSourceType?.dbType || "MYSQL";
-      const targetDbType = nextTargetType?.dbType || "MYSQL";
-
-      const [sourceOptions, targetOptions] = await Promise.all([
-        fetchDataSourceOptionsU(sourceDbType),
-        fetchDataSourceOptionsU(targetDbType),
-      ]);
-
-      if (!mounted) return;
-
-      setSourceOption(sourceOptions);
-      setTargetOption(targetOptions);
-
-      const sourceId = Number(
-        params?.sourceDataSourceId ||
-          workflow?.sourceDataSourceId ||
-          workflow?.sourceId ||
-          workflow?.source?.datasourceId
-      );
-
-      const sinkId = Number(
-        params?.targetDataSourceId ||
-          workflow?.targetDataSourceId ||
-          workflow?.targetId ||
-          workflow?.target?.datasourceId
-      );
-
-      const nextMatchMode =
-        workflow?.tableMatch?.mode || DEFAULT_FORM_VALUES.matchMode;
-
-      const nextKeyword = workflow?.tableMatch?.keyword || "";
-      const nextMultiTableList = workflow?.tableMatch?.tables || [];
-
-      setMatchMode(nextMatchMode);
-      setTableKeyword(nextKeyword);
-      setCurrentSourceId(String(sourceId || ""));
-
-      form.setFieldsValue({
-        sourceId,
-        sinkId,
-        matchMode: nextMatchMode,
-        sourceTable: nextKeyword,
-
-        fetchSize:
-          workflow?.source?.fetchSize ?? DEFAULT_FORM_VALUES.fetchSize,
-
-        splitSize:
-          workflow?.source?.splitSize ?? DEFAULT_FORM_VALUES.splitSize,
-
-        schemaSaveMode:
-          workflow?.target?.schemaSaveMode ??
-          DEFAULT_FORM_VALUES.schemaSaveMode,
-
-        dataSaveMode:
-          workflow?.target?.dataSaveMode ?? DEFAULT_FORM_VALUES.dataSaveMode,
-
-        batchSize:
-          workflow?.target?.batchSize ?? DEFAULT_FORM_VALUES.batchSize,
-
-        enableUpsert:
-          workflow?.target?.enableUpsert ?? DEFAULT_FORM_VALUES.enableUpsert,
-
-        fieldIde:
-          workflow?.target?.fieldIde ?? DEFAULT_FORM_VALUES.fieldIde,
-      });
-
-      if (sourceId) {
-        if (nextMatchMode === "1") {
-          await fetchTables(String(sourceId), "1");
-          setMultiTableList(nextMultiTableList);
-        } else if (nextMatchMode === "4") {
-          await fetchTables(String(sourceId), "4");
-        } else if (nextMatchMode === "2" || nextMatchMode === "3") {
-          if (nextKeyword) {
-            await fetchReferenceTables(
-              String(sourceId),
-              nextMatchMode,
-              nextKeyword
-            );
-          }
-        }
-      }
-
-      setIsDirty(false);
-    };
-
-    init();
-
-    return () => {
-      mounted = false;
-      debouncedFetchReferenceTables.cancel();
-    };
-  }, [
-    params,
-    form,
-    sourceType,
-    targetType,
-    fetchDataSourceOptionsU,
-    fetchTables,
-    fetchReferenceTables,
-    debouncedFetchReferenceTables,
-  ]);
-
-  const handleSourceIdChange = async (value: string) => {
-    setCurrentSourceId(value);
-    setIsDirty(true);
-
-    if (matchMode === "1" || matchMode === "4") {
-      await fetchTables(value, matchMode);
-      setReadOnlyTables([]);
-      return;
-    }
-
-    if (tableKeyword) {
-      await fetchReferenceTables(value, matchMode, tableKeyword);
-    }
-  };
-
-  const handleMatchModeChange = async (value: string) => {
-    setMatchMode(value);
-    setIsDirty(true);
-    form.setFieldValue("matchMode", value);
-
-    if (!currentSourceId) return;
-
-    if (value === "1" || value === "4") {
-      setReadOnlyTables([]);
-      await fetchTables(currentSourceId, value);
-      return;
-    }
-
-    setTableData([]);
-    setMultiTableList([]);
-
-    if (tableKeyword) {
-      await fetchReferenceTables(currentSourceId, value, tableKeyword);
-    } else {
-      setReadOnlyTables([]);
-    }
-  };
-
-  const handleKeywordChange = (value: string) => {
-    const keyword = value.trim();
-
-    setTableKeyword(keyword);
-    setIsDirty(true);
-
-    if (!keyword) {
-      setReadOnlyTables([]);
-      return;
-    }
-
-    if (!currentSourceId) return;
-    debouncedFetchReferenceTables(currentSourceId, matchMode, keyword);
-  };
-
-  const buildWorkflowData = () => {
+  const buildWorkflowData = useCallback(() => {
     const formValues = form.getFieldsValue();
 
     return {
@@ -392,9 +226,16 @@ export function useMultiWorkflowState({
           matchMode === "2" || matchMode === "3" ? tableKeyword : undefined,
       },
     };
-  };
+  }, [
+    form,
+    sourceType,
+    targetType,
+    matchMode,
+    multiTableList,
+    tableKeyword,
+  ]);
 
-  const buildFinalPayload = () => {
+  const buildFinalPayload = useCallback(() => {
     return {
       id: params?.id ?? publishedJobDefineId,
       basic: {
@@ -406,10 +247,227 @@ export function useMultiWorkflowState({
         ...scheduleConfig,
       },
       env: {
-        jobMode: "BATCH",
-        parallelism: 1,
+        ...envConfig,
       },
     };
+  }, [
+    params?.id,
+    publishedJobDefineId,
+    basicConfig,
+    scheduleConfig,
+    envConfig,
+    buildWorkflowData,
+  ]);
+
+  const currentSignature = useMemo(() => {
+    return stableStringify({
+      basic: {
+        ...basicConfig,
+        mode: "GUIDE_MULTI",
+      },
+      content: buildWorkflowData(),
+      schedule: scheduleConfig,
+      env: envConfig,
+    });
+  }, [basicConfig, scheduleConfig, envConfig, buildWorkflowData]);
+
+  const isDirty =
+    !!publishedJobDefineId &&
+    !!baselineSignatureRef.current &&
+    currentSignature !== baselineSignatureRef.current;
+
+  useEffect(() => {
+    let mounted = true;
+
+    const init = async () => {
+      try {
+        initializingRef.current = true;
+
+        const workflow = resolveWorkflow(params);
+
+        const nextSourceType = resolveSourceType(params, sourceType);
+        const nextTargetType = resolveTargetType(params, targetType);
+
+        const sourceDbType = nextSourceType?.dbType || "MYSQL";
+        const targetDbType = nextTargetType?.dbType || "MYSQL";
+
+        const [sourceOptions, targetOptions] = await Promise.all([
+          fetchDataSourceOptionsU(sourceDbType),
+          fetchDataSourceOptionsU(targetDbType),
+        ]);
+
+        if (!mounted) return;
+
+        setSourceOption(sourceOptions);
+        setTargetOption(targetOptions);
+
+        const sourceId = Number(
+          params?.sourceDataSourceId ||
+            workflow?.sourceDataSourceId ||
+            workflow?.sourceId ||
+            workflow?.source?.datasourceId
+        );
+
+        const sinkId = Number(
+          params?.targetDataSourceId ||
+            workflow?.targetDataSourceId ||
+            workflow?.targetId ||
+            workflow?.target?.datasourceId
+        );
+
+        const nextMatchMode =
+          workflow?.tableMatch?.mode || DEFAULT_FORM_VALUES.matchMode;
+
+        const nextKeyword = workflow?.tableMatch?.keyword || "";
+        const nextMultiTableList = workflow?.tableMatch?.tables || [];
+
+        setMatchMode(nextMatchMode);
+        setTableKeyword(nextKeyword);
+        setCurrentSourceId(String(sourceId || ""));
+
+        form.setFieldsValue({
+          sourceId,
+          sinkId,
+          matchMode: nextMatchMode,
+          sourceTable: nextKeyword,
+
+          fetchSize:
+            workflow?.source?.fetchSize ?? DEFAULT_FORM_VALUES.fetchSize,
+
+          splitSize:
+            workflow?.source?.splitSize ?? DEFAULT_FORM_VALUES.splitSize,
+
+          schemaSaveMode:
+            workflow?.target?.schemaSaveMode ??
+            DEFAULT_FORM_VALUES.schemaSaveMode,
+
+          dataSaveMode:
+            workflow?.target?.dataSaveMode ?? DEFAULT_FORM_VALUES.dataSaveMode,
+
+          batchSize:
+            workflow?.target?.batchSize ?? DEFAULT_FORM_VALUES.batchSize,
+
+          enableUpsert:
+            workflow?.target?.enableUpsert ?? DEFAULT_FORM_VALUES.enableUpsert,
+
+          fieldIde:
+            workflow?.target?.fieldIde ?? DEFAULT_FORM_VALUES.fieldIde,
+        });
+
+        if (sourceId) {
+          if (nextMatchMode === "1") {
+            await fetchTables(String(sourceId), "1");
+            if (mounted) {
+              setMultiTableList(nextMultiTableList);
+            }
+          } else if (nextMatchMode === "4") {
+            await fetchTables(String(sourceId), "4");
+          } else if (nextMatchMode === "2" || nextMatchMode === "3") {
+            if (nextKeyword) {
+              await fetchReferenceTables(
+                String(sourceId),
+                nextMatchMode,
+                nextKeyword
+              );
+            }
+          }
+        }
+      } finally {
+        if (mounted) {
+          initializingRef.current = false;
+        }
+      }
+    };
+
+    init();
+
+    return () => {
+      mounted = false;
+      debouncedFetchReferenceTables.cancel();
+    };
+  }, [
+    params?.id,
+    form,
+    sourceType,
+    targetType,
+    fetchDataSourceOptionsU,
+    fetchTables,
+    fetchReferenceTables,
+    debouncedFetchReferenceTables,
+  ]);
+
+  useEffect(() => {
+    if (!params?.id && !publishedJobDefineId) {
+      baselineSignatureRef.current = "";
+      return;
+    }
+
+    if (!initializingRef.current && !baselineSignatureRef.current) {
+      baselineSignatureRef.current = currentSignature;
+    }
+  }, [params?.id, publishedJobDefineId, currentSignature]);
+
+  const resetBaseline = useCallback(() => {
+    baselineSignatureRef.current = stableStringify({
+      basic: {
+        ...basicConfig,
+        mode: "GUIDE_MULTI",
+      },
+      content: buildWorkflowData(),
+      schedule: scheduleConfig,
+      env: envConfig,
+    });
+  }, [basicConfig, scheduleConfig, envConfig, buildWorkflowData]);
+
+  const handleSourceIdChange = async (value: string) => {
+    setCurrentSourceId(value);
+
+    if (matchMode === "1" || matchMode === "4") {
+      await fetchTables(value, matchMode);
+      setReadOnlyTables([]);
+      return;
+    }
+
+    if (tableKeyword) {
+      await fetchReferenceTables(value, matchMode, tableKeyword);
+    }
+  };
+
+  const handleMatchModeChange = async (value: string) => {
+    setMatchMode(value);
+    form.setFieldValue("matchMode", value);
+
+    if (!currentSourceId) return;
+
+    if (value === "1" || value === "4") {
+      setReadOnlyTables([]);
+      await fetchTables(currentSourceId, value);
+      return;
+    }
+
+    setTableData([]);
+    setMultiTableList([]);
+
+    if (tableKeyword) {
+      await fetchReferenceTables(currentSourceId, value, tableKeyword);
+    } else {
+      setReadOnlyTables([]);
+    }
+  };
+
+  const handleKeywordChange = (value: string) => {
+    const keyword = value.trim();
+
+    setTableKeyword(keyword);
+
+    if (!keyword) {
+      setReadOnlyTables([]);
+      return;
+    }
+
+    if (!currentSourceId) return;
+
+    debouncedFetchReferenceTables(currentSourceId, matchMode, keyword);
   };
 
   const validateBeforeSubmit = async () => {
@@ -452,7 +510,6 @@ export function useMultiWorkflowState({
 
       if (jobDefineId) {
         setPublishedJobDefineId(jobDefineId);
-        setIsDirty(false);
 
         setParams((prev: any) => ({
           ...(prev || {}),
@@ -461,13 +518,22 @@ export function useMultiWorkflowState({
           content: workflowData,
           sourceDataSourceId: workflowData.source.datasourceId,
           targetDataSourceId: workflowData.target.datasourceId,
+          scheduleConfig,
+          env: envConfig,
         }));
+
+        baselineSignatureRef.current = stableStringify({
+          basic: finalPayload.basic,
+          content: workflowData,
+          schedule: finalPayload.schedule,
+          env: finalPayload.env,
+        });
       }
 
       message.success("发布成功");
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      message.error("发布失败");
+      message.error(error?.message || "发布失败");
     } finally {
       setPublishLoading(false);
     }
@@ -487,9 +553,9 @@ export function useMultiWorkflowState({
 
       setPreviewContent(res?.data || "");
       setPreviewOpen(true);
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      message.error("预览失败");
+      message.error(error?.message || "预览失败");
     } finally {
       setPreviewLoading(false);
     }
@@ -501,8 +567,8 @@ export function useMultiWorkflowState({
   const runDisabledReason = !publishedJobDefineId
     ? "请先发布任务，再执行"
     : isDirty
-    ? "当前内容已变更，请重新发布后再执行"
-    : "";
+      ? "当前内容已变更，请重新发布后再执行"
+      : "";
 
   const handleRun = async () => {
     const pass = await validateBeforeSubmit();
@@ -521,13 +587,13 @@ export function useMultiWorkflowState({
     try {
       setRunLoading(true);
 
-      // 这里先和脚本模式保持一致，后续接你的 execute / runLog API。
+      // TODO: 后续接入真正执行接口 / RunLog。
       // await seatunnelJobDefinitionApi.execute(publishedJobDefineId);
 
       message.success("运行校验通过，可继续接入执行逻辑");
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      message.error("运行失败");
+      message.error(error?.message || "运行失败");
     } finally {
       setRunLoading(false);
     }
@@ -568,5 +634,8 @@ export function useMultiWorkflowState({
     handleSave,
     handlePreview,
     handleRun,
+
+    buildFinalPayload,
+    resetBaseline,
   };
 }

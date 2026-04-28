@@ -1,12 +1,14 @@
 import { history, useLocation, useParams } from "@umijs/max";
 import { Empty, message, Spin } from "antd";
 import { useEffect, useState } from "react";
-import MultiWorkflow from "./MultiWorkflow";
 import { seatunnelJobDefinitionApi } from "../../api";
 import {
   BasicConfig,
+  defaultEnvConfig,
+  EnvConfig,
   ScheduleConfig,
 } from "../../workflow/components/ScheduleConfigContent/types";
+import MultiWorkflow from "./MultiWorkflow";
 
 const defaultScheduleConfig: ScheduleConfig = {
   paramsList: [],
@@ -78,7 +80,27 @@ const mergeScheduleConfig = (schedule?: any): ScheduleConfig => {
 const buildInitialScheduleConfigForCreate = (
   rawData?: any
 ): ScheduleConfig => {
-  return mergeScheduleConfig(rawData?.scheduleConfig);
+  return mergeScheduleConfig(rawData?.scheduleConfig || rawData?.schedule);
+};
+
+const buildInitialScheduleConfigForEdit = (
+  editData?: any
+): ScheduleConfig => {
+  return mergeScheduleConfig(editData?.schedule);
+};
+
+const buildInitialEnvConfigForCreate = (rawData?: any): EnvConfig => {
+  return {
+    ...defaultEnvConfig,
+    ...(rawData?.env || rawData?.envConfig || {}),
+  };
+};
+
+const buildInitialEnvConfigForEdit = (editData?: any): EnvConfig => {
+  return {
+    ...defaultEnvConfig,
+    ...(editData?.env || {}),
+  };
 };
 
 const buildInitialBasicConfigForCreate = (rawData?: any): BasicConfig => {
@@ -93,12 +115,6 @@ const buildInitialBasicConfigForCreate = (rawData?: any): BasicConfig => {
     sourceDataSourceId: rawData?.sourceDataSourceId || rawData?.sourceId || "",
     targetDataSourceId: rawData?.targetDataSourceId || rawData?.targetId || "",
   };
-};
-
-const buildInitialScheduleConfigForEdit = (
-  editData?: any
-): ScheduleConfig => {
-  return mergeScheduleConfig(editData?.schedule);
 };
 
 const buildInitialBasicConfigForEdit = (editData?: any): BasicConfig => {
@@ -147,6 +163,7 @@ const buildPageParamsForEdit = (editData?: any) => {
   const workflow = editData?.workflow || {};
   const content = editData?.content || {};
   const schedule = editData?.schedule || {};
+  const env = editData?.env || {};
 
   const source = workflow?.source || content?.source || {};
   const target = workflow?.target || content?.target || {};
@@ -193,6 +210,7 @@ const buildPageParamsForEdit = (editData?: any) => {
     },
     basic,
     content,
+    env,
   };
 };
 
@@ -204,6 +222,7 @@ export default function MultiConfigPage() {
   const [scheduleConfig, setScheduleConfig] = useState<ScheduleConfig>(
     defaultScheduleConfig
   );
+  const [envConfig, setEnvConfig] = useState<EnvConfig>(defaultEnvConfig);
   const [basicConfig, setBasicConfig] =
     useState<BasicConfig>(defaultBasicConfig);
   const [loading, setLoading] = useState(false);
@@ -224,9 +243,11 @@ export default function MultiConfigPage() {
 
       try {
         const data = JSON.parse(cache);
+
         setParams(data);
         setBasicConfig(buildInitialBasicConfigForCreate(data));
         setScheduleConfig(buildInitialScheduleConfigForCreate(data));
+        setEnvConfig(buildInitialEnvConfigForCreate(data));
       } catch (error) {
         console.error("解析缓存失败:", error);
         message.error("读取缓存配置失败");
@@ -246,9 +267,11 @@ export default function MultiConfigPage() {
         }
 
         const data = res.data;
+
         setParams(buildPageParamsForEdit(data));
         setBasicConfig(buildInitialBasicConfigForEdit(data));
         setScheduleConfig(buildInitialScheduleConfigForEdit(data));
+        setEnvConfig(buildInitialEnvConfigForEdit(data));
       } catch (error) {
         console.error(error);
         message.error("获取编辑详情失败");
@@ -305,7 +328,7 @@ export default function MultiConfigPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#ffffff]">
+    <div className="min-h-screen bg-white">
       <MultiWorkflow
         params={params}
         setParams={setParams}
@@ -314,6 +337,8 @@ export default function MultiConfigPage() {
         setBasicConfig={setBasicConfig}
         scheduleConfig={scheduleConfig}
         setScheduleConfig={setScheduleConfig}
+        envConfig={envConfig}
+        setEnvConfig={setEnvConfig}
       />
     </div>
   );

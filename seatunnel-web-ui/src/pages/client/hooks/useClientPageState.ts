@@ -31,7 +31,7 @@ export function useClientPageState() {
 
       const res = await seatunnelClientApi.saveOrUpdate(values);
       if (res.code !== 0) {
-        message.error(res.msg || "创建 Client 失败");
+
         return;
       }
 
@@ -41,7 +41,7 @@ export function useClientPageState() {
       await reloadClients();
     } catch (error: any) {
       if (error?.errorFields) return;
-      message.error(error?.message || "创建 Client 失败");
+
     } finally {
       setConfirmLoading(false);
     }
@@ -58,7 +58,7 @@ export function useClientPageState() {
 
       const res = await seatunnelClientApi.metrics(clientId);
       if (res.code !== 0) {
-        message.error(res.msg || res.message || "获取指标失败");
+
         return;
       }
 
@@ -69,7 +69,7 @@ export function useClientPageState() {
         runningOps: res.data?.runningOps,
       });
     } catch (error: any) {
-      message.error(error?.message || "获取指标失败");
+
       setMetrics({});
     } finally {
       setMetricsLoading(false);

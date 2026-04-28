@@ -31,11 +31,11 @@ export const getTabDefinitions = (
       />
     ),
   },
-  {
-    key: "mapping",
-    label: "映射",
-    content: <MappingConfigContent />,
-  },
+  // {
+  //   key: "mapping",
+  //   label: "映射",
+  //   content: <MappingConfigContent />,
+  // },
   {
     key: "env",
     label: "环境",

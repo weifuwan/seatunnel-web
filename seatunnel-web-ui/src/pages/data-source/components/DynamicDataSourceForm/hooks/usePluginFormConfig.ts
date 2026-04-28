@@ -36,15 +36,10 @@ export function usePluginFormConfig(params: {
 
           if (Object.keys(patch).length) configForm.setFieldsValue(patch);
         } else {
-          message.error(response?.message);
+          
         }
       } catch {
-        message.error(
-          intl.formatMessage({
-            id: "pages.datasource.form.loadConfigFail",
-            defaultMessage: "Failed to load form config",
-          })
-        );
+        
       } finally {
         if (!cancelled) setLoading(false);
       }

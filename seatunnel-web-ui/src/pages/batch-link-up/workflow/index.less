@@ -159,3 +159,53 @@
 
 .sidePanelTabHovered {
 }
+
+:global {
+  .st-hocon-popover {
+    .ant-popover-inner {
+      border-radius: 16px;
+      padding: 0;
+      box-shadow: 0 12px 40px rgba(15, 23, 42, 0.12);
+    }
+
+    .ant-popover-inner-content {
+      padding: 0;
+    }
+
+    .ant-popover-arrow {
+      display: none;
+    }
+  }
+}
+
+:global {
+  /* 整个预览区域的滚动条 */
+  .st-hocon-popover pre,
+  .st-hocon-popover .overflow-auto {
+    scrollbar-width: thin; /* Firefox */
+    scrollbar-color: #cbd5e1 transparent; /* Firefox: thumb track */
+  }
+
+  .st-hocon-popover pre::-webkit-scrollbar,
+  .st-hocon-popover .overflow-auto::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .st-hocon-popover pre::-webkit-scrollbar-track,
+  .st-hocon-popover .overflow-auto::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 999px;
+  }
+
+  .st-hocon-popover pre::-webkit-scrollbar-thumb,
+  .st-hocon-popover .overflow-auto::-webkit-scrollbar-thumb {
+    background: #cbd5e1; // 比现在浅很多
+    border-radius: 999px;
+  }
+
+  .st-hocon-popover pre::-webkit-scrollbar-thumb:hover,
+  .st-hocon-popover .overflow-auto::-webkit-scrollbar-thumb:hover {
+    background: #b6c2d1;
+  }
+}

@@ -55,7 +55,7 @@ export default function DriverLocationField(props: {
         message.success("驱动包上传成功");
         onSuccess?.(data);
       } catch (e: any) {
-        message.error(e?.message || "驱动包上传失败");
+        
         onError?.(e);
       }
     },

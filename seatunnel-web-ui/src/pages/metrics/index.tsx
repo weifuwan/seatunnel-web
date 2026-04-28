@@ -99,7 +99,7 @@ const App: React.FC = () => {
       await Promise.all([refreshSummaryData(), refreshChartData()]);
       setPageReady(true);
     } catch (error: any) {
-      message.error(error?.message || "加载数据失败");
+      
     } finally {
       setLoading(false);
     }

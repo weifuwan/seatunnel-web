@@ -253,7 +253,7 @@ const ActionColumn: React.FC<ActionColumnProps> = ({
             title="任务下线"
             description={
               <div style={{ marginRight: 12 }}>
-                下线后任务将不会再被调度触发，确认下线该任务吗？
+                下线后任务将不会再被调度触发，<br />确认下线该任务吗？
               </div>
             }
             okText="确认"
@@ -267,7 +267,7 @@ const ActionColumn: React.FC<ActionColumnProps> = ({
             title="任务上线"
             description={
               <div style={{ marginRight: 12 }}>
-                上线后任务将恢复可运行状态，并同步恢复调度，确认上线该任务吗？
+                上线后任务将恢复可运行状态，并同步恢复调度，<br />确认上线该任务吗？
               </div>
             }
             okText="确认"

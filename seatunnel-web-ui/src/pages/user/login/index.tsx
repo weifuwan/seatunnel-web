@@ -153,7 +153,7 @@ const Login: React.FC = () => {
         defaultMessage: '登录失败，请重试！',
       });
       
-      message.error(defaultLoginFailureMessage);
+
     }
   };
   const { status, type: loginType } = userLoginState;

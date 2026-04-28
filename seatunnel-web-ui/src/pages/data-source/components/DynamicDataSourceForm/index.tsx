@@ -159,10 +159,10 @@ const DynamicDataSourceForm: React.FC<DynamicDataSourceFormProps> = ({
         message.success("Plugin installed");
         await loadFormConfig();
       } else {
-        message.error(resp?.message || "Install failed");
+        message.error(resp?.msg || "Install failed");
       }
     } catch (e: any) {
-      message.error(e?.message || "Install failed");
+      
     } finally {
       setInstalling(false);
     }

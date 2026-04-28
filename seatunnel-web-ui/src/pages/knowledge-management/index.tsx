@@ -116,7 +116,7 @@ const Index: React.FC = () => {
       setConnectorData(records);
       setConnectorTotal(res?.data?.pagination?.total || 0);
     } catch (error) {
-      message.error("获取 Connector 参数失败");
+   
     } finally {
       setConnectorLoading(false);
     }
@@ -198,7 +198,7 @@ const Index: React.FC = () => {
               loadConnectorData();
             }
           } catch (error) {
-            message.error("删除失败");
+        
           }
           return;
         }

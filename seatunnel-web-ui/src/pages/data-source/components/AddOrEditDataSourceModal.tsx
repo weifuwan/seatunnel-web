@@ -170,7 +170,7 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
       successCallbackRef.current?.();
     } catch (error: any) {
       if (error?.errorFields) return;
-      message.error(error?.message || "Submit failed");
+      
     }
   };
 

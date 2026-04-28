@@ -86,6 +86,7 @@ public class DefaultJobDefinitionCommandResolver implements JobDefinitionCommand
         ScriptJobSaveCommand command = new ScriptJobSaveCommand();
         command.setContent(JSONUtils.parseObject(jobDefinitionContentEntity.getDefinitionContent(), ScriptJobContent.class));
         command.setBasic(buildBasic(definition));
+        command.setId(definition.getId());
         return command;
     }
 

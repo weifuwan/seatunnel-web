@@ -34,27 +34,24 @@ public class JobSubmitter {
     }
 
     public void submit(JobInstanceVO instance) {
-        if (instance == null) {
-            throw new IllegalArgumentException("Job instance must not be null");
-        }
+        validate(instance);
 
         Long instanceId = instance.getId();
+        Long jobDefinitionId = instance.getJobDefinitionId();
+        Long clientId = instance.getClientId();
+
         String hoconConfig = instance.getRuntimeConfig();
         String logPath = instance.getLogPath();
-
-        if (instanceId == null) {
-            throw new IllegalArgumentException("Job instance id must not be null");
-        }
-        if (StringUtils.isBlank(logPath)) {
-            throw new IllegalArgumentException("Job log path must not be blank");
-        }
 
         JobFileLogger jobLogger = new JobFileLogger(logPath);
         jobLogger.info("=== Job Submit Start (REST API) ===");
         jobLogger.info("Job instanceId: " + instanceId);
+        jobLogger.info("Job definitionId: " + jobDefinitionId);
+        jobLogger.info("Client id: " + clientId);
 
         String configFile = null;
         Long engineId = null;
+        boolean submitted = false;
 
         try {
             jobLogger.info("Writing config file...");
@@ -63,47 +60,38 @@ public class JobSubmitter {
 
             jobLogger.info("Submitting job via REST API...");
             String filename = "job-" + instanceId + ".conf";
+
             Map<?, ?> resp = restClient.submitJobUpload(
-                    instance.getClientId(),
-                    (hoconConfig == null ? "" : hoconConfig).getBytes(StandardCharsets.UTF_8),
+                    clientId,
+                    safeConfig(hoconConfig).getBytes(StandardCharsets.UTF_8),
                     filename
             );
 
             engineId = extractJobId(resp);
+            submitted = true;
+
             jobLogger.info("Job submitted, engineId(jobId): " + engineId);
 
             resultHandler.updateEngineId(instanceId, engineId);
 
-            JobRuntimeContext ctx = new JobRuntimeContext(instanceId, engineId, configFile, instance.getClientId());
+            JobRuntimeContext ctx = buildRuntimeContext(
+                    instanceId,
+                    jobDefinitionId,
+                    clientId,
+                    engineId,
+                    configFile
+            );
 
-            try {
-                metricsMonitor.register(ctx);
-                jobLogger.info("Metrics monitor registered");
-            } catch (Exception e) {
-                jobLogger.warn("Metrics monitor register failed: " + e.getMessage());
-                log.warn("Metrics monitor register failed, instanceId={}, engineId={}", instanceId, engineId, e);
-                throw new JobSubmitException(JobSubmitStage.POST_SUBMIT, "Metrics monitor register failed", e);
-            }
-
-            try {
-                resultWatcher.registerByRest(ctx);
-                jobLogger.info("REST result watcher registered");
-            } catch (Exception e) {
-                jobLogger.warn("Result watcher register failed: " + e.getMessage());
-                log.warn("Result watcher register failed, instanceId={}, engineId={}", instanceId, engineId, e);
-                throw new JobSubmitException(JobSubmitStage.POST_SUBMIT, "Result watcher register failed", e);
-            }
+            registerPostSubmitWatchers(ctx, jobLogger);
 
             jobLogger.info("=== Job Submit Complete ===");
 
-        } catch (JobSubmitException postStage) {
-            if (postStage.getStage() == JobSubmitStage.POST_SUBMIT) {
-                jobLogger.warn("=== Job Submit Done (but post-submit failed) ===");
-                throw postStage;
-            }
-            handleCoreFailure(jobLogger, instanceId, postStage);
-
         } catch (Exception e) {
+            if (submitted) {
+                handlePostSubmitFailure(jobLogger, instanceId, engineId, e);
+                return;
+            }
+
             handleCoreFailure(jobLogger, instanceId, e);
 
         } finally {
@@ -111,8 +99,89 @@ public class JobSubmitter {
         }
     }
 
-    private void handleCoreFailure(JobFileLogger jobLogger, Long instanceId, Exception e) {
-        jobLogger.error("Job submit failed (core stage)", e);
+    private void validate(JobInstanceVO instance) {
+        if (instance == null) {
+            throw new IllegalArgumentException("Job instance must not be null");
+        }
+
+        if (instance.getId() == null) {
+            throw new IllegalArgumentException("Job instance id must not be null");
+        }
+
+        if (instance.getClientId() == null) {
+            throw new IllegalArgumentException("Job client id must not be null");
+        }
+
+        if (StringUtils.isBlank(instance.getLogPath())) {
+            throw new IllegalArgumentException("Job log path must not be blank");
+        }
+
+        if (StringUtils.isBlank(instance.getRuntimeConfig())) {
+            throw new IllegalArgumentException("Job runtime config must not be blank");
+        }
+    }
+
+    private JobRuntimeContext buildRuntimeContext(Long instanceId,
+                                                  Long jobDefinitionId,
+                                                  Long clientId,
+                                                  Long engineId,
+                                                  String configFile) {
+        JobRuntimeContext ctx = new JobRuntimeContext();
+        ctx.setInstanceId(instanceId);
+        ctx.setJobDefinitionId(jobDefinitionId);
+        ctx.setClientId(clientId);
+        ctx.setEngineId(engineId);
+        ctx.setConfigFile(configFile);
+        return ctx;
+    }
+
+    private void registerPostSubmitWatchers(JobRuntimeContext ctx,
+                                            JobFileLogger jobLogger) {
+        boolean metricsRegistered = false;
+        boolean watcherRegistered = false;
+
+        try {
+            metricsMonitor.register(ctx);
+            metricsRegistered = true;
+            jobLogger.info("Metrics monitor registered");
+        } catch (Exception e) {
+            jobLogger.warn("Metrics monitor register failed: " + e.getMessage());
+            log.warn(
+                    "Metrics monitor register failed, instanceId={}, engineId={}",
+                    ctx.getInstanceId(),
+                    ctx.getEngineId(),
+                    e
+            );
+        }
+
+        try {
+            resultWatcher.registerByRest(ctx);
+            watcherRegistered = true;
+            jobLogger.info("REST result watcher registered");
+        } catch (Exception e) {
+            jobLogger.warn("Result watcher register failed: " + e.getMessage());
+            log.warn(
+                    "Result watcher register failed, instanceId={}, engineId={}",
+                    ctx.getInstanceId(),
+                    ctx.getEngineId(),
+                    e
+            );
+        }
+
+        if (!metricsRegistered || !watcherRegistered) {
+            jobLogger.warn(
+                    "Post-submit watcher registration incomplete. " +
+                            "The job has already been submitted to SeaTunnel Engine. " +
+                            "metricsRegistered=" + metricsRegistered +
+                            ", watcherRegistered=" + watcherRegistered
+            );
+        }
+    }
+
+    private void handleCoreFailure(JobFileLogger jobLogger,
+                                   Long instanceId,
+                                   Exception e) {
+        jobLogger.error("Job submit failed before engine accepted the job", e);
 
         try {
             resultHandler.handleFailure(instanceId, e);
@@ -125,11 +194,43 @@ public class JobSubmitter {
                 : new JobSubmitException(JobSubmitStage.SUBMIT, "Submit job failed", e);
     }
 
+    private void handlePostSubmitFailure(JobFileLogger jobLogger,
+                                         Long instanceId,
+                                         Long engineId,
+                                         Exception e) {
+        jobLogger.error(
+                "Job was submitted to SeaTunnel Engine, but post-submit handling failed. " +
+                        "instanceId=" + instanceId + ", engineId=" + engineId,
+                e
+        );
+
+        log.warn(
+                "Post-submit handling failed after job accepted by engine, instanceId={}, engineId={}",
+                instanceId,
+                engineId,
+                e
+        );
+
+        /*
+         * Do not mark the job instance as FAILED here.
+         *
+         * Reason:
+         * The SeaTunnel Engine has already accepted the job. If we mark the local
+         * instance as failed now, local state may conflict with the real engine state.
+         */
+    }
+
     private Long extractJobId(Map<?, ?> resp) {
         Object jobIdObj = resp == null ? null : resp.get("jobId");
+
         if (jobIdObj == null) {
             throw new IllegalStateException("REST submit response missing jobId, resp=" + resp);
         }
+
         return Long.valueOf(jobIdObj.toString());
+    }
+
+    private String safeConfig(String config) {
+        return config == null ? "" : config;
     }
 }

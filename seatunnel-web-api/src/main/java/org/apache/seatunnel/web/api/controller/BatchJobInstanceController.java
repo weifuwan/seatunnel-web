@@ -13,8 +13,11 @@ import org.apache.seatunnel.web.spi.bean.dto.SeaTunnelJobInstanceDTO;
 import org.apache.seatunnel.web.spi.bean.entity.PaginationResult;
 import org.apache.seatunnel.web.spi.bean.entity.Result;
 import org.apache.seatunnel.web.spi.bean.vo.JobInstanceVO;
+import org.apache.seatunnel.web.spi.bean.vo.JobTableMetricsVO;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 import static org.apache.seatunnel.web.spi.enums.Status.BATCH_JOB_INSTANCE_NOT_EXIST;
 import static org.apache.seatunnel.web.spi.enums.Status.QUERY_BATCH_JOB_INSTANCE_ERROR;
@@ -33,9 +36,6 @@ public class BatchJobInstanceController {
     @Resource
     private BatchJobInstanceService seatunnelJobInstanceService;
 
-    /**
-     * Performs pagination query for batch job instances.
-     */
     @PostMapping("/page")
     @Operation(summary = "queryBatchJobInstancePaging", description = "QUERY_BATCH_JOB_INSTANCE_PAGING_NOTES")
     @ApiException(QUERY_BATCH_JOB_INSTANCE_ERROR)
@@ -43,23 +43,27 @@ public class BatchJobInstanceController {
         return seatunnelJobInstanceService.paging(dto);
     }
 
-    /**
-     * Retrieves batch job instance details by ID.
-     */
     @GetMapping("/{id}")
     @Operation(summary = "selectBatchJobInstanceById", description = "SELECT_BATCH_JOB_INSTANCE_BY_ID_NOTES")
     @Parameters({
             @Parameter(name = "id", description = "BATCH_JOB_INSTANCE_ID", required = true)
     })
     @ApiException(BATCH_JOB_INSTANCE_NOT_EXIST)
-    public Result<JobInstanceVO> selectById(
-            @PathVariable("id") @NotNull Long id) {
+    public Result<JobInstanceVO> selectById(@PathVariable("id") @NotNull Long id) {
         return Result.buildSuc(seatunnelJobInstanceService.selectById(id));
     }
 
-    /**
-     * Retrieves execution log content by batch job instance ID.
-     */
+    @GetMapping("/{instanceId}/table-metrics")
+    @Operation(summary = "queryBatchJobInstanceTableMetrics", description = "QUERY_BATCH_JOB_INSTANCE_TABLE_METRICS_NOTES")
+    @Parameters({
+            @Parameter(name = "instanceId", description = "BATCH_JOB_INSTANCE_ID", required = true)
+    })
+    @ApiException(QUERY_BATCH_JOB_INSTANCE_ERROR)
+    public Result<List<JobTableMetricsVO>> listTableMetrics(
+            @PathVariable("instanceId") @NotNull Long instanceId) {
+        return Result.buildSuc(seatunnelJobInstanceService.listTableMetrics(instanceId));
+    }
+
     @GetMapping("/{instanceId}/log")
     @Operation(summary = "queryBatchJobInstanceLog", description = "QUERY_BATCH_JOB_INSTANCE_LOG_NOTES")
     @Parameters({

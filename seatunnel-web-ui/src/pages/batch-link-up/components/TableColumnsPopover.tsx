@@ -75,10 +75,9 @@ const TableColumnsPopover: React.FC<TableColumnsPopoverProps> = ({
       if (data?.code === 0) {
         setColumns(data?.data || []);
       } else {
-        message.error(data?.message);
+       
       }
     } catch (error) {
-      message.error("Failed to load column info");
     } finally {
       setLoading(false);
     }

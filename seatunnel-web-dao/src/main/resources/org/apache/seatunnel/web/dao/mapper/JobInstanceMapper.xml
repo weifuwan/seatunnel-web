@@ -109,6 +109,47 @@
         s.next_schedule_time AS nextScheduleTime
     </sql>
 
+    <select id="selectDetailById"
+            resultMap="JobInstancePageVOResultMap">
+
+        SELECT
+        <include refid="BaseSelectColumns"/>
+
+        FROM t_seatunnel_job_instance i
+
+        LEFT JOIN t_seatunnel_job_definition d
+        ON i.job_definition_id = d.id
+
+        LEFT JOIN (
+        SELECT
+        job_instance_id,
+        SUM(read_row_count) AS read_row_count,
+        SUM(write_row_count) AS write_row_count,
+        SUM(read_qps) AS read_qps,
+        SUM(write_qps) AS write_qps,
+        SUM(read_bytes) AS read_bytes,
+        SUM(write_bytes) AS write_bytes,
+        SUM(read_bps) AS read_bps,
+        SUM(write_bps) AS write_bps,
+        SUM(intermediate_queue_size) AS intermediate_queue_size,
+        SUM(lag_count) AS lag_count,
+        AVG(loss_rate) AS loss_rate,
+        AVG(avg_row_size) AS avg_row_size,
+        MAX(record_delay) AS record_delay
+        FROM t_seatunnel_job_metrics
+        GROUP BY job_instance_id
+        ) m
+        ON i.id = m.job_instance_id
+
+        LEFT JOIN t_seatunnel_job_schedule s
+        ON i.job_definition_id = s.job_definition_id
+
+        WHERE i.id = #{id}
+
+        LIMIT 1
+
+    </select>
+
     <select id="pageWithDefinition"
             resultMap="JobInstancePageVOResultMap">
 

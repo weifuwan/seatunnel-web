@@ -174,3 +174,24 @@ export const seatunnelCopilotApi = {
     return HttpUtils.post<any[]>(`${seatunnelCopilotApiPrefix}/agent`, data);
   },
 };
+
+
+export const batchJobInstanceApi = {
+  page: (data: any) => {
+    return HttpUtils.post("/api/v1/job/batch-instance/page", data);
+  },
+
+  detail: (id: string | number) => {
+    return HttpUtils.get(`/api/v1/job/batch-instance/${id}`);
+  },
+
+  tableMetrics: (instanceId: string | number) => {
+    return HttpUtils.get(
+      `/api/v1/job/batch-instance/${instanceId}/table-metrics`
+    );
+  },
+
+  log: (instanceId: string | number) => {
+    return HttpUtils.get(`/api/v1/job/batch-instance/${instanceId}/log`);
+  },
+};

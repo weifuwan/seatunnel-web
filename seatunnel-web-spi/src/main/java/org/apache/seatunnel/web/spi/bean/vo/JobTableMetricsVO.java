@@ -1,17 +1,12 @@
-package org.apache.seatunnel.web.dao.entity;
+package org.apache.seatunnel.web.spi.bean.vo;
 
-import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
 import java.math.BigDecimal;
 import java.util.Date;
 
-/**
- * SeaTunnel job / pipeline level metrics.
- */
 @Data
-@TableName("t_seatunnel_job_metrics")
-public class JobMetrics {
+public class JobTableMetricsVO {
 
     private Long id;
 
@@ -20,6 +15,10 @@ public class JobMetrics {
     private Long jobDefinitionId;
 
     private Integer pipelineId;
+
+    private String sourceTable;
+
+    private String sinkTable;
 
     private Long readRowCount;
 
@@ -37,15 +36,9 @@ public class JobMetrics {
 
     private BigDecimal writeBps;
 
-    private Long intermediateQueueSize;
+    private String status;
 
-    private Long lagCount;
-
-    private BigDecimal lossRate;
-
-    private Long avgRowSize;
-
-    private Long recordDelay;
+    private String errorMsg;
 
     private Date createTime;
 

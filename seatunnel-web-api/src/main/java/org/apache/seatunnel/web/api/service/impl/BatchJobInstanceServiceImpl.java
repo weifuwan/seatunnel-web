@@ -17,10 +17,12 @@ import org.apache.seatunnel.web.core.hocon.JobDefinitionHoconBuilder;
 import org.apache.seatunnel.web.dao.entity.JobInstance;
 import org.apache.seatunnel.web.dao.repository.JobInstanceDao;
 import org.apache.seatunnel.web.dao.repository.JobMetricsDao;
+import org.apache.seatunnel.web.dao.repository.JobTableMetricsDao;
 import org.apache.seatunnel.web.spi.bean.dto.JobDefinitionSaveCommand;
 import org.apache.seatunnel.web.spi.bean.dto.SeaTunnelJobInstanceDTO;
 import org.apache.seatunnel.web.spi.bean.entity.PaginationResult;
 import org.apache.seatunnel.web.spi.bean.vo.JobInstanceVO;
+import org.apache.seatunnel.web.spi.bean.vo.JobTableMetricsVO;
 import org.apache.seatunnel.web.spi.enums.Status;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -32,6 +34,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 
 @Service
 @Slf4j
@@ -54,6 +57,9 @@ public class BatchJobInstanceServiceImpl implements BatchJobInstanceService {
 
     @Value("${seatunnel.job.log-dir:logs}")
     private String baseLogDir;
+
+    @Resource
+    private JobTableMetricsDao jobTableMetricsDao;
 
     @PostConstruct
     public void init() {
@@ -122,8 +128,13 @@ public class BatchJobInstanceServiceImpl implements BatchJobInstanceService {
         validateInstanceId(id);
 
         try {
-            JobInstance entity = getJobInstanceOrThrow(id);
-            JobInstanceVO vo = ConvertUtil.sourceToTarget(entity, JobInstanceVO.class);
+            JobInstanceVO vo = jobInstanceDao.selectDetailById(id);
+            if (vo == null) {
+                throw new ServiceException(Status.BATCH_JOB_INSTANCE_NOT_EXIST);
+            }
+
+            vo.setTableMetrics(listTableMetrics(id));
+
             maskSensitiveFields(vo);
             return vo;
         } catch (ServiceException e) {
@@ -186,6 +197,7 @@ public class BatchJobInstanceServiceImpl implements BatchJobInstanceService {
         }
 
         try {
+            jobTableMetricsDao.deleteByDefinitionId(definitionId);
             jobMetricsDao.deleteByDefinitionId(definitionId);
             jobInstanceDao.deleteByDefinitionId(definitionId);
         } catch (ServiceException e) {
@@ -209,6 +221,18 @@ public class BatchJobInstanceServiceImpl implements BatchJobInstanceService {
         } catch (Exception e) {
             log.error("Update batch job instance failed, id={}", po.getId(), e);
             throw new ServiceException(Status.UPDATE_BATCH_JOB_INSTANCE_ERROR);
+        }
+    }
+
+    @Override
+    public List<JobTableMetricsVO> listTableMetrics(Long instanceId) {
+        validateInstanceId(instanceId);
+
+        try {
+            return jobTableMetricsDao.selectByInstanceId(instanceId);
+        } catch (Exception e) {
+            log.error("Query table metrics failed, instanceId={}", instanceId, e);
+            throw new ServiceException(Status.QUERY_BATCH_JOB_INSTANCE_ERROR);
         }
     }
 

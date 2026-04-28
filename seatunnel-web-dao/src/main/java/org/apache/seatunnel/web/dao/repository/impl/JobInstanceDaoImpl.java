@@ -39,6 +39,15 @@ public class JobInstanceDaoImpl
     }
 
     @Override
+    public JobInstanceVO selectDetailById(Long id) {
+        if (id == null || id <= 0) {
+            return null;
+        }
+
+        return jobInstanceMapper.selectDetailById(id);
+    }
+
+    @Override
     public boolean existsRunningInstance(Long definitionId) {
         LambdaQueryWrapper<JobInstance> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(JobInstance::getJobDefinitionId, definitionId)

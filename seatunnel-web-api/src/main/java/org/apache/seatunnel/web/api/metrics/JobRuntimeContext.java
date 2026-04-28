@@ -2,6 +2,7 @@ package org.apache.seatunnel.web.api.metrics;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * Runtime context information for a SeaTunnel job instance.
@@ -11,6 +12,7 @@ import lombok.Data;
  */
 @Data
 @AllArgsConstructor
+@NoArgsConstructor
 public class JobRuntimeContext {
 
     /**
@@ -25,6 +27,8 @@ public class JobRuntimeContext {
      * for metrics collection and job result querying.
      */
     private Long engineId;
+
+    private Long jobDefinitionId;
 
     /**
      * Path to the job configuration file.

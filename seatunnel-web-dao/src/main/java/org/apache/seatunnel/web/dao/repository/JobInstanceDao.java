@@ -11,6 +11,8 @@ import java.util.Date;
 public interface JobInstanceDao extends IDao<JobInstance> {
     IPage<JobInstanceVO> pageWithDefinition(SeaTunnelJobInstanceDTO dto);
 
+    JobInstanceVO selectDetailById(Long id);
+
     boolean existsRunningInstance(Long definitionId);
 
     void deleteByDefinitionId(Long definitionId);

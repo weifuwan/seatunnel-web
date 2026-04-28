@@ -15,4 +15,6 @@ public interface JobInstanceMapper extends BaseMapper<JobInstance> {
             Page<?> page,
             @Param("dto") SeaTunnelJobInstanceDTO dto);
 
+    JobInstanceVO selectDetailById(@Param("id") Long id);
+
 }

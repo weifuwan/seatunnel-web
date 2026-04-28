@@ -105,7 +105,9 @@ public class DefaultJobDefinitionCommandResolver implements JobDefinitionCommand
     private GuideMultiJobSaveCommand buildGuideMultiCommand(JobDefinitionEntity definition, JobDefinitionContentEntity jobDefinitionContentEntity) {
         GuideMultiJobSaveCommand command = new GuideMultiJobSaveCommand();
         command.setBasic(buildBasic(definition));
+        command.setContent(JSONUtils.parseObject(jobDefinitionContentEntity.getDefinitionContent(), GuideMultiJobContent.class));
         command.setEnv(JSONUtils.parseObject(jobDefinitionContentEntity.getEnvConfig(), EnvConfig.class));
+        command.setId(definition.getId());
         return command;
     }
 

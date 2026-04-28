@@ -1,16 +1,46 @@
 import Header from "@/components/Header";
+import { useIntl } from "@umijs/max";
 import { Descriptions } from "antd";
 import React from "react";
-import { useIntl } from "@umijs/max";
 import DatabaseIcons from "../data-source/icon/DatabaseIcons";
-import IconRightArrow from "./IconRightArrow";
+
+import { DoubleRightOutlined } from "@ant-design/icons";
 
 interface TaskDetailPanelProps {
   item: any;
 }
 
+const AnimatedSyncArrow: React.FC = () => {
+  return (
+    <span className="mx-3 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-50 text-blue-500 shadow-[0_1px_4px_rgba(15,23,42,0.08)]">
+      <style>
+        {`
+          @keyframes syncArrowMove {
+            0%, 100% {
+              transform: translateX(0);
+              opacity: 0.72;
+            }
+            50% {
+              transform: translateX(4px);
+              opacity: 1;
+            }
+          }
+        `}
+      </style>
+
+      <DoubleRightOutlined
+        style={{
+          fontSize: 10,
+          animation: "syncArrowMove 1.8s ease-in-out infinite",
+        }}
+      />
+    </span>
+  );
+};
+
 const BasicInfoSection: React.FC<TaskDetailPanelProps> = ({ item }) => {
   const intl = useIntl();
+  console.log(item);
 
   return (
     <div className="m-4 rounded bg-white p-4 shadow-[0_2px_6px_#0000000d]">
@@ -29,10 +59,7 @@ const BasicInfoSection: React.FC<TaskDetailPanelProps> = ({ item }) => {
         <div className="w-[150px]">{/* reserved actions */}</div>
       </div>
 
-      <Descriptions
-        column={2}
-        labelStyle={{ color: "rgba(128,128,128,1)" }}
-      >
+      <Descriptions column={2} labelStyle={{ color: "rgba(128,128,128,1)" }}>
         <Descriptions.Item
           label={intl.formatMessage({
             id: "pages.job.detail.jobCode",
@@ -53,17 +80,13 @@ const BasicInfoSection: React.FC<TaskDetailPanelProps> = ({ item }) => {
               <DatabaseIcons dbType={item?.sourceType} width="24" height="24" />
             )}
 
-            <span className="mx-3">{item?.sourceTable || "-"}</span>
-
-            <IconRightArrow />
+            <AnimatedSyncArrow />
 
             {item?.sinkType && (
               <span className="ml-3 flex items-center">
                 <DatabaseIcons dbType={item?.sinkType} width="24" height="24" />
               </span>
             )}
-
-            <span className="mx-3">{item?.sinkTable || "-"}</span>
           </div>
         </Descriptions.Item>
 

@@ -590,7 +590,7 @@ export function useMultiWorkflowState({
       // TODO: 后续接入真正执行接口 / RunLog。
       // await seatunnelJobDefinitionApi.execute(publishedJobDefineId);
 
-      message.success("运行校验通过，可继续接入执行逻辑");
+      // message.success("运行校验通过，可继续接入执行逻辑");
     } catch (error: any) {
       console.error(error);
       message.error(error?.message || "运行失败");

@@ -1,5 +1,6 @@
 package org.apache.seatunnel.web.dao.repository;
 
+import org.apache.seatunnel.web.common.enums.ReleaseState;
 import org.apache.seatunnel.web.dao.entity.JobDefinitionEntity;
 import org.apache.seatunnel.web.spi.bean.dto.BatchJobDefinitionQueryDTO;
 import org.apache.seatunnel.web.spi.bean.vo.BatchJobDefinitionVO;
@@ -17,4 +18,6 @@ public interface JobDefinitionDao extends IDao<JobDefinitionEntity> {
     );
 
     Long count(BatchJobDefinitionQueryDTO dto);
+
+    boolean updateReleaseState(Long id, ReleaseState releaseState);
 }

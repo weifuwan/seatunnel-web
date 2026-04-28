@@ -1,6 +1,7 @@
 package org.apache.seatunnel.web.api.service;
 
 
+import org.apache.seatunnel.web.common.enums.ReleaseState;
 import org.apache.seatunnel.web.spi.bean.dto.*;
 import org.apache.seatunnel.web.spi.bean.entity.PaginationResult;
 import org.apache.seatunnel.web.spi.bean.vo.BatchJobDefinitionVO;
@@ -27,5 +28,5 @@ public interface BatchJobDefinitionService {
 
     JobDefinitionSaveCommand  selectEditDetail(Long id);
 
-
+    Boolean updateReleaseState(Long id, ReleaseState releaseState);
 }

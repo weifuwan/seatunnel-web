@@ -29,11 +29,14 @@ const HistoryListItem: React.FC<HistoryListItemProps> = ({
         className={[
           "w-full cursor-pointer rounded-xl border px-3 py-2.5 transition-all duration-200 ease-out",
           "bg-white shadow-[0_1px_3px_rgba(15,23,42,0.04)]",
-          "hover:border-blue-200 hover:shadow-[0_6px_18px_rgba(15,23,42,0.06)]",
           active
-            ? "border-blue-300 bg-blue-50 shadow-[0_3px_10px_rgba(22,119,255,0.08)]"
-            : "border-slate-200",
+            ? "shadow-[0_3px_10px_rgba(67,78,181,0.08)]"
+            : "border-slate-200 hover:shadow-[0_6px_18px_rgba(67,78,181,0.08)]",
         ].join(" ")}
+        style={{
+          borderColor: active ? "hsl(231 44% 82%)" : undefined,
+          backgroundColor: active ? "hsl(231 56% 98.5%)" : undefined,
+        }}
       >
         <div className="flex items-start gap-2.5">
           <div

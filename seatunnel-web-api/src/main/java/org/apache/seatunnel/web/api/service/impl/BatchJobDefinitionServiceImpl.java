@@ -6,7 +6,9 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.seatunnel.web.api.service.BatchJobDefinitionService;
 import org.apache.seatunnel.web.api.service.BatchJobInstanceService;
+import org.apache.seatunnel.web.api.service.JobScheduleService;
 import org.apache.seatunnel.web.api.service.application.JobScheduleApplicationService;
+import org.apache.seatunnel.web.common.enums.ReleaseState;
 import org.apache.seatunnel.web.common.utils.JSONUtils;
 import org.apache.seatunnel.web.core.exceptions.ServiceException;
 import org.apache.seatunnel.web.core.job.assembler.JobDefinitionAssembler;
@@ -52,6 +54,9 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
 
     @Resource
     private BatchJobDefinitionQueryService definitionQueryService;
+
+    @Resource
+    private JobScheduleService jobScheduleService;
 
     /**
      * Save or update batch job definition.
@@ -230,6 +235,86 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
         } catch (Exception e) {
             log.error("Query job definition edit detail failed, id={}", id, e);
             throw new ServiceException(Status.QUERY_BATCH_JOB_DEFINITION_ERROR);
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Boolean updateReleaseState(Long id, ReleaseState releaseState) {
+        if (id == null) {
+            throw new RuntimeException("Job definition id cannot be null");
+        }
+        if (releaseState == null) {
+            throw new RuntimeException("Release state cannot be null");
+        }
+
+        JobDefinitionEntity entity = jobDefinitionDao.queryById(id);
+        if (entity == null) {
+            throw new RuntimeException("Job definition does not exist");
+        }
+
+        ReleaseState currentState = entity.getReleaseState();
+
+        // 状态已经一致时，也顺手同步一下调度状态，避免 Quartz 状态和业务状态不一致
+        if (releaseState == currentState) {
+            syncScheduleState(id, releaseState);
+            log.info("Job definition release state already synced, id={}, state={}", id, releaseState);
+            return true;
+        }
+
+        // 下线：先停调度，再更新任务定义状态
+        if (releaseState.isOffline()) {
+            syncScheduleState(id, ReleaseState.OFFLINE);
+            updateJobReleaseState(id, ReleaseState.OFFLINE);
+
+            log.info("Job definition offline completed, id={}", id);
+            return true;
+        }
+
+        // 上线：先更新任务定义状态，再启动调度
+        if (releaseState.isOnline()) {
+            updateJobReleaseState(id, ReleaseState.ONLINE);
+            syncScheduleState(id, ReleaseState.ONLINE);
+
+            log.info("Job definition online completed, id={}", id);
+            return true;
+        }
+
+        throw new RuntimeException("Unsupported release state: " + releaseState);
+    }
+
+    private void updateJobReleaseState(Long jobDefinitionId, ReleaseState releaseState) {
+        boolean updated = jobDefinitionDao.updateReleaseState(jobDefinitionId, releaseState);
+
+        if (!updated) {
+            throw new RuntimeException("Failed to update job definition release state");
+        }
+    }
+
+    private void syncScheduleState(Long jobDefinitionId, ReleaseState releaseState) {
+        JobSchedule schedule = jobScheduleService.getByTaskDefinitionId(jobDefinitionId);
+        if (schedule == null) {
+            log.info("No schedule found for job definition, skip schedule sync. jobDefinitionId={}", jobDefinitionId);
+            return;
+        }
+
+        if (releaseState.isOnline()) {
+            jobScheduleService.startSchedule(schedule.getId());
+            log.info(
+                    "Schedule started with job definition online, jobDefinitionId={}, scheduleId={}",
+                    jobDefinitionId,
+                    schedule.getId()
+            );
+            return;
+        }
+
+        if (releaseState.isOffline()) {
+            jobScheduleService.stopSchedule(schedule.getId());
+            log.info(
+                    "Schedule stopped with job definition offline, jobDefinitionId={}, scheduleId={}",
+                    jobDefinitionId,
+                    schedule.getId()
+            );
         }
     }
 

@@ -8,6 +8,7 @@ import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.seatunnel.web.api.exceptions.ApiException;
 import org.apache.seatunnel.web.api.service.BatchJobDefinitionService;
+import org.apache.seatunnel.web.common.enums.ReleaseState;
 import org.apache.seatunnel.web.common.utils.CodeGenerateUtils;
 import org.apache.seatunnel.web.spi.bean.dto.*;
 import org.apache.seatunnel.web.spi.bean.entity.PaginationResult;
@@ -144,5 +145,31 @@ public class BatchJobDefinitionController {
     @Operation(summary = "查询任务编辑详情")
     public Result<JobDefinitionSaveCommand> selectEditDetail(@PathVariable("id") Long id) {
         return Result.buildSuc(batchJobDefinitionService.selectEditDetail(id));
+    }
+
+    /**
+     * 上线任务定义
+     */
+    @PutMapping("/{id}/online")
+    @Operation(summary = "onlineBatchJobDefinition", description = "上线批任务定义")
+    @Parameters({
+            @Parameter(name = "id", description = "BATCH_JOB_DEFINITION_ID", required = true)
+    })
+    @ApiException(SAVE_OR_UPDATE_BATCH_JOB_DEFINITION_ERROR)
+    public Result<Boolean> online(@PathVariable("id") Long id) {
+        return Result.buildSuc(batchJobDefinitionService.updateReleaseState(id, ReleaseState.ONLINE));
+    }
+
+    /**
+     * 下线任务定义
+     */
+    @PutMapping("/{id}/offline")
+    @Operation(summary = "offlineBatchJobDefinition", description = "下线批任务定义")
+    @Parameters({
+            @Parameter(name = "id", description = "BATCH_JOB_DEFINITION_ID", required = true)
+    })
+    @ApiException(SAVE_OR_UPDATE_BATCH_JOB_DEFINITION_ERROR)
+    public Result<Boolean> offline(@PathVariable("id") Long id) {
+        return Result.buildSuc(batchJobDefinitionService.updateReleaseState(id, ReleaseState.OFFLINE));
     }
 }

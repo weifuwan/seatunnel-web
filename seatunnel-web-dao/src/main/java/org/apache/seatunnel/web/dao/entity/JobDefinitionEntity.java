@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.*;
 import org.apache.seatunnel.web.common.enums.JobDefinitionMode;
 import org.apache.seatunnel.web.common.enums.JobMode;
+import org.apache.seatunnel.web.common.enums.ReleaseState;
 
 @Data
 @Builder
@@ -20,10 +21,9 @@ public class JobDefinitionEntity extends BaseEntity {
     private JobMode jobType;
 
     private Long clientId;
-    private Integer parallelism;
 
     private Integer jobVersion;
-    private String status;
+    private ReleaseState releaseState;
 
     private String sourceType;
     private String sinkType;

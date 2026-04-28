@@ -23,7 +23,6 @@ public class JobDefinitionAssembler {
                 .mode(command.getMode())
                 .jobType(env.getJobMode())
                 .clientId(basic.getClientId())
-                .parallelism(env.getParallelism())
                 .jobVersion(1)
                 .sourceType(analysis.getSourceType())
                 .sinkType(analysis.getSinkType())
@@ -48,7 +47,6 @@ public class JobDefinitionAssembler {
         entity.setMode(command.getMode());
         entity.setJobType(env.getJobMode());
         entity.setClientId(basic.getClientId());
-        entity.setParallelism(env.getParallelism());
         entity.setJobVersion(nextVersion);
         entity.setSourceType(analysis.getSourceType());
         entity.setSinkType(analysis.getSinkType());

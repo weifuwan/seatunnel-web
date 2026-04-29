@@ -4,6 +4,8 @@ DATABASE IF NOT EXISTS seatunnel_web;
 use
 seatunnel_web;
 
+-- seatunnel_web.t_connector_param_meta definition
+
 CREATE TABLE `t_connector_param_meta`
 (
     `id`             bigint                                                        NOT NULL AUTO_INCREMENT COMMENT '主键ID',
@@ -27,26 +29,6 @@ CREATE TABLE `t_connector_param_meta`
     KEY              `idx_param_name` (`param_name`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='连接器参数元数据表';
 
-INSERT INTO seatunnel_web.t_connector_param_meta
-(id, `type`, connector_name, connector_type, param_name, param_desc, param_type, required_flag, default_value, example_value, param_context, remark, create_time, update_time, deleted)
-VALUES(1, 'connector', 'Jdbc', 'source', 'fetch.size', '控制单次从数据库拉取结果集的批量大小，用于平衡查询效率、网络传输与内存占用。', 'number', 0, '1024', '2048', '{
-  "summary": "控制 JDBC 结果集读取时的单次抓取批量。",
-  "coreMeaning": "影响结果集分批拉取节奏，不等于返回总条数。",
-  "processingLogic": [
-    "值小：单批更轻，但往返更多。",
-    "值大：往返更少，但单批压力更高。"
-  ],
-  "recommendationHints": [
-    "大结果集、轻量行数据可适当调大。",
-    "宽表、大字段、内存敏感场景应谨慎调大。",
-    "稳定性优先时，可适当调小。"
-  ],
-  "cautions": [
-    "不等于 limit。",
-    "不是越大越好。"
-  ]
-}', '用于AI参数推荐', '2026-04-09 20:48:01', '2026-04-10 10:23:36', 0);
-
 
 -- seatunnel_web.t_seatunnel_client definition
 
@@ -68,7 +50,7 @@ CREATE TABLE `t_seatunnel_client`
     KEY              `idx_engine_type` (`engine_type`),
     KEY              `idx_health_status` (`health_status`),
     KEY              `idx_heartbeat_time` (`heartbeat_time`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='SeaTunnel Client表';
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='SeaTunnel Client表';
 
 
 -- seatunnel_web.t_seatunnel_datasource definition
@@ -106,26 +88,25 @@ CREATE TABLE `t_seatunnel_datasource_plugin_config`
 
 CREATE TABLE `t_seatunnel_job_definition`
 (
-    `id`           bigint       NOT NULL COMMENT '主键ID',
-    `job_name`     varchar(255) NOT NULL COMMENT '任务名称',
-    `job_desc`     varchar(500)          DEFAULT NULL COMMENT '任务描述',
-    `mode`         varchar(32)  NOT NULL COMMENT 'SCRIPT / GUIDE_SINGLE / GUIDE_MULTI',
-    `job_type`     varchar(32)  NOT NULL DEFAULT 'BATCH' COMMENT 'BATCH / STREAMING',
-    `client_id`    bigint                DEFAULT NULL COMMENT '桥接客户端ID',
-    `parallelism`  int                   DEFAULT '1' COMMENT '并行度',
-    `job_version`  int          NOT NULL DEFAULT '1' COMMENT '任务版本号',
-    `status`       varchar(32)           DEFAULT NULL COMMENT '任务状态',
-    `source_type`  varchar(255)          DEFAULT NULL COMMENT '源类型摘要',
-    `sink_type`    varchar(255)          DEFAULT NULL COMMENT '目标类型摘要',
-    `source_table` varchar(1024)         DEFAULT NULL COMMENT '源表摘要',
-    `sink_table`   varchar(1024)         DEFAULT NULL COMMENT '目标表摘要',
-    `create_time`  datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `update_time`  datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `id`            bigint       NOT NULL COMMENT '主键ID',
+    `job_name`      varchar(255) NOT NULL COMMENT '任务名称',
+    `job_desc`      varchar(500)                                                 DEFAULT NULL COMMENT '任务描述',
+    `mode`          varchar(32)  NOT NULL COMMENT 'SCRIPT / GUIDE_SINGLE / GUIDE_MULTI',
+    `job_type`      varchar(32)  NOT NULL                                        DEFAULT 'BATCH' COMMENT 'BATCH / STREAMING',
+    `client_id`     bigint                                                       DEFAULT NULL COMMENT '桥接客户端ID',
+    `job_version`   int          NOT NULL                                        DEFAULT '1' COMMENT '任务版本号',
+    `release_state` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL COMMENT '任务状态',
+    `source_type`   varchar(255)                                                 DEFAULT NULL COMMENT '源类型摘要',
+    `sink_type`     varchar(255)                                                 DEFAULT NULL COMMENT '目标类型摘要',
+    `source_table`  varchar(1024)                                                DEFAULT NULL COMMENT '源表摘要',
+    `sink_table`    varchar(1024)                                                DEFAULT NULL COMMENT '目标表摘要',
+    `create_time`   datetime     NOT NULL                                        DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time`   datetime     NOT NULL                                        DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (`id`),
-    KEY            `idx_mode` (`mode`),
-    KEY            `idx_job_type` (`job_type`),
-    KEY            `idx_client_id` (`client_id`),
-    KEY            `idx_job_name` (`job_name`)
+    KEY             `idx_mode` (`mode`),
+    KEY             `idx_job_type` (`job_type`),
+    KEY             `idx_client_id` (`client_id`),
+    KEY             `idx_job_name` (`job_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='任务定义主表';
 
 
@@ -140,10 +121,11 @@ CREATE TABLE `t_seatunnel_job_definition_content`
     `content_schema_version` int         NOT NULL DEFAULT '1' COMMENT '内容schema版本',
     `definition_content`     longtext    NOT NULL COMMENT '完整定义内容JSON',
     `create_time`            datetime    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `env_config`             text,
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_definition_version` (`job_definition_id`,`version`),
     KEY                      `idx_job_definition_id` (`job_definition_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=52 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='任务定义内容版本表';
+) ENGINE=InnoDB AUTO_INCREMENT=100 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='任务定义内容版本表';
 
 
 -- seatunnel_web.t_seatunnel_job_instance definition
@@ -181,28 +163,29 @@ CREATE TABLE `t_seatunnel_job_metrics`
 (
     `id`                      bigint NOT NULL COMMENT '主键ID',
     `job_instance_id`         bigint NOT NULL COMMENT '任务实例ID',
-    `pipeline_id`             int      DEFAULT NULL COMMENT 'pipeline ID',
-    `read_row_count`          bigint   DEFAULT '0' COMMENT '读取行数',
-    `write_row_count`         bigint   DEFAULT '0' COMMENT '写入行数',
-    `read_qps`                bigint   DEFAULT '0' COMMENT '读取QPS',
-    `write_qps`               bigint   DEFAULT '0' COMMENT '写入QPS',
-    `read_bytes`              bigint   DEFAULT '0' COMMENT '读取字节数',
-    `write_bytes`             bigint   DEFAULT '0' COMMENT '写入字节数',
-    `read_bps`                bigint   DEFAULT '0' COMMENT '读取BPS(字节/秒)',
-    `write_bps`               bigint   DEFAULT '0' COMMENT '写入BPS(字节/秒)',
-    `intermediate_queue_size` bigint   DEFAULT '0' COMMENT '中间队列大小',
-    `lag_count`               bigint   DEFAULT '0' COMMENT '滞后计数',
-    `loss_rate`               double   DEFAULT '0' COMMENT '丢失率',
-    `avg_row_size`            bigint   DEFAULT '0' COMMENT '平均行大小(字节)',
-    `record_delay`            bigint   DEFAULT '0' COMMENT '数据延迟(ms)',
-    `create_time`             datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `update_time`             datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    `job_definition_id`       bigint   DEFAULT NULL,
+    `job_definition_id`       bigint         DEFAULT NULL COMMENT '任务定义ID',
+    `pipeline_id`             int            DEFAULT '0' COMMENT 'pipeline ID',
+    `read_row_count`          bigint         DEFAULT '0' COMMENT '读取行数',
+    `write_row_count`         bigint         DEFAULT '0' COMMENT '写入行数',
+    `read_qps`                decimal(18, 4) DEFAULT '0.0000' COMMENT '读取QPS',
+    `write_qps`               decimal(18, 4) DEFAULT '0.0000' COMMENT '写入QPS',
+    `read_bytes`              bigint         DEFAULT '0' COMMENT '读取字节数',
+    `write_bytes`             bigint         DEFAULT '0' COMMENT '写入字节数',
+    `read_bps`                decimal(18, 4) DEFAULT '0.0000' COMMENT '读取BPS(字节/秒)',
+    `write_bps`               decimal(18, 4) DEFAULT '0.0000' COMMENT '写入BPS(字节/秒)',
+    `intermediate_queue_size` bigint         DEFAULT '0' COMMENT '中间队列大小',
+    `lag_count`               bigint         DEFAULT '0' COMMENT '滞后计数',
+    `loss_rate`               decimal(10, 6) DEFAULT '0.000000' COMMENT '丢失率',
+    `avg_row_size`            bigint         DEFAULT '0' COMMENT '平均行大小(字节)',
+    `record_delay`            bigint         DEFAULT '0' COMMENT '数据延迟(ms)',
+    `create_time`             datetime       DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time`             datetime       DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_instance_pipeline` (`job_instance_id`,`pipeline_id`),
     KEY                       `idx_job_instance_id` (`job_instance_id`),
+    KEY                       `idx_job_definition_id` (`job_definition_id`),
     KEY                       `idx_create_time` (`create_time`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Seatunnel任务运行指标表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='SeaTunnel任务运行汇总指标表';
 
 
 -- seatunnel_web.t_seatunnel_job_schedule definition
@@ -223,6 +206,38 @@ CREATE TABLE `t_seatunnel_job_schedule`
     KEY                  `idx_schedule_status` (`schedule_status`),
     KEY                  `idx_next_schedule_time` (`next_schedule_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='任务调度表';
+
+
+-- seatunnel_web.t_seatunnel_job_table_metrics definition
+
+CREATE TABLE `t_seatunnel_job_table_metrics`
+(
+    `id`                bigint NOT NULL COMMENT '主键ID',
+    `job_instance_id`   bigint NOT NULL COMMENT '任务实例ID',
+    `job_definition_id` bigint                                  DEFAULT NULL COMMENT '任务定义ID',
+    `pipeline_id`       int                                     DEFAULT '0' COMMENT 'pipeline ID',
+    `source_table`      varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '来源表',
+    `sink_table`        varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '目标表',
+    `read_row_count`    bigint                                  DEFAULT '0' COMMENT '读取行数',
+    `write_row_count`   bigint                                  DEFAULT '0' COMMENT '写入行数',
+    `read_qps`          decimal(18, 4)                          DEFAULT '0.0000' COMMENT '读取QPS',
+    `write_qps`         decimal(18, 4)                          DEFAULT '0.0000' COMMENT '写入QPS',
+    `read_bytes`        bigint                                  DEFAULT '0' COMMENT '读取字节数',
+    `write_bytes`       bigint                                  DEFAULT '0' COMMENT '写入字节数',
+    `read_bps`          decimal(18, 4)                          DEFAULT '0.0000' COMMENT '读取BPS(字节/秒)',
+    `write_bps`         decimal(18, 4)                          DEFAULT '0.0000' COMMENT '写入BPS(字节/秒)',
+    `status`            varchar(32) COLLATE utf8mb4_unicode_ci  DEFAULT NULL COMMENT '表级状态',
+    `error_msg`         text COLLATE utf8mb4_unicode_ci COMMENT '表级错误信息',
+    `create_time`       datetime                                DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time`       datetime                                DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_instance_pipeline_table` (`job_instance_id`,`pipeline_id`,`source_table`,`sink_table`),
+    KEY                 `idx_job_instance_id` (`job_instance_id`),
+    KEY                 `idx_job_definition_id` (`job_definition_id`),
+    KEY                 `idx_source_table` (`source_table`),
+    KEY                 `idx_sink_table` (`sink_table`),
+    KEY                 `idx_create_time` (`create_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='SeaTunnel任务表级运行指标表';
 
 
 -- seatunnel_web.t_seatunnel_session definition
@@ -283,6 +298,28 @@ CREATE TABLE `t_seatunnel_user`
 INSERT INTO seatunnel_web.t_seatunnel_user
 (id, user_name, user_password, user_type, email, phone, create_time, update_time, state)
 VALUES (1, 'admin', 'e10adc3949ba59abbe56e057f20f883e', 0, '295227940@qq.com', '15002344940', NULL, NULL, 1);
+
+INSERT INTO seatunnel_web.t_connector_param_meta
+(id, `type`, connector_name, connector_type, param_name, param_desc, param_type, required_flag, default_value,
+ example_value, param_context, remark, create_time, update_time, deleted)
+VALUES (1, 'connector', 'Jdbc', 'source', 'fetch.size', '控制单次从数据库拉取结果集的批量大小，用于平衡查询效率、网络传输与内存占用。', 'number', 0, '1024',
+        '2048', '{
+  "summary": "控制 JDBC 结果集读取时的单次抓取批量。",
+  "coreMeaning": "影响结果集分批拉取节奏，不等于返回总条数。",
+  "processingLogic": [
+    "值小：单批更轻，但往返更多。",
+    "值大：往返更少，但单批压力更高。"
+  ],
+  "recommendationHints": [
+    "大结果集、轻量行数据可适当调大。",
+    "宽表、大字段、内存敏感场景应谨慎调大。",
+    "稳定性优先时，可适当调小。"
+  ],
+  "cautions": [
+    "不等于 limit。",
+    "不是越大越好。"
+  ]
+}', '用于AI参数推荐', '2026-04-09 20:48:01', '2026-04-10 10:23:36', 0);
 
 -- ----------------------------
 -- Table structure for qrtz_blob_triggers

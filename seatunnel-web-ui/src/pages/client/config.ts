@@ -1,4 +1,4 @@
-import { HealthStateEnum } from "./components/HealthState";
+
 
 export const statusFilters = [
   {
@@ -43,17 +43,6 @@ export const sortFieldOptions = [
   },
 ];
 
-export const healthStatusToHealthState = (
-  healthStatus?: number
-): HealthStateEnum => {
-  if (healthStatus === 1) {
-    return HealthStateEnum.GOOD;
-  }
-  if (healthStatus === 2) {
-    return HealthStateEnum.DOWN;
-  }
-  return HealthStateEnum.UNKNOWN;
-};
 
 export const healthStatusTextMap: Record<number, string> = {
   1: "运行中",

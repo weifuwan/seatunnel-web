@@ -1,6 +1,6 @@
 import ClickSpark from "@/components/ClickSpark";
 import { useIntl } from "@umijs/max";
-import { Col, message, Modal, Row, Spin } from "antd";
+import { message, Modal, Spin } from "antd";
 import { motion } from "framer-motion";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import AddOrEditDataSourceModal from "./components/AddOrEditDataSourceModal";
@@ -198,8 +198,7 @@ const DataSourcePage: React.FC = () => {
       );
 
       handleRefresh();
-    } catch (_) {
-    }
+    } catch (_) {}
   };
 
   return (
@@ -241,26 +240,21 @@ const DataSourcePage: React.FC = () => {
                   initial="hidden"
                   animate="visible"
                 >
-                  <Row gutter={[24, 24]}>
+                  <div className="grid grid-cols-[repeat(auto-fill,400px)] justify-start gap-5">
                     {filteredDataSourceList.map((record) => (
-                      <Col xs={24} md={12} lg={8} key={record.id}>
-                        <motion.div
-                          variants={PAGE_ANIMATION.fadeUp}
-                          whileHover={{
-                            y: -6,
-                            transition: { duration: 0.2 },
-                          }}
-                        >
-                          <DataSourceCard
-                            record={record}
-                            onEdit={handleEdit}
-                            onDelete={handleDelete}
-                            onTestConnection={handleTestConnection}
-                          />
-                        </motion.div>
-                      </Col>
+                      <motion.div
+                        key={record.id}
+                        variants={PAGE_ANIMATION.fadeUp}
+                      >
+                        <DataSourceCard
+                          record={record}
+                          onEdit={handleEdit}
+                          onDelete={handleDelete}
+                          onTestConnection={handleTestConnection}
+                        />
+                      </motion.div>
                     ))}
-                  </Row>
+                  </div>
 
                   {!loading && filteredDataSourceList.length === 0 && (
                     <EmptyState onCreate={handleCreate} />

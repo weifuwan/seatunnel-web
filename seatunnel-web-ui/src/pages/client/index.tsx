@@ -19,7 +19,6 @@ const ClientPageTailwind: React.FC = () => {
     setOpenAddModal,
     metrics,
     form,
-    healthMeta,
     handleCreateClient,
     loadClientMetrics,
   } = useClientPageState();
@@ -78,7 +77,6 @@ const ClientPageTailwind: React.FC = () => {
                   <ClientDetailPanel
                     selectedClient={selectedClient}
                     selectedClientId={selectedClientId}
-                    healthMeta={healthMeta}
                     metrics={metrics}
                     metricsLoading={metricsLoading}
                     onRefresh={loadClientMetrics}

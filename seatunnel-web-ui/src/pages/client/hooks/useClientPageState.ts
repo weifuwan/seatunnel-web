@@ -2,7 +2,6 @@ import { Form, message } from "antd";
 import { useEffect, useMemo, useState } from "react";
 import { seatunnelClientApi, SeatunnelClientMetrics } from "../api";
 import { useClientMonitoring } from "./useClientMonitoring";
-import { getHealthMeta } from "../utils";
 
 export function useClientPageState() {
   const {
@@ -19,10 +18,7 @@ export function useClientPageState() {
   const [metrics, setMetrics] = useState<SeatunnelClientMetrics>({});
   const [form] = Form.useForm();
 
-  const healthMeta = useMemo(
-    () => getHealthMeta(selectedClient?.healthStatus),
-    [selectedClient?.healthStatus]
-  );
+
 
   const handleCreateClient = async () => {
     try {
@@ -93,7 +89,6 @@ export function useClientPageState() {
     setOpenAddModal,
     metrics,
     form,
-    healthMeta,
 
     handleCreateClient,
     loadClientMetrics,

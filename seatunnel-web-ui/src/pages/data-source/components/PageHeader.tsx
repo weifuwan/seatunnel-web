@@ -11,21 +11,20 @@ const PageHeader: React.FC<PageHeaderProps> = ({ onCreate }) => {
   const intl = useIntl();
 
   return (
-    <div className="datasource-page-header">
-      <div>
-        <div className="datasource-page-title-row">
-          <div className="datasource-page-icon-wrapper">
+    <div className="mb-8 flex flex-col gap-5 rounded-3xl  lg:flex-row lg:items-end lg:justify-between">
+      <div className="min-w-0">
+        <div className="mb-2 flex items-center gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[hsl(231_48%_48%/0.10)] text-[hsl(231_48%_48%)]">
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
+              width="23"
+              height="23"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="datasource-page-icon"
             >
               <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z" />
               <path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2" />
@@ -37,7 +36,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({ onCreate }) => {
             </svg>
           </div>
 
-          <h1 className="datasource-page-title">
+          <h1 className="m-0 truncate text-[26px] font-bold leading-8 tracking-[-0.02em] text-[#101828]">
             {intl.formatMessage({
               id: 'pages.datasource.header.title',
               defaultMessage: 'List of Data Sources',
@@ -45,12 +44,8 @@ const PageHeader: React.FC<PageHeaderProps> = ({ onCreate }) => {
           </h1>
         </div>
 
-        <p className="datasource-page-description">
-          {intl.formatMessage({
-            id: 'pages.datasource.header.desc',
-            defaultMessage:
-              'A unified governance system for data sources, connectivity, access, and security.',
-          })}
+        <p className="m-0 max-w-[780px] text-sm leading-6 text-[#667085]">
+          统一管理数据源连接、访问权限与安全策略，让数据接入更规范、更可控。
         </p>
       </div>
 
@@ -59,7 +54,14 @@ const PageHeader: React.FC<PageHeaderProps> = ({ onCreate }) => {
         icon={<PlusOutlined />}
         size="large"
         onClick={onCreate}
-        className="datasource-create-button"
+        className={[
+          '!h-[42px] !shrink-0 !rounded-full !px-5 !font-semibold',
+          '!border-[hsl(231_48%_48%)] !bg-[hsl(231_48%_48%)]',
+          'shadow-[0_8px_18px_hsl(231_48%_48%/0.22)]',
+          'transition-all duration-200 ease-out',
+          'hover:!-translate-y-0.5 hover:!border-[hsl(231_48%_44%)] hover:!bg-[hsl(231_48%_44%)]',
+          'hover:!shadow-[0_12px_24px_hsl(231_48%_48%/0.26)]',
+        ].join(' ')}
       >
         新建数据源
       </Button>

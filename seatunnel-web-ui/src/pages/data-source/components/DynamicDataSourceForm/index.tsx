@@ -26,8 +26,8 @@ const ENV_OPTIONS = [
     value: "DEVELOP",
     label: (
       <div className="flex items-center gap-2">
-        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
-          <Code2 size={15} />
+        <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+          <Code2 size={13} />
         </span>
         <span className="text-[13px] font-medium text-slate-700">开发环境</span>
       </div>
@@ -37,8 +37,8 @@ const ENV_OPTIONS = [
     value: "TEST",
     label: (
       <div className="flex items-center gap-2">
-        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
-          <FlaskConical size={15} />
+        <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
+          <FlaskConical size={13} />
         </span>
         <span className="text-[13px] font-medium text-slate-700">测试环境</span>
       </div>
@@ -48,8 +48,8 @@ const ENV_OPTIONS = [
     value: "PROD",
     label: (
       <div className="flex items-center gap-2">
-        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-rose-50 text-rose-600">
-          <ShieldCheck size={15} />
+        <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-rose-50 text-rose-600">
+          <ShieldCheck size={13} />
         </span>
         <span className="text-[13px] font-medium text-slate-700">生产环境</span>
       </div>
@@ -129,7 +129,7 @@ const DynamicDataSourceForm: React.FC<DynamicDataSourceFormProps> = ({
         }
       } else {
         setNeedInstall(true);
-        setLoadErrMsg(response?.message || "Plugin config not available");
+        setLoadErrMsg(response?.msg || "Plugin config not available");
         setFormConfig([]);
       }
     } catch (error: any) {

@@ -36,30 +36,30 @@ const DataSourceCard: React.FC<DataSourceCardProps> = ({
     <Card
       bodyStyle={{ padding: 0 }}
       className={[
-        "group relative overflow-hidden rounded-2xl border border-[#F0F0F0]",
-        "bg-white shadow-[0_6px_18px_rgba(15,23,42,0.04)]",
+        "group relative overflow-hidden rounded-3xl border border-[#F0F0F0]",
+        "bg-white shadow-[0_8px_24px_rgba(15,23,42,0.04)]",
         "!transition-shadow !duration-200 !ease-out",
         "hover:!translate-y-0 hover:!transform-none",
-        "hover:shadow-[0_10px_22px_rgba(15,23,42,0.06)]",
+        "hover:shadow-[0_10px_20px_rgba(15,23,42,0.06)]",
       ].join(" ")}
     >
-      <div className="relative h-[78px] bg-[hsl(210_40%_96.1%)]">
+      <div className="relative h-[88px] bg-[hsl(210_40%_96.1%)]">
         <div
           className={[
-            "absolute left-5 bottom-[-22px] z-[2]",
-            "flex h-[54px] w-[54px] items-center justify-center rounded-full",
-            "border-[3px] border-white bg-white",
-            "shadow-[0_4px_10px_rgba(0,0,0,0.10)]",
+            "absolute left-6 bottom-[-24px] z-[2]",
+            "flex h-16 w-16 items-center justify-center rounded-full",
+            "border-4 border-white bg-white",
+            "shadow-[0_4px_12px_rgba(0,0,0,0.12)]",
           ].join(" ")}
         >
-          <DatabaseIcons dbType={record.dbType} width="25" height="25" />
+          <DatabaseIcons dbType={record.dbType} width="28" height="28" />
         </div>
 
-        <div className="absolute right-4 top-4">
+        <div className="absolute right-5 top-4">
           <span
             className={[
               "inline-flex items-center gap-1.5 rounded-full",
-              "px-2 py-0.5 text-[11px] font-medium leading-none",
+              "px-2.5 py-1 text-xs font-medium leading-none",
             ].join(" ")}
             style={{
               background: environmentConfig.backgroundColor,
@@ -82,17 +82,16 @@ const DataSourceCard: React.FC<DataSourceCardProps> = ({
           <button
             type="button"
             className={[
-              "flex h-[28px] w-[28px] items-center justify-center rounded-full",
-              "border border-[#E8E8E8] bg-white text-[11px] text-[#262626]",
-              "shadow-[0_6px_16px_rgba(0,0,0,0.08)]",
+              "flex h-[30px] w-[30px] items-center justify-center rounded-full",
+              "border border-[#E8E8E8] bg-white text-xs text-[#262626]",
+              "shadow-[0_6px_18px_rgba(0,0,0,0.08)]",
               "transition-all duration-200 ease-out",
-              "hover:scale-[1.05] hover:border-[#FFCCC7] hover:bg-[#FFF2F0] hover:text-[#FF4D4F]",
+              "hover:scale-[1.06] hover:border-[#FFCCC7] hover:bg-[#FFF2F0] hover:text-[#FF4D4F]",
             ].join(" ")}
             onClick={(event) => {
               event.stopPropagation();
               onDelete(record);
             }}
-            title="删除"
           >
             <DeleteOutlined />
           </button>
@@ -100,43 +99,42 @@ const DataSourceCard: React.FC<DataSourceCardProps> = ({
           <button
             type="button"
             className={[
-              "flex h-[28px] w-[28px] items-center justify-center rounded-full",
-              "border border-[#E8E8E8] bg-white text-[11px] text-[#262626]",
-              "shadow-[0_6px_16px_rgba(0,0,0,0.08)]",
+              "flex h-[30px] w-[30px] items-center justify-center rounded-full",
+              "border border-[#E8E8E8] bg-white text-xs text-[#262626]",
+              "shadow-[0_6px_18px_rgba(0,0,0,0.08)]",
               "transition-all duration-200 ease-out",
-              "hover:scale-[1.05] hover:bg-[#F5F5F5] hover:text-[#1677FF]",
+              "hover:scale-[1.06] hover:bg-[#F5F5F5] hover:text-[#1677FF]",
             ].join(" ")}
             onClick={(event) => {
               event.stopPropagation();
               onTestConnection(record);
             }}
-            title="测试连接"
           >
             <DisconnectOutlined />
           </button>
         </div>
       </div>
 
-      <div className="px-5 pb-4 pt-[34px]">
+      <div className="px-6 pb-5 pt-9">
         <div
-          className="mb-1.5 truncate text-[16px] font-bold text-[#1F1F1F]"
+          className="mb-2 truncate text-lg font-bold text-[#1F1F1F]"
           title={record.name}
         >
           {record.name || "-"}
         </div>
 
         <div
-          className="mb-2.5 truncate text-xs leading-5 text-[#475467]"
+          className="mb-3 truncate text-[13px] text-[#262626]"
           title={record.jdbcUrl}
         >
           {record.jdbcUrl || "-"}
         </div>
 
-        <div className="mb-3">
+        <div className="mb-4">
           <DataSourceStatus status={record.connStatus} />
         </div>
 
-        <div className="mb-3 text-xs text-[#8C8C8C]">
+        <div className="mb-4 mt-3 text-xs text-[#8C8C8C]">
           <span className="font-medium text-[#595959]">
             {record.updateTime || "-"}
           </span>
@@ -146,8 +144,8 @@ const DataSourceCard: React.FC<DataSourceCardProps> = ({
           block
           type="default"
           className={[
-            "group/detail relative h-[36px] overflow-hidden rounded-full p-0",
-            "border border-[#D9D9D9] bg-white font-semibold",
+            "group/detail relative h-[42px] overflow-hidden rounded-full p-0",
+            "border border-[#D9D9D9] bg-white font-bold",
             "transition-all duration-300 ease-out",
             "hover:!border-[hsl(231_48%_48%)]",
           ].join(" ")}

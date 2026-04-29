@@ -240,7 +240,7 @@ const DataSourcePage: React.FC = () => {
                   initial="hidden"
                   animate="visible"
                 >
-                  <div className="grid grid-cols-[repeat(auto-fill,400px)] justify-start gap-5">
+                  <div className="grid grid-cols-[repeat(auto-fill,440px)] justify-start gap-5">
                     {filteredDataSourceList.map((record) => (
                       <motion.div
                         key={record.id}

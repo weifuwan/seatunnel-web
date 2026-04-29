@@ -428,24 +428,6 @@ export default function useFlowBuilder({ form, params }: Props) {
       case "delete_all_connections":
         deleteConnections("both", nodesToDelete);
         break;
-      case "duplicate":
-        setNodes((nds) => {
-          const newNodes = nodesToDelete.map((node: any, index: number) => ({
-            ...node,
-            id: `${nds.length + index + 1}-${Date.now()}`,
-            position: {
-              x: node.position.x + 50 * (index + 1),
-              y: node.position.y + 50 * (index + 1),
-            },
-            data: {
-              ...node.data,
-              label: `${node.data.label} (副本)`,
-            },
-          }));
-          message.success(`已复制 ${newNodes.length} 个节点`);
-          return nds.concat(newNodes);
-        });
-        break;
       default:
         break;
     }
@@ -469,10 +451,10 @@ export default function useFlowBuilder({ form, params }: Props) {
     );
     const hasAnyConnections = hasLeftConnections || hasRightConnections;
 
-    const items: any[] = [{ key: "duplicate", label: "复制节点" }];
+    const items: any[] = [];
 
     if (hasLeftConnections || hasRightConnections) {
-      items.push({ type: "divider" });
+      // items.push({ type: "divider" });
     }
 
     if (hasLeftConnections) {

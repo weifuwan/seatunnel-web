@@ -1,52 +1,45 @@
 package org.apache.seatunnel.web.core.builder;
 
 import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.seatunnel.web.core.builder.context.DagBuildContext;
 import org.apache.seatunnel.web.core.builder.sink.SinkNodeConfigBuilder;
 import org.apache.seatunnel.web.core.builder.source.SourceNodeConfigBuilder;
 import org.apache.seatunnel.web.core.builder.transform.TransformNodeConfigBuilder;
 import org.apache.seatunnel.web.core.dag.DagGraph;
 import org.apache.seatunnel.web.core.utils.SeaTunnelConfigUtil;
-import org.apache.seatunnel.web.spi.bean.dto.BaseJobDefinitionCommand;
 import org.apache.seatunnel.web.spi.bean.dto.EnvConfig;
-import org.apache.seatunnel.web.spi.bean.dto.JobBasicConfig;
 import org.springframework.stereotype.Component;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
  * Builds a complete SeaTunnel job configuration in HOCON format.
- *
- * <p>
- * This class performs the following steps:
- * </p>
- * <ol>
- *     <li>Classify DAG nodes into sources, transforms, and sinks.</li>
- *     <li>Use appropriate NodeConfigBuilder to generate individual node configs.</li>
- *     <li>Group nodes into NodeGroup and render each category as HOCON text.</li>
- *     <li>Combine environment, sources, transforms, and sinks into a full job configuration.</li>
- * </ol>
  */
 @Component
 @Slf4j
 public class HoconConfigBuilder {
 
-    @Resource
-    private NodeConfigBuilderRegistry registry; // Registry for retrieving builders by nodeType
+    private static final String KEY_ID = "id";
+    private static final String KEY_DATA = "data";
+    private static final String KEY_NODE_TYPE = "nodeType";
 
     @Resource
-    private EnvConfigBuilder envConfigBuilder; // Builds the environment section of the config
+    private NodeConfigBuilderRegistry registry;
 
-    /**
-     * Build the full SeaTunnel HOCON configuration for a DAG graph.
-     *
-     * @param dagGraph the DAG representation of the job
-     * @return HOCON string representing the full job configuration
-     */
-    public String build(DagGraph dagGraph,  EnvConfig envConfig) {
-        NodeGroup group = groupNodes(dagGraph.getNodesAsConfig());
+    @Resource
+    private EnvConfigBuilder envConfigBuilder;
+
+    public String build(DagGraph dagGraph, EnvConfig envConfig) {
+        DagBuildContext context = DagBuildContext.from(dagGraph);
+
+        NodeGroup group = groupNodes(dagGraph.getNodesAsConfig(), context);
+
         return SeaTunnelConfigUtil.generateConfig(
                 envConfigBuilder.build(envConfig),
                 render(group.sources()),
@@ -55,50 +48,65 @@ public class HoconConfigBuilder {
         );
     }
 
-    /**
-     * Classify raw node configs into sources, transforms, and sinks.
-     *
-     * @param nodes list of node Config objects from the DAG
-     * @return NodeGroup containing grouped nodes
-     */
-    private NodeGroup groupNodes(List<Config> nodes) {
+    private NodeGroup groupNodes(List<Config> nodes, DagBuildContext context) {
         NodeGroup nodeGroup = new NodeGroup();
+
         nodes.stream()
-                .filter(n -> n.hasPath("data"))      // Only process nodes that have "data"
-                .map(n -> n.getConfig("data"))       // Extract the "data" block
-                .forEach(data -> classify(data, nodeGroup));
+                .filter(n -> n.hasPath(KEY_DATA))
+                .map(this::resolveNodeDataWithId)
+                .forEach(data -> classify(data, nodeGroup, context));
+
         return nodeGroup;
     }
 
     /**
-     * Classify a single node's data into the appropriate category in NodeGroup.
+     * Keep outer node id in data.
      *
-     * @param data node configuration
-     * @param g    NodeGroup to populate
+     * <p>
+     * ReactFlow node id is outside data, but source/sink plugin_input/plugin_output
+     * needs this id when transform exists.
+     * </p>
      */
-    private void classify(Config data, NodeGroup g) {
-        String nodeType = data.getString("nodeType");
-        NodeConfigBuilder<?> b = registry.get(nodeType);
+    private Config resolveNodeDataWithId(Config node) {
+        Config data = node.getConfig(KEY_DATA);
 
-        if (b instanceof SourceNodeConfigBuilder) {
-            SourceNodeConfigBuilder sb = (SourceNodeConfigBuilder) b;
-            g.addSource(sb.connectorName(data), sb.build(data));
-        } else if (b instanceof SinkNodeConfigBuilder) {
-            SinkNodeConfigBuilder kb = (SinkNodeConfigBuilder) b;
-            g.addSink(kb.connectorName(data), kb.build(data));
-        } else if (b instanceof TransformNodeConfigBuilder) {
-            g.addTransform(((TransformNodeConfigBuilder) b).build(data));
-        } else {
-            log.warn("Unknown builder type: {}", b.getClass());
+        if (!node.hasPath(KEY_ID)) {
+            return data;
         }
+
+        String nodeId = node.getString(KEY_ID);
+
+        Map<String, Object> idMap = new HashMap<>();
+        idMap.put(KEY_ID, nodeId);
+
+        return ConfigFactory.parseMap(idMap).withFallback(data).resolve();
     }
 
-    /**
-     * Render a list of {@link RenderedItem} as HOCON text.
-     *
-     * @param items list of rendered items
-     * @return concatenated HOCON string
-     */
+    private void classify(Config data, NodeGroup g, DagBuildContext context) {
+        String nodeType = data.getString(KEY_NODE_TYPE);
+        NodeConfigBuilder<?> builder = registry.get(nodeType);
+
+        if (builder instanceof SourceNodeConfigBuilder) {
+            SourceNodeConfigBuilder sourceBuilder = (SourceNodeConfigBuilder) builder;
+            g.addSource(sourceBuilder.connectorName(data), sourceBuilder.build(data, context));
+            return;
+        }
+
+        if (builder instanceof SinkNodeConfigBuilder) {
+            SinkNodeConfigBuilder sinkBuilder = (SinkNodeConfigBuilder) builder;
+            g.addSink(sinkBuilder.connectorName(data), sinkBuilder.build(data, context));
+            return;
+        }
+
+        if (builder instanceof TransformNodeConfigBuilder) {
+            TransformNodeConfigBuilder transformBuilder = (TransformNodeConfigBuilder) builder;
+            g.addTransform(transformBuilder.build(data, context));
+            return;
+        }
+
+        log.warn("Unknown builder type: {}", builder.getClass());
+    }
+
     private String render(List<RenderedItem> items) {
         return items.stream()
                 .map(RenderedItem::toHocon)

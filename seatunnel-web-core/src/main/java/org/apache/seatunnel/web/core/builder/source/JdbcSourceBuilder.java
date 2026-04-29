@@ -1,6 +1,7 @@
 package org.apache.seatunnel.web.core.builder.source;
 
 import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 import jakarta.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.seatunnel.plugin.datasource.api.jdbc.DataSourceProcessor;
@@ -8,10 +9,14 @@ import org.apache.seatunnel.plugin.datasource.api.utils.DataSourceUtils;
 import org.apache.seatunnel.web.common.config.ConfigValidator;
 import org.apache.seatunnel.web.common.config.ReadonlyConfig;
 import org.apache.seatunnel.web.common.enums.HoconBuildStage;
+import org.apache.seatunnel.web.core.builder.context.DagBuildContext;
 import org.apache.seatunnel.web.dao.entity.DataSource;
 import org.apache.seatunnel.web.dao.repository.DataSourceDao;
 import org.apache.seatunnel.web.spi.enums.DbType;
 import org.springframework.stereotype.Component;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * JDBC source node builder.
@@ -25,6 +30,8 @@ public class JdbcSourceBuilder implements SourceNodeConfigBuilder {
     private static final String KEY_PLUGIN_NAME = "pluginName";
     private static final String KEY_CONNECTOR_TYPE = "connectorType";
 
+    private static final String KEY_PLUGIN_OUTPUT = "plugin_output";
+
     @Resource
     private DataSourceDao dataSourceDao;
 
@@ -35,7 +42,13 @@ public class JdbcSourceBuilder implements SourceNodeConfigBuilder {
 
     @Override
     public Config build(Config data) {
+        return build(data, DagBuildContext.empty());
+    }
+
+    @Override
+    public Config build(Config data, DagBuildContext context) {
         Config config = resolveNodeConfig(data);
+        config = appendPluginOutputIfNecessary(data, config, context);
 
         Long dataSourceId = parseDataSourceId(config);
         DataSource dataSource = getRequiredDataSource(dataSourceId);
@@ -56,9 +69,28 @@ public class JdbcSourceBuilder implements SourceNodeConfigBuilder {
         return sourceConfig;
     }
 
-    /**
-     * Prefer connectorType as connector name.
-     */
+    private Config appendPluginOutputIfNecessary(Config data,
+                                                 Config config,
+                                                 DagBuildContext context) {
+        if (context == null || !context.hasTransform()) {
+            return config;
+        }
+
+        String pluginOutput = getTrimmedString(config, "pluginOutput");
+        if (StringUtils.isBlank(pluginOutput)) {
+            pluginOutput = getTrimmedString(data, "pluginOutput");
+        }
+
+        if (StringUtils.isBlank(pluginOutput)) {
+            return config;
+        }
+
+        Map<String, Object> extra = new HashMap<>();
+        extra.put("plugin_output", pluginOutput);
+
+        return ConfigFactory.parseMap(extra).withFallback(config).resolve();
+    }
+
     @Override
     public String connectorName(Config data) {
         String connectorType = getTrimmedString(data, KEY_CONNECTOR_TYPE);
@@ -129,6 +161,7 @@ public class JdbcSourceBuilder implements SourceNodeConfigBuilder {
         if (config == null || !config.hasPath(path)) {
             return null;
         }
+
         String value = config.getString(path);
         return value == null ? null : value.trim();
     }

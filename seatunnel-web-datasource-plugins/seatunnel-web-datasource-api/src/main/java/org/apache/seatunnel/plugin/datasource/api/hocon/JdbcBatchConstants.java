@@ -78,9 +78,18 @@ public final class JdbcBatchConstants {
     public static final String WRITE_MODE = "writeMode";
     public static final String BATCH_SIZE = "batchSize";
 
+
+    public static final String EXTRA_PARAMS = "extraParams";
+
+    // =========================
+    // Plugin relation keys
+    // =========================
+
     public static final String PLUGIN_INPUT = "pluginInput";
     public static final String PLUGIN_OUTPUT = "pluginOutput";
-    public static final String EXTRA_PARAMS = "extraParams";
+
+    public static final String PLUGIN_INPUT_UNDERSCORE = "plugin_input";
+    public static final String PLUGIN_OUTPUT_UNDERSCORE = "plugin_output";
 
     // =========================
     // SeaTunnel sink option keys

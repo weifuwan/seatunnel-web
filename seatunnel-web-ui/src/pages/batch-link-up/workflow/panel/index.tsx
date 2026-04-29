@@ -6,21 +6,34 @@ import SourcePanel from "./components/SourcePanel";
 import TransformPanel from "./components/TransformPanel";
 import "./index.less";
 
+interface FieldMapperLinkedNodeIds {
+  sourceNodeId?: string;
+  sinkNodeId?: string;
+}
+
 interface WorkflowPanelProps {
   selectedNode: any;
   onClose: () => void;
   onNodeDataChange: (nodeId: string, newData: any) => void;
   getDirectUpstreamSchema: (nodeId: string) => any[];
+  getFieldMapperLinkedNodeIds: (nodeId: string) => FieldMapperLinkedNodeIds;
   refreshNodeSchema: (nodeId: string) => void;
   refreshDownstreamSchemas: (nodeId: string) => void;
+  syncTransformPluginConfig: (nodeId: string) => {
+    pluginInput?: string;
+    pluginOutput?: string;
+  };
 }
+
 const WorkflowPanel: FC<WorkflowPanelProps> = ({
   selectedNode,
   onClose,
   onNodeDataChange,
   getDirectUpstreamSchema,
+  getFieldMapperLinkedNodeIds,
   refreshNodeSchema,
-  refreshDownstreamSchemas
+  refreshDownstreamSchemas,
+  syncTransformPluginConfig,
 }) => {
   const nodeType = selectedNode?.data?.nodeType;
 
@@ -46,18 +59,20 @@ const WorkflowPanel: FC<WorkflowPanelProps> = ({
     );
   }
 
- if (nodeType === "transform") {
-  return (
-    <TransformPanel
-      selectedNode={selectedNode}
-      onClose={onClose}
-      onNodeDataChange={onNodeDataChange}
-      getDirectUpstreamSchema={getDirectUpstreamSchema}
-      refreshNodeSchema={refreshNodeSchema}
-      refreshDownstreamSchemas={refreshDownstreamSchemas}
-    />
-  );
-}
+  if (nodeType === "transform") {
+    return (
+      <TransformPanel
+        selectedNode={selectedNode}
+        onClose={onClose}
+        onNodeDataChange={onNodeDataChange}
+        getDirectUpstreamSchema={getDirectUpstreamSchema}
+        getFieldMapperLinkedNodeIds={getFieldMapperLinkedNodeIds}
+        refreshNodeSchema={refreshNodeSchema}
+        refreshDownstreamSchemas={refreshDownstreamSchemas}
+        syncTransformPluginConfig={syncTransformPluginConfig}
+      />
+    );
+  }
 
   return null;
 };

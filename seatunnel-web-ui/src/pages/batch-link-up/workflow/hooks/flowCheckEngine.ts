@@ -98,6 +98,7 @@ const sourceRules: NodeCheckRule[] = [
 
 const transformRules: NodeCheckRule[] = [
   (node) => {
+    console.log(node)
     const config = getConfig(node);
     if (!config.pluginInput) {
       return buildWarning(node, "pluginInput", "缺少上游输入配置");

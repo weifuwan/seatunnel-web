@@ -701,6 +701,69 @@ export default function useFlowBuilder({ form, params }: Props) {
     [getDirectDownstreamNodes, refreshNodeSchema]
   );
 
+  const getFieldMapperLinkedNodeIds = useCallback(
+    (nodeId: string) => {
+      const currentEdges = getEdges();
+      const currentNodes = getNodes();
+
+      const incomingEdge = currentEdges.find((edge) => edge.target === nodeId);
+      const outgoingEdge = currentEdges.find((edge) => edge.source === nodeId);
+
+      const upstreamNode = incomingEdge
+        ? currentNodes.find((node) => node.id === incomingEdge.source)
+        : null;
+
+      console.log(upstreamNode);
+
+      const downstreamNode = outgoingEdge
+        ? currentNodes.find((node) => node.id === outgoingEdge.target)
+        : null;
+      console.log(downstreamNode);
+      return {
+        sourceNodeId: upstreamNode?.id,
+        sinkNodeId: downstreamNode?.id,
+      };
+    },
+    [getEdges, getNodes]
+  );
+
+  const syncTransformPluginConfig = useCallback(
+  (nodeId: string) => {
+    const currentEdges = getEdges();
+    const currentNodes = getNodes();
+
+    const incomingEdge = currentEdges.find((edge) => edge.target === nodeId);
+    const outgoingEdge = currentEdges.find((edge) => edge.source === nodeId);
+
+    const pluginInput = incomingEdge?.source;
+    const pluginOutput = outgoingEdge?.target;
+
+    setNodes((nds) =>
+      nds.map((node) => {
+        if (node.id !== nodeId) return node;
+
+        return {
+          ...node,
+          data: {
+            ...node.data,
+            config: {
+              ...(node.data?.config || {}),
+              pluginInput,
+              pluginOutput,
+            },
+          },
+        };
+      })
+    );
+
+    return {
+      pluginInput,
+      pluginOutput,
+    };
+  },
+  [getEdges, getNodes, setNodes]
+);
+
   return {
     nodes,
     edges,
@@ -741,5 +804,7 @@ export default function useFlowBuilder({ form, params }: Props) {
     getDirectDownstreamNodes,
     refreshNodeSchema,
     refreshDownstreamSchemas,
+    getFieldMapperLinkedNodeIds,
+    syncTransformPluginConfig
   };
 }

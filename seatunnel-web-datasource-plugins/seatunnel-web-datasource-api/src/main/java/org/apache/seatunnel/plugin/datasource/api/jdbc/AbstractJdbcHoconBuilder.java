@@ -4,13 +4,8 @@ import com.typesafe.config.Config;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Map;
+import static org.apache.seatunnel.plugin.datasource.api.hocon.JdbcBatchConstants.*;
 
-import static org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConfigKeys.DATABASE;
-import static org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConfigKeys.DRIVER;
-import static org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConfigKeys.PASSWORD;
-import static org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConfigKeys.SCHEMA;
-import static org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConfigKeys.URL;
-import static org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConfigKeys.USER;
 
 public abstract class AbstractJdbcHoconBuilder {
 

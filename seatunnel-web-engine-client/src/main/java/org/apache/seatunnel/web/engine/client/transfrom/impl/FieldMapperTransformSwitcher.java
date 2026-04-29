@@ -8,21 +8,15 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.seatunnel.web.engine.client.transfrom.TransformConfigSwitcher;
 import org.apache.seatunnel.web.engine.client.transfrom.domain.FieldMapperField;
+import org.apache.seatunnel.web.engine.client.transfrom.domain.FieldMapperMapping;
 import org.apache.seatunnel.web.engine.client.transfrom.domain.FieldMapperTransformOptions;
 import org.apache.seatunnel.web.engine.client.transfrom.domain.Transform;
 import org.apache.seatunnel.web.engine.client.transfrom.domain.TransformOptions;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
-/**
- * TransformConfigSwitcher implementation for SeaTunnel FieldMapper transform.
- *
- * <p>
- * Responsible for converting {@link FieldMapperTransformOptions}
- * into a SeaTunnel-compatible {@link Config}.
- * </p>
- */
 @Slf4j
 @AutoService(TransformConfigSwitcher.class)
 public class FieldMapperTransformSwitcher implements TransformConfigSwitcher {
@@ -37,7 +31,8 @@ public class FieldMapperTransformSwitcher implements TransformConfigSwitcher {
         if (!(options instanceof FieldMapperTransformOptions)) {
             throw new IllegalArgumentException(
                     "Invalid TransformOptions type for FieldMapper: "
-                            + options.getClass().getName());
+                            + (options == null ? "null" : options.getClass().getName())
+            );
         }
 
         FieldMapperTransformOptions transformOptions =
@@ -45,22 +40,21 @@ public class FieldMapperTransformSwitcher implements TransformConfigSwitcher {
 
         validate(transformOptions);
 
+        String pluginInput = transformOptions.getEffectivePluginInput();
+        String pluginOutput = transformOptions.getEffectivePluginOutput();
+
+        Map<String, Object> fieldMapper = buildFieldMapper(transformOptions);
+
         log.info(
                 "Generating FieldMapper config, plugin_input={}, plugin_output={}, field_count={}",
-                transformOptions.getPluginInput(),
-                transformOptions.getPluginOutput(),
-                transformOptions.getTransformColumns().size()
+                pluginInput,
+                pluginOutput,
+                fieldMapper.size()
         );
 
-        Map<String, Object> fieldMapper = new HashMap<>();
-
-        for (FieldMapperField field : transformOptions.getTransformColumns()) {
-            fieldMapper.put(field.getFieldName(), field.getTargetFieldName());
-        }
-
         Map<String, Object> fieldMapperConfig = new HashMap<>();
-        fieldMapperConfig.put("plugin_input", transformOptions.getPluginInput());
-        fieldMapperConfig.put("plugin_output", transformOptions.getPluginOutput());
+        fieldMapperConfig.put("plugin_input", pluginInput);
+        fieldMapperConfig.put("plugin_output", pluginOutput);
         fieldMapperConfig.put("field_mapper", fieldMapper);
 
         Map<String, Object> root = new HashMap<>();
@@ -73,32 +67,111 @@ public class FieldMapperTransformSwitcher implements TransformConfigSwitcher {
         return config;
     }
 
-    /**
-     * Validate FieldMapper transform options.
-     *
-     * @param options FieldMapperTransformOptions
-     */
+    private Map<String, Object> buildFieldMapper(FieldMapperTransformOptions options) {
+        Map<String, Object> fieldMapper = new HashMap<>();
+
+        /**
+         * New structure:
+         * config.mappings: [
+         *   {
+         *     sourceField,
+         *     targetField,
+         *     enabled
+         *   }
+         * ]
+         */
+        List<FieldMapperMapping> mappings = options.getEffectiveMappings();
+        if (CollectionUtils.isNotEmpty(mappings)) {
+            for (FieldMapperMapping mapping : mappings) {
+                if (Boolean.FALSE.equals(mapping.getEnabled())) {
+                    continue;
+                }
+
+                fieldMapper.put(
+                        mapping.getSourceField(),
+                        mapping.getTargetField()
+                );
+            }
+
+            return fieldMapper;
+        }
+
+        /**
+         * Old structure:
+         * transformColumns: [
+         *   {
+         *     fieldName,
+         *     targetFieldName
+         *   }
+         * ]
+         */
+        if (CollectionUtils.isNotEmpty(options.getTransformColumns())) {
+            for (FieldMapperField field : options.getTransformColumns()) {
+                fieldMapper.put(
+                        field.getFieldName(),
+                        field.getTargetFieldName()
+                );
+            }
+        }
+
+        return fieldMapper;
+    }
+
     private void validate(FieldMapperTransformOptions options) {
-        if (StringUtils.isBlank(options.getPluginInput())) {
+        String pluginInput = options.getEffectivePluginInput();
+        String pluginOutput = options.getEffectivePluginOutput();
+
+        if (StringUtils.isBlank(pluginInput)) {
             throw new IllegalArgumentException("plugin_input must not be empty");
         }
 
-        if (StringUtils.isBlank(options.getPluginOutput())) {
+        if (StringUtils.isBlank(pluginOutput)) {
             throw new IllegalArgumentException("plugin_output must not be empty");
         }
 
+        List<FieldMapperMapping> mappings = options.getEffectiveMappings();
+
+        /**
+         * Validate new structure first.
+         */
+        if (CollectionUtils.isNotEmpty(mappings)) {
+            for (FieldMapperMapping mapping : mappings) {
+                if (Boolean.FALSE.equals(mapping.getEnabled())) {
+                    continue;
+                }
+
+                if (StringUtils.isBlank(mapping.getSourceField())) {
+                    throw new IllegalArgumentException("sourceField must not be empty");
+                }
+
+                if (StringUtils.isBlank(mapping.getTargetField())) {
+                    throw new IllegalArgumentException(
+                            "targetField must not be empty for sourceField: "
+                                    + mapping.getSourceField()
+                    );
+                }
+            }
+
+            return;
+        }
+
+        /**
+         * Validate old structure.
+         */
         if (CollectionUtils.isEmpty(options.getTransformColumns())) {
-            throw new IllegalArgumentException("transformColumns must not be empty");
+            throw new IllegalArgumentException("mappings must not be empty");
         }
 
         for (FieldMapperField field : options.getTransformColumns()) {
             if (StringUtils.isBlank(field.getFieldName())) {
                 throw new IllegalArgumentException("source field name must not be empty");
             }
+
             if (StringUtils.isBlank(field.getTargetFieldName())) {
                 throw new IllegalArgumentException(
                         "target field name must not be empty for source field: "
-                                + field.getFieldName());
+                                + field.getFieldName()
+                );
             }
         }
     }

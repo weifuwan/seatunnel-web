@@ -54,7 +54,7 @@ public class TransformBuilder implements TransformNodeConfigBuilder {
     public Config build(Config data) {
 
         // Parse the transform type from input config
-        Transform transform = Transform.valueOf(data.getString("transformType").toUpperCase());
+        Transform transform = Transform.valueOf(data.getString("componentType").toUpperCase());
 
         try {
             // Convert the full config to a JSON string for TransformOptions parsing

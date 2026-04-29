@@ -153,6 +153,20 @@ public class SeaTunnelClientServiceImpl implements SeaTunnelClientService {
     }
 
     @Override
+    public void deleteById(Long id) {
+        if (id == null) {
+            throw new IllegalArgumentException("客户端 ID 不能为空");
+        }
+
+        SeaTunnelClient entity = seaTunnelClientDao.selectById(id);
+        if (entity == null) {
+            throw new IllegalArgumentException("客户端不存在, id=" + id);
+        }
+
+        seaTunnelClientDao.deleteById(id);
+    }
+
+    @Override
     public ClientDatasourceVerifyVO verifyDatasource(Long clientId, ClientDatasourceVerifyDTO dto) {
         if (clientId == null) {
             throw new IllegalArgumentException("clientId 不能为空");

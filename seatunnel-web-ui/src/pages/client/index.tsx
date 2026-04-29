@@ -17,9 +17,15 @@ const ClientPageTailwind: React.FC = () => {
     metricsLoading,
     openAddModal,
     setOpenAddModal,
+    editingClient,
+    deleteLoadingId,
     metrics,
     form,
-    handleCreateClient,
+    handleOpenCreate,
+    handleOpenEdit,
+    handleDeleteClient,
+    handleSaveClient,
+    handleCancelModal,
     loadClientMetrics,
   } = useClientPageState();
 
@@ -38,7 +44,7 @@ const ClientPageTailwind: React.FC = () => {
         style={{ background: PAGE_BG }}
       >
         <div className="box-border px-6 py-6">
-          <ClientPageHeader onAdd={() => setOpenAddModal(true)} />
+          <ClientPageHeader onAdd={handleOpenCreate} />
 
           <div
             style={{
@@ -59,6 +65,9 @@ const ClientPageTailwind: React.FC = () => {
                 clients={clients}
                 selectedClientId={selectedClientId}
                 onSelect={setSelectedClientId}
+                onEdit={handleOpenEdit}
+                onDelete={handleDeleteClient}
+                deleteLoadingId={deleteLoadingId}
               />
 
               <div className="min-w-0 p-6">
@@ -90,12 +99,11 @@ const ClientPageTailwind: React.FC = () => {
         <AddClientModal
           open={openAddModal}
           form={form}
+          mode={editingClient ? "edit" : "create"}
+          initialValues={editingClient}
           confirmLoading={confirmLoading}
-          onCancel={() => {
-            setOpenAddModal(false);
-            form.resetFields();
-          }}
-          onSubmit={handleCreateClient}
+          onCancel={handleCancelModal}
+          onSubmit={handleSaveClient}
         />
       </div>
     </ClickSpark>

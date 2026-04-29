@@ -101,10 +101,10 @@ export const useTaskHistory = ({
       if (data?.code === 0) {
         setHistoryItems(data?.data?.bizData || []);
       } else {
-        message.error(data?.message || "Load history failed");
+        
       }
     } catch (error) {
-      message.error("Load history failed");
+      
     } finally {
       setLoading(false);
     }

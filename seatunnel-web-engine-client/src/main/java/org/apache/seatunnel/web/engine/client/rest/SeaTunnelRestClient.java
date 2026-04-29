@@ -248,7 +248,7 @@ public class SeaTunnelRestClient {
             );
             return resp.getBody();
         } catch (Exception e) {
-            throw wrap(e, "POST /submit-job/upload failed");
+            throw wrap(e, e.getMessage());
         }
     }
 

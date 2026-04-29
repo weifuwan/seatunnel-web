@@ -304,8 +304,10 @@ export default function FlowCanvas({
           onClose={flow.onCloseDrawer}
           onNodeDataChange={flow.handleNodeDataChange}
           getDirectUpstreamSchema={flow.getDirectUpstreamSchema}
+          getFieldMapperLinkedNodeIds={flow.getFieldMapperLinkedNodeIds}
           refreshNodeSchema={flow.refreshNodeSchema}
           refreshDownstreamSchemas={flow.refreshDownstreamSchemas}
+          syncTransformPluginConfig={flow.syncTransformPluginConfig}
         />
       )}
     </div>

@@ -35,15 +35,25 @@ import React, {
   useState,
 } from "react";
 import PanelShell from "../PanelShell";
-import "./index.less"
+import "./index.less";
+
+interface FieldMapperLinkedNodeIds {
+  sourceNodeId?: string;
+  sinkNodeId?: string;
+}
 
 interface Props {
   selectedNode: any;
   onClose: () => void;
   onNodeDataChange: (nodeId: string, newData: any) => void;
   getDirectUpstreamSchema: (nodeId: string) => any[];
+  getFieldMapperLinkedNodeIds: (nodeId: string) => FieldMapperLinkedNodeIds;
   refreshNodeSchema: (nodeId: string) => void;
   refreshDownstreamSchemas: (nodeId: string) => void;
+  syncTransformPluginConfig: (nodeId: string) => {
+    pluginInput?: string;
+    pluginOutput?: string;
+  };
 }
 
 interface FieldMappingRow {
@@ -179,12 +189,16 @@ function FieldMapperPanel({
   onClose,
   onNodeDataChange,
   getDirectUpstreamSchema,
+  getFieldMapperLinkedNodeIds,
   refreshNodeSchema,
   refreshDownstreamSchemas,
+  syncTransformPluginConfig,
 }: Props) {
   const nodeId = selectedNode?.id;
+
   const title =
     selectedNode?.data?.title || selectedNode?.data?.label || "字段映射";
+
   const description =
     selectedNode?.data?.description || "配置来源字段与目标字段的映射关系";
 
@@ -217,6 +231,18 @@ function FieldMapperPanel({
     return normalizeSchemaToList(currentInput, "input");
   }, [selectedNode?.data?.meta?.inputSchema, upstreamSchema]);
 
+  const linkedNodeIds = useMemo(() => {
+    if (!nodeId) {
+      return {};
+    }
+
+    return getFieldMapperLinkedNodeIds?.(nodeId) || {};
+  }, [nodeId, getFieldMapperLinkedNodeIds]);
+
+  const pluginInput = linkedNodeIds.sourceNodeId;
+  console.log(pluginInput);
+  const pluginOutput = linkedNodeIds.sinkNodeId;
+
   useEffect(() => {
     const mappings = selectedNode?.data?.config?.mappings || [];
     setRows(buildRowsFromMappings(mappings, inputSchema));
@@ -229,6 +255,20 @@ function FieldMapperPanel({
       )
     );
   }, []);
+
+  function useDebounce<T extends (...args: any[]) => void>(fn: T, ms = 120): T {
+    const timer = useRef<NodeJS.Timeout | null>(null);
+
+    return useCallback(
+      ((...args: Parameters<T>) => {
+        if (timer.current) clearTimeout(timer.current);
+        timer.current = setTimeout(() => fn(...args), ms);
+      }) as T,
+      [fn, ms]
+    );
+  }
+
+  const debouncedUpdateSinkFieldName = useDebounce(updateSinkFieldName, 80);
 
   const handleSyncFields = () => {
     if (!inputSchema.length) {
@@ -250,11 +290,21 @@ function FieldMapperPanel({
     setRows((prev) => {
       const oldIndex = prev.findIndex((item) => item.key === active.id);
       const newIndex = prev.findIndex((item) => item.key === over.id);
+
+      if (oldIndex < 0 || newIndex < 0) {
+        return prev;
+      }
+
       return arrayMove(prev, oldIndex, newIndex);
     });
   };
 
   const handleApply = () => {
+    if (!nodeId) {
+      message.warning("当前节点不存在");
+      return;
+    }
+
     const validRows = rows.filter(
       (item) => item.sourceFieldName?.trim() && item.sinkFieldName?.trim()
     );
@@ -264,13 +314,28 @@ function FieldMapperPanel({
       return;
     }
 
+    const syncedPluginConfig = syncTransformPluginConfig(nodeId);
+
+    const nextPluginInput = syncedPluginConfig.pluginInput;
+    const nextPluginOutput = syncedPluginConfig.pluginOutput;
+
+    if (!nextPluginInput) {
+      message.warning("请先连接上游节点");
+      return;
+    }
+
+    if (!nextPluginOutput) {
+      message.warning("请先连接下游节点");
+      return;
+    }
+
     const nextMappings = validRows.map((item, index) => ({
       id: item.key || `mapping_${index}`,
       sourceField: item.sourceFieldName.trim(),
       targetField: item.sinkFieldName.trim(),
       targetType: item.sourceFieldType || "",
       expression: "",
-      enabled: true,
+      enabled: item.enabled !== false,
     }));
 
     const outputSchema = validRows.map((item) => ({
@@ -281,6 +346,10 @@ function FieldMapperPanel({
     onNodeDataChange(nodeId, {
       config: {
         ...(selectedNode?.data?.config || {}),
+
+        pluginInput: nextPluginInput,
+        pluginOutput: nextPluginOutput,
+
         mappings: nextMappings,
         passThroughUnmapped,
       },
@@ -298,22 +367,9 @@ function FieldMapperPanel({
 
     refreshNodeSchema(nodeId);
     refreshDownstreamSchemas(nodeId);
+
     message.success("字段映射已应用");
   };
-
-  function useDebounce<T extends (...args: any[]) => void>(fn: T, ms = 120): T {
-    const timer = useRef<NodeJS.Timeout | null>(null);
-
-    return useCallback(
-      ((...args: Parameters<T>) => {
-        if (timer.current) clearTimeout(timer.current);
-        timer.current = setTimeout(() => fn(...args), ms);
-      }) as T,
-      [fn, ms]
-    );
-  }
-
-  const debouncedUpdateSinkFieldName = useDebounce(updateSinkFieldName, 80);
 
   const menuItems: MenuProps["items"] = [
     {
@@ -322,6 +378,7 @@ function FieldMapperPanel({
       danger: true,
       onClick: () => {
         if (!selectedRowKey) return;
+
         handleDeleteRow(selectedRowKey);
         setMenuOpen(false);
         message.success("已删除该字段");
@@ -393,14 +450,20 @@ function FieldMapperPanel({
       <section className="workflow-panel__section space-y-4">
         <div className="rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="space-y-1">
+            {/* <div className="space-y-1">
               <div className="text-sm font-medium text-slate-800">字段信息</div>
-            </div>
+
+              <div className="text-xs text-slate-400">
+                当前输入：{pluginInput || "未连接"}；当前输出：
+                {pluginOutput || "未连接"}
+              </div>
+            </div> */}
 
             <Space wrap>
               <Button onClick={handleSyncFields} style={{ borderRadius: 16 }}>
                 同步字段
               </Button>
+
               <Button
                 type="primary"
                 onClick={handleApply}
@@ -444,7 +507,6 @@ function FieldMapperPanel({
                     pagination={false}
                     bordered={false}
                     size="middle"
-                    // scroll={{ y: 700 }}
                     onRow={(record) => ({
                       onContextMenu: (e) => {
                         e.preventDefault();

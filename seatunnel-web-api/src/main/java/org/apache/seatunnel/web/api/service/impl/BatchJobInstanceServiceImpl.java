@@ -220,7 +220,7 @@ public class BatchJobInstanceServiceImpl implements BatchJobInstanceService {
             throw e;
         } catch (Exception e) {
             log.error("Update batch job instance failed, id={}", po.getId(), e);
-            throw new ServiceException(Status.UPDATE_BATCH_JOB_INSTANCE_ERROR);
+            throw  new ServiceException(Status.UPDATE_BATCH_JOB_INSTANCE_ERROR);
         }
     }
 

@@ -69,6 +69,9 @@ public class JobSubmitter {
                     filename
             );
 
+            engineId = extractJobId(resp);
+            submitted = true;
+
             log.info("Submit job response received, instanceId={}, resp={}", instanceId, resp);
             jobLogger.info("Submit job response received: " + resp);
 

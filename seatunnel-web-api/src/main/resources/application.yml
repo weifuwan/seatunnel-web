@@ -86,10 +86,3 @@ mybatis-plus:
     db-config:
       id-type: auto
     banner: false
-
-seatunnel:
-  log:
-    snapshot-url: http://192.168.1.115:8080/log/seatunnel-engine-server.log
-    snapshot-lines: 200
-    snapshot-connect-timeout-ms: 3000
-    snapshot-read-timeout-ms: 10000

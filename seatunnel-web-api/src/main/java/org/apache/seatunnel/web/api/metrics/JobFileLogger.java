@@ -62,23 +62,6 @@ public class JobFileLogger {
             log.error("Failed to initialize JobFileLogger: {}", logFilePath, e);
         }
     }
-
-    public void raw(String line) {
-        if (line == null) {
-            return;
-        }
-
-        if (!running.get()) {
-            return;
-        }
-
-        boolean success = logQueue.offer(line);
-
-        if (!success) {
-            log.warn("Job log queue is full, drop raw log. logFilePath={}", logFilePath);
-        }
-    }
-
     /**
      * Background consumer loop
      */

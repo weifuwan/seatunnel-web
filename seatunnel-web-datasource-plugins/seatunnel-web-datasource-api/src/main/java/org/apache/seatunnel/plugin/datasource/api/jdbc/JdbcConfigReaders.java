@@ -7,9 +7,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.util.List;
 import java.util.Map;
 
-import static org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConfigKeys.KEY;
-import static org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConfigKeys.PARAMS;
-import static org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConfigKeys.VALUE;
+import static org.apache.seatunnel.plugin.datasource.api.hocon.JdbcBatchConstants.*;
 
 public final class JdbcConfigReaders {
 

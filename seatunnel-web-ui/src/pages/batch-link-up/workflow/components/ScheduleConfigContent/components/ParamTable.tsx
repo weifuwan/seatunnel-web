@@ -1,0 +1,113 @@
+import React from "react";
+import { Input, Table, Tooltip } from "antd";
+import type { ColumnsType } from "antd/es/table";
+import { InfoCircleOutlined } from "@ant-design/icons";
+import type { ParamRow } from "../types";
+
+interface ParamTableProps {
+  dataSource: ParamRow[];
+  onChange?: (nextDataSource: ParamRow[]) => void;
+}
+
+const inputStyle: React.CSSProperties = {
+  height: 30,
+  borderRadius: 16,
+  borderColor: "#D0D5DD",
+  background: "#FCFCFD",
+  boxShadow: "none",
+};
+
+const ParamTable: React.FC<ParamTableProps> = ({ dataSource, onChange }) => {
+  const handleFieldChange = (
+    rowKey: React.Key,
+    field: keyof Pick<ParamRow, "paramName" | "paramValue">,
+    fieldValue: string
+  ) => {
+    const nextDataSource = dataSource.map((item) =>
+      item.key === rowKey
+        ? {
+            ...item,
+            [field]: fieldValue,
+          }
+        : item
+    );
+
+    onChange?.(nextDataSource);
+  };
+
+  const handleDelete = (rowKey: React.Key) => {
+    const nextDataSource = dataSource.filter((item) => item.key !== rowKey);
+    onChange?.(nextDataSource);
+  };
+
+  const columns: ColumnsType<ParamRow> = [
+    {
+      title: <span style={{ fontSize: 13, fontWeight: 500 }}>参数名</span>,
+      dataIndex: "paramName",
+      key: "paramName",
+      width: "28%",
+      render: (value: string, record) => (
+        <Input
+          size="small"
+          value={value}
+          placeholder="请输入参数名"
+          style={inputStyle}
+          onChange={(e) =>
+            handleFieldChange(record.key, "paramName", e.target.value)
+          }
+        />
+      ),
+    },
+    {
+      title: (
+        <span style={{ fontSize: 13, fontWeight: 500 }}>
+          参数值{" "}
+          <Tooltip title="支持使用时间表达式，例如 ${add_months(yyyymmdd,-1)}">
+            <InfoCircleOutlined className="text-[12px] text-[#98A2B3]" />
+          </Tooltip>
+        </span>
+      ),
+      dataIndex: "paramValue",
+      key: "paramValue",
+      width: "52%",
+      render: (value: string, record) => (
+        <Input
+          size="small"
+          value={value}
+          placeholder="请输入参数值或表达式"
+          style={inputStyle}
+          onChange={(e) =>
+            handleFieldChange(record.key, "paramValue", e.target.value)
+          }
+        />
+      ),
+    },
+    {
+      title: <span style={{ fontSize: 13, fontWeight: 500 }}>操作</span>,
+      key: "action",
+      width: "18%",
+      render: (_, record) => (
+        <a
+          className="schedule-table-action"
+          onClick={() => handleDelete(record.key)}
+        >
+          删除
+        </a>
+      ),
+    },
+  ];
+
+  return (
+    <div className="schedule-table-card">
+      <Table<ParamRow>
+        rowKey="key"
+        columns={columns}
+        dataSource={dataSource}
+        pagination={false}
+        size="small"
+      />
+    </div>
+  );
+};
+
+export default ParamTable;

@@ -94,10 +94,8 @@ services:
     networks:
       - seatunnel_network
 
-
 volumes:
   mysql_data:
-
 
 networks:
   seatunnel_network:

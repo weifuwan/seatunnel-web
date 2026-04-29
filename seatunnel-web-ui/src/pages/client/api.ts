@@ -58,6 +58,7 @@ export const seatunnelClientApi = {
   saveOrUpdate: (data: SeatunnelClient) => {
     return HttpUtils.post(`${apiPrefix}/saveOrUpdate`, data);
   },
+  
 
   selectById: (
     id: number

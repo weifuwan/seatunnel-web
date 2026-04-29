@@ -7,7 +7,12 @@ import {
   LoadingOutlined,
 } from "@ant-design/icons";
 import { Button, Form, message, Select } from "antd";
-import React, { useEffect, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { generateDataSourceOptions } from "../../DataSourceSelect";
 import "./client-link.less";
 
@@ -39,6 +44,11 @@ interface Props {
   setTargetTestStatus: (status: ConnectivityStatus) => void;
 
   sectionRef?: React.RefObject<HTMLDivElement>;
+}
+
+interface SelectOption {
+  label: string;
+  value: string;
 }
 
 const statusMap: Record<
@@ -161,6 +171,13 @@ const SectionCard: React.FC<{
   );
 };
 
+const normalizeClientOptions = (data: any[]): SelectOption[] => {
+  return data.map((item: any) => ({
+    label: item.label ?? item.clientName ?? item.name ?? "",
+    value: String(item.value ?? item.id ?? ""),
+  }));
+};
+
 const ClientLinkSection: React.FC<Props> = ({
   sourceType,
   targetType,
@@ -184,25 +201,51 @@ const ClientLinkSection: React.FC<Props> = ({
 }) => {
   const [form] = Form.useForm();
   const [clientForm] = Form.useForm();
+
   const dataSourceTypeOptions = useMemo(() => generateDataSourceOptions(), []);
+
   const [sourceDataSources, setSourceDataSources] = useState<any[]>([]);
   const [targetDataSources, setTargetDataSources] = useState<any[]>([]);
+
   const [sourceLoading, setSourceLoading] = useState(false);
   const [targetLoading, setTargetLoading] = useState(false);
-  const [clientOptions, setClientOptions] = useState<
-    { label: string; value: string }[]
-  >([]);
+
+  const [clientOptions, setClientOptions] = useState<SelectOption[]>([]);
   const [clientLoading, setClientLoading] = useState(false);
+
   const [openAddModal, setOpenAddModal] = useState(false);
-
   const [confirmLoading, setConfirmLoading] = useState(false);
-  const resetSourceTestStatus = () => {
-    setSourceTestStatus("idle");
-  };
 
-  const resetTargetTestStatus = () => {
+  const resetSourceTestStatus = useCallback(() => {
+    setSourceTestStatus("idle");
+  }, [setSourceTestStatus]);
+
+  const resetTargetTestStatus = useCallback(() => {
     setTargetTestStatus("idle");
-  };
+  }, [setTargetTestStatus]);
+
+  const loadClientOptions = useCallback(async () => {
+    try {
+      setClientLoading(true);
+
+      const res = await seatunnelClientApi.option();
+
+      const options = Array.isArray(res?.data)
+        ? normalizeClientOptions(res.data)
+        : [];
+
+      setClientOptions(options);
+
+      return options;
+    } catch (error) {
+      console.error("加载客户端节点失败:", error);
+      setClientOptions([]);
+      message.error("加载客户端节点失败");
+      return [];
+    } finally {
+      setClientLoading(false);
+    }
+  }, []);
 
   const handleCreateClient = async () => {
     try {
@@ -210,14 +253,51 @@ const ClientLinkSection: React.FC<Props> = ({
       setConfirmLoading(true);
 
       const res = await seatunnelClientApi.saveOrUpdate(values);
-      if (res.code !== 0) {
-        message.error(res.msg || res.msg || "创建 Client 失败");
+
+      if (res?.code !== 0) {
+        message.error(res?.msg || "创建 Client 失败");
         return;
       }
 
       message.success("Client 创建成功");
       setOpenAddModal(false);
       clientForm.resetFields();
+
+      const options = await loadClientOptions();
+
+      /**
+       * 优先自动选中新建的 Client。
+       * 这里兼容几种常见后端返回：
+       * 1. res.data.id
+       * 2. res.data.value
+       * 3. res.data 直接就是 id
+       */
+      const newClientId =
+        res?.data?.id ??
+        res?.data?.value ??
+        (typeof res?.data === "string" || typeof res?.data === "number"
+          ? res.data
+          : undefined);
+
+      if (newClientId) {
+        const nextClientId = String(newClientId);
+        const exists = options.some((item) => item.value === nextClientId);
+
+        if (exists) {
+          setClientId(nextClientId);
+          resetSourceTestStatus();
+          resetTargetTestStatus();
+          return;
+        }
+      }
+
+      /**
+       * 如果后端没有返回新建 Client 的 id，
+       * 就保持当前选择；如果当前没有选择，则默认选第一个。
+       */
+      if (!clientId && options.length) {
+        setClientId(options[0].value);
+      }
     } catch (error: any) {
       if (error?.errorFields) return;
       message.error(error?.message || "创建 Client 失败");
@@ -281,30 +361,8 @@ const ClientLinkSection: React.FC<Props> = ({
   }, [targetType?.dbType, form, setTargetDataSourceId]);
 
   useEffect(() => {
-    const loadClientOptions = async () => {
-      try {
-        setClientLoading(true);
-        const res = await seatunnelClientApi.option();
-
-        const options = Array.isArray(res?.data)
-          ? res.data.map((item: any) => ({
-              label: item.label,
-              value: String(item.value),
-            }))
-          : [];
-
-        setClientOptions(options);
-      } catch (error) {
-        console.error("加载客户端节点失败:", error);
-        setClientOptions([]);
-        message.error("加载客户端节点失败");
-      } finally {
-        setClientLoading(false);
-      }
-    };
-
     loadClientOptions();
-  }, []);
+  }, [loadClientOptions]);
 
   useEffect(() => {
     if (!clientOptions.length) return;
@@ -347,8 +405,6 @@ const ClientLinkSection: React.FC<Props> = ({
       const firstValue = sourceOptions[0]?.value;
       setSourceDataSourceId(firstValue);
       form.setFieldValue("sourceId", firstValue);
-      // 这里不要 resetSourceTestStatus()
-      // 否则初始化回填时会把 success/error 冲成 idle
     }
   }, [sourceOptions, sourceDataSourceId, form, setSourceDataSourceId]);
 
@@ -367,7 +423,6 @@ const ClientLinkSection: React.FC<Props> = ({
       const firstValue = targetOptions[0]?.value;
       setTargetDataSourceId(firstValue);
       form.setFieldValue("targetId", firstValue);
-      // 这里不要 resetTargetTestStatus()
     }
   }, [targetOptions, targetDataSourceId, form, setTargetDataSourceId]);
 
@@ -419,6 +474,7 @@ const ClientLinkSection: React.FC<Props> = ({
         clientId,
         datasourceId
       );
+
       const success = !!res?.data?.success;
 
       if (type === "source") {
@@ -540,9 +596,14 @@ const ClientLinkSection: React.FC<Props> = ({
             <SectionCard
               title="客户端"
               footer={
-                <Button className="w-full !rounded-full" onClick={() => {
-                  setOpenAddModal(true);
-                }}>新建客户端</Button>
+                <Button
+                  className="w-full !rounded-full"
+                  onClick={() => {
+                    setOpenAddModal(true);
+                  }}
+                >
+                  新建客户端
+                </Button>
               }
             >
               <div className="space-y-4">
@@ -550,16 +611,17 @@ const ClientLinkSection: React.FC<Props> = ({
                   <div className="mb-2 text-sm font-medium text-slate-700">
                     客户端节点
                   </div>
+
                   <Select
                     value={clientId}
-                    onChange={(values) => {
-                      setClientId(values);
+                    onChange={(value) => {
+                      setClientId(value);
                       resetSourceTestStatus();
                       resetTargetTestStatus();
                     }}
                     className="w-full"
                     showSearch
-                    placeholder="请选择Zeta客户端节点"
+                    placeholder="请选择 Zeta 客户端节点"
                     loading={clientLoading}
                     options={clientOptions}
                   />
@@ -630,6 +692,7 @@ const ClientLinkSection: React.FC<Props> = ({
           </div>
         </div>
       </div>
+
       <AddClientModal
         open={openAddModal}
         form={clientForm}

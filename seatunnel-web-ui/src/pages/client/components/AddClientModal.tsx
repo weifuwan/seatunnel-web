@@ -6,10 +6,11 @@ import React, { useEffect, useRef } from "react";
 const { TextArea } = Input;
 
 export interface SeaTunnelClientFormValues {
+  id?: number;
   clientName: string;
   engineType: string;
   clientAddress: string;
-  clientPort: string;
+  clientPort: string | number;
   remark?: string;
 }
 
@@ -17,6 +18,8 @@ interface AddClientModalProps {
   open: boolean;
   form: any;
   confirmLoading?: boolean;
+  mode?: "create" | "edit";
+  initialValues?: Partial<SeaTunnelClientFormValues>;
   onCancel: () => void;
   onSubmit: () => void;
 }
@@ -56,7 +59,6 @@ const remarkPresets = [
   "新的客户端已接入，期待它接下来的表现 🌟",
 ];
 
-
 const clientNamePresets = [
   "九阴真经",
   "九阳神功",
@@ -80,7 +82,6 @@ const clientNamePresets = [
   "龙象般若功",
 ];
 
-/** 通用随机：尽量避免与上一次相同 */
 const getRandomItem = (list: string[], lastValue?: string) => {
   if (!list.length) return "";
   if (list.length === 1) return list[0];
@@ -105,14 +106,30 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
   open,
   form,
   confirmLoading = false,
+  mode = "create",
+  initialValues,
   onCancel,
   onSubmit,
 }) => {
   const lastRemarkRef = useRef<string>();
   const lastClientNameRef = useRef<string>();
 
+  const isEdit = mode === "edit";
+
   useEffect(() => {
     if (!open) return;
+
+    if (isEdit) {
+      form.setFieldsValue({
+        id: initialValues?.id,
+        clientName: initialValues?.clientName,
+        engineType: initialValues?.engineType || "ZETA",
+        clientAddress: initialValues?.clientAddress,
+        clientPort: initialValues?.clientPort || 8080,
+        remark: initialValues?.remark,
+      });
+      return;
+    }
 
     const nextRemark = getRandomRemark(lastRemarkRef.current);
     const nextClientName = getRandomClientName(
@@ -128,7 +145,7 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
       remark: nextRemark,
       clientName: nextClientName,
     });
-  }, [open, form]);
+  }, [open, isEdit, initialValues, form]);
 
   return (
     <Modal
@@ -160,60 +177,22 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
         },
       }}
       title={
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 12,
-            paddingRight: 24,
-          }}
-        >
-          <div style={{ minWidth: 0 }}>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                minWidth: 0,
-              }}
-            >
-              <div
-                style={{
-                  width: 34,
-                  height: 34,
-                  borderRadius: 10,
-                  background: "#EEF4FF",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
-                }}
-              >
+        <div className="flex items-center justify-between gap-3 pr-6">
+          <div className="min-w-0">
+            <div className="flex min-w-0 items-center gap-2.5">
+              <div className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px] bg-[#EEF4FF]">
                 <SmileOutlined style={{ color: "#3B82F6", fontSize: 18 }} />
               </div>
 
-              <div style={{ minWidth: 0 }}>
-                <div
-                  style={{
-                    fontSize: 18,
-                    fontWeight: 600,
-                    color: "#101828",
-                    lineHeight: "28px",
-                  }}
-                >
-                  新增 Client
+              <div className="min-w-0">
+                <div className="text-[18px] font-semibold leading-7 text-[#101828]">
+                  {isEdit ? "编辑 Client" : "新增 Client"}
                 </div>
 
-                <div
-                  style={{
-                    marginTop: 2,
-                    fontSize: 13,
-                    color: "#667085",
-                    lineHeight: "20px",
-                  }}
-                >
-                  录入 Client 的基础连接信息，用于后续任务绑定与调度。
+                <div className="mt-0.5 text-[13px] leading-5 text-[#667085]">
+                  {isEdit
+                    ? "调整 Client 的基础连接信息，保存后会用于后续任务绑定与调度。"
+                    : "录入 Client 的基础连接信息，用于后续任务绑定与调度。"}
                 </div>
               </div>
             </div>
@@ -221,23 +200,11 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
         </div>
       }
       footer={
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: 12,
-          }}
-        >
-          <div
-            style={{
-              fontSize: 12,
-              color: "#98A2B3",
-            }}
-          />
+        <div className="flex items-center justify-between gap-3">
+          <div className="text-[12px] text-[#98A2B3]" />
 
-          <div style={{ display: "flex", gap: 10 }}>
-            <Button onClick={onCancel} style={{ height: 38, borderRadius: 10 }}>
+          <div className="flex gap-2.5">
+            <Button onClick={onCancel} style={{ height: 34, borderRadius: 16 }}>
               取消
             </Button>
 
@@ -245,22 +212,15 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
               type="primary"
               loading={confirmLoading}
               onClick={onSubmit}
-              style={{ height: 38, borderRadius: 10, paddingInline: 18 }}
+              style={{ height: 34, borderRadius: 16, paddingInline: 18 }}
             >
-              创建 Client
+              {isEdit ? "保存修改" : "创建 Client"}
             </Button>
           </div>
         </div>
       }
     >
-      <div
-        style={{
-          border: "1px solid #EAF0F6",
-          borderRadius: 16,
-          background: "#FFFFFF",
-          padding: 20,
-        }}
-      >
+      <div className="rounded-2xl border border-[#EAF0F6] bg-white p-5">
         <Form
           form={form}
           layout="vertical"
@@ -269,6 +229,10 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
             clientPort: 8080,
           }}
         >
+          <Form.Item name="id" hidden>
+            <Input />
+          </Form.Item>
+
           <Form.Item
             name="clientName"
             label="客户端名称"
@@ -292,13 +256,7 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
             />
           </Form.Item>
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 160px",
-              gap: 16,
-            }}
-          >
+          <div className="grid grid-cols-[1fr_160px] gap-4">
             <Form.Item
               name="clientAddress"
               label="客户端地址"

@@ -1,16 +1,21 @@
 package org.apache.seatunnel.web.core.builder.sink;
 
 import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 import jakarta.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.seatunnel.plugin.datasource.api.jdbc.DataSourceProcessor;
 import org.apache.seatunnel.plugin.datasource.api.utils.DataSourceUtils;
 import org.apache.seatunnel.web.common.config.ConfigValidator;
 import org.apache.seatunnel.web.common.config.ReadonlyConfig;
+import org.apache.seatunnel.web.core.builder.context.DagBuildContext;
 import org.apache.seatunnel.web.dao.entity.DataSource;
 import org.apache.seatunnel.web.dao.repository.DataSourceDao;
 import org.apache.seatunnel.web.spi.enums.DbType;
 import org.springframework.stereotype.Component;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * JDBC sink node builder.
@@ -24,6 +29,8 @@ public class JdbcSinkBuilder implements SinkNodeConfigBuilder {
     private static final String KEY_PLUGIN_NAME = "pluginName";
     private static final String KEY_CONNECTOR_TYPE = "connectorType";
 
+    private static final String KEY_PLUGIN_INPUT = "plugin_input";
+
     @Resource
     private DataSourceDao dataSourceDao;
 
@@ -34,7 +41,14 @@ public class JdbcSinkBuilder implements SinkNodeConfigBuilder {
 
     @Override
     public Config build(Config data) {
+        return build(data, DagBuildContext.empty());
+    }
+
+    @Override
+    public Config build(Config data, DagBuildContext context) {
         Config config = resolveNodeConfig(data);
+        config = appendPluginInputIfNecessary(data, config, context);
+
         Long dataSourceId = parseDataSourceId(config);
         DataSource dataSource = getRequiredDataSource(dataSourceId);
         DbType dbType = parseDbType(data);
@@ -49,9 +63,28 @@ public class JdbcSinkBuilder implements SinkNodeConfigBuilder {
         return sinkConfig;
     }
 
-    /**
-     * Prefer connectorType as connector name.
-     */
+    private Config appendPluginInputIfNecessary(Config data,
+                                                Config config,
+                                                DagBuildContext context) {
+        if (context == null || !context.hasTransform()) {
+            return config;
+        }
+
+        String pluginInput = getTrimmedString(config, "pluginInput");
+        if (StringUtils.isBlank(pluginInput)) {
+            pluginInput = getTrimmedString(data, "pluginInput");
+        }
+
+        if (StringUtils.isBlank(pluginInput)) {
+            return config;
+        }
+
+        Map<String, Object> extra = new HashMap<>();
+        extra.put("plugin_input", pluginInput);
+
+        return ConfigFactory.parseMap(extra).withFallback(config).resolve();
+    }
+
     @Override
     public String connectorName(Config data) {
         String connectorType = getTrimmedString(data, KEY_CONNECTOR_TYPE);
@@ -64,7 +97,6 @@ public class JdbcSinkBuilder implements SinkNodeConfigBuilder {
     }
 
     private Long parseDataSourceId(Config config) {
-
         String value = getTrimmedString(config, KEY_DATA_SOURCE_ID);
         if (StringUtils.isBlank(value)) {
             throw new IllegalArgumentException(
@@ -120,6 +152,7 @@ public class JdbcSinkBuilder implements SinkNodeConfigBuilder {
         if (config == null || !config.hasPath(path)) {
             return null;
         }
+
         String value = config.getString(path);
         return value == null ? null : value.trim();
     }

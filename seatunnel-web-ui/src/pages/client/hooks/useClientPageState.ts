@@ -1,96 +1,191 @@
 import { Form, message } from "antd";
-import { useEffect, useMemo, useState } from "react";
-import { seatunnelClientApi, SeatunnelClientMetrics } from "../api";
-import { useClientMonitoring } from "./useClientMonitoring";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { seatunnelClientApi } from "../api";
 
-export function useClientPageState() {
-  const {
-    clients,
-    selectedClientId,
-    setSelectedClientId,
-    selectedClient,
-    reloadClients,
-  } = useClientMonitoring();
 
-  const [confirmLoading, setConfirmLoading] = useState(false);
-  const [metricsLoading, setMetricsLoading] = useState(false);
-  const [openAddModal, setOpenAddModal] = useState(false);
-  const [metrics, setMetrics] = useState<SeatunnelClientMetrics>({});
+export const useClientPageState = () => {
   const [form] = Form.useForm();
 
+  const [clients, setClients] = useState<any[]>([]);
+  const [selectedClientId, setSelectedClientId] = useState<number>();
+  const [openAddModal, setOpenAddModal] = useState(false);
+  const [editingClient, setEditingClient] = useState<any>();
+  const [confirmLoading, setConfirmLoading] = useState(false);
+  const [metricsLoading, setMetricsLoading] = useState(false);
+  const [deleteLoadingId, setDeleteLoadingId] = useState<number>();
+  const [metrics, setMetrics] = useState<any>();
 
+  const selectedClient = useMemo(() => {
+    return clients.find((item) => item.id === selectedClientId);
+  }, [clients, selectedClientId]);
 
-  const handleCreateClient = async () => {
-    try {
-      const values = await form.validateFields();
-      setConfirmLoading(true);
+  const normalizePageRecords = (res: any) => {
+    const data = res?.data || res;
 
-      const res = await seatunnelClientApi.saveOrUpdate(values);
-      if (res.code !== 0) {
-
-        return;
-      }
-
-      message.success("Client 创建成功");
-      setOpenAddModal(false);
-      form.resetFields();
-      await reloadClients();
-    } catch (error: any) {
-      if (error?.errorFields) return;
-
-    } finally {
-      setConfirmLoading(false);
+    if (Array.isArray(data)) {
+      return data;
     }
+
+    if (Array.isArray(data?.records)) {
+      return data.records;
+    }
+
+    if (Array.isArray(data?.data?.records)) {
+      return data.data.records;
+    }
+
+    return [];
   };
 
-  const loadClientMetrics = async (clientId?: number) => {
-    if (!clientId) {
-      setMetrics({});
+  const loadClients = useCallback(
+    async (nextSelectedId?: number) => {
+      const res = await seatunnelClientApi.page({
+        pageNo: 1,
+        pageSize: 999,
+      });
+
+      const records = normalizePageRecords(res);
+      setClients(records);
+
+      if (!records.length) {
+        setSelectedClientId(undefined);
+        setMetrics(undefined);
+        return records;
+      }
+
+      const targetId =
+        nextSelectedId && records.some((item: any) => item.id === nextSelectedId)
+          ? nextSelectedId
+          : selectedClientId &&
+              records.some((item: any) => item.id === selectedClientId)
+            ? selectedClientId
+            : records[0].id;
+
+      setSelectedClientId(targetId);
+      return records;
+    },
+    [selectedClientId]
+  );
+
+  const loadClientMetrics = useCallback(async (id?: number) => {
+    const targetId = id;
+    if (!targetId) {
+      setMetrics(undefined);
       return;
     }
 
+    setMetricsLoading(true);
     try {
-      setMetricsLoading(true);
-
-      const res = await seatunnelClientApi.metrics(clientId);
-      if (res.code !== 0) {
-
-        return;
-      }
-
-      setMetrics({
-        cpuUsage: res.data?.cpuUsage,
-        memoryUsage: res.data?.memoryUsage,
-        threadCount: res.data?.threadCount,
-        runningOps: res.data?.runningOps,
-      });
-    } catch (error: any) {
-
-      setMetrics({});
+      const res = await seatunnelClientApi.metrics(targetId);
+      setMetrics(res?.data || res);
     } finally {
       setMetricsLoading(false);
     }
-  };
+  }, []);
+
+  const handleOpenCreate = useCallback(() => {
+    setEditingClient(undefined);
+    form.resetFields();
+    setOpenAddModal(true);
+  }, [form]);
+
+  const handleOpenEdit = useCallback(
+    (client: any) => {
+      setEditingClient(client);
+      form.resetFields();
+      setOpenAddModal(true);
+    },
+    [form]
+  );
+
+  const handleCancelModal = useCallback(() => {
+    setOpenAddModal(false);
+    setEditingClient(undefined);
+    form.resetFields();
+  }, [form]);
+
+  const handleSaveClient = useCallback(async () => {
+    const values = await form.validateFields();
+
+    const payload = {
+      ...values,
+      id: editingClient?.id,
+      clientPort: Number(values.clientPort),
+    };
+
+    setConfirmLoading(true);
+    try {
+      await seatunnelClientApi.saveOrUpdate(payload);
+
+      message.success(editingClient ? "Client 修改成功" : "Client 创建成功");
+
+      setOpenAddModal(false);
+      setEditingClient(undefined);
+      form.resetFields();
+
+      await loadClients(editingClient?.id);
+    } finally {
+      setConfirmLoading(false);
+    }
+  }, [editingClient, form, loadClients]);
+
+  const handleDeleteClient = useCallback(
+    async (client: any) => {
+      if (!client?.id) return;
+
+      setDeleteLoadingId(client.id);
+      try {
+        await seatunnelClientApi.delete(client.id);
+        message.success("Client 删除成功");
+
+        const nextClients = await loadClients();
+
+        if (selectedClientId === client.id) {
+          const nextSelected = nextClients.find((item: any) => item.id !== client.id);
+          setSelectedClientId(nextSelected?.id);
+        }
+      } finally {
+        setDeleteLoadingId(undefined);
+      }
+    },
+    [loadClients, selectedClientId]
+  );
 
   useEffect(() => {
-    loadClientMetrics(selectedClientId);
-  }, [selectedClientId]);
+    loadClients();
+  }, []);
+
+  useEffect(() => {
+    if (selectedClientId) {
+      loadClientMetrics(selectedClientId);
+    } else {
+      setMetrics(undefined);
+    }
+  }, [selectedClientId, loadClientMetrics]);
 
   return {
     clients,
     selectedClientId,
     setSelectedClientId,
     selectedClient,
-    reloadClients,
+
+    openAddModal,
+    setOpenAddModal,
+    editingClient,
 
     confirmLoading,
     metricsLoading,
-    openAddModal,
-    setOpenAddModal,
+    deleteLoadingId,
+
     metrics,
     form,
 
-    handleCreateClient,
+    handleOpenCreate,
+    handleOpenEdit,
+    handleDeleteClient,
+    handleSaveClient,
+    handleCancelModal,
+    loadClients,
     loadClientMetrics,
   };
-}
+};

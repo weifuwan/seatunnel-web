@@ -80,86 +80,87 @@ const ClientDetailPanel: React.FC<Props> = ({
         className="min-h-full"
       >
         <section className="mb-6 rounded-2xl border border-[#EAECF0] bg-white px-6 py-6 shadow-[0_8px_24px_rgba(16,24,40,0.045)]">
-  <div className="flex flex-wrap items-start justify-between gap-5">
-    <div className="min-w-0 flex-1">
-      <div className="flex items-start gap-4">
-        <div
-          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl"
-          style={{
-            background: "linear-gradient(135deg, #EEF4FF 0%, #F8FAFF 100%)",
-            color: BLUE,
-          }}
-        >
-          <ApiOutlined className="text-[19px]" />
-        </div>
+          <div className="flex flex-wrap items-start justify-between gap-5">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-start gap-4">
+                <div
+                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, #EEF4FF 0%, #F8FAFF 100%)",
+                    color: BLUE,
+                  }}
+                >
+                  <ApiOutlined className="text-[19px]" />
+                </div>
 
-        <div className="min-w-0 flex-1 pt-0.5">
-          <div className="flex flex-wrap items-center gap-2.5">
-            <h1 className="m-0 max-w-[420px] truncate text-[21px] font-semibold leading-8 text-[#101828]">
-              {clientName}
-            </h1>
+                <div className="min-w-0 flex-1 pt-0.5">
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    <h1 className="m-0 max-w-[420px] truncate text-[21px] font-semibold leading-8 text-[#101828]">
+                      {clientName}
+                    </h1>
 
-            {clientVersion && (
-              <span className="inline-flex h-6 items-center rounded-full border border-[#DFE7F3] bg-[#F7FAFF] px-2.5 text-[12px] font-medium text-[#4F5BD5]">
-                v{clientVersion}
-              </span>
-            )}
+                    {clientVersion && (
+                      <span className="inline-flex h-6 items-center rounded-full border border-[#DFE7F3] bg-[#F7FAFF] px-2.5 text-[12px] font-medium text-[#4F5BD5]">
+                        v{clientVersion}
+                      </span>
+                    )}
 
-            <span
-              className={`inline-flex h-6 items-center gap-1.5 rounded-full border px-2.5 text-[12px] font-medium ${healthMeta.badge}`}
-            >
-              <span
-                className={`inline-block h-1.5 w-1.5 rounded-full ${healthMeta.dot}`}
-              />
-              {healthMeta.label}
-            </span>
-          </div>
+                    <span
+                      className={`inline-flex h-6 items-center gap-1.5 rounded-full border px-2.5 text-[12px] font-medium ${healthMeta.badge}`}
+                    >
+                      <span
+                        className={`inline-block h-1.5 w-1.5 rounded-full ${healthMeta.dot}`}
+                      />
+                      {healthMeta.label}
+                    </span>
+                  </div>
 
-          <div className="mt-1.5 text-[13px] text-[#98A2B3]">
-            {engineType} Engine Client
-          </div>
+                  <div className="mt-1.5 text-[13px] text-[#98A2B3]">
+                    {engineType} Engine Client
+                  </div>
 
-          <div className="mt-4 flex flex-wrap items-center gap-3">
-            <div
-              className="
+                  <div className="mt-4 flex flex-wrap items-center gap-3">
+                    <div
+                      className="
                 inline-flex max-w-full items-center gap-2 rounded-full
                 border border-[#E7EDF4]
                 px-3 py-1.5
                 text-[13px] font-medium text-[#344054]
               "
-              style={{ backgroundColor: "#FAFBFC" }}
-            >
-              <span className="inline-block h-2 w-2 shrink-0 rounded-full bg-[#98A2B3]" />
-              <span className="break-all">{displayBaseUrl}</span>
+                      style={{ backgroundColor: "#FAFBFC" }}
+                    >
+                      <span className="inline-block h-2 w-2 shrink-0 rounded-full bg-[#98A2B3]" />
+                      <span className="break-all">{displayBaseUrl}</span>
+                    </div>
+                  </div>
+
+                  <div className="mt-2.5 flex items-center gap-2 text-[13px] leading-5 text-[#667085]">
+                    <span
+                      className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${healthMeta.dot}`}
+                    />
+                    <span className="text-[#667085]">{healthMeta.desc}</span>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
 
-          <div className="mt-2.5 flex items-center gap-2 text-[13px] leading-5 text-[#667085]">
-            <span
-              className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${healthMeta.dot}`}
-            />
-            <span className="text-[#667085]">{healthMeta.desc}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <Button
-      icon={<ReloadOutlined />}
-      loading={metricsLoading}
-      onClick={() => onRefresh(selectedClientId)}
-      className="
+            <Button
+              icon={<ReloadOutlined />}
+              loading={metricsLoading}
+              onClick={() => onRefresh(selectedClientId)}
+              className="
         h-10 rounded-full border-[#E4E7EC] px-4
         text-[13px] font-medium text-[#475467]
         shadow-[0_2px_8px_rgba(16,24,40,0.04)]
         transition-all duration-200
         hover:!border-[#CBD5E1] hover:!text-[#344054]
       "
-    >
-      刷新指标
-    </Button>
-  </div>
-</section>
+            >
+              刷新指标
+            </Button>
+          </div>
+        </section>
 
         <ClientMetricsSection
           metrics={metrics}

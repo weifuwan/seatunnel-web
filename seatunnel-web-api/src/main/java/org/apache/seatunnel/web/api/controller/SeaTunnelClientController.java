@@ -30,6 +30,12 @@ public class SeaTunnelClientController {
         return Result.buildSuc();
     }
 
+    @DeleteMapping("/{id}")
+    public Result<Void> delete(@PathVariable("id") Long id) {
+        seatunnelClientService.deleteById(id);
+        return Result.buildSuc();
+    }
+
     @GetMapping("/{id}/metrics")
     public Result<SeaTunnelClientMetricsVO> metrics(@PathVariable("id") Long clientId) {
         return Result.buildSuc(seatunnelClientService.metrics(clientId));

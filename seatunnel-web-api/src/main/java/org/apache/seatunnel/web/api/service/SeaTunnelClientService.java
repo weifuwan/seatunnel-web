@@ -20,4 +20,6 @@ public interface SeaTunnelClientService {
     IPage<SeaTunnelClient> page(SeaTunnelClientPageDTO dto);
 
     ClientDatasourceVerifyVO verifyDatasource(Long clientId, ClientDatasourceVerifyDTO dto);
+
+    void deleteById(Long id);
 }

@@ -67,7 +67,7 @@
     "react-easy-crop": "^5.0.8",
     "react-json-pretty": "^2.2.0",
     "react-json-view": "^1.21.3",
-    "reactflow": "^11.11.3",
+    "reactflow": "11.11.4",
     "sockjs-client": "^1.6.1",
     "three": "^0.183.2",
     "zustand": "^5.0.9"

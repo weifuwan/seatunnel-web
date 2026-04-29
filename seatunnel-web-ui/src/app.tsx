@@ -1,3 +1,4 @@
+import "d3-transition";
 import {
   AvatarDropdown,
   AvatarName,

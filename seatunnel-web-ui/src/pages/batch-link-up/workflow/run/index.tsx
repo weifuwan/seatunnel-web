@@ -16,35 +16,65 @@ interface RunLogProps {
 }
 
 type SeatunnelJobMetricsPO = {
+  id?: string | number | null;
+  jobInstanceId?: number;
+  jobDefinitionId?: number;
   pipelineId: number;
+
   readRowCount: number;
   writeRowCount: number;
   readQps: number;
   writeQps: number;
-  recordDelay?: number;
+
   readBytes?: number;
   writeBytes?: number;
   readBps?: number;
   writeBps?: number;
+
   intermediateQueueSize?: number;
   lagCount?: number;
   lossRate?: number;
   avgRowSize?: number;
+  recordDelay?: number;
+
   status?: string;
+  errorMsg?: string | null;
+
+  createTime?: string | null;
+  updateTime?: string | null;
+};
+
+type TableMetricsPO = SeatunnelJobMetricsPO & {
+  sourceTable?: string;
+  sinkTable?: string;
 };
 
 type MetricsMessage = {
   type: "METRICS";
   instanceId: number;
-  engineId: string;
+  engineId: string | number;
   timestamp?: number;
-  metrics: Record<string, SeatunnelJobMetricsPO>;
+
+  /**
+   * 后端当前实际返回字段
+   */
+  pipelineMetrics?: Record<string, SeatunnelJobMetricsPO>;
+
+  /**
+   * 兼容旧字段，避免以后字段名变化导致前端直接挂掉
+   */
+  metrics?: Record<string, SeatunnelJobMetricsPO>;
+
+  /**
+   * 表级指标
+   */
+  tableMetrics?: TableMetricsPO[];
 };
 
 type JobStatusMessage = {
   type: "JOB_STATUS";
   instanceId: number;
-  engineId: string;
+  engineId: string | number;
   status: "RUNNING" | "FINISHED" | "FAILED" | string;
   timestamp?: number;
 };
@@ -79,6 +109,7 @@ const RunLog: FC<RunLogProps> = ({
   const logsContainerRef = useRef<HTMLDivElement>(null);
   const stompClientRef = useRef<Client | null>(null);
   const connectTimerRef = useRef<number | null>(null);
+
   const metricsCacheRef = useRef<
     Map<number, { data: MetricsMessage; timestamp: number }>
   >(new Map());
@@ -108,42 +139,84 @@ const RunLog: FC<RunLogProps> = ({
 
     setLogEntries((prev) => {
       if (type === "metric" && data?.instanceId != null) {
-        metricsCacheRef.current.set(data.instanceId, { data, timestamp: now });
+        metricsCacheRef.current.set(data.instanceId, {
+          data,
+          timestamp: now,
+        });
       }
+
       return [...prev, newEntry].slice(-200);
     });
+  };
+
+  const getPipelineMetricsMap = (
+    data?: MetricsMessage
+  ): Record<string, SeatunnelJobMetricsPO> | undefined => {
+    return data?.pipelineMetrics || data?.metrics;
   };
 
   const getFirstPipeline = (
     metrics?: Record<string, SeatunnelJobMetricsPO>
   ): SeatunnelJobMetricsPO | null => {
     if (!metrics) return null;
+
     const keys = Object.keys(metrics);
     if (!keys.length) return null;
-    const firstKey = keys.sort()[0];
+
+    const firstKey = keys.sort((a, b) => Number(a) - Number(b))[0];
     return metrics[firstKey] || null;
+  };
+
+  const getFirstTableMetric = (data?: MetricsMessage): TableMetricsPO | null => {
+    if (!data?.tableMetrics?.length) return null;
+    return data.tableMetrics[0] || null;
   };
 
   const isDuplicateMetric = (data: MetricsMessage) => {
     const cached = metricsCacheRef.current.get(data.instanceId);
     if (!cached) return false;
 
-    const curr = getFirstPipeline(data.metrics);
-    const prev = getFirstPipeline(cached.data.metrics);
-    if (!curr || !prev) return false;
+    const currPipeline = getFirstPipeline(getPipelineMetricsMap(data));
+    const prevPipeline = getFirstPipeline(getPipelineMetricsMap(cached.data));
+
+    if (!currPipeline || !prevPipeline) return false;
+
+    const currTable = getFirstTableMetric(data);
+    const prevTable = getFirstTableMetric(cached.data);
 
     return (
-      curr.readRowCount === prev.readRowCount &&
-      curr.writeRowCount === prev.writeRowCount &&
-      (curr.status ?? "") === (prev.status ?? "")
+      currPipeline.readRowCount === prevPipeline.readRowCount &&
+      currPipeline.writeRowCount === prevPipeline.writeRowCount &&
+      currPipeline.readQps === prevPipeline.readQps &&
+      currPipeline.writeQps === prevPipeline.writeQps &&
+      currPipeline.intermediateQueueSize ===
+        prevPipeline.intermediateQueueSize &&
+      (currPipeline.status ?? "") === (prevPipeline.status ?? "") &&
+      (currTable?.status ?? "") === (prevTable?.status ?? "")
     );
+  };
+
+  const formatTableText = (tableMetric?: TableMetricsPO | null) => {
+    if (!tableMetric?.sourceTable && !tableMetric?.sinkTable) {
+      return "";
+    }
+
+    return `, Table ${tableMetric?.sourceTable || "-"} → ${
+      tableMetric?.sinkTable || "-"
+    }`;
+  };
+
+  const formatStatusText = (tableMetric?: TableMetricsPO | null) => {
+    if (!tableMetric?.status) return "";
+    return `, Status ${tableMetric.status}`;
   };
 
   const handleMetricsData = (data: MetricsMessage) => {
     const now = Date.now();
+
     const payload: MetricsMessage = {
       ...data,
-      timestamp: now,
+      timestamp: data.timestamp ?? now,
     };
 
     if (isDuplicateMetric(payload)) {
@@ -154,24 +227,29 @@ const RunLog: FC<RunLogProps> = ({
       return;
     }
 
-    const pipeline = getFirstPipeline(payload.metrics);
+    const pipeline = getFirstPipeline(getPipelineMetricsMap(payload));
+    const tableMetric = getFirstTableMetric(payload);
 
     if (!pipeline) {
       addLogEntry(
-        `METRICS received but metrics map empty: ${JSON.stringify(payload)}`,
+        `METRICS received but pipelineMetrics map empty: ${JSON.stringify(
+          payload
+        )}`,
         "error"
       );
       return;
     }
 
     addLogEntry(
-      `Instance ${payload.instanceId} - Pipeline ${pipeline.pipelineId}: Read ${
-        pipeline.readRowCount ?? 0
-      } (${pipeline.readQps ?? 0} QPS), Write ${
-        pipeline.writeRowCount ?? 0
-      } (${pipeline.writeQps ?? 0} QPS), Queue ${
-        pipeline.intermediateQueueSize ?? 0
-      };`,
+      `Instance ${payload.instanceId} - Pipeline ${
+        pipeline.pipelineId
+      }${formatTableText(tableMetric)}: Read ${pipeline.readRowCount ?? 0} (${
+        pipeline.readQps ?? 0
+      } QPS), Write ${pipeline.writeRowCount ?? 0} (${
+        pipeline.writeQps ?? 0
+      } QPS), Queue ${pipeline.intermediateQueueSize ?? 0}${formatStatusText(
+        tableMetric
+      )};`,
       "metric",
       payload
     );
@@ -240,7 +318,7 @@ const RunLog: FC<RunLogProps> = ({
           if (execResp?.code !== 0) {
             addLogEntry(
               `Backend execute error: ${
-                execResp?.msg || execResp?.msg || "unknown"
+                execResp?.msg || execResp?.message || "unknown"
               }`,
               "error"
             );
@@ -262,7 +340,10 @@ const RunLog: FC<RunLogProps> = ({
             try {
               if (data?.type === "METRICS") {
                 handleMetricsData(data as MetricsMessage);
-              } else if (data?.type === "JOB_STATUS") {
+                return;
+              }
+
+              if (data?.type === "JOB_STATUS") {
                 const status = (data as JobStatusMessage)?.status;
 
                 if (status === "FINISHED") {
@@ -276,7 +357,11 @@ const RunLog: FC<RunLogProps> = ({
                 } else {
                   addLogEntry(JSON.stringify(data), "log");
                 }
-              } else if (typeof data === "string") {
+
+                return;
+              }
+
+              if (typeof data === "string") {
                 addLogEntry(data, "log");
               } else {
                 addLogEntry(JSON.stringify(data), "log");
@@ -343,6 +428,7 @@ const RunLog: FC<RunLogProps> = ({
 
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true);
+
     const startY = e.clientY;
     const startHeight = panelHeight;
 
@@ -372,16 +458,23 @@ const RunLog: FC<RunLogProps> = ({
     if (type === "metric") {
       return "run-log__log-item run-log__log-item--metric";
     }
+
     if (type === "error") {
       return "run-log__log-item run-log__log-item--error";
     }
+
     return "run-log__log-item run-log__log-item--log";
   };
 
-  const latestMetricData = Array.from(metricsCacheRef.current.values())
-    .sort((a, b) => b.timestamp - a.timestamp)[0]?.data;
+  const latestMetricData = Array.from(metricsCacheRef.current.values()).sort(
+    (a, b) => b.timestamp - a.timestamp
+  )[0]?.data;
 
-  const latestPipeline = getFirstPipeline(latestMetricData?.metrics);
+  const latestPipeline = getFirstPipeline(
+    getPipelineMetricsMap(latestMetricData)
+  );
+
+  const latestTableMetric = getFirstTableMetric(latestMetricData);
 
   const totalSynced = latestPipeline
     ? latestPipeline.writeRowCount ?? latestPipeline.readRowCount ?? 0
@@ -390,6 +483,8 @@ const RunLog: FC<RunLogProps> = ({
   const readQps = latestPipeline?.readQps ?? 0;
   const writeQps = latestPipeline?.writeQps ?? 0;
   const qpsText = latestPipeline ? `${readQps}/${writeQps}` : "--/--";
+
+  const statusText = latestTableMetric?.status || connectionStatus;
 
   if (!runVisible) {
     return null;
@@ -415,9 +510,7 @@ const RunLog: FC<RunLogProps> = ({
 
                 <div className="run-log__header-text">
                   <div className="run-log__header-title">运行日志</div>
-                  <div className="run-log__header-subtitle">
-                    {connectionStatus}
-                  </div>
+                  <div className="run-log__header-subtitle">{statusText}</div>
                 </div>
               </div>
 
@@ -465,9 +558,11 @@ const RunLog: FC<RunLogProps> = ({
                       <span className="run-log__log-badge">
                         {getLogBadgeText(entry.type)}
                       </span>
+
                       <span className="run-log__log-time">
                         [{entry.timestamp}]
                       </span>
+
                       <span className="run-log__log-text" title={entry.content}>
                         {entry.content}
                       </span>

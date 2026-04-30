@@ -71,10 +71,94 @@ public class JobMetricsServiceImpl implements JobMetricsService {
         Map<String, Object> metrics = (Map<String, Object>) metricsObj;
 
         ParsedJobMetrics parsed = new ParsedJobMetrics();
-        parsed.setPipelineMetrics(parsePipelineMetrics(metrics));
-        parsed.setTableMetrics(parseTableMetrics(jobInfo, metrics));
+
+        Map<Integer, JobMetrics> pipelineMetrics = parsePipelineMetrics(metrics);
+        List<JobTableMetrics> tableMetrics = parseTableMetrics(jobInfo, metrics);
+
+        fillPipelineQpsFromTableMetricsIfNecessary(pipelineMetrics, tableMetrics);
+
+        parsed.setPipelineMetrics(pipelineMetrics);
+        parsed.setTableMetrics(tableMetrics);
 
         return parsed;
+    }
+
+    private void fillPipelineQpsFromTableMetricsIfNecessary(Map<Integer, JobMetrics> pipelineMetrics,
+                                                            List<JobTableMetrics> tableMetrics) {
+        if (pipelineMetrics == null || pipelineMetrics.isEmpty()) {
+            return;
+        }
+
+        if (tableMetrics == null || tableMetrics.isEmpty()) {
+            return;
+        }
+
+        Map<Integer, BigDecimal> readQpsByPipeline = new HashMap<>();
+        Map<Integer, BigDecimal> writeQpsByPipeline = new HashMap<>();
+
+        Map<Integer, BigDecimal> readBpsByPipeline = new HashMap<>();
+        Map<Integer, BigDecimal> writeBpsByPipeline = new HashMap<>();
+
+        for (JobTableMetrics item : tableMetrics) {
+            Integer pipelineId = item.getPipelineId() == null ? 0 : item.getPipelineId();
+
+            readQpsByPipeline.merge(
+                    pipelineId,
+                    defaultDecimal(item.getReadQps()),
+                    BigDecimal::add
+            );
+
+            writeQpsByPipeline.merge(
+                    pipelineId,
+                    defaultDecimal(item.getWriteQps()),
+                    BigDecimal::add
+            );
+
+            readBpsByPipeline.merge(
+                    pipelineId,
+                    defaultDecimal(item.getReadBps()),
+                    BigDecimal::add
+            );
+
+            writeBpsByPipeline.merge(
+                    pipelineId,
+                    defaultDecimal(item.getWriteBps()),
+                    BigDecimal::add
+            );
+        }
+
+        for (Map.Entry<Integer, JobMetrics> entry : pipelineMetrics.entrySet()) {
+            Integer pipelineId = entry.getKey() == null ? 0 : entry.getKey();
+            JobMetrics item = entry.getValue();
+
+            if (item == null) {
+                continue;
+            }
+
+            if (isZero(item.getReadQps())) {
+                item.setReadQps(readQpsByPipeline.getOrDefault(pipelineId, BigDecimal.ZERO).setScale(4));
+            }
+
+            if (isZero(item.getWriteQps())) {
+                item.setWriteQps(writeQpsByPipeline.getOrDefault(pipelineId, BigDecimal.ZERO).setScale(4));
+            }
+
+            if (isZero(item.getReadBps())) {
+                item.setReadBps(readBpsByPipeline.getOrDefault(pipelineId, BigDecimal.ZERO).setScale(4));
+            }
+
+            if (isZero(item.getWriteBps())) {
+                item.setWriteBps(writeBpsByPipeline.getOrDefault(pipelineId, BigDecimal.ZERO).setScale(4));
+            }
+        }
+    }
+
+    private BigDecimal defaultDecimal(BigDecimal value) {
+        return value == null ? BigDecimal.ZERO : value;
+    }
+
+    private boolean isZero(BigDecimal value) {
+        return value == null || BigDecimal.ZERO.compareTo(value) == 0;
     }
 
     /**

@@ -25,13 +25,4 @@ public interface BatchJobExecutorService {
      */
     Long jobPause(Long jobInstanceId);
 
-    /**
-     * Store (persist or archive) a SeaTunnel job instance.
-     *
-     * @param jobInstanceId the ID of the job instance
-     * @return the job instance ID after store operation
-     */
-    Long jobStore(Long jobInstanceId);
-
-
 }

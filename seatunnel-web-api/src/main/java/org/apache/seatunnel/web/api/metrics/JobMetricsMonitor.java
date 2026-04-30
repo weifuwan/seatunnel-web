@@ -1,6 +1,7 @@
 package org.apache.seatunnel.web.api.metrics;
 
 import jakarta.annotation.Resource;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.seatunnel.web.api.modal.ParsedJobMetrics;
 import org.apache.seatunnel.web.api.service.BatchJobInstanceService;
@@ -9,12 +10,19 @@ import org.apache.seatunnel.web.api.websocket.WorkflowWebSocketService;
 import org.apache.seatunnel.web.common.utils.CodeGenerateUtils;
 import org.apache.seatunnel.web.dao.entity.JobMetrics;
 import org.apache.seatunnel.web.dao.entity.JobTableMetrics;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -26,6 +34,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * 2. Write snapshots to job log file.
  * 3. Push metrics to WebSocket.
  * 4. Persist final metrics when job finishes.
+ * 5. Avoid endless polling when job status is not finalized in time.
  * </p>
  */
 @Component
@@ -35,6 +44,50 @@ public class JobMetricsMonitor {
     private final Map<Long, JobRuntimeContext> monitoringJobs = new ConcurrentHashMap<>();
 
     private final Map<Long, JobFileLogger> loggers = new ConcurrentHashMap<>();
+
+    private final Map<Long, MonitorState> monitorStates = new ConcurrentHashMap<>();
+
+    @Value("${seatunnel.metrics.log-every-times:10}")
+    private int logEveryTimes;
+
+    /**
+     * Maximum time to keep polling metrics for one job.
+     *
+     * <p>
+     * Default: 30 minutes.
+     * Set to 0 or negative to disable timeout.
+     * </p>
+     */
+    @Value("${seatunnel.metrics.max-monitor-ms:1800000}")
+    private long maxMonitorMs;
+
+    /**
+     * Maximum continuous empty metrics count.
+     *
+     * <p>
+     * If Engine returns empty metrics continuously, we should stop monitoring
+     * to avoid endless polling.
+     * </p>
+     */
+    @Value("${seatunnel.metrics.max-empty-times:30}")
+    private int maxEmptyTimes;
+
+    /**
+     * Maximum continuous metrics fetching error count.
+     */
+    @Value("${seatunnel.metrics.max-error-times:30}")
+    private int maxErrorTimes;
+
+    /**
+     * Warn when read/write rows do not change for a long time.
+     *
+     * <p>
+     * This only writes warning logs. It does not stop the job.
+     * Default: 5 minutes.
+     * </p>
+     */
+    @Value("${seatunnel.metrics.no-progress-warn-ms:300000}")
+    private long noProgressWarnMs;
 
     @Resource
     private JobMetricsService metricsService;
@@ -49,6 +102,7 @@ public class JobMetricsMonitor {
         Long instanceId = context.getInstanceId();
 
         monitoringJobs.put(instanceId, context);
+        monitorStates.put(instanceId, MonitorState.create());
 
         try {
             String logPath = instanceService.selectById(instanceId).getLogPath();
@@ -63,32 +117,216 @@ public class JobMetricsMonitor {
 
     @Scheduled(fixedDelayString = "${seatunnel.metrics.interval-ms:2000}")
     public void reportAllWebSocket() {
+        if (monitoringJobs.isEmpty()) {
+            return;
+        }
+
         monitoringJobs.forEach((instanceId, context) -> {
             try {
-                ParsedJobMetrics parsed = metricsService.getJobMetricsFromEngine(
-                        context.getClientId(),
-                        context.getEngineId()
-                );
-
-                if (parsed == null || parsed.isEmpty()) {
-                    return;
-                }
-
-                attachContext(instanceId, context, parsed);
-
-                JobFileLogger logger = loggers.get(instanceId);
-                if (logger != null) {
-                    logger.info(formatMetrics(parsed));
-                }
-
-                webSocketService.sendMessage(
-                        buildChannel(instanceId, context.getEngineId()),
-                        buildPayload(instanceId, context.getEngineId(), parsed)
-                );
+                reportSingleJob(instanceId, context);
             } catch (Exception e) {
-                log.warn("Failed to fetch metrics, instanceId={}", instanceId, e);
+                handleFetchError(instanceId, context, e);
             }
         });
+    }
+
+    private void reportSingleJob(Long instanceId, JobRuntimeContext context) {
+        MonitorState state = monitorStates.computeIfAbsent(instanceId, key -> MonitorState.create());
+
+        if (isMonitorTimeout(state)) {
+            handleMonitorTimeout(instanceId, context, state);
+            return;
+        }
+
+        ParsedJobMetrics parsed = metricsService.getJobMetricsFromEngine(
+                context.getClientId(),
+                context.getEngineId()
+        );
+
+        if (parsed == null || parsed.isEmpty()) {
+            handleEmptyMetrics(instanceId, context, state);
+            return;
+        }
+
+        state.setErrorTimes(0);
+        state.setEmptyTimes(0);
+        state.setPollTimes(state.getPollTimes() + 1);
+
+        attachContext(instanceId, context, parsed);
+
+        writeMetricsLogIfNecessary(instanceId, parsed, state);
+
+        detectNoProgress(instanceId, context, parsed, state);
+
+        webSocketService.sendMessage(
+                buildChannel(instanceId, context.getEngineId()),
+                buildPayload(instanceId, context.getEngineId(), parsed)
+        );
+    }
+
+    private void handleEmptyMetrics(Long instanceId, JobRuntimeContext context, MonitorState state) {
+        state.setEmptyTimes(state.getEmptyTimes() + 1);
+
+        if (state.getEmptyTimes() == 1 || state.getEmptyTimes() % 10 == 0) {
+            log.warn("Empty metrics returned from SeaTunnel Engine, instanceId={}, engineId={}, emptyTimes={}",
+                    instanceId, context.getEngineId(), state.getEmptyTimes());
+        }
+
+        if (maxEmptyTimes > 0 && state.getEmptyTimes() >= maxEmptyTimes) {
+            log.warn("Metrics monitor stopped because empty metrics exceeded limit, instanceId={}, engineId={}, emptyTimes={}",
+                    instanceId, context.getEngineId(), state.getEmptyTimes());
+
+            sendFinalEvent(instanceId, context.getEngineId(), "METRICS_EMPTY_TIMEOUT");
+            cleanup(instanceId);
+        }
+    }
+
+    private void handleFetchError(Long instanceId, JobRuntimeContext context, Exception e) {
+        MonitorState state = monitorStates.computeIfAbsent(instanceId, key -> MonitorState.create());
+        state.setErrorTimes(state.getErrorTimes() + 1);
+
+        if (state.getErrorTimes() == 1 || state.getErrorTimes() % 10 == 0) {
+            log.warn("Failed to fetch metrics, instanceId={}, engineId={}, errorTimes={}",
+                    instanceId, context.getEngineId(), state.getErrorTimes(), e);
+        }
+
+        if (maxErrorTimes > 0 && state.getErrorTimes() >= maxErrorTimes) {
+            log.warn("Metrics monitor stopped because fetch error exceeded limit, instanceId={}, engineId={}, errorTimes={}",
+                    instanceId, context.getEngineId(), state.getErrorTimes());
+
+            sendFinalEvent(instanceId, context.getEngineId(), "METRICS_FETCH_FAILED");
+            cleanup(instanceId);
+        }
+    }
+
+    private boolean isMonitorTimeout(MonitorState state) {
+        if (maxMonitorMs <= 0) {
+            return false;
+        }
+
+        return System.currentTimeMillis() - state.getStartTime() >= maxMonitorMs;
+    }
+
+    private void handleMonitorTimeout(Long instanceId, JobRuntimeContext context, MonitorState state) {
+        long costMs = System.currentTimeMillis() - state.getStartTime();
+
+        log.warn("Metrics monitor stopped because max monitor time exceeded, instanceId={}, engineId={}, costMs={}, maxMonitorMs={}",
+                instanceId, context.getEngineId(), costMs, maxMonitorMs);
+
+        JobFileLogger logger = loggers.get(instanceId);
+        if (logger != null) {
+            logger.warn("Metrics monitor stopped because max monitor time exceeded, costMs="
+                    + costMs + ", maxMonitorMs=" + maxMonitorMs);
+        }
+
+        sendFinalEvent(instanceId, context.getEngineId(), "METRICS_MONITOR_TIMEOUT");
+        cleanup(instanceId);
+    }
+
+    private void writeMetricsLogIfNecessary(Long instanceId,
+                                            ParsedJobMetrics parsed,
+                                            MonitorState state) {
+        JobFileLogger logger = loggers.get(instanceId);
+        if (logger == null) {
+            return;
+        }
+
+        if (!shouldWriteMetricsLog(state)) {
+            return;
+        }
+
+        logger.info(formatMetrics(parsed));
+    }
+
+    private boolean shouldWriteMetricsLog(MonitorState state) {
+        if (logEveryTimes <= 1) {
+            return true;
+        }
+
+        long pollTimes = state.getPollTimes();
+        return pollTimes == 1 || pollTimes % logEveryTimes == 0;
+    }
+
+    private void detectNoProgress(Long instanceId,
+                                  JobRuntimeContext context,
+                                  ParsedJobMetrics parsed,
+                                  MonitorState state) {
+        if (noProgressWarnMs <= 0) {
+            return;
+        }
+
+        ProgressSnapshot current = buildProgressSnapshot(parsed);
+        if (current == null) {
+            return;
+        }
+
+        ProgressSnapshot last = state.getLastProgressSnapshot();
+        long now = System.currentTimeMillis();
+
+        if (last == null || current.hasProgressComparedTo(last)) {
+            state.setLastProgressSnapshot(current);
+            state.setLastProgressTime(now);
+            state.setLastNoProgressWarnTime(0L);
+            return;
+        }
+
+        long noProgressMs = now - state.getLastProgressTime();
+        boolean shouldWarn = noProgressMs >= noProgressWarnMs
+                && now - state.getLastNoProgressWarnTime() >= noProgressWarnMs;
+
+        if (!shouldWarn) {
+            return;
+        }
+
+        state.setLastNoProgressWarnTime(now);
+
+        String message = String.format(
+                "SeaTunnel job metrics has no progress, instanceId=%s, engineId=%s, readRows=%s, writeRows=%s, queueSize=%s, noProgressMs=%s",
+                instanceId,
+                context.getEngineId(),
+                current.getReadRows(),
+                current.getWriteRows(),
+                current.getQueueSize(),
+                noProgressMs
+        );
+
+        log.warn(message);
+
+        JobFileLogger logger = loggers.get(instanceId);
+        if (logger != null) {
+            logger.warn(message);
+        }
+    }
+
+    private ProgressSnapshot buildProgressSnapshot(ParsedJobMetrics parsed) {
+        long readRows = 0L;
+        long writeRows = 0L;
+        long queueSize = 0L;
+
+        if (parsed.getPipelineMetrics() != null) {
+            for (JobMetrics item : parsed.getPipelineMetrics().values()) {
+                readRows += defaultLong(item.getReadRowCount());
+                writeRows += defaultLong(item.getWriteRowCount());
+                queueSize += defaultLong(item.getIntermediateQueueSize());
+            }
+        }
+
+        if (parsed.getTableMetrics() != null && !parsed.getTableMetrics().isEmpty()) {
+            long tableReadRows = 0L;
+            long tableWriteRows = 0L;
+
+            for (JobTableMetrics item : parsed.getTableMetrics()) {
+                tableReadRows += defaultLong(item.getReadRowCount());
+                tableWriteRows += defaultLong(item.getWriteRowCount());
+            }
+
+            if (tableReadRows > 0 || tableWriteRows > 0) {
+                readRows = Math.max(readRows, tableReadRows);
+                writeRows = Math.max(writeRows, tableWriteRows);
+            }
+        }
+
+        return new ProgressSnapshot(readRows, writeRows, queueSize);
     }
 
     public void finalizeAndPersist(Long instanceId) {
@@ -100,6 +338,7 @@ public class JobMetricsMonitor {
 
         if (context == null) {
             log.warn("Metrics monitor context not found when finalizing, instanceId={}", instanceId);
+            cleanup(instanceId);
             return;
         }
 
@@ -118,7 +357,10 @@ public class JobMetricsMonitor {
                     logger.info(formatMetrics(parsed));
                 }
 
-                persistPipelineMetrics(parsed.getPipelineMetrics().values());
+                if (parsed.getPipelineMetrics() != null) {
+                    persistPipelineMetrics(parsed.getPipelineMetrics().values());
+                }
+
                 persistTableMetrics(parsed.getTableMetrics());
 
                 log.info("Final metrics persisted, instanceId={}, pipelineCount={}, tableCount={}",
@@ -261,6 +503,7 @@ public class JobMetricsMonitor {
 
     private void cleanup(Long instanceId) {
         monitoringJobs.remove(instanceId);
+        monitorStates.remove(instanceId);
 
         JobFileLogger logger = loggers.remove(instanceId);
         if (logger != null) {
@@ -379,5 +622,51 @@ public class JobMetricsMonitor {
 
     private String safe(String value) {
         return value == null ? "-" : value;
+    }
+
+    @Data
+    private static class MonitorState {
+
+        private long startTime;
+
+        private long pollTimes;
+
+        private int emptyTimes;
+
+        private int errorTimes;
+
+        private long lastProgressTime;
+
+        private long lastNoProgressWarnTime;
+
+        private ProgressSnapshot lastProgressSnapshot;
+
+        static MonitorState create() {
+            MonitorState state = new MonitorState();
+            long now = System.currentTimeMillis();
+            state.setStartTime(now);
+            state.setLastProgressTime(now);
+            return state;
+        }
+    }
+
+    @Data
+    private static class ProgressSnapshot {
+
+        private final long readRows;
+
+        private final long writeRows;
+
+        private final long queueSize;
+
+        boolean hasProgressComparedTo(ProgressSnapshot last) {
+            if (last == null) {
+                return true;
+            }
+
+            return readRows != last.getReadRows()
+                    || writeRows != last.getWriteRows()
+                    || queueSize != last.getQueueSize();
+        }
     }
 }

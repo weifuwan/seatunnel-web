@@ -295,27 +295,4 @@ public class SeaTunnelRestClient {
         }
     }
 
-    public Map encryptConfig(Long clientId, Object config) {
-        try {
-            HttpEntity<Object> entity = new HttpEntity<>(config, jsonHeaders());
-            return restTemplate.postForObject(url(clientId, "/encrypt-config"), entity, Map.class);
-        } catch (Exception e) {
-            throw wrap(e, "POST /encrypt-config failed");
-        }
-    }
-
-    public Map updateTags(Long clientId, Map<String, String> tags) {
-        try {
-            Map<String, String> body = (tags == null) ? Collections.emptyMap() : tags;
-            HttpEntity<Object> entity = new HttpEntity<>(body, jsonHeaders());
-            return restTemplate.postForObject(url(clientId, "/update-tags"), entity, Map.class);
-        } catch (Exception e) {
-            throw wrap(e, "POST /update-tags failed");
-        }
-    }
-
-    public Map submitJobUploadText(Long clientId, String text, String filename) {
-        byte[] bytes = (text == null ? "" : text).getBytes(StandardCharsets.UTF_8);
-        return submitJobUpload(clientId, bytes, filename);
-    }
 }

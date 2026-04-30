@@ -4,8 +4,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.seatunnel.web.common.enums.JobSubmitStage;
 import org.apache.seatunnel.web.common.exception.JobSubmitException;
+import org.apache.seatunnel.web.core.exceptions.ServiceException;
 import org.apache.seatunnel.web.engine.client.rest.SeaTunnelRestClient;
 import org.apache.seatunnel.web.spi.bean.vo.JobInstanceVO;
+import org.apache.seatunnel.web.spi.enums.Status;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
@@ -100,6 +102,32 @@ public class JobSubmitter {
         } finally {
             jobLogger.close();
         }
+    }
+
+    public void pause(JobInstanceVO instance) {
+        if (instance == null || instance.getId() == null) {
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "jobInstance");
+        }
+
+        if (instance.getClientId() == null || instance.getClientId() <= 0) {
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "clientId");
+        }
+
+        if (instance.getEngineJobId() == null || instance.getEngineJobId() <= 0) {
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "engineJobId");
+        }
+
+        Long instanceId = instance.getId();
+        Long clientId = instance.getClientId();
+        Long engineJobId = instance.getEngineJobId();
+
+        log.info("Stopping SeaTunnel job: instanceId={}, clientId={}, engineJobId={}",
+                instanceId, clientId, engineJobId);
+
+        Map<?, ?> resp = restClient.stopJob(clientId, engineJobId, false);
+
+        log.info("Stop SeaTunnel job response: instanceId={}, clientId={}, engineJobId={}, resp={}",
+                instanceId, clientId, engineJobId, resp);
     }
 
     private void validate(JobInstanceVO instance) {

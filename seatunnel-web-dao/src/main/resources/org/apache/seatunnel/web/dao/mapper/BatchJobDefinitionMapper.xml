@@ -33,6 +33,7 @@
         i.end_time AS lastEndTime,
         i.error_message AS errorMessage,
         i.run_mode AS runMode,
+        i.id AS instanceId,
 
         CASE
         WHEN i.start_time IS NULL THEN NULL

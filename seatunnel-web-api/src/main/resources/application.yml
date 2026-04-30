@@ -86,3 +86,12 @@ mybatis-plus:
     db-config:
       id-type: auto
     banner: false
+
+seatunnel:
+  metrics:
+    interval-ms: 2000
+    log-every-times: 10
+    max-monitor-ms: 1800000
+    max-empty-times: 30
+    max-error-times: 30
+    no-progress-warn-ms: 300000

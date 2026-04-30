@@ -124,8 +124,8 @@ export const seatunnelJobExecuteApi = {
     return HttpUtils.get(executeApiPrefix + '/execute?jobDefineId=' + jobDefineId);
   },
 
-  executeadHoc: (data: any) => {
-    return HttpUtils.post(executeApiPrefix + '/execute/ad-hoc', data);
+  pause: (jobInstanceId: any) => {
+    return HttpUtils.get(`${executeApiPrefix}/pause?jobInstanceId=${jobInstanceId}`);
   },
 };
 

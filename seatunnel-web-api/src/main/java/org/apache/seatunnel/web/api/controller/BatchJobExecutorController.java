@@ -37,4 +37,18 @@ public class BatchJobExecutorController {
         Long jobInstanceId = jobExecutorService.jobExecute(jobDefineId, RunMode.MANUAL);
         return Result.buildSuc(jobInstanceId);
     }
+
+    /**
+     * Pause / stop a running SeaTunnel job instance.
+     */
+    @GetMapping("/pause")
+    @Operation(summary = "pauseJob", description = "PAUSE_JOB_NOTES")
+    @Parameters({
+            @Parameter(name = "jobInstanceId", description = "JOB_INSTANCE_ID", required = true)
+    })
+    @ApiException(JOB_DEFINITION_EXECUTE_ERROR)
+    public Result<Long> pause(@RequestParam("jobInstanceId") Long jobInstanceId) {
+        Long id = jobExecutorService.jobPause(jobInstanceId);
+        return Result.buildSuc(id);
+    }
 }

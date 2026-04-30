@@ -15,6 +15,8 @@ public class BatchJobDefinitionVO {
 
     private Long id;
 
+    private Long instanceId;
+
     private String jobName;
 
     private String jobDesc;

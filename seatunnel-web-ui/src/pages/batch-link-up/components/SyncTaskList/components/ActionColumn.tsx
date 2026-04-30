@@ -7,7 +7,7 @@ import {
   seatunnelJobExecuteApi,
 } from "../../../api";
 import TaskViewModal from "../../../TaskViewModal";
-import { taskExecutionApi } from "../../../type";
+
 
 interface ActionColumnProps {
   record: any;
@@ -34,10 +34,13 @@ const ActionColumn: React.FC<ActionColumnProps> = ({
     record?.releaseState === "ONLINE" || record?.releaseState === 1;
 
   const handleStop = () => {
-    const executionId = record?.executionId;
 
-    if (executionId !== undefined) {
-      taskExecutionApi.cancel(executionId).then((data) => {
+    console.log(record)
+
+    const instanceId = record?.instanceId;
+
+    if (instanceId !== undefined) {
+      seatunnelJobExecuteApi.pause(instanceId).then((data) => {
         if (data?.code === 0) {
           cbk();
         } else {

@@ -35,6 +35,7 @@ public abstract class BaseConnectionParam implements ConnectionParam {
 
     protected DbType dbType;
 
+    @FormField(label = "Schema", order = 7)
     protected String schemaName;
 
 }

@@ -1,5 +1,6 @@
 package org.apache.seatunnel.plugin.datasource.pgsql.param;
 
+import org.apache.commons.collections4.MapUtils;
 import org.apache.seatunnel.web.common.utils.JSONUtils;
 import org.apache.seatunnel.plugin.datasource.api.constants.DataSourceConstants;
 import org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcParamConverter;
@@ -24,16 +25,21 @@ public class PgSQLParamConverter implements JdbcParamConverter {
     }
 
     private String buildUrl(PgSQLConnectionParam pgSQLConnectionParam) {
-
-        return String.format("%s%s:%s/%s",
+        String base = String.format("%s%s:%s/%s",
                 jdbcPrefix(),
                 pgSQLConnectionParam.getHost(),
                 pgSQLConnectionParam.getPort(),
                 pgSQLConnectionParam.getDatabase());
+        
+        Map<String, String> other = pgSQLConnectionParam.getOtherAsMap();
+        if (MapUtils.isEmpty(other)) {
+            return base;
+        }
+        return base + "?" + buildQueryString(other);
     }
 
     private String jdbcPrefix() {
-        return DataSourceConstants.JDBC_MYSQL;
+        return DataSourceConstants.JDBC_POSTGRESQL;
     }
 
     private String buildQueryString(Map<String, String> params) {

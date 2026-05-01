@@ -38,24 +38,24 @@ public class PgSQLCatalog extends AbstractJdbcCatalog {
 
     @Override
     protected String getListTableSql(String databaseName) {
-        return "SHOW TABLES;";
+        return "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE';";
     }
 
     @Override
     protected DataSourceTableColumn buildColumn(Map<String, Object> item) {
-        String columnName = item.get("COLUMN_NAME").toString();
-        String columnType = item.get("COLUMN_TYPE").toString();
-        String isNullable = item.get("IS_NULLABLE").toString();
-        String columnComment = item.get("COLUMN_COMMENT").toString();
-        String columnKey = item.get("COLUMN_KEY").toString();
-        int ordinalPosition = Integer.parseInt(item.get("ORDINAL_POSITION").toString());
+        String columnName = item.get("column_name").toString();
+        String dataType = item.get("data_type").toString();
+        String isNullable = item.get("is_nullable").toString();
+        String columnComment = item.get("column_comment") != null ? item.get("column_comment").toString() : null;
+        String columnKey = item.get("column_key") != null ? item.get("column_key").toString() : null;
+        int ordinalPosition = Integer.parseInt(item.get("ordinal_position").toString());
 
         return DataSourceTableColumn.builder()
                 .isNullable(isNullable)
                 .columnComment(columnComment)
                 .columnKey(columnKey)
                 .columnName(columnName)
-                .sourceType(columnType)
+                .sourceType(dataType.toUpperCase())
                 .ordinalPosition(ordinalPosition)
                 .build();
     }

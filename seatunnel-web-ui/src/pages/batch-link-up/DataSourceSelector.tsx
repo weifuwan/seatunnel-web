@@ -21,7 +21,7 @@ const { Option } = Select;
 type DataSourceType =
   | 'MYSQL'
   | 'ORACLE'
-  | 'PGSQL'
+  | 'POSTGRE_SQL'
 
 type DataSourceSelectorProps = {
   type: 'source' | 'target';
@@ -38,14 +38,14 @@ const DATA_SOURCE_CONFIG: Record<
 > = {
   MYSQL: { icon: MysqlIcon, displayName: 'MySQL' },
   ORACLE: { icon: OracleIcon, displayName: 'ORACLE' },
-  PGSQL: { icon: PostgreSQL, displayName: 'PGSQL' }
+  POSTGRE_SQL: { icon: PostgreSQL, displayName: 'PGSQL' }
 };
 
 // 默认支持的数据源
 const DEFAULT_DATA_SOURCES: DataSourceType[] = [
   'MYSQL',
   'ORACLE',
-  'PGSQL'
+  'POSTGRE_SQL'
 ];
 
 const DataSourceSelector = ({

@@ -11,7 +11,7 @@ export const PAGE_DEFAULT_PAGINATION = {
 export const COMMON_DB_OPTIONS: DataSourceOptionItem[] = [
   { label: "MYSQL", value: "MYSQL" },
   { label: "ORACLE", value: "ORACLE" },
-  { label: "PGSQL", value: "PGSQL" },
+  { label: "PGSQL", value: "POSTGRE_SQL" },
 ];
 
 export const ENVIRONMENT_OPTIONS: DataSourceOptionItem[] = [
@@ -38,8 +38,8 @@ export const dataSourceGroupList: DataSourceGroup[] = [
       },
       {
         onlyDiScript: false,
-        dbType: "PGSQL",
-        type: "PGSQL",
+        dbType: "POSTGRE_SQL",
+        type: "POSTGRE_SQL",
         connectorType: "Jdbc",
       },
     ],

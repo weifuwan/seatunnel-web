@@ -110,7 +110,7 @@ const AdvancedSearchForm: React.FC<AdvancedSearchFormProps> = ({
   const dataSourceOption = [
     createDataSourceOption("MySql", "MYSQL"),
     createDataSourceOption("Oracle", "ORACLE"),
-    createDataSourceOption("PgSQL", "PGSQL"),
+    createDataSourceOption("PgSQL", "POSTGRE_SQL"),
   ];
 
   return (

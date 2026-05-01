@@ -23,9 +23,12 @@ public abstract class AbstractJdbcBatchBuilder extends AbstractJdbcHoconBuilder
         JdbcTableNameResolver tableNameResolver = new JdbcTableNameResolver();
 
         JdbcSourceTargetBuilder singleSourceBuilder =
-                new JdbcSingleSourceTargetBuilder(tableNameResolver, this::handleQueryByStage);
+                new JdbcSingleSourceTargetBuilder(
+                        tableNameResolver,
+                        this::handleQueryByStage,
+                        this::buildTablePath);
         JdbcSourceTargetBuilder multiSourceBuilder =
-                new JdbcMultiSourceTargetBuilder(tableNameResolver);
+                new JdbcMultiSourceTargetBuilder(tableNameResolver, this::buildTablePath);
 
         JdbcSinkTargetBuilder singleSinkBuilder =
                 new JdbcSingleSinkTargetBuilder(tableNameResolver);

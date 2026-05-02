@@ -20,13 +20,13 @@ const CronPreview: React.FC<Props> = ({ cronExpression }) => {
       await navigator.clipboard.writeText(cronExpression);
       message.success("Cron 表达式已复制");
     } catch {
-      message.error("复制失败");
+      
     }
   };
 
   const handlePreviewNextRuns = async () => {
     if (!cronExpression) {
-      message.error("请先生成 Cron 表达式");
+      
       return;
     }
 
@@ -38,7 +38,7 @@ const CronPreview: React.FC<Props> = ({ cronExpression }) => {
       setNextExecutionTimes(data?.data || []);
       setPreviewOpen(true);
     } catch {
-      message.error("执行时间预览失败");
+      
     } finally {
       setPreviewLoading(false);
     }

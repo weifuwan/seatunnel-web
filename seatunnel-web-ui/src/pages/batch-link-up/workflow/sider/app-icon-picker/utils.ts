@@ -312,7 +312,7 @@ export const useLocalFileUploader = ({ limit, disabled = false, onUpload }: useL
     reader.addEventListener(
       'error',
       () => {
-        message.error("fjfjfjasldf")
+        
       },
       false,
     )

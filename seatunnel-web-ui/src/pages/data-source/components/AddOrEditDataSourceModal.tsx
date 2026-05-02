@@ -118,7 +118,7 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
 
       message.error(response.message);
     } catch (error: any) {
-      message.error(error?.message || "Connection test failed");
+      
     }
   };
 
@@ -155,7 +155,7 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
         const response = await updateDataSource(currentRecord.id, payload);
 
         if (response.code !== 0) {
-          message.error(response.message);
+          
           return;
         }
       }

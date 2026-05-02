@@ -65,12 +65,10 @@ export const useWholeSync = ({ baseForm, form }: UseWholeSyncProps) => {
           } else if (currentMatchMode === "1") {
             setMultiTableList([]);
           }
-        } else {
-          message.error(res?.message || "Failed to fetch tables");
-        }
+        } 
       } catch (err) {
         console.error(err);
-        message.error("Failed to fetch tables");
+       
       } finally {
         setLoading(false);
       }
@@ -91,12 +89,10 @@ export const useWholeSync = ({ baseForm, form }: UseWholeSyncProps) => {
         );
         if (res?.code === 0) {
           setReadOnlyTables(buildTableItems(res.data));
-        } else {
-          message.error(res?.message || "获取参考表失败");
-        }
+        } 
       } catch (err) {
         console.error(err);
-        message.error("获取参考表失败");
+       
       } finally {
         setLoading(false);
       }

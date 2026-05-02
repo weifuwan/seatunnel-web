@@ -271,7 +271,7 @@ export default function Workflow({
       setPreviewContent(res?.data || "");
       setPreviewOpen(true);
     } catch (error: any) {
-      message.error(error?.message || "预览生成失败");
+      
     } finally {
       setPreviewLoading(false);
     }

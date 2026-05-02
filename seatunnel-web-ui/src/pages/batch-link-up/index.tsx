@@ -39,7 +39,7 @@ const App = () => {
 
         history.push(`/sync/batch-link-up/${returnId}/detail`);
       } else {
-        message.error(data?.message || "获取任务ID失败");
+        
       }
     });
   };
@@ -74,9 +74,9 @@ const App = () => {
         return;
       }
 
-      message.error("未知任务模式，无法进入编辑页");
+      
     } catch (error) {
-      message.error("获取编辑详情失败");
+      
     }
   };
 

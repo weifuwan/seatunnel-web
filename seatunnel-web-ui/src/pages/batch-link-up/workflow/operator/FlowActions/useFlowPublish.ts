@@ -40,7 +40,7 @@ export function useFlowPublish(nodes: any[], edges: any[], baseForm: any) {
             message.success("发布成功");
         }
         else {
-            message.error(data?.message || "发布失败");
+            
         }
     };
 

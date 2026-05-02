@@ -38,6 +38,6 @@ public class GuideSingleHoconBuildService {
         }
 
         DagGraph dagGraph = DagUtil.parseAndCheck(dagJson);
-        return hoconConfigBuilder.build(dagGraph,  command.getEnv());
+        return hoconConfigBuilder.build(dagGraph,  command.getEnv(), command.getSchedule());
     }
 }

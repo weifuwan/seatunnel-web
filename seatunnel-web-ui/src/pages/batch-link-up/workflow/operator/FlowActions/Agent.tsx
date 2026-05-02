@@ -174,7 +174,7 @@ function useDataSources() {
     fetchDataSourceAll()
       .then((res: any) => {
         if (res?.code !== 0) {
-          message.error(res?.message || "Load data sources failed");
+          
           return;
         }
 
@@ -192,7 +192,7 @@ function useDataSources() {
       })
       .catch((err: any) => {
         console.error(err);
-        message.error("Load data sources failed");
+        
       });
   }, []);
 
@@ -243,7 +243,7 @@ function useTables(
       .catch((err: any) => {
         if (cancelled) return;
         console.error(err);
-        message.error("Load tables failed");
+   
         setTablesState({ loading: false, options: [] });
       });
 
@@ -399,7 +399,7 @@ const App: React.FC = () => {
         }}
         onCancel={() => {
           setLoading(false);
-          message.error("Cancel sending!");
+          
         }}
       />
     </Flex>

@@ -17,12 +17,17 @@ import {
   MenuKey,
   ParamItem,
   TimeParamItem,
+  TimeVariableVO,
 } from "./types";
 import {
   createConnectorParam,
+  createTimeVariable,
   deleteConnectorParam,
+  deleteTimeVariable,
   fetchConnectorParamPage,
+  fetchTimeVariablePage,
   updateConnectorParam,
+  updateTimeVariable,
 } from "./api";
 
 const { confirm } = Modal;
@@ -37,7 +42,11 @@ const Index: React.FC = () => {
   const [connectorPageSize, setConnectorPageSize] = useState(10);
   const [connectorTotal, setConnectorTotal] = useState(0);
 
+  const [timeLoading, setTimeLoading] = useState(false);
   const [timeData, setTimeData] = useState<TimeParamItem[]>([]);
+  const [timePageNum, setTimePageNum] = useState(1);
+  const [timePageSize, setTimePageSize] = useState(10);
+  const [timeTotal, setTimeTotal] = useState(0);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<ParamItem | null>(null);
@@ -46,30 +55,8 @@ const Index: React.FC = () => {
   const [form] = Form.useForm<FormValues>();
 
   const currentList = useMemo<ParamItem[]>(() => {
-    if (activeMenu === "connector") {
-      return connectorData;
-    }
-
-    const kw = keyword.trim().toLowerCase();
-    if (!kw) return timeData;
-
-    return timeData.filter((item) => {
-      const fields = [
-        item.paramName,
-        item.paramDesc,
-        item.defaultValue,
-        item.exampleValue,
-        item.timeFormat,
-        item.expression || "",
-      ];
-
-      return fields.some((field) =>
-        String(field || "")
-          .toLowerCase()
-          .includes(kw)
-      );
-    });
-  }, [activeMenu, connectorData, keyword, timeData]);
+    return activeMenu === "connector" ? connectorData : timeData;
+  }, [activeMenu, connectorData, timeData]);
 
   const resetModal = () => {
     setModalOpen(false);
@@ -80,6 +67,7 @@ const Index: React.FC = () => {
   const handleResetSelection = () => {
     setKeyword("");
     setConnectorPageNum(1);
+    setTimePageNum(1);
   };
 
   const mapConnectorVOToItem = useCallback(
@@ -95,6 +83,24 @@ const Index: React.FC = () => {
       defaultValue: record.defaultValue || "",
       exampleValue: record.exampleValue || "",
       paramContext: record.paramContext || "",
+    }),
+    []
+  );
+
+  const mapTimeVOToItem = useCallback(
+    (record: TimeVariableVO): TimeParamItem => ({
+      id: record.id,
+      type: "time",
+      paramName: record.paramName,
+      paramDesc: record.paramDesc,
+      variableSource: record.variableSource || "CUSTOM",
+      valueType: record.valueType || "DYNAMIC",
+      timeFormat: record.timeFormat || "yyyy-MM-dd HH:mm:ss",
+      defaultValue: record.defaultValue || "",
+      exampleValue: record.exampleValue || "",
+      expression: record.expression || "",
+      enabled: record.enabled,
+      remark: record.remark || "",
     }),
     []
   );
@@ -116,16 +122,53 @@ const Index: React.FC = () => {
       setConnectorData(records);
       setConnectorTotal(res?.data?.pagination?.total || 0);
     } catch (error) {
-   
+      message.error("连接器参数加载失败");
     } finally {
       setConnectorLoading(false);
     }
   }, [connectorPageNum, connectorPageSize, keyword, mapConnectorVOToItem]);
 
+  const loadTimeData = useCallback(async () => {
+    setTimeLoading(true);
+    try {
+      const res = await fetchTimeVariablePage({
+        keyword: keyword || undefined,
+        pageNo: timePageNum,
+        pageSize: timePageSize,
+      });
+
+      /**
+       * 兼容两种分页结构：
+       * 1. MyBatis-Plus IPage: data.records / data.total
+       * 2. 你现有封装: data.bizData / data.pagination.total
+       */
+      const pageData = res?.data;
+      const rawRecords = Array.isArray(pageData?.records)
+        ? pageData.records
+        : Array.isArray(pageData?.bizData)
+          ? pageData.bizData
+          : [];
+
+      const total = pageData?.total ?? pageData?.pagination?.total ?? 0;
+
+      setTimeData(rawRecords.map(mapTimeVOToItem));
+      setTimeTotal(total);
+    } catch (error) {
+      message.error("时间变量加载失败");
+    } finally {
+      setTimeLoading(false);
+    }
+  }, [keyword, timePageNum, timePageSize, mapTimeVOToItem]);
+
   useEffect(() => {
     if (activeMenu !== "connector") return;
     loadConnectorData();
   }, [activeMenu, loadConnectorData]);
+
+  useEffect(() => {
+    if (activeMenu !== "time") return;
+    loadTimeData();
+  }, [activeMenu, loadTimeData]);
 
   const openAddModal = () => {
     setEditingRecord(null);
@@ -139,7 +182,10 @@ const Index: React.FC = () => {
       });
     } else {
       form.setFieldsValue({
+        variableSource: "CUSTOM",
+        valueType: "DYNAMIC",
         timeFormat: "yyyy-MM-dd HH:mm:ss",
+        enabled: true,
       });
     }
 
@@ -165,10 +211,14 @@ const Index: React.FC = () => {
       form.setFieldsValue({
         paramName: record.paramName,
         paramDesc: record.paramDesc,
+        variableSource: record.variableSource,
+        valueType: record.valueType,
         timeFormat: record.timeFormat,
         defaultValue: record.defaultValue,
         exampleValue: record.exampleValue,
         expression: record.expression,
+        enabled: record.enabled,
+        remark: record.remark,
       });
     }
 
@@ -176,6 +226,14 @@ const Index: React.FC = () => {
   };
 
   const handleDelete = (record: ParamItem) => {
+    const isSystemTimeVariable =
+      record.type === "time" && record.variableSource === "SYSTEM";
+
+    if (isSystemTimeVariable) {
+      message.warning("系统内置变量不允许删除");
+      return;
+    }
+
     confirm({
       title: "确认删除",
       icon: <ExclamationCircleOutlined />,
@@ -198,13 +256,23 @@ const Index: React.FC = () => {
               loadConnectorData();
             }
           } catch (error) {
-        
+            message.error("删除失败");
           }
           return;
         }
 
-        setTimeData((prev) => prev.filter((item) => item.id !== record.id));
-        message.success("删除成功");
+        try {
+          await deleteTimeVariable(record.id);
+          message.success("删除成功");
+
+          if (timeData.length === 1 && timePageNum > 1 && timeTotal > 1) {
+            setTimePageNum((prev) => prev - 1);
+          } else {
+            loadTimeData();
+          }
+        } catch (error) {
+          message.error("删除失败");
+        }
       },
     });
   };
@@ -243,28 +311,33 @@ const Index: React.FC = () => {
         return;
       }
 
-      const nextId = editingRecord?.id ?? Date.now();
-      const timePayload: TimeParamItem = {
-        id: nextId,
-        type: "time",
+      const isEdit = Boolean(editingRecord?.id);
+
+      const timePayload = {
+        id: editingRecord?.id,
         paramName: values.paramName,
         paramDesc: values.paramDesc,
+        variableSource: values.variableSource || "CUSTOM",
+        valueType: values.valueType || "DYNAMIC",
         timeFormat: values.timeFormat || "yyyy-MM-dd HH:mm:ss",
         defaultValue: values.defaultValue || "",
         exampleValue: values.exampleValue || "",
         expression: values.expression || "",
+        enabled: values.enabled ?? true,
+        remark: values.remark || "",
       };
 
-      setTimeData((prev) =>
-        editingRecord?.type === "time"
-          ? prev.map((item) => (item.id === editingRecord.id ? timePayload : item))
-          : [timePayload, ...prev]
-      );
+      if (isEdit) {
+        await updateTimeVariable(timePayload);
+      } else {
+        await createTimeVariable(timePayload);
+      }
 
-      message.success(editingRecord?.id ? "编辑成功" : "新增成功");
+      message.success(isEdit ? "编辑成功" : "新增成功");
       resetModal();
+      loadTimeData();
     } catch (error) {
-      // ignore
+      // validateFields 失败时不提示
     } finally {
       setSubmitting(false);
     }
@@ -286,11 +359,17 @@ const Index: React.FC = () => {
           },
         }
       : {
-          current: 1,
-          pageSize: 10,
-          total: currentList.length,
-          showSizeChanger: false,
+          current: timePageNum,
+          pageSize: timePageSize,
+          total: timeTotal,
+          showSizeChanger: true,
+          showQuickJumper: true,
           showTotal: (total: number) => `共 ${total} 条`,
+          onChange: (page: number, pageSize: number) => {
+            const pageSizeChanged = pageSize !== timePageSize;
+            setTimePageNum(pageSizeChanged ? 1 : page);
+            setTimePageSize(pageSize);
+          },
         };
 
   return (
@@ -331,6 +410,7 @@ const Index: React.FC = () => {
                 setActiveMenu(key);
                 setKeyword("");
                 setConnectorPageNum(1);
+                setTimePageNum(1);
               }}
               onResetSelection={handleResetSelection}
             />
@@ -344,12 +424,15 @@ const Index: React.FC = () => {
             >
               <ContentHeader
                 activeMenu={activeMenu}
-                count={activeMenu === "connector" ? connectorTotal : currentList.length}
+                count={activeMenu === "connector" ? connectorTotal : timeTotal}
                 keyword={keyword}
                 onKeywordChange={(value) => {
                   setKeyword(value);
+
                   if (activeMenu === "connector") {
                     setConnectorPageNum(1);
+                  } else {
+                    setTimePageNum(1);
                   }
                 }}
                 onAdd={openAddModal}
@@ -358,7 +441,7 @@ const Index: React.FC = () => {
               <ParamTable
                 activeMenu={activeMenu}
                 dataSource={currentList}
-                loading={activeMenu === "connector" ? connectorLoading : false}
+                loading={activeMenu === "connector" ? connectorLoading : timeLoading}
                 pagination={tablePagination}
                 onEdit={openEditModal}
                 onDelete={handleDelete}

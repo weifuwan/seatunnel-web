@@ -1,9 +1,13 @@
-import { fetchTimeVariableList } from "@/pages/knowledge-management/api";
+import {
+  fetchTimeVariableList,
+  previewTimeVariable,
+} from "@/pages/knowledge-management/api";
 import { PlusOutlined } from "@ant-design/icons";
-import { Space, Typography } from "antd";
+import { Popover, Space, Typography, message } from "antd";
 import React, { useEffect, useState } from "react";
 import ParamTable from "./ParamTable";
 
+const { Paragraph, Text } = Typography;
 interface Props {
   value?: any;
   onChange?: (patch: Record<string, any>) => void;
@@ -13,6 +17,8 @@ const { Link } = Typography;
 
 const ScheduleParamsSection: React.FC<Props> = ({ value, onChange }) => {
   const [dataSource, setDataSource] = useState<any[]>([]);
+  const [previewResult, setPreviewResult] = useState<string | null>(null); // Store the preview result here
+  const [isPopoverVisible, setPopoverVisible] = useState<boolean>(false); // Track visibility of Popover
 
   useEffect(() => {
     if (value?.paramsList) {
@@ -74,6 +80,45 @@ const ScheduleParamsSection: React.FC<Props> = ({ value, onChange }) => {
     });
   };
 
+  // Handle preview click to fetch and show time variable preview
+  const handlePreview = async () => {
+    const selectedVariables = dataSource.map((item) => item.paramValue); // Assuming paramName holds time expressions
+    const timeFormat = "yyyy-MM-dd HH:mm:ss"; // You can adjust this based on your needs
+
+    try {
+      const response = await previewTimeVariable({
+        expression: selectedVariables.join(", "), // Send selected variables as expression
+        timeFormat: timeFormat,
+      });
+
+      // Assuming response contains a 'value' field with the preview result
+      setPreviewResult(response.data.value); // Store the result in state
+      setPopoverVisible(true); // Show the Popover with the result
+    } catch (error) {
+      message.error("Failed to fetch preview.");
+      console.error("Error during preview:", error);
+    }
+  };
+
+  // Preview content inside Popover
+  const previewContent = (
+    <div className="p-4 max-w-xs min-w-[200px] rounded-lg  bg-white">
+      <p className="mb-2 text-sm font-semibold text-gray-700">
+        🌟 <span className="text-blue-600">时间变量预览</span>{" "}
+        帮助您快速理解时间表达式的效果！
+      </p>
+      {previewResult ? (
+        <p className="text-sm text-green-500">
+          🕒 <span className="font-semibold">预览结果:</span> {previewResult} 🎉
+        </p>
+      ) : (
+        <div className="flex items-center space-x-2">
+          <div className="w-4 h-4 border-t-2 border-gray-500 rounded-full animate-spin"></div>
+          <p className="text-sm text-gray-500">正在加载预览... 请稍等哦⏳</p>
+        </div>
+      )}
+    </div>
+  );
   return (
     <div className="schedule-section-body">
       <div className="schedule-link-row">
@@ -85,12 +130,21 @@ const ScheduleParamsSection: React.FC<Props> = ({ value, onChange }) => {
             <PlusOutlined className="text-xs" />
             添加时间变量
           </Link>
-          <Link
-            className="inline-flex h-7 items-center justify-center gap-1 rounded-[10px] border px-2.5 text-[13px] font-medium"
-            onClick={() => {}}
+
+          <Popover
+            content={previewContent} // Use the previewContent here
+            title="参数预览"
+            trigger="click"
+            visible={isPopoverVisible} // Control visibility
+            onVisibleChange={(visible) => setPopoverVisible(visible)} // Toggle visibility
           >
-            参数预览
-          </Link>
+            <Link
+              className="inline-flex h-7 items-center justify-center gap-1 rounded-[10px] border px-2.5 text-[13px] font-medium"
+              onClick={handlePreview} // Call previewTimeVariable when clicked
+            >
+              参数预览
+            </Link>
+          </Popover>
         </Space>
       </div>
 

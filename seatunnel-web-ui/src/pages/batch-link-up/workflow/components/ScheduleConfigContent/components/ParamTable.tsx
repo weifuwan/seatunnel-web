@@ -37,7 +37,7 @@ const ParamTable: React.FC<ParamTableProps> = ({
         const selectedItem = timeVariableKeys.find(
           (option) => option.value === fieldValue
         );
-        const newParamValue = selectedItem ? selectedItem.description : ""; // 获取 paramValue
+        const newParamValue = selectedItem ? selectedItem.description : ""; 
         return {
           ...item,
           [field]: fieldValue,
@@ -61,9 +61,6 @@ const ParamTable: React.FC<ParamTableProps> = ({
       key: "paramName",
       width: "48%",
       render: (value: string, record: any) => {
-        console.log(value);
-        console.log(record);
-        console.log(timeVariableKeys)
         return (
           <Select
             style={{ width: "100%" }}

@@ -109,3 +109,7 @@ export async function previewTimeVariable(data: TimeVariablePreviewPayload) {
     data
   );
 }
+
+export async function fetchTimeVariableList() {
+  return HttpUtils.get<any[]>("/api/v1/time-variable/list");  
+}

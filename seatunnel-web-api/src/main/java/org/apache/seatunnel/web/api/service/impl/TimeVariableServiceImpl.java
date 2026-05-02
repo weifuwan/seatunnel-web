@@ -219,6 +219,11 @@ public class TimeVariableServiceImpl implements TimeVariableService {
     }
 
     @Override
+    public List<TimeVariable> getAllEnabledVariables() {
+        return timeVariableDao.queryEnabledList();
+    }
+
+    @Override
     public TimeVariableRenderVO render(TimeVariableRenderReq req) {
         validateRenderReq(req);
 

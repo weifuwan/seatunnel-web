@@ -1,13 +1,10 @@
-import React from "react";
-import { Input, Table, Tooltip } from "antd";
+import { TimeParamItem } from "@/pages/knowledge-management/types";
+import { InfoCircleOutlined, MinusCircleOutlined } from "@ant-design/icons";
+import { Input, Select, Table, Tooltip } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { InfoCircleOutlined } from "@ant-design/icons";
-import type { ParamRow } from "../types";
+import React from "react";
 
-interface ParamTableProps {
-  dataSource: ParamRow[];
-  onChange?: (nextDataSource: ParamRow[]) => void;
-}
+const { Option } = Select;
 
 const inputStyle: React.CSSProperties = {
   height: 30,
@@ -17,46 +14,68 @@ const inputStyle: React.CSSProperties = {
   boxShadow: "none",
 };
 
-const ParamTable: React.FC<ParamTableProps> = ({ dataSource, onChange }) => {
+interface ParamTableProps {
+  dataSource: TimeParamItem[];
+  onChange?: (nextDataSource: any) => void;
+  onDelete: (record: any) => void;
+  timeVariableKeys: any[];
+}
+
+const ParamTable: React.FC<ParamTableProps> = ({
+  dataSource,
+  onChange,
+  onDelete,
+  timeVariableKeys,
+}) => {
   const handleFieldChange = (
     rowKey: React.Key,
-    field: keyof Pick<ParamRow, "paramName" | "paramValue">,
+    field: keyof TimeParamItem,
     fieldValue: string
   ) => {
-    const nextDataSource = dataSource.map((item) =>
-      item.key === rowKey
-        ? {
-            ...item,
-            [field]: fieldValue,
-          }
-        : item
-    );
+    const nextDataSource = dataSource.map((item) => {
+      if (item.key === rowKey) {
+        const selectedItem = timeVariableKeys.find(
+          (option) => option.value === fieldValue
+        );
+        const newParamValue = selectedItem ? selectedItem.description : ""; // 获取 paramValue
+        return {
+          ...item,
+          [field]: fieldValue,
+          paramValue: newParamValue,
+        };
+      }
+      return item;
+    });
 
-    onChange?.(nextDataSource);
+    const updatedItem = nextDataSource.find((item) => item.key === rowKey);
+
+    if (updatedItem) {
+      onChange?.(updatedItem);
+    }
   };
 
-  const handleDelete = (rowKey: React.Key) => {
-    const nextDataSource = dataSource.filter((item) => item.key !== rowKey);
-    onChange?.(nextDataSource);
-  };
-
-  const columns: ColumnsType<ParamRow> = [
+  const columns: ColumnsType<TimeParamItem> = [
     {
       title: <span style={{ fontSize: 13, fontWeight: 500 }}>参数名</span>,
       dataIndex: "paramName",
       key: "paramName",
-      width: "28%",
-      render: (value: string, record) => (
-        <Input
-          size="small"
-          value={value}
-          placeholder="请输入参数名"
-          style={inputStyle}
-          onChange={(e) =>
-            handleFieldChange(record.key, "paramName", e.target.value)
-          }
-        />
-      ),
+      width: "48%",
+      render: (value: string, record: any) => {
+        console.log(value);
+        console.log(record);
+        console.log(timeVariableKeys)
+        return (
+          <Select
+            style={{ width: "100%" }}
+            placeholder="时间参数"
+            value={value}
+            options={timeVariableKeys}
+            onChange={(value) =>
+              handleFieldChange(record.key, "paramName", value)
+            }
+          />
+        );
+      },
     },
     {
       title: (
@@ -69,29 +88,27 @@ const ParamTable: React.FC<ParamTableProps> = ({ dataSource, onChange }) => {
       ),
       dataIndex: "paramValue",
       key: "paramValue",
-      width: "52%",
-      render: (value: string, record) => (
+      width: "50%",
+      render: (value: string, record: any) => (
         <Input
           size="small"
           value={value}
           placeholder="请输入参数值或表达式"
           style={inputStyle}
-          onChange={(e) =>
-            handleFieldChange(record.key, "paramValue", e.target.value)
-          }
+          disabled
         />
       ),
     },
     {
-      title: <span style={{ fontSize: 13, fontWeight: 500 }}>操作</span>,
+      title: <></>,
       key: "action",
-      width: "18%",
-      render: (_, record) => (
+      width: "2%",
+      render: (_, record: any) => (
         <a
           className="schedule-table-action"
-          onClick={() => handleDelete(record.key)}
+          onClick={() => onDelete(record.key)}
         >
-          删除
+          <MinusCircleOutlined />
         </a>
       ),
     },
@@ -99,7 +116,7 @@ const ParamTable: React.FC<ParamTableProps> = ({ dataSource, onChange }) => {
 
   return (
     <div className="schedule-table-card">
-      <Table<ParamRow>
+      <Table<TimeParamItem>
         rowKey="key"
         columns={columns}
         dataSource={dataSource}

@@ -377,7 +377,6 @@ const Index: React.FC = () => {
       style={{
         height: "calc(100vh - 48px)",
         background: PAGE_BG,
-        overflow: "auto",
       }}
     >
       <div

@@ -1,6 +1,8 @@
-CREATE DATABASE IF NOT EXISTS seatunnel_web;
+CREATE
+DATABASE IF NOT EXISTS seatunnel_web;
 
-use seatunnel_web;
+use
+seatunnel_web;
 
 -- seatunnel_web.t_connector_param_meta definition
 
@@ -292,6 +294,34 @@ CREATE TABLE `t_seatunnel_user`
     `state`         tinyint     DEFAULT '1' COMMENT 'State: 0=disabled, 1=enabled',
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='User table';
+
+CREATE TABLE `t_seatunnel_time_variable`
+(
+    `id`              bigint       NOT NULL COMMENT '主键ID',
+    `param_name`      varchar(128) NOT NULL COMMENT '变量名称，如 biz_date、start_time、end_time',
+    `param_desc`      varchar(500)          DEFAULT NULL COMMENT '变量说明',
+    `variable_source` varchar(32)  NOT NULL DEFAULT 'CUSTOM' COMMENT '变量来源：SYSTEM / CUSTOM',
+    `value_type`      varchar(32)  NOT NULL DEFAULT 'DYNAMIC' COMMENT '取值方式：FIXED / DYNAMIC',
+    `time_format`     varchar(64)  NOT NULL DEFAULT 'yyyy-MM-dd HH:mm:ss' COMMENT '输出时间格式',
+    `default_value`   varchar(255)          DEFAULT NULL COMMENT '默认值，固定值模式下直接使用',
+    `expression`      varchar(255)          DEFAULT NULL COMMENT '动态表达式，如 schedule_time-1d@day_start',
+    `example_value`   varchar(128)          DEFAULT NULL COMMENT '示例值',
+    `enabled`         tinyint      NOT NULL DEFAULT 1 COMMENT '是否启用：1启用，0禁用',
+    `remark`          varchar(500)          DEFAULT NULL COMMENT '备注',
+    `create_time`     datetime              DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time`     datetime              DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_param_name` (`param_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='SeaTunnel 时间变量表';
+
+INSERT INTO `t_seatunnel_time_variable`
+(`id`, `param_name`, `param_desc`, `variable_source`, `value_type`, `time_format`, `default_value`, `expression`, `example_value`, `enabled`, `remark`)
+VALUES
+(10001, 'now', '当前时间', 'SYSTEM', 'DYNAMIC', 'yyyy-MM-dd HH:mm:ss', NULL, 'now', '2026-05-02 09:30:00', 1, '系统内置变量'),
+(10002, 'today', '今天零点', 'SYSTEM', 'DYNAMIC', 'yyyy-MM-dd HH:mm:ss', NULL, 'today', '2026-05-02 00:00:00', 1, '系统内置变量'),
+(10003, 'biz_date', '业务日期，默认取调度时间的前一天', 'SYSTEM', 'DYNAMIC', 'yyyy-MM-dd', NULL, 'schedule_time-1d', '2026-05-01', 1, '系统内置变量'),
+(10004, 'start_time', '同步开始时间，默认取调度时间前一天零点', 'SYSTEM', 'DYNAMIC', 'yyyy-MM-dd HH:mm:ss', NULL, 'schedule_time-1d@day_start', '2026-05-01 00:00:00', 1, '系统内置变量'),
+(10005, 'end_time', '同步结束时间，默认取调度当天零点', 'SYSTEM', 'DYNAMIC', 'yyyy-MM-dd HH:mm:ss', NULL, 'schedule_time@day_start', '2026-05-02 00:00:00', 1, '系统内置变量');
 
 INSERT INTO seatunnel_web.t_seatunnel_user
 (id, user_name, user_password, user_type, email, phone, create_time, update_time, state)

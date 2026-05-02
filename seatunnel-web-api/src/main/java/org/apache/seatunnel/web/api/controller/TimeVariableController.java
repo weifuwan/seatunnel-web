@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import org.apache.seatunnel.web.api.service.TimeVariableService;
+import org.apache.seatunnel.web.dao.entity.TimeVariable;
 import org.apache.seatunnel.web.spi.bean.dto.TimeVariableCreateDTO;
 import org.apache.seatunnel.web.spi.bean.dto.TimeVariablePageReq;
 import org.apache.seatunnel.web.spi.bean.dto.TimeVariablePreviewReq;
@@ -11,10 +12,14 @@ import org.apache.seatunnel.web.spi.bean.dto.TimeVariableRenderReq;
 import org.apache.seatunnel.web.spi.bean.dto.TimeVariableUpdateDTO;
 import org.apache.seatunnel.web.spi.bean.entity.PaginationResult;
 import org.apache.seatunnel.web.spi.bean.entity.Result;
+import org.apache.seatunnel.web.spi.bean.vo.OptionVO;
 import org.apache.seatunnel.web.spi.bean.vo.TimeVariablePreviewVO;
 import org.apache.seatunnel.web.spi.bean.vo.TimeVariableRenderVO;
 import org.apache.seatunnel.web.spi.bean.vo.TimeVariableVO;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/time-variable")
@@ -65,5 +70,20 @@ public class TimeVariableController {
     @Operation(summary = "渲染 HOCON 中的时间变量")
     public Result<TimeVariableRenderVO> render(@RequestBody TimeVariableRenderReq req) {
         return Result.buildSuc(timeVariableService.render(req));
+    }
+
+    @GetMapping("/list")
+    @Operation(summary = "获取所有时间变量")
+    public Result<List<OptionVO>> getAllTimeVariables() {
+        List<TimeVariable> timeVariables = timeVariableService.getAllEnabledVariables();
+        List<OptionVO> optionVOList = timeVariables.stream().map(timeVariable -> {
+            OptionVO option = new OptionVO();
+            option.setValue(timeVariable.getId()+"");
+            option.setLabel(timeVariable.getParamName());
+            option.setDescription(timeVariable.getExpression());
+            return option;
+        }).collect(Collectors.toList());
+
+        return Result.buildSuc(optionVOList);
     }
 }

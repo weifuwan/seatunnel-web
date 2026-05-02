@@ -59,6 +59,7 @@ export interface ConnectorParamItem {
 }
 
 export interface TimeParamItem {
+  key: any;
   id: number;
   type: "time";
   paramName: string;

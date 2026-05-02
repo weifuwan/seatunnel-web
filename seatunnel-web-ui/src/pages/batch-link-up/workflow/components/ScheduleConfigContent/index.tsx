@@ -3,6 +3,8 @@ import type { CollapseProps } from "antd";
 import { Collapse } from "antd";
 import "./index.less";
 
+import { fetchTimeVariableList } from "@/pages/knowledge-management/api";
+import { useEffect, useState } from "react";
 import ScheduleParamsSection from "./components/ScheduleParamsSection";
 import ScheduleStrategySection from "./components/ScheduleStrategySection";
 import ScheduleTimeSection from "./components/ScheduleTimeSection";
@@ -20,6 +22,8 @@ export default function ScheduleConfigContent({ value, onChange }: Props) {
       ...patch,
     }));
   };
+
+
 
   const items: CollapseProps["items"] = [
     {
@@ -43,10 +47,7 @@ export default function ScheduleConfigContent({ value, onChange }: Props) {
         />
       ),
       children: (
-        <ScheduleStrategySection
-          value={value}
-          onChange={updateSchedule}
-        />
+        <ScheduleStrategySection value={value} onChange={updateSchedule} />
       ),
     },
     {
@@ -54,12 +55,7 @@ export default function ScheduleConfigContent({ value, onChange }: Props) {
       label: (
         <SectionLabel title="调度时间" tooltip="配置周期、时间和生效规则" />
       ),
-      children: (
-        <ScheduleTimeSection
-          value={value}
-          onChange={updateSchedule}
-        />
-      ),
+      children: <ScheduleTimeSection value={value} onChange={updateSchedule} />,
     },
   ];
 

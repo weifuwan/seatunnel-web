@@ -4,12 +4,14 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import jakarta.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.seatunnel.plugin.datasource.api.hocon.DataSourceHoconBuilder;
 import org.apache.seatunnel.plugin.datasource.api.jdbc.DataSourceProcessor;
 import org.apache.seatunnel.plugin.datasource.api.utils.DataSourceUtils;
 import org.apache.seatunnel.web.common.config.ConfigValidator;
 import org.apache.seatunnel.web.common.config.ReadonlyConfig;
 import org.apache.seatunnel.web.common.enums.HoconBuildStage;
 import org.apache.seatunnel.web.core.builder.context.DagBuildContext;
+import org.apache.seatunnel.web.core.time.TimeVariableJdbcSqlRenderService;
 import org.apache.seatunnel.web.dao.entity.DataSource;
 import org.apache.seatunnel.web.dao.repository.DataSourceDao;
 import org.apache.seatunnel.web.spi.enums.DbType;
@@ -30,10 +32,16 @@ public class JdbcSourceBuilder implements SourceNodeConfigBuilder {
     private static final String KEY_PLUGIN_NAME = "pluginName";
     private static final String KEY_CONNECTOR_TYPE = "connectorType";
 
+    private static final String KEY_SQL = "sql";
+    private static final String KEY_WHERE_CONDITION = "where_condition";
+
     private static final String KEY_PLUGIN_OUTPUT = "plugin_output";
 
     @Resource
     private DataSourceDao dataSourceDao;
+
+    @Resource
+    private TimeVariableJdbcSqlRenderService timeVariableJdbcSqlRenderService;
 
     @Override
     public String nodeType() {
@@ -57,16 +65,49 @@ public class JdbcSourceBuilder implements SourceNodeConfigBuilder {
         String pluginName = getRequiredPluginName(config);
 
         DataSourceProcessor processor = DataSourceUtils.getDatasourceProcessor(dbType);
-        Config sourceConfig = processor.getQueryBuilder(pluginName)
-                .buildSourceHocon(
-                        dataSource.getConnectionParams(),
-                        config,
-                        processor.getConnectionManager(),
-                        HoconBuildStage.INSTANCE
-                );
+
+        DataSourceHoconBuilder hoconBuilder = processor.getQueryBuilder(pluginName);
+
+        config = renderSqlTimeVariablesIfNecessary(config, hoconBuilder);
+
+        Config sourceConfig = hoconBuilder.buildSourceHocon(
+                dataSource.getConnectionParams(),
+                config,
+                processor.getConnectionManager(),
+                HoconBuildStage.INSTANCE
+        );
 
         validateSourceConfig(processor, pluginName, sourceConfig);
         return sourceConfig;
+    }
+
+    private Config renderSqlTimeVariablesIfNecessary(Config config,
+                                                     DataSourceHoconBuilder hoconBuilder) {
+        Map<String, Object> extra = new HashMap<>();
+
+        renderSqlFragmentIfNecessary(config, hoconBuilder, KEY_SQL, extra);
+        renderSqlFragmentIfNecessary(config, hoconBuilder, KEY_WHERE_CONDITION, extra);
+
+        if (extra.isEmpty()) {
+            return config;
+        }
+
+        return ConfigFactory.parseMap(extra)
+                .withFallback(config)
+                .resolve();
+    }
+
+    private void renderSqlFragmentIfNecessary(Config config,
+                                              DataSourceHoconBuilder hoconBuilder,
+                                              String key,
+                                              Map<String, Object> extra) {
+        String value = getTrimmedString(config, key);
+        if (StringUtils.isBlank(value)) {
+            return;
+        }
+
+        String renderedValue = timeVariableJdbcSqlRenderService.renderSql(value, hoconBuilder);
+        extra.put(key, renderedValue);
     }
 
     private Config appendPluginOutputIfNecessary(Config data,

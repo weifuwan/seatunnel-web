@@ -6,6 +6,7 @@ import org.apache.seatunnel.plugin.datasource.api.hocon.table.*;
 import org.apache.seatunnel.plugin.datasource.api.jdbc.AbstractJdbcHoconBuilder;
 import org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConnectionProvider;
 import org.apache.seatunnel.web.common.enums.HoconBuildStage;
+import org.apache.seatunnel.web.common.modal.JdbcQueryRenderContext;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -19,13 +20,17 @@ public abstract class AbstractJdbcBatchBuilder extends AbstractJdbcHoconBuilder
     private final JdbcSinkOptionAppender sinkOptionAppender;
     private final JdbcExtraOptionAppender extraOptionAppender;
 
+    protected String handleQuery(String query, JdbcQueryRenderContext context) {
+        return query;
+    }
+
     protected AbstractJdbcBatchBuilder() {
         JdbcTableNameResolver tableNameResolver = new JdbcTableNameResolver();
 
         JdbcSourceTargetBuilder singleSourceBuilder =
                 new JdbcSingleSourceTargetBuilder(
                         tableNameResolver,
-                        this::handleQueryByStage);
+                        this::handleQuery);
 
         JdbcSourceTargetBuilder multiSourceBuilder =
                 new JdbcMultiSourceTargetBuilder(tableNameResolver);

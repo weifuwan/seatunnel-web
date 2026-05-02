@@ -47,6 +47,26 @@ public interface DataSourceHoconBuilder {
      */
     String pluginName();
 
+    /**
+     * Format rendered time variable value as database-specific SQL literal.
+     *
+     * <p>
+     * For example:
+     * MySQL: '2026-05-02 00:00:00'
+     * Oracle: TO_DATE('2026-05-02 00:00:00', 'YYYY-MM-DD HH24:MI:SS')
+     * </p>
+     *
+     * @param value      rendered time value
+     * @param timeFormat java time format, e.g. yyyy-MM-dd HH:mm:ss
+     * @return database-specific SQL literal
+     */
+    default String renderTimeLiteral(String value, String timeFormat) {
+        if (value == null) {
+            return "NULL";
+        }
+        return "'" + value.replace("'", "''") + "'";
+    }
+
 
     default String sourceTemplate() {
         return "";

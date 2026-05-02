@@ -5,6 +5,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConfigReaders;
 import org.apache.seatunnel.plugin.datasource.api.jdbc.TablePath;
 import org.apache.seatunnel.web.common.enums.HoconBuildStage;
+import org.apache.seatunnel.web.common.modal.JdbcQueryRenderContext;
 
 import java.util.List;
 import java.util.Map;
@@ -15,13 +16,13 @@ import static org.apache.seatunnel.plugin.datasource.api.hocon.JdbcBatchConstant
 public class JdbcSingleSourceTargetBuilder implements JdbcSourceTargetBuilder {
 
     private final JdbcTableNameResolver tableNameResolver;
-    private final BiFunction<String, HoconBuildStage, String> queryStageHandler;
+    private final BiFunction<String, JdbcQueryRenderContext, String> queryRenderHandler;
 
     public JdbcSingleSourceTargetBuilder(
             JdbcTableNameResolver tableNameResolver,
-            BiFunction<String, HoconBuildStage, String> queryStageHandler) {
+            BiFunction<String, JdbcQueryRenderContext, String> queryRenderHandler) {
         this.tableNameResolver = tableNameResolver;
-        this.queryStageHandler = queryStageHandler;
+        this.queryRenderHandler = queryRenderHandler;
     }
 
     @Override
@@ -31,7 +32,10 @@ public class JdbcSingleSourceTargetBuilder implements JdbcSourceTargetBuilder {
                       HoconBuildStage stage) {
         String sql = JdbcConfigReaders.getString(config, SQL, "");
         if (StringUtils.isNotBlank(sql)) {
-            map.put(QUERY, queryStageHandler.apply(sql, stage));
+            JdbcQueryRenderContext renderContext =
+                    new JdbcQueryRenderContext(config, conn, stage, null);
+
+            map.put(QUERY, queryRenderHandler.apply(sql, renderContext));
             return;
         }
 

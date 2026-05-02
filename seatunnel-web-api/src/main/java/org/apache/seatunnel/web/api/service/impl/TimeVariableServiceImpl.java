@@ -1,30 +1,26 @@
 package org.apache.seatunnel.web.api.service.impl;
 
-
-
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.seatunnel.web.api.service.TimeVariableService;
 import org.apache.seatunnel.web.common.enums.TimeVariableSource;
 import org.apache.seatunnel.web.common.enums.TimeVariableValueType;
+import org.apache.seatunnel.web.core.exceptions.ServiceException;
 import org.apache.seatunnel.web.core.time.TimeExpressionEvaluator;
 import org.apache.seatunnel.web.dao.entity.TimeVariable;
-import org.apache.seatunnel.web.dao.mapper.TimeVariableMapper;
-import org.apache.seatunnel.web.spi.bean.dto.TimeVariablePageReq;
-import org.apache.seatunnel.web.spi.bean.dto.TimeVariablePreviewReq;
-import org.apache.seatunnel.web.spi.bean.dto.TimeVariableRenderReq;
-import org.apache.seatunnel.web.spi.bean.dto.TimeVariableSaveReq;
+import org.apache.seatunnel.web.dao.repository.TimeVariableDao;
+import org.apache.seatunnel.web.spi.bean.dto.*;
+import org.apache.seatunnel.web.spi.bean.entity.PaginationResult;
 import org.apache.seatunnel.web.spi.bean.vo.TimeVariablePreviewVO;
 import org.apache.seatunnel.web.spi.bean.vo.TimeVariableRenderVO;
 import org.apache.seatunnel.web.spi.bean.vo.TimeVariableVO;
+import org.apache.seatunnel.web.spi.enums.Status;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 
-import jakarta.annotation.Resource;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -32,201 +28,261 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
-public class TimeVariableServiceImpl
-        extends ServiceImpl<TimeVariableMapper, TimeVariable>
-        implements TimeVariableService {
+public class TimeVariableServiceImpl implements TimeVariableService {
 
     private static final Pattern VARIABLE_PATTERN = Pattern.compile("\\$\\{([a-zA-Z][a-zA-Z0-9_]*)}");
 
+    private static final Pattern PARAM_NAME_PATTERN = Pattern.compile("^[a-zA-Z][a-zA-Z0-9_]*$");
+
     private static final String DEFAULT_TIME_FORMAT = "yyyy-MM-dd HH:mm:ss";
+
+    private static final DateTimeFormatter DEFAULT_DATE_TIME_FORMATTER =
+            DateTimeFormatter.ofPattern(DEFAULT_TIME_FORMAT);
+
+    @Resource
+    private TimeVariableDao timeVariableDao;
 
     @Resource
     private TimeExpressionEvaluator timeExpressionEvaluator;
 
     @Override
-    public IPage<TimeVariableVO> page(TimeVariablePageReq req) {
-        Page<TimeVariable> page = new Page<>(
-                req.getPageNo() == null ? 1 : req.getPageNo(),
-                req.getPageSize() == null ? 10 : req.getPageSize()
-        );
+    @Transactional(rollbackFor = Exception.class)
+    public Long create(TimeVariableCreateDTO dto) {
+        validateCreateDto(dto);
 
-        LambdaQueryWrapper<TimeVariable> wrapper = new LambdaQueryWrapper<>();
+        try {
+            String paramName = dto.getParamName().trim();
 
-        if (StringUtils.hasText(req.getKeyword())) {
-            String keyword = req.getKeyword().trim();
-            wrapper.and(w -> w
-                    .like(TimeVariable::getParamName, keyword)
-                    .or()
-                    .like(TimeVariable::getParamDesc, keyword)
-                    .or()
-                    .like(TimeVariable::getExpression, keyword)
-            );
+            if (timeVariableDao.checkDuplicate(paramName)) {
+                throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR,
+                        "时间变量名称已存在：" + paramName);
+            }
+
+            TimeVariable entity = new TimeVariable();
+            BeanUtils.copyProperties(dto, entity);
+
+            entity.setParamName(paramName);
+            entity.setVariableSource(TimeVariableSource.CUSTOM.name());
+            entity.setEnabled(dto.getEnabled() == null || dto.getEnabled());
+
+            timeVariableDao.insert(entity);
+            return entity.getId();
+        } catch (ServiceException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Create time variable failed, dto={}", dto, e);
+            throw new ServiceException(Status.INTERNAL_SERVER_ERROR_ARGS, e.getMessage());
         }
-
-        if (StringUtils.hasText(req.getVariableSource())) {
-            wrapper.eq(TimeVariable::getVariableSource, req.getVariableSource());
-        }
-
-        if (StringUtils.hasText(req.getValueType())) {
-            wrapper.eq(TimeVariable::getValueType, req.getValueType());
-        }
-
-        if (req.getEnabled() != null) {
-            wrapper.eq(TimeVariable::getEnabled, req.getEnabled());
-        }
-
-        wrapper.orderByDesc(TimeVariable::getVariableSource)
-                .orderByDesc(TimeVariable::getCreateTime);
-
-        IPage<TimeVariable> entityPage = this.page(page, wrapper);
-
-        Page<TimeVariableVO> voPage = new Page<>();
-        voPage.setCurrent(entityPage.getCurrent());
-        voPage.setSize(entityPage.getSize());
-        voPage.setTotal(entityPage.getTotal());
-
-        List<TimeVariableVO> records = entityPage.getRecords()
-                .stream()
-                .map(this::toVO)
-                .collect(Collectors.toList());
-
-        voPage.setRecords(records);
-        return voPage;
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public Long saveOrUpdateVariable(TimeVariableSaveReq req) {
-        validateSaveReq(req);
+    public Boolean update(Long id, TimeVariableUpdateDTO dto) {
+        validateId(id);
+        validateUpdateDto(dto);
 
-        TimeVariable entity;
+        TimeVariable existing = getEntityOrThrow(id);
 
-        if (req.getId() == null) {
-            entity = new TimeVariable();
-            entity.setCreateTime(LocalDateTime.now());
-        } else {
-            entity = this.getById(req.getId());
-            if (entity == null) {
-                throw new IllegalArgumentException("时间变量不存在");
-            }
-
-            if (TimeVariableSource.SYSTEM.name().equals(entity.getVariableSource())) {
-                throw new IllegalArgumentException("系统内置变量不允许修改");
-            }
+        if (TimeVariableSource.SYSTEM.name().equals(existing.getVariableSource())) {
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "系统内置变量不允许修改");
         }
 
-        checkDuplicateName(req.getParamName(), req.getId());
+        try {
+            String targetParamName = StringUtils.isNotBlank(dto.getParamName())
+                    ? dto.getParamName().trim()
+                    : existing.getParamName();
 
-        entity.setParamName(req.getParamName().trim());
-        entity.setParamDesc(req.getParamDesc());
-        entity.setVariableSource(
-                StringUtils.hasText(req.getVariableSource())
-                        ? req.getVariableSource()
-                        : TimeVariableSource.CUSTOM.name()
-        );
-        entity.setValueType(req.getValueType());
-        entity.setTimeFormat(req.getTimeFormat());
-        entity.setDefaultValue(req.getDefaultValue());
-        entity.setExpression(req.getExpression());
-        entity.setExampleValue(req.getExampleValue());
-        entity.setEnabled(req.getEnabled() == null || req.getEnabled());
-        entity.setRemark(req.getRemark());
-        entity.setUpdateTime(LocalDateTime.now());
+            if (!PARAM_NAME_PATTERN.matcher(targetParamName).matches()) {
+                throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR,
+                        "参数名称只能包含字母、数字、下划线，并且必须以字母开头");
+            }
 
-        this.saveOrUpdate(entity);
-        return entity.getId();
+            if (timeVariableDao.checkDuplicateExcludeId(targetParamName, id)) {
+                throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR,
+                        "时间变量名称已存在：" + targetParamName);
+            }
+
+            TimeVariable entity = new TimeVariable();
+            BeanUtils.copyProperties(dto, entity);
+
+            entity.setId(id);
+            entity.setParamName(targetParamName);
+            entity.setVariableSource(existing.getVariableSource());
+            entity.initUpdate();
+
+            timeVariableDao.updateById(entity);
+            return true;
+        } catch (ServiceException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Update time variable failed, id={}, dto={}", id, dto, e);
+            throw new ServiceException(Status.INTERNAL_SERVER_ERROR_ARGS, e.getMessage());
+        }
+    }
+
+    @Override
+    public TimeVariableVO getById(Long id) {
+        validateId(id);
+
+        try {
+            return toVO(getEntityOrThrow(id));
+        } catch (ServiceException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Query time variable by id failed, id={}", id, e);
+            throw new ServiceException(Status.INTERNAL_SERVER_ERROR_ARGS, e.getMessage());
+        }
+    }
+
+    @Override
+    public PaginationResult<TimeVariableVO> pageQuery(TimeVariablePageReq req) {
+        if (req == null) {
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "timeVariablePageReq");
+        }
+
+        if (req.getPageNo() == null || req.getPageNo() <= 0) {
+            req.setPageNo(1);
+        }
+        if (req.getPageSize() == null || req.getPageSize() <= 0) {
+            req.setPageSize(10);
+        }
+
+        try {
+            IPage<TimeVariable> pageResult = timeVariableDao.queryPage(req);
+
+            List<TimeVariableVO> records = pageResult.getRecords()
+                    .stream()
+                    .map(this::toVO)
+                    .collect(Collectors.toList());
+
+            return PaginationResult.buildSuc(records, pageResult);
+        } catch (ServiceException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Page query time variable failed, req={}", req, e);
+            throw new ServiceException(Status.INTERNAL_SERVER_ERROR_ARGS, e.getMessage());
+        }
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void deleteVariable(Long id) {
-        TimeVariable entity = this.getById(id);
-        if (entity == null) {
-            return;
-        }
+    public void delete(Long id) {
+        validateId(id);
+
+        TimeVariable entity = getEntityOrThrow(id);
 
         if (TimeVariableSource.SYSTEM.name().equals(entity.getVariableSource())) {
-            throw new IllegalArgumentException("系统内置变量不允许删除");
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "系统内置变量不允许删除");
         }
 
-        this.removeById(id);
+        try {
+            timeVariableDao.deleteById(id);
+        } catch (ServiceException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Delete time variable failed, id={}", id, e);
+            throw new ServiceException(Status.INTERNAL_SERVER_ERROR_ARGS, e.getMessage());
+        }
     }
 
     @Override
     public TimeVariablePreviewVO preview(TimeVariablePreviewReq req) {
-        if (!StringUtils.hasText(req.getExpression())) {
-            throw new IllegalArgumentException("表达式不能为空");
+        validatePreviewReq(req);
+
+        try {
+            String timeFormat = StringUtils.isNotBlank(req.getTimeFormat())
+                    ? req.getTimeFormat()
+                    : DEFAULT_TIME_FORMAT;
+
+            LocalDateTime baseTime = parseBaseTime(req.getBaseTime());
+
+            String value = timeExpressionEvaluator.evaluateToString(
+                    req.getExpression(),
+                    timeFormat,
+                    baseTime
+            );
+
+            return new TimeVariablePreviewVO(
+                    req.getExpression(),
+                    timeFormat,
+                    baseTime.format(DEFAULT_DATE_TIME_FORMATTER),
+                    value
+            );
+        } catch (ServiceException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Preview time variable failed, req={}", req, e);
+            throw new ServiceException(Status.INTERNAL_SERVER_ERROR_ARGS, e.getMessage());
         }
-
-        String timeFormat = StringUtils.hasText(req.getTimeFormat())
-                ? req.getTimeFormat()
-                : DEFAULT_TIME_FORMAT;
-
-        LocalDateTime baseTime = parseBaseTime(req.getBaseTime());
-
-        String value = timeExpressionEvaluator.evaluateToString(
-                req.getExpression(),
-                timeFormat,
-                baseTime
-        );
-
-        String baseTimeText = baseTime.format(DateTimeFormatter.ofPattern(DEFAULT_TIME_FORMAT));
-
-        return new TimeVariablePreviewVO(
-                req.getExpression(),
-                timeFormat,
-                baseTimeText,
-                value
-        );
     }
 
     @Override
     public TimeVariableRenderVO render(TimeVariableRenderReq req) {
-        if (!StringUtils.hasText(req.getContent())) {
-            throw new IllegalArgumentException("待渲染内容不能为空");
+        validateRenderReq(req);
+
+        try {
+            LocalDateTime baseTime = parseBaseTime(req.getBaseTime());
+
+            Map<String, String> overrideVariables = req.getOverrideVariables() == null
+                    ? Collections.emptyMap()
+                    : req.getOverrideVariables();
+
+            Map<String, TimeVariable> variableMap = timeVariableDao.queryEnabledList()
+                    .stream()
+                    .collect(Collectors.toMap(
+                            TimeVariable::getParamName,
+                            item -> item,
+                            (first, second) -> first,
+                            LinkedHashMap::new
+                    ));
+
+            return renderContent(req.getContent(), baseTime, overrideVariables, variableMap);
+        } catch (ServiceException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Render time variable failed, req={}", req, e);
+            throw new ServiceException(Status.INTERNAL_SERVER_ERROR_ARGS, e.getMessage());
         }
+    }
 
-        LocalDateTime baseTime = parseBaseTime(req.getBaseTime());
-        Map<String, String> overrideVariables = req.getOverrideVariables() == null
-                ? Collections.emptyMap()
-                : req.getOverrideVariables();
+    private TimeVariableRenderVO renderContent(
+            String content,
+            LocalDateTime baseTime,
+            Map<String, String> overrideVariables,
+            Map<String, TimeVariable> variableMap) {
 
-        Map<String, TimeVariable> variableMap = listEnabledVariables()
-                .stream()
-                .collect(Collectors.toMap(TimeVariable::getParamName, item -> item, (a, b) -> a));
-
-        String content = req.getContent();
         Matcher matcher = VARIABLE_PATTERN.matcher(content);
 
         StringBuffer renderedBuffer = new StringBuffer();
         TimeVariableRenderVO vo = new TimeVariableRenderVO();
         vo.setOriginalContent(content);
 
-        Set<String> resolvedNames = new LinkedHashSet<>();
         Set<String> unresolvedNames = new LinkedHashSet<>();
+        Set<String> addedVariableKeys = new LinkedHashSet<>();
 
         while (matcher.find()) {
             String variableName = matcher.group(1);
 
-            String value;
-            TimeVariable variable = variableMap.get(variableName);
-
             if (overrideVariables.containsKey(variableName)) {
-                value = overrideVariables.get(variableName);
+                String value = overrideVariables.get(variableName);
 
-                TimeVariableRenderVO.VariableItem item = new TimeVariableRenderVO.VariableItem();
-                item.setName(variableName);
-                item.setValue(value);
-                item.setSource("OVERRIDE");
-                item.setExpression(null);
-                item.setTimeFormat(null);
-                vo.getVariables().add(item);
+                addVariableItemIfAbsent(
+                        vo,
+                        addedVariableKeys,
+                        variableName,
+                        value,
+                        "OVERRIDE",
+                        null,
+                        null
+                );
 
-                resolvedNames.add(variableName);
                 matcher.appendReplacement(renderedBuffer, Matcher.quoteReplacement(value));
                 continue;
             }
+
+            TimeVariable variable = variableMap.get(variableName);
 
             if (variable == null) {
                 unresolvedNames.add(variableName);
@@ -234,17 +290,18 @@ public class TimeVariableServiceImpl
                 continue;
             }
 
-            value = resolveVariableValue(variable, baseTime);
+            String value = resolveVariableValue(variable, baseTime);
 
-            TimeVariableRenderVO.VariableItem item = new TimeVariableRenderVO.VariableItem();
-            item.setName(variableName);
-            item.setValue(value);
-            item.setSource(variable.getVariableSource());
-            item.setExpression(variable.getExpression());
-            item.setTimeFormat(variable.getTimeFormat());
-            vo.getVariables().add(item);
+            addVariableItemIfAbsent(
+                    vo,
+                    addedVariableKeys,
+                    variableName,
+                    value,
+                    variable.getVariableSource(),
+                    variable.getExpression(),
+                    variable.getTimeFormat()
+            );
 
-            resolvedNames.add(variableName);
             matcher.appendReplacement(renderedBuffer, Matcher.quoteReplacement(value));
         }
 
@@ -252,24 +309,48 @@ public class TimeVariableServiceImpl
 
         vo.setRenderedContent(renderedBuffer.toString());
         vo.setUnresolvedVariables(new ArrayList<>(unresolvedNames));
-
         return vo;
+    }
+
+    private void addVariableItemIfAbsent(
+            TimeVariableRenderVO vo,
+            Set<String> addedVariableKeys,
+            String name,
+            String value,
+            String source,
+            String expression,
+            String timeFormat) {
+
+        if (!addedVariableKeys.add(name)) {
+            return;
+        }
+
+        TimeVariableRenderVO.VariableItem item = new TimeVariableRenderVO.VariableItem();
+        item.setName(name);
+        item.setValue(value);
+        item.setSource(source);
+        item.setExpression(expression);
+        item.setTimeFormat(timeFormat);
+
+        vo.getVariables().add(item);
     }
 
     private String resolveVariableValue(TimeVariable variable, LocalDateTime baseTime) {
         if (TimeVariableValueType.FIXED.name().equals(variable.getValueType())) {
-            if (!StringUtils.hasText(variable.getDefaultValue())) {
-                throw new IllegalArgumentException("固定值变量未配置默认值：" + variable.getParamName());
+            if (StringUtils.isBlank(variable.getDefaultValue())) {
+                throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR,
+                        "固定值变量未配置默认值：" + variable.getParamName());
             }
             return variable.getDefaultValue();
         }
 
         if (TimeVariableValueType.DYNAMIC.name().equals(variable.getValueType())) {
-            if (!StringUtils.hasText(variable.getExpression())) {
-                throw new IllegalArgumentException("动态变量未配置表达式：" + variable.getParamName());
+            if (StringUtils.isBlank(variable.getExpression())) {
+                throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR,
+                        "动态变量未配置表达式：" + variable.getParamName());
             }
 
-            String timeFormat = StringUtils.hasText(variable.getTimeFormat())
+            String timeFormat = StringUtils.isNotBlank(variable.getTimeFormat())
                     ? variable.getTimeFormat()
                     : DEFAULT_TIME_FORMAT;
 
@@ -280,83 +361,132 @@ public class TimeVariableServiceImpl
             );
         }
 
-        throw new IllegalArgumentException("不支持的变量取值方式：" + variable.getValueType());
+        throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR,
+                "不支持的变量取值方式：" + variable.getValueType());
     }
 
-    private List<TimeVariable> listEnabledVariables() {
-        LambdaQueryWrapper<TimeVariable> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(TimeVariable::getEnabled, true);
-        return this.list(wrapper);
+    private void validateCreateDto(TimeVariableCreateDTO dto) {
+        if (dto == null) {
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "timeVariableCreateDTO");
+        }
+
+        validateRequiredFields(dto.getParamName(), dto.getParamDesc(), dto.getValueType());
+        validateParamName(dto.getParamName());
+        validateValueRule(dto.getValueType(), dto.getDefaultValue(), dto.getExpression(), dto.getTimeFormat());
     }
 
-    private void validateSaveReq(TimeVariableSaveReq req) {
+    private void validateUpdateDto(TimeVariableUpdateDTO dto) {
+        if (dto == null) {
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "timeVariableUpdateDTO");
+        }
+
+        if (StringUtils.isNotBlank(dto.getParamName())) {
+            validateParamName(dto.getParamName());
+        }
+
+        if (StringUtils.isNotBlank(dto.getValueType())) {
+            validateValueRule(dto.getValueType(), dto.getDefaultValue(), dto.getExpression(), dto.getTimeFormat());
+        }
+    }
+
+    private void validateRequiredFields(String paramName, String paramDesc, String valueType) {
+        if (StringUtils.isBlank(paramName)) {
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "paramName");
+        }
+        if (StringUtils.isBlank(paramDesc)) {
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "paramDesc");
+        }
+        if (StringUtils.isBlank(valueType)) {
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "valueType");
+        }
+    }
+
+    private void validateParamName(String paramName) {
+        if (StringUtils.isBlank(paramName)) {
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "paramName");
+        }
+
+        if (!PARAM_NAME_PATTERN.matcher(paramName.trim()).matches()) {
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR,
+                    "参数名称只能包含字母、数字、下划线，并且必须以字母开头");
+        }
+    }
+
+    private void validateValueRule(
+            String valueType,
+            String defaultValue,
+            String expression,
+            String timeFormat) {
+
+        if (!TimeVariableValueType.FIXED.name().equals(valueType)
+                && !TimeVariableValueType.DYNAMIC.name().equals(valueType)) {
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR,
+                    "取值方式只支持 FIXED / DYNAMIC");
+        }
+
+        if (TimeVariableValueType.FIXED.name().equals(valueType)) {
+            if (StringUtils.isBlank(defaultValue)) {
+                throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "defaultValue");
+            }
+            return;
+        }
+
+        if (StringUtils.isBlank(expression)) {
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "expression");
+        }
+        if (StringUtils.isBlank(timeFormat)) {
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "timeFormat");
+        }
+
+        try {
+            timeExpressionEvaluator.evaluate(expression, LocalDateTime.now());
+            DateTimeFormatter.ofPattern(timeFormat);
+        } catch (Exception e) {
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, e.getMessage());
+        }
+    }
+
+    private void validatePreviewReq(TimeVariablePreviewReq req) {
         if (req == null) {
-            throw new IllegalArgumentException("请求参数不能为空");
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "timeVariablePreviewReq");
         }
-
-        if (!StringUtils.hasText(req.getParamName())) {
-            throw new IllegalArgumentException("参数名称不能为空");
-        }
-
-        if (!req.getParamName().matches("^[a-zA-Z][a-zA-Z0-9_]*$")) {
-            throw new IllegalArgumentException("参数名称只能包含字母、数字、下划线，并且必须以字母开头");
-        }
-
-        if (!StringUtils.hasText(req.getParamDesc())) {
-            throw new IllegalArgumentException("参数说明不能为空");
-        }
-
-        if (!StringUtils.hasText(req.getValueType())) {
-            throw new IllegalArgumentException("取值方式不能为空");
-        }
-
-        if (!TimeVariableValueType.FIXED.name().equals(req.getValueType())
-                && !TimeVariableValueType.DYNAMIC.name().equals(req.getValueType())) {
-            throw new IllegalArgumentException("取值方式只支持 FIXED / DYNAMIC");
-        }
-
-        if (TimeVariableValueType.FIXED.name().equals(req.getValueType())) {
-            if (!StringUtils.hasText(req.getDefaultValue())) {
-                throw new IllegalArgumentException("固定值变量必须填写默认值");
-            }
-        }
-
-        if (TimeVariableValueType.DYNAMIC.name().equals(req.getValueType())) {
-            if (!StringUtils.hasText(req.getExpression())) {
-                throw new IllegalArgumentException("动态变量必须填写表达式");
-            }
-            if (!StringUtils.hasText(req.getTimeFormat())) {
-                throw new IllegalArgumentException("动态变量必须填写时间格式");
-            }
-
-            // 提前校验表达式是否能解析
-            timeExpressionEvaluator.evaluate(req.getExpression(), LocalDateTime.now());
+        if (StringUtils.isBlank(req.getExpression())) {
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "expression");
         }
     }
 
-    private void checkDuplicateName(String paramName, Long id) {
-        LambdaQueryWrapper<TimeVariable> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(TimeVariable::getParamName, paramName.trim());
-
-        if (id != null) {
-            wrapper.ne(TimeVariable::getId, id);
+    private void validateRenderReq(TimeVariableRenderReq req) {
+        if (req == null) {
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "timeVariableRenderReq");
         }
-
-        long count = this.count(wrapper);
-        if (count > 0) {
-            throw new IllegalArgumentException("变量名称已存在：" + paramName);
+        if (StringUtils.isBlank(req.getContent())) {
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "content");
         }
+    }
+
+    private void validateId(Long id) {
+        if (id == null || id <= 0) {
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "id");
+        }
+    }
+
+    private TimeVariable getEntityOrThrow(Long id) {
+        TimeVariable entity = timeVariableDao.queryById(id);
+        if (entity == null) {
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "时间变量不存在");
+        }
+        return entity;
     }
 
     private LocalDateTime parseBaseTime(String baseTime) {
-        if (!StringUtils.hasText(baseTime)) {
+        if (StringUtils.isBlank(baseTime)) {
             return LocalDateTime.now();
         }
 
         String text = baseTime.trim();
 
         List<DateTimeFormatter> formatters = Arrays.asList(
-                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"),
+                DEFAULT_DATE_TIME_FORMATTER,
                 DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"),
                 DateTimeFormatter.ISO_LOCAL_DATE_TIME
         );
@@ -368,7 +498,8 @@ public class TimeVariableServiceImpl
             }
         }
 
-        throw new IllegalArgumentException("基准时间格式不正确，请使用 yyyy-MM-dd HH:mm:ss");
+        throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR,
+                "基准时间格式不正确，请使用 yyyy-MM-dd HH:mm:ss");
     }
 
     private TimeVariableVO toVO(TimeVariable entity) {

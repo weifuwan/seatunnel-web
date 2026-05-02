@@ -1,14 +1,15 @@
 package org.apache.seatunnel.web.api.controller;
 
-import com.baomidou.mybatisplus.core.metadata.IPage;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import org.apache.seatunnel.web.api.service.TimeVariableService;
+import org.apache.seatunnel.web.spi.bean.dto.TimeVariableCreateDTO;
 import org.apache.seatunnel.web.spi.bean.dto.TimeVariablePageReq;
 import org.apache.seatunnel.web.spi.bean.dto.TimeVariablePreviewReq;
 import org.apache.seatunnel.web.spi.bean.dto.TimeVariableRenderReq;
-import org.apache.seatunnel.web.spi.bean.dto.TimeVariableSaveReq;
+import org.apache.seatunnel.web.spi.bean.dto.TimeVariableUpdateDTO;
+import org.apache.seatunnel.web.spi.bean.entity.PaginationResult;
 import org.apache.seatunnel.web.spi.bean.entity.Result;
 import org.apache.seatunnel.web.spi.bean.vo.TimeVariablePreviewVO;
 import org.apache.seatunnel.web.spi.bean.vo.TimeVariableRenderVO;
@@ -25,28 +26,32 @@ public class TimeVariableController {
 
     @PostMapping("/page")
     @Operation(summary = "分页查询时间变量")
-    public Result<IPage<TimeVariableVO>> page(@RequestBody TimeVariablePageReq req) {
-        return Result.buildSuc(timeVariableService.page(req));
+    public PaginationResult<TimeVariableVO> page(@RequestBody TimeVariablePageReq req) {
+        return timeVariableService.pageQuery(req);
+    }
+
+    @GetMapping("/{id}")
+    @Operation(summary = "查询时间变量详情")
+    public Result<TimeVariableVO> getById(@PathVariable Long id) {
+        return Result.buildSuc(timeVariableService.getById(id));
     }
 
     @PostMapping
     @Operation(summary = "新增时间变量")
-    public Result<Long> create(@RequestBody TimeVariableSaveReq req) {
-        req.setId(null);
-        return Result.buildSuc(timeVariableService.saveOrUpdateVariable(req));
+    public Result<Long> create(@RequestBody TimeVariableCreateDTO dto) {
+        return Result.buildSuc(timeVariableService.create(dto));
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "修改时间变量")
-    public Result<Long> update(@PathVariable Long id, @RequestBody TimeVariableSaveReq req) {
-        req.setId(id);
-        return Result.buildSuc(timeVariableService.saveOrUpdateVariable(req));
+    public Result<Boolean> update(@PathVariable Long id, @RequestBody TimeVariableUpdateDTO dto) {
+        return Result.buildSuc(timeVariableService.update(id, dto));
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "删除时间变量")
     public Result<Boolean> delete(@PathVariable Long id) {
-        timeVariableService.deleteVariable(id);
+        timeVariableService.delete(id);
         return Result.buildSuc(true);
     }
 

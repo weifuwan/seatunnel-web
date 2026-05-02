@@ -26,7 +26,7 @@ public class PgSQLBatchBuilder extends AbstractJdbcBatchBuilder {
     
     private final JdbcSourceTargetBuilder pgSingleSourceBuilder;
     private final JdbcSourceTargetBuilder pgMultiSourceBuilder;
-    private final JdbcSinkTargetBuilder pgSingleSinkBuilder;
+//    private final JdbcSinkTargetBuilder pgSingleSinkBuilder;
     
     public PgSQLBatchBuilder() {
         super();
@@ -38,7 +38,7 @@ public class PgSQLBatchBuilder extends AbstractJdbcBatchBuilder {
         this.pgMultiSourceBuilder = null;  // Use parent's
         
         // PostgreSQL-specific sink builder with schema.table format
-        this.pgSingleSinkBuilder = new PgSQLSingleSinkTargetBuilder(tableNameResolver);
+//        this.pgSingleSinkBuilder = new PgSQLSingleSinkTargetBuilder(tableNameResolver);
     }
     
     @Override
@@ -62,7 +62,7 @@ public class PgSQLBatchBuilder extends AbstractJdbcBatchBuilder {
         putConnCommon(conn, map);
         
         // Use PostgreSQL-specific sink builder
-        pgSingleSinkBuilder.build(config, conn, map);
+//        pgSingleSinkBuilder.build(config, conn, map);
         
         // Append common options
         appendSinkOptions(config, map);

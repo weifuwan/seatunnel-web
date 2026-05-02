@@ -4,29 +4,22 @@ import com.typesafe.config.Config;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConfigReaders;
+import org.apache.seatunnel.plugin.datasource.api.jdbc.TablePath;
 import org.apache.seatunnel.web.common.enums.HoconBuildStage;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 
 import static org.apache.seatunnel.plugin.datasource.api.hocon.JdbcBatchConstants.*;
 
 public class JdbcMultiSourceTargetBuilder implements JdbcSourceTargetBuilder {
 
     private final JdbcTableNameResolver tableNameResolver;
-    private final TablePathBuilder tablePathBuilder;
 
     public JdbcMultiSourceTargetBuilder(JdbcTableNameResolver tableNameResolver) {
         this.tableNameResolver = tableNameResolver;
-        this.tablePathBuilder = null;
-    }
-
-    public JdbcMultiSourceTargetBuilder(JdbcTableNameResolver tableNameResolver, TablePathBuilder tablePathBuilder) {
-        this.tableNameResolver = tableNameResolver;
-        this.tablePathBuilder = tablePathBuilder;
     }
 
     @Override
@@ -59,13 +52,13 @@ public class JdbcMultiSourceTargetBuilder implements JdbcSourceTargetBuilder {
             }
 
             String tablePath = table.trim();
+
             if (!tableNameResolver.isFullTablePath(tablePath)) {
-                // Use custom tablePathBuilder if available, otherwise use default resolver
-                if (tablePathBuilder != null) {
-                    tablePath = tablePathBuilder.build(database, schema, tablePath);
-                } else {
-                    tablePath = tableNameResolver.buildTablePath(database, schema, tablePath);
-                }
+                tablePath = TablePath.of(
+                        normalizeBlank(database),
+                        normalizeBlank(schema),
+                        tablePath
+                ).getFullName();
             }
 
             Map<String, Object> item = new LinkedHashMap<>();
@@ -74,5 +67,9 @@ public class JdbcMultiSourceTargetBuilder implements JdbcSourceTargetBuilder {
         }
 
         return tableList;
+    }
+
+    private String normalizeBlank(String value) {
+        return StringUtils.isBlank(value) ? null : value.trim();
     }
 }

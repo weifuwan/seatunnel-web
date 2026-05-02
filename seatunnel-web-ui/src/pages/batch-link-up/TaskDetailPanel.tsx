@@ -41,7 +41,7 @@ const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({ instanceItem }) => {
         defaultMessage: "Failed to load log",
       });
 
-      message.error(errorText);
+     
       setLogContent(errorText);
     } finally {
       setLogLoading(false);

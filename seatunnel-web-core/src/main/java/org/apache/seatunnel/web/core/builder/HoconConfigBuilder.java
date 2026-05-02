@@ -11,6 +11,7 @@ import org.apache.seatunnel.web.core.builder.transform.TransformNodeConfigBuilde
 import org.apache.seatunnel.web.core.dag.DagGraph;
 import org.apache.seatunnel.web.core.utils.SeaTunnelConfigUtil;
 import org.apache.seatunnel.web.spi.bean.dto.EnvConfig;
+import org.apache.seatunnel.web.spi.bean.dto.JobScheduleConfig;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
@@ -105,6 +106,19 @@ public class HoconConfigBuilder {
         }
 
         log.warn("Unknown builder type: {}", builder.getClass());
+    }
+
+    public String build(DagGraph dagGraph, EnvConfig envConfig, JobScheduleConfig scheduleConfig) {
+        DagBuildContext context = DagBuildContext.from(dagGraph, scheduleConfig);
+
+        NodeGroup group = groupNodes(dagGraph.getNodesAsConfig(), context);
+
+        return SeaTunnelConfigUtil.generateConfig(
+                envConfigBuilder.build(envConfig),
+                render(group.sources()),
+                render(group.transforms()),
+                render(group.sinks())
+        );
     }
 
     private String render(List<RenderedItem> items) {

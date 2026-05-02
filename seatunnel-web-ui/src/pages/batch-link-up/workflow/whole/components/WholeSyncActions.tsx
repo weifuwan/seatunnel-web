@@ -73,7 +73,7 @@ const WholeSyncActions: React.FC<Props> = ({
         goBack();
         message.success(isEdit ? "更新成功" : "发布成功");
       } else {
-        message.error(res?.message || (isEdit ? "更新失败" : "发布失败"));
+        
       }
     } catch (e) {
       console.error(e);
@@ -98,7 +98,7 @@ const WholeSyncActions: React.FC<Props> = ({
         setOpen(true);
         setContent(res?.data);
       } else {
-        message.error(res?.message || "生成hocon失败");
+        
       }
     } catch (e) {
       console.error(e);

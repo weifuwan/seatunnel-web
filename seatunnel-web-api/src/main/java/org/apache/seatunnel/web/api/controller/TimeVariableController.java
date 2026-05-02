@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import org.apache.seatunnel.web.api.service.TimeVariableService;
+import org.apache.seatunnel.web.core.time.DefaultTimeVariableRenderService;
 import org.apache.seatunnel.web.dao.entity.TimeVariable;
 import org.apache.seatunnel.web.spi.bean.dto.TimeVariableCreateDTO;
 import org.apache.seatunnel.web.spi.bean.dto.TimeVariablePageReq;
@@ -28,6 +29,9 @@ public class TimeVariableController {
 
     @Resource
     private TimeVariableService timeVariableService;
+
+    @Resource
+    private DefaultTimeVariableRenderService defaultTimeVariableRenderService;
 
     @PostMapping("/page")
     @Operation(summary = "分页查询时间变量")
@@ -69,13 +73,13 @@ public class TimeVariableController {
     @PostMapping("/render")
     @Operation(summary = "渲染 HOCON 中的时间变量")
     public Result<TimeVariableRenderVO> render(@RequestBody TimeVariableRenderReq req) {
-        return Result.buildSuc(timeVariableService.render(req));
+        return Result.buildSuc(defaultTimeVariableRenderService.render(req));
     }
 
     @GetMapping("/list")
     @Operation(summary = "获取所有时间变量")
     public Result<List<OptionVO>> getAllTimeVariables() {
-        List<TimeVariable> timeVariables = timeVariableService.getAllEnabledVariables();
+        List<TimeVariable> timeVariables = defaultTimeVariableRenderService.getAllEnabledVariables();
         List<OptionVO> optionVOList = timeVariables.stream().map(timeVariable -> {
             OptionVO option = new OptionVO();
             option.setValue(timeVariable.getId()+"");

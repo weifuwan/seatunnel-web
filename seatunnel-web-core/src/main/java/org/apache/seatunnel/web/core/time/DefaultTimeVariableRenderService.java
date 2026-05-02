@@ -67,27 +67,6 @@ public class DefaultTimeVariableRenderService implements TimeVariableRenderServi
     }
 
     @Override
-    public String renderContent(String content) {
-        if (StringUtils.isBlank(content)) {
-            return content;
-        }
-
-        TimeVariableRenderReq req = new TimeVariableRenderReq();
-        req.setContent(content);
-
-        TimeVariableRenderVO vo = render(req);
-
-        if (vo.getUnresolvedVariables() != null && !vo.getUnresolvedVariables().isEmpty()) {
-            throw new ServiceException(
-                    Status.REQUEST_PARAMS_NOT_VALID_ERROR,
-                    "存在未解析的时间变量：" + vo.getUnresolvedVariables()
-            );
-        }
-
-        return vo.getRenderedContent();
-    }
-
-    @Override
     public List<TimeVariable> getAllEnabledVariables() {
         return timeVariableDao.queryEnabledList();
     }

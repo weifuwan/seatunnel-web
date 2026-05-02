@@ -3,6 +3,7 @@ package org.apache.seatunnel.web.core.builder.context;
 import com.typesafe.config.Config;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.seatunnel.web.core.dag.DagGraph;
+import org.apache.seatunnel.web.spi.bean.dto.JobScheduleConfig;
 
 import java.util.HashMap;
 import java.util.List;
@@ -20,13 +21,22 @@ public class DagBuildContext {
 
     private static final String KEY_DATA = "data";
     private static final String KEY_NODE_TYPE = "nodeType";
-    private static final String KEY_CONFIG = "config";
 
     private static final String NODE_TYPE_SOURCE = "source";
     private static final String NODE_TYPE_SINK = "sink";
     private static final String NODE_TYPE_TRANSFORM = "transform";
 
     private final boolean hasTransform;
+
+    /**
+     * Current job schedule config.
+     *
+     * <p>
+     * Used by node builders to resolve schedule params, such as time variables
+     * referenced in JDBC SQL or where_condition.
+     * </p>
+     */
+    private final JobScheduleConfig scheduleConfig;
 
     /**
      * source node id -> downstream transform node id
@@ -39,16 +49,22 @@ public class DagBuildContext {
     private final Map<String, String> sinkPluginInputMap;
 
     private DagBuildContext(boolean hasTransform,
+                            JobScheduleConfig scheduleConfig,
                             Map<String, String> sourcePluginOutputMap,
                             Map<String, String> sinkPluginInputMap) {
         this.hasTransform = hasTransform;
+        this.scheduleConfig = scheduleConfig;
         this.sourcePluginOutputMap = sourcePluginOutputMap;
         this.sinkPluginInputMap = sinkPluginInputMap;
     }
 
     public static DagBuildContext from(DagGraph dagGraph) {
+        return from(dagGraph, null);
+    }
+
+    public static DagBuildContext from(DagGraph dagGraph, JobScheduleConfig scheduleConfig) {
         if (dagGraph == null || dagGraph.getNodes() == null || dagGraph.getNodes().isEmpty()) {
-            return empty();
+            return empty(scheduleConfig);
         }
 
         List<Config> nodes = dagGraph.getNodesAsConfig();
@@ -58,7 +74,12 @@ public class DagBuildContext {
                 .anyMatch(data -> NODE_TYPE_TRANSFORM.equalsIgnoreCase(getString(data, KEY_NODE_TYPE)));
 
         if (!hasTransform) {
-            return empty();
+            return new DagBuildContext(
+                    false,
+                    scheduleConfig,
+                    new HashMap<>(),
+                    new HashMap<>()
+            );
         }
 
         Map<String, String> sourcePluginOutputMap = new HashMap<>();
@@ -82,15 +103,33 @@ public class DagBuildContext {
             }
         }
 
-        return new DagBuildContext(true, sourcePluginOutputMap, sinkPluginInputMap);
+        return new DagBuildContext(
+                true,
+                scheduleConfig,
+                sourcePluginOutputMap,
+                sinkPluginInputMap
+        );
     }
 
     public static DagBuildContext empty() {
-        return new DagBuildContext(false, new HashMap<>(), new HashMap<>());
+        return empty(null);
+    }
+
+    public static DagBuildContext empty(JobScheduleConfig scheduleConfig) {
+        return new DagBuildContext(
+                false,
+                scheduleConfig,
+                new HashMap<>(),
+                new HashMap<>()
+        );
     }
 
     public boolean hasTransform() {
         return hasTransform;
+    }
+
+    public JobScheduleConfig getScheduleConfig() {
+        return scheduleConfig;
     }
 
     public String resolveSourcePluginOutput(Config sourceData) {

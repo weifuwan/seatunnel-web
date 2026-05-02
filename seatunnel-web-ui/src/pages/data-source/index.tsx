@@ -50,26 +50,14 @@ const DataSourcePage: React.FC = () => {
       const response = await fetchDataSourcePage(requestParams);
 
       if (response.code !== 0) {
-        message.error(
-          response.message ||
-            intl.formatMessage({
-              id: "pages.datasource.message.loadFailed",
-              defaultMessage: "Load data source list failed",
-            })
-        );
+        
         return;
       }
 
       setDataSourceList(response.data?.bizData || []);
       setPagination(response.data?.pagination || PAGE_DEFAULT_PAGINATION);
     } catch (error: any) {
-      message.error(
-        error?.message ||
-          intl.formatMessage({
-            id: "pages.datasource.message.loadFailed",
-            defaultMessage: "Load data source list failed",
-          })
-      );
+     
     } finally {
       setLoading(false);
     }
@@ -157,7 +145,7 @@ const DataSourcePage: React.FC = () => {
           const response = await deleteDataSource(record.id);
 
           if (response.code !== 0) {
-            message.error(response.message);
+            
             return;
           }
 

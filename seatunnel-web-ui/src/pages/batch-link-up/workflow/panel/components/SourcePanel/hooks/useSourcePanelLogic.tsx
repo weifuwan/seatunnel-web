@@ -359,11 +359,9 @@ export function useSourcePanelLogic({
       if (data?.code === 0) {
         qualityDetailRef.current?.onOpen(true, data);
       } else {
-        message.error(data?.message || "数据预览失败");
+        
       }
     } catch (error) {
-      console.error("preview source data error", error);
-      message.error("数据预览失败");
     } finally {
       setViewLoading(false);
     }

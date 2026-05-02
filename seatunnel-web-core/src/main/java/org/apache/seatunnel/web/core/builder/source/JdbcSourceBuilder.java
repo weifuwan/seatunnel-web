@@ -14,6 +14,7 @@ import org.apache.seatunnel.web.core.builder.context.DagBuildContext;
 import org.apache.seatunnel.web.core.time.TimeVariableJdbcSqlRenderService;
 import org.apache.seatunnel.web.dao.entity.DataSource;
 import org.apache.seatunnel.web.dao.repository.DataSourceDao;
+import org.apache.seatunnel.web.spi.bean.dto.JobScheduleConfig;
 import org.apache.seatunnel.web.spi.enums.DbType;
 import org.springframework.stereotype.Component;
 
@@ -68,7 +69,11 @@ public class JdbcSourceBuilder implements SourceNodeConfigBuilder {
 
         DataSourceHoconBuilder hoconBuilder = processor.getQueryBuilder(pluginName);
 
-        config = renderSqlTimeVariablesIfNecessary(config, hoconBuilder);
+        config = renderSqlTimeVariablesIfNecessary(
+                config,
+                hoconBuilder,
+                context.getScheduleConfig()
+        );
 
         Config sourceConfig = hoconBuilder.buildSourceHocon(
                 dataSource.getConnectionParams(),
@@ -82,11 +87,12 @@ public class JdbcSourceBuilder implements SourceNodeConfigBuilder {
     }
 
     private Config renderSqlTimeVariablesIfNecessary(Config config,
-                                                     DataSourceHoconBuilder hoconBuilder) {
+                                                     DataSourceHoconBuilder hoconBuilder,
+                                                     JobScheduleConfig scheduleConfig) {
         Map<String, Object> extra = new HashMap<>();
 
-        renderSqlFragmentIfNecessary(config, hoconBuilder, KEY_SQL, extra);
-        renderSqlFragmentIfNecessary(config, hoconBuilder, KEY_WHERE_CONDITION, extra);
+        renderSqlFragmentIfNecessary(config, hoconBuilder, scheduleConfig, KEY_SQL, extra);
+        renderSqlFragmentIfNecessary(config, hoconBuilder, scheduleConfig, KEY_WHERE_CONDITION, extra);
 
         if (extra.isEmpty()) {
             return config;
@@ -99,6 +105,7 @@ public class JdbcSourceBuilder implements SourceNodeConfigBuilder {
 
     private void renderSqlFragmentIfNecessary(Config config,
                                               DataSourceHoconBuilder hoconBuilder,
+                                              JobScheduleConfig scheduleConfig,
                                               String key,
                                               Map<String, Object> extra) {
         String value = getTrimmedString(config, key);
@@ -106,7 +113,12 @@ public class JdbcSourceBuilder implements SourceNodeConfigBuilder {
             return;
         }
 
-        String renderedValue = timeVariableJdbcSqlRenderService.renderSql(value, hoconBuilder);
+        String renderedValue = timeVariableJdbcSqlRenderService.renderSql(
+                value,
+                hoconBuilder,
+                scheduleConfig
+        );
+
         extra.put(key, renderedValue);
     }
 

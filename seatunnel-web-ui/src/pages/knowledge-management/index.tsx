@@ -122,7 +122,7 @@ const Index: React.FC = () => {
       setConnectorData(records);
       setConnectorTotal(res?.data?.pagination?.total || 0);
     } catch (error) {
-      message.error("连接器参数加载失败");
+     
     } finally {
       setConnectorLoading(false);
     }
@@ -154,7 +154,7 @@ const Index: React.FC = () => {
       setTimeData(rawRecords.map(mapTimeVOToItem));
       setTimeTotal(total);
     } catch (error) {
-      message.error("时间变量加载失败");
+      
     } finally {
       setTimeLoading(false);
     }
@@ -256,7 +256,7 @@ const Index: React.FC = () => {
               loadConnectorData();
             }
           } catch (error) {
-            message.error("删除失败");
+            
           }
           return;
         }
@@ -271,7 +271,7 @@ const Index: React.FC = () => {
             loadTimeData();
           }
         } catch (error) {
-          message.error("删除失败");
+          
         }
       },
     });

@@ -281,7 +281,7 @@ const WorkflowRunPanel: FC<WorkflowRunPanelProps> = ({
             `${new Date().toLocaleTimeString()}: 执行请求失败 - ${response?.msg || '未知错误'}`,
           ],
         }));
-        message.error(response?.msg || '执行请求失败');
+        
       }
     } catch (error: any) {
       setExecution((prev) => ({
@@ -290,7 +290,7 @@ const WorkflowRunPanel: FC<WorkflowRunPanelProps> = ({
         error: error.message,
         logs: [...prev.logs, `${new Date().toLocaleTimeString()}: 网络错误 - ${error.message}`],
       }));
-      message.error(error.message);
+      
     }
   }, [websocketConnected, workflowId, addLog]);
 

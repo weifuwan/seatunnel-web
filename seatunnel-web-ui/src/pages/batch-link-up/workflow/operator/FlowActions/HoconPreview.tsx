@@ -36,7 +36,6 @@ export const HoconPreview = ({ onGenerate, checkStat, checkGroups }: any) => {
         setOpen(true);
       } else {
         setOpen(false);
-        message.error(data?.message);
       }
     } finally {
       setLoading(false);

@@ -34,6 +34,7 @@ interface FlowCanvasProps {
   sourceType?: any;
   targetType?: any;
   onWorkflowChange?: (value: { nodes: any[]; edges: any[] }) => void;
+  scheduleConfig?: any;
 }
 
 function buildInitialGraph(
@@ -148,6 +149,7 @@ export default function FlowCanvas({
   sourceType,
   targetType,
   onWorkflowChange,
+  scheduleConfig
 }: FlowCanvasProps) {
   const flow = useFlowBuilder({ form, params });
   const placement = useNodePlacement({
@@ -308,6 +310,7 @@ export default function FlowCanvas({
           refreshNodeSchema={flow.refreshNodeSchema}
           refreshDownstreamSchemas={flow.refreshDownstreamSchemas}
           syncTransformPluginConfig={flow.syncTransformPluginConfig}
+          scheduleConfig={scheduleConfig}
         />
       )}
     </div>

@@ -8,8 +8,10 @@ import org.apache.seatunnel.web.common.utils.JSONUtils;
 import org.apache.seatunnel.web.core.exceptions.ServiceException;
 import org.apache.seatunnel.web.dao.entity.JobDefinitionContentEntity;
 import org.apache.seatunnel.web.dao.entity.JobDefinitionEntity;
+import org.apache.seatunnel.web.dao.entity.JobSchedule;
 import org.apache.seatunnel.web.dao.repository.JobDefinitionContentDao;
 import org.apache.seatunnel.web.dao.repository.JobDefinitionDao;
+import org.apache.seatunnel.web.dao.repository.JobScheduleDao;
 import org.apache.seatunnel.web.spi.bean.dto.*;
 import org.apache.seatunnel.web.spi.enums.Status;
 import org.springframework.stereotype.Component;
@@ -25,11 +27,14 @@ public class DefaultJobDefinitionCommandResolver implements JobDefinitionCommand
 
     private final JobDefinitionDao jobDefinitionDao;
     private final JobDefinitionContentDao jobDefinitionContentDao;
+    private final JobScheduleDao jobScheduleDao;
 
     public DefaultJobDefinitionCommandResolver(JobDefinitionDao jobDefinitionDao,
-                                               JobDefinitionContentDao jobDefinitionContentDao) {
+                                               JobDefinitionContentDao jobDefinitionContentDao,
+                                               JobScheduleDao jobScheduleDao) {
         this.jobDefinitionDao = jobDefinitionDao;
         this.jobDefinitionContentDao = jobDefinitionContentDao;
+        this.jobScheduleDao = jobScheduleDao;
     }
 
     @Override
@@ -87,6 +92,7 @@ public class DefaultJobDefinitionCommandResolver implements JobDefinitionCommand
         command.setContent(JSONUtils.parseObject(jobDefinitionContentEntity.getDefinitionContent(), ScriptJobContent.class));
         command.setBasic(buildBasic(definition));
         command.setId(definition.getId());
+        command.setSchedule(buildScheduleConfig(definition.getId()));
         return command;
     }
 
@@ -98,6 +104,7 @@ public class DefaultJobDefinitionCommandResolver implements JobDefinitionCommand
                 new TypeReference<Map<String, Object>>() {
                 }
         ));
+        command.setSchedule(buildScheduleConfig(definition.getId()));
         command.setId(definition.getId());
         command.setEnv(JSONUtils.parseObject(jobDefinitionContentEntity.getEnvConfig(), EnvConfig.class));
         return command;
@@ -109,6 +116,7 @@ public class DefaultJobDefinitionCommandResolver implements JobDefinitionCommand
         command.setContent(JSONUtils.parseObject(jobDefinitionContentEntity.getDefinitionContent(), GuideMultiJobContent.class));
         command.setEnv(JSONUtils.parseObject(jobDefinitionContentEntity.getEnvConfig(), EnvConfig.class));
         command.setId(definition.getId());
+        command.setSchedule(buildScheduleConfig(definition.getId()));
         return command;
     }
 
@@ -122,5 +130,38 @@ public class DefaultJobDefinitionCommandResolver implements JobDefinitionCommand
         basic.setJobDesc(definition.getJobDesc());
         basic.setClientId(definition.getClientId());
         return basic;
+    }
+
+    /**
+     * Build schedule config.
+     */
+    private JobScheduleConfig buildScheduleConfig(Long definitionId) {
+        JobSchedule schedule = jobScheduleDao.queryByJobDefinitionId(definitionId);
+        if (schedule == null) {
+            throw new RuntimeException("schedule is null");
+        }
+
+        JobScheduleConfig config = null;
+        if (StringUtils.isNotBlank(schedule.getScheduleConfig())) {
+            try {
+                config = JSONUtils.parseObject(schedule.getScheduleConfig(), JobScheduleConfig.class);
+            } catch (Exception e) {
+                log.warn("Parse schedule config failed, definitionId={}, raw={}",
+                        definitionId, schedule.getScheduleConfig(), e);
+            }
+        }
+
+        if (config == null) {
+            config = new JobScheduleConfig();
+        }
+
+        if (StringUtils.isBlank(config.getCronExpression())) {
+            config.setCronExpression(schedule.getCronExpression());
+        }
+        if (StringUtils.isBlank(config.getScheduleRunType()) && schedule.getScheduleStatus() != null) {
+            config.setScheduleRunType(schedule.getScheduleStatus().getDesc());
+        }
+
+        return config;
     }
 }

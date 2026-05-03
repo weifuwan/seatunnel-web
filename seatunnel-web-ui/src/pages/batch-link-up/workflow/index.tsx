@@ -549,6 +549,7 @@ export default function Workflow({
                             sourceType={sourceType}
                             targetType={targetType}
                             onWorkflowChange={handleWorkflowChange}
+                            scheduleConfig={scheduleConfig}
                           />
                         </ReactFlowProvider>
                       </div>

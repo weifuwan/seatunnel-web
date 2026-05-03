@@ -4,6 +4,15 @@ import { history } from "umi";
 import "./index.less";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import moment from "moment";
+import {
+  Boxes,
+  BriefcaseBusiness,
+  MonitorX,
+  Palette,
+  Database,
+  ChevronsLeftRight,
+} from "lucide-react";
+
 
 export type SiderTheme = "light" | "dark";
 
@@ -136,24 +145,7 @@ const searchList: SearchItem[] = [
         ...getRecentOneDayRange(),
       },
     },
-    icon: (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="h-4 w-4 text-blue-500"
-      >
-        <path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z" />
-        <path d="M22 10v6" />
-        <path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5" />
-      </svg>
-    ),
+    icon: <Boxes className="h-4 w-4 text-blue-500" />,
   },
   {
     id: "2",
@@ -168,23 +160,7 @@ const searchList: SearchItem[] = [
         pageSize: "10",
       },
     },
-    icon: (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="h-4 w-4 text-green-500"
-      >
-        <path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
-        <rect width="20" height="14" x="2" y="6" rx="2" />
-      </svg>
-    ),
+    icon: <BriefcaseBusiness className="h-4 w-4 text-green-500" />,
   },
   {
     id: "3",
@@ -199,22 +175,7 @@ const searchList: SearchItem[] = [
         pageSize: "10",
       },
     },
-    icon: (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="h-4 w-4 text-indigo-500"
-      >
-        <path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0 1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16" />
-      </svg>
-    ),
+    icon: <MonitorX className="h-4 w-4 text-indigo-500" />,
   },
   {
     id: "4",
@@ -228,26 +189,7 @@ const searchList: SearchItem[] = [
         pageSize: "10",
       },
     },
-    icon: (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="h-4 w-4 text-pink-500"
-      >
-        <circle cx="13.5" cy="6.5" r=".5" fill="currentColor" />
-        <circle cx="17.5" cy="10.5" r=".5" fill="currentColor" />
-        <circle cx="8.5" cy="7.5" r=".5" fill="currentColor" />
-        <circle cx="6.5" cy="12.5" r=".5" fill="currentColor" />
-        <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z" />
-      </svg>
-    ),
+    icon: <Palette className="h-4 w-4 text-pink-500" />,
   },
   {
     id: "5",
@@ -260,24 +202,7 @@ const searchList: SearchItem[] = [
         ...getTodayRange(),
       },
     },
-    icon: (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="h-4 w-4 text-orange-500"
-      >
-        <ellipse cx="12" cy="5" rx="9" ry="3" />
-        <path d="M3 5V19A9 3 0 0 0 21 19V5" />
-        <path d="M3 12A9 3 0 0 0 21 12" />
-      </svg>
-    ),
+    icon: <Database className="h-4 w-4 text-orange-500" />,
   },
   {
     id: "6",
@@ -290,23 +215,7 @@ const searchList: SearchItem[] = [
         ...getRecentWeekRange(),
       },
     },
-    icon: (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="h-4 w-4 text-teal-500"
-      >
-        <polyline points="16 18 22 12 16 6" />
-        <polyline points="8 6 2 12 8 18" />
-      </svg>
-    ),
+    icon: <ChevronsLeftRight className="h-4 w-4 text-teal-500" />,
   },
 ];
 
@@ -397,7 +306,7 @@ export const GlobalSearch: React.FC = () => {
             className="rounded-full border transition-all duration-300"
             style={{
               background: "#fff",
-              borderColor: open ? "#3b82f6" : "#d1d5db",
+              borderColor: open ? "hsl(231 48% 48%)" : "#d1d5db",
               boxShadow: open
                 ? "0 0 0 3px rgba(59,130,246,0.10)"
                 : "0 1px 2px rgba(15,23,42,0.04)",

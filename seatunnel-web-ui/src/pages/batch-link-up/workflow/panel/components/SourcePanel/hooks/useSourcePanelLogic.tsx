@@ -10,12 +10,14 @@ export interface SourcePanelLogicProps {
   selectedNode: any;
   onNodeDataChange: (nodeId: string, newData: any) => void;
   qualityDetailRef: any;
+  scheduleConfig: any;
 }
 
 export function useSourcePanelLogic({
   selectedNode,
   onNodeDataChange,
   qualityDetailRef,
+  scheduleConfig,
 }: SourcePanelLogicProps) {
   const nodeId = selectedNode?.id;
   const nodeData = selectedNode?.data || {};
@@ -26,9 +28,7 @@ export function useSourcePanelLogic({
   const dbType = nodeData?.dbType || "MYSQL";
   const description = nodeData?.description || "读取源端数据";
 
-  const dataSourceId = config?.dataSourceId
-    ? String(config.dataSourceId)
-    : "";
+  const dataSourceId = config?.dataSourceId ? String(config.dataSourceId) : "";
   const readMode = config?.readMode || "table";
   const table = config?.table || undefined;
   const sql = config?.sql || "";
@@ -251,14 +251,10 @@ export function useSourcePanelLogic({
     try {
       setTableLoading(true);
 
-      updateNode(
-        undefined,
-        undefined,
-        {
-          schemaStatus: "loading",
-          schemaError: "",
-        }
-      );
+      updateNode(undefined, undefined, {
+        schemaStatus: "loading",
+        schemaError: "",
+      });
 
       const params = {
         read_mode: currentReadMode,
@@ -274,15 +270,11 @@ export function useSourcePanelLogic({
       if (resp?.code !== 0) {
         const errorMsg = resp?.message || "字段解析失败";
 
-        updateNode(
-          undefined,
-          undefined,
-          {
-            outputSchema: [],
-            schemaStatus: "error",
-            schemaError: errorMsg,
-          }
-        );
+        updateNode(undefined, undefined, {
+          outputSchema: [],
+          schemaStatus: "error",
+          schemaError: errorMsg,
+        });
 
         message.error(errorMsg);
         return [];
@@ -297,27 +289,19 @@ export function useSourcePanelLogic({
         originFieldName: item?.fieldName || "",
       }));
 
-      updateNode(
-        undefined,
-        undefined,
-        {
-          outputSchema,
-          schemaStatus: "success",
-          schemaError: "",
-        }
-      );
+      updateNode(undefined, undefined, {
+        outputSchema,
+        schemaStatus: "success",
+        schemaError: "",
+      });
 
       return outputSchema;
     } catch (error: any) {
-      updateNode(
-        undefined,
-        undefined,
-        {
-          outputSchema: [],
-          schemaStatus: "error",
-          schemaError: "字段解析失败",
-        }
-      );
+      updateNode(undefined, undefined, {
+        outputSchema: [],
+        schemaStatus: "error",
+        schemaError: "字段解析失败",
+      });
 
       message.error("字段解析失败");
       return [];
@@ -326,16 +310,21 @@ export function useSourcePanelLogic({
     }
   }, [dataSourceId, readMode, table, sql, updateNode]);
 
+  const scheduleParamsList = scheduleConfig?.paramsList || [];
+
   const handlePreview = useCallback(async () => {
     if (!dataSourceId) {
       message.warning("请选择数据源");
       return;
     }
 
+    console.log(scheduleConfig);
+
     const getRequestParams = () => ({
       read_mode: readMode,
       ...(readMode === "table" ? { table_path: table } : { query: sql }),
       extra_params: extraParams,
+      paramsList: scheduleConfig?.paramsList || [],
     });
 
     try {
@@ -359,13 +348,20 @@ export function useSourcePanelLogic({
       if (data?.code === 0) {
         qualityDetailRef.current?.onOpen(true, data);
       } else {
-        
       }
     } catch (error) {
     } finally {
       setViewLoading(false);
     }
-  }, [dataSourceId, readMode, table, sql, extraParams, qualityDetailRef]);
+  }, [
+    dataSourceId,
+    readMode,
+    table,
+    sql,
+    extraParams,
+    qualityDetailRef,
+    scheduleParamsList,
+  ]);
 
   const handleStatistics = useCallback(() => {
     console.log("statistics source data", {

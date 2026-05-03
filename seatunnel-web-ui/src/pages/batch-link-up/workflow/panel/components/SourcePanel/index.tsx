@@ -13,9 +13,10 @@ interface Props {
   selectedNode: any;
   onClose: () => void;
   onNodeDataChange: (nodeId: string, newData: any) => void;
+  scheduleConfig: any;
 }
 
-function SourcePanel({ selectedNode, onClose, onNodeDataChange }: Props) {
+function SourcePanel({ selectedNode, onClose, onNodeDataChange, scheduleConfig }: Props) {
   const qualityDetailRef = useRef<any>(null);
 
   const {
@@ -55,6 +56,7 @@ function SourcePanel({ selectedNode, onClose, onNodeDataChange }: Props) {
     selectedNode,
     onNodeDataChange,
     qualityDetailRef,
+    scheduleConfig
   });
 
   return (

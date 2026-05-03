@@ -226,7 +226,7 @@ export function useSourcePanelLogic({
     },
     [updateNode]
   );
- const scheduleParamsList = scheduleConfig?.paramsList || [];
+  const scheduleParamsList = scheduleConfig?.paramsList || [];
 
   const resolveSourceOutputSchema = useCallback(async () => {
     const currentDataSourceId = dataSourceId;
@@ -310,8 +310,6 @@ export function useSourcePanelLogic({
       setTableLoading(false);
     }
   }, [dataSourceId, readMode, table, sql, updateNode, scheduleParamsList]);
-
- 
 
   const handlePreview = useCallback(async () => {
     if (!dataSourceId) {
@@ -432,6 +430,9 @@ export function useSourcePanelLogic({
 
       const res = await dataSourceCatalogApi.resolveSql(dataSourceId, {
         query: sql,
+        read_mode: readMode,
+        extra_params: extraParams,
+        paramsList: scheduleConfig?.paramsList || [],
       });
 
       if (res?.code !== 0) {
@@ -446,7 +447,7 @@ export function useSourcePanelLogic({
     } finally {
       setResolveSqlLoading(false);
     }
-  }, [dataSourceId, sql]);
+  }, [dataSourceId, sql, scheduleParamsList]);
 
   const handleOpenResolvePopover = useCallback(
     async (open: boolean) => {

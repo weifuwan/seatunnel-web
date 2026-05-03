@@ -1,5 +1,5 @@
 import { Button, Input, Popover, Select, Space } from "antd";
-import { Eye, Sparkles, Wand2 } from "lucide-react";
+import { Variable, Replace, Sparkles, Wand2 } from "lucide-react";
 
 const { TextArea } = Input;
 
@@ -166,7 +166,7 @@ export default function SqlEditorSection(props: Props) {
               size="small"
               type="text"
               disabled={!sourceDataSourceId || !sql}
-              icon={<Eye size={14} />}
+              icon={<Variable   size={14} />}
             />
           </Popover>
 

@@ -1,6 +1,8 @@
 
-<img width="1920" height="945" alt="image" src="https://github.com/user-attachments/assets/901d765c-cbd7-4f39-ae3a-de6716ae09f2" />
 
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/901d765c-cbd7-4f39-ae3a-de6716ae09f2" width="100%" alt="Nest Logo" /></a>
+</p>
 ## SeaTunnel Web
 
 **SeaTunnel Web** is a modern web-based management platform for **Apache SeaTunnel**, designed to simplify the creation, configuration, and operation of data integration pipelines.

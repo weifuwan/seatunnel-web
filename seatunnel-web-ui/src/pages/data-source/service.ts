@@ -39,6 +39,12 @@ export async function updateDataSource(
     return HttpUtils.put(`${DATA_SOURCE_API_PREFIX}/${id}`, payload);
 }
 
+export async function selectDataSourceById(
+    id: any,
+): Promise<any> {
+    return HttpUtils.get(`${DATA_SOURCE_API_PREFIX}/${id}`);
+}
+
 export async function deleteDataSource(
     id: string,
 ): Promise<CommonApiResponse<boolean>> {

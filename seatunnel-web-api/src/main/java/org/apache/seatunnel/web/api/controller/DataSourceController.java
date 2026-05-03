@@ -62,6 +62,19 @@ public class DataSourceController {
     }
 
     /**
+     * select a data source by ID.
+     */
+    @GetMapping("/{id}")
+    @Operation(summary = "deleteDataSource", description = "DELETE_DATA_SOURCE_NOTES")
+    @Parameters({
+            @Parameter(name = "id", description = "DATA_SOURCE_ID", required = true)
+    })
+    @ApiException(QUERY_DATASOURCE_ERROR)
+    public Result<DataSource> selectById(@PathVariable("id") Long id) {
+        return Result.buildSuc(dataSourceService.selectById(id));
+    }
+
+    /**
      * Deletes a data source by ID.
      */
     @DeleteMapping("/{id}")

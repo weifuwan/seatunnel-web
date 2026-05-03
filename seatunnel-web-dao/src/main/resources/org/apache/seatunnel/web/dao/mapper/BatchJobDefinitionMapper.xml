@@ -15,6 +15,8 @@
         d.job_version AS jobVersion,
         d.source_type AS sourceType,
         d.source_table AS sourceTable,
+        d.source_datasource_id AS sourceDatasourceId,
+        d.sink_datasource_id AS sinkDatasourceId,
         d.sink_type AS sinkType,
         d.sink_table AS sinkTable,
         d.release_state AS releaseState,
@@ -46,7 +48,10 @@
         m.write_row_count AS writeRowCount,
         m.read_qps AS readQps,
         m.write_qps AS writeQps,
-        m.record_delay AS recordDelay
+        m.record_delay AS recordDelay,
+
+        ds_source.name AS sourceDatasourceName,
+        ds_sink.name AS sinkDatasourceName
 
         FROM
         (
@@ -103,6 +108,12 @@
 
         LEFT JOIN t_seatunnel_job_schedule s
         ON d.id = s.job_definition_id
+
+        -- Join t_seatunnel_datasource for source and sink names
+        LEFT JOIN t_seatunnel_datasource ds_source
+        ON d.source_datasource_id = ds_source.id
+        LEFT JOIN t_seatunnel_datasource ds_sink
+        ON d.sink_datasource_id = ds_sink.id
 
         <where>
             <if test="dto.status != null and dto.status != ''">

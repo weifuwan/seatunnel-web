@@ -6,10 +6,10 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.seatunnel.web.core.exceptions.ServiceException;
 import org.apache.seatunnel.web.api.service.DataSourceService;
 import org.apache.seatunnel.web.api.service.SeaTunnelClientService;
 import org.apache.seatunnel.web.common.enums.SeaTunnelClientHealthStatusEnum;
+import org.apache.seatunnel.web.core.exceptions.ServiceException;
 import org.apache.seatunnel.web.core.utils.MetricValueParser;
 import org.apache.seatunnel.web.core.utils.SeaTunnelClientUrlUtils;
 import org.apache.seatunnel.web.core.verify.DatasourceConnectivityVerificationStrategy;
@@ -32,11 +32,17 @@ import org.springframework.stereotype.Service;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
 @Slf4j
 public class SeaTunnelClientServiceImpl implements SeaTunnelClientService {
+
+    private static final Set<String> SUPPORTED_CLIENT_VERSIONS = Set.of(
+            "2.3.12",
+            "2.3.13"
+    );
 
     @Resource
     private SeaTunnelClientDao seaTunnelClientDao;
@@ -50,27 +56,30 @@ public class SeaTunnelClientServiceImpl implements SeaTunnelClientService {
     @Resource
     private DatasourceConnectivityVerificationStrategyFactory strategyFactory;
 
-
     @Override
     public void saveOrUpdate(SeaTunnelClientDTO dto) {
         validate(dto);
 
         Date now = new Date();
+
+        String baseUrl = SeaTunnelClientUrlUtils.buildBaseUrl(
+                dto.getClientAddress(),
+                dto.getClientPort()
+        );
+
         if (dto.getId() == null) {
             SeaTunnelClient entity = new SeaTunnelClient();
             BeanUtils.copyProperties(dto, entity);
 
-            String baseUrl = SeaTunnelClientUrlUtils.buildBaseUrl(
-                    dto.getClientAddress(),
-                    dto.getClientPort()
-            );
             entity.setBaseUrl(baseUrl);
+
 
             fillVersionFromOverview(baseUrl, entity);
 
             entity.setHealthStatus(SeaTunnelClientHealthStatusEnum.LIVE.getCode());
             entity.setCreateTime(now);
             entity.setUpdateTime(now);
+
             seaTunnelClientDao.insert(entity);
             return;
         }
@@ -78,13 +87,14 @@ public class SeaTunnelClientServiceImpl implements SeaTunnelClientService {
         SeaTunnelClient entity = getEntity(dto.getId());
         BeanUtils.copyProperties(dto, entity);
 
-        String baseUrl = SeaTunnelClientUrlUtils.buildBaseUrl(
-                dto.getClientAddress(),
-                dto.getClientPort()
-        );
         entity.setBaseUrl(baseUrl);
 
+
+        fillVersionFromOverview(baseUrl, entity);
+
+        entity.setHealthStatus(SeaTunnelClientHealthStatusEnum.LIVE.getCode());
         entity.setUpdateTime(now);
+
         seaTunnelClientDao.updateById(entity);
     }
 
@@ -146,7 +156,6 @@ public class SeaTunnelClientServiceImpl implements SeaTunnelClientService {
         int pageSize = dto == null || dto.getPageSize() == null || dto.getPageSize() <= 0 ? 10 : dto.getPageSize();
 
         LambdaQueryWrapper<SeaTunnelClient> wrapper = new LambdaQueryWrapper<>();
-
         wrapper.orderByDesc(SeaTunnelClient::getCreateTime);
 
         return seaTunnelClientDao.selectPage(new Page<>(pageNo, pageSize), wrapper);
@@ -200,18 +209,51 @@ public class SeaTunnelClientServiceImpl implements SeaTunnelClientService {
     }
 
     /**
-     * Fill client version from overview if available.
+     * 从 SeaTunnel Client overview 中获取版本。
+     *
+     * 这里同时承担三个职责：
+     * 1. 网络连通性检测：overview 调用失败则不允许保存 / 更新。
+     * 2. 版本识别：必须能拿到 projectVersion。
+     * 3. 版本限制：目前仅支持 2.3.12 和 2.3.13。
      */
     public void fillVersionFromOverview(String baseUrl, SeaTunnelClient entity) {
+        if (StringUtils.isBlank(baseUrl)) {
+            throw new IllegalArgumentException("SeaTunnel 客户端地址不能为空");
+        }
+
+        Map<String, Object> overview;
         try {
-            Map overview = seaTunnelRestClient.overview(baseUrl + "/overview", null);
-            Object projectVersion = overview == null ? null : overview.get("projectVersion");
-            if (projectVersion != null) {
-                entity.setClientVersion(String.valueOf(projectVersion));
-            }
+            overview = seaTunnelRestClient.overview(baseUrl + "/overview", null);
         } catch (Exception e) {
             log.warn("Fetch seatunnel client overview failed, baseUrl={}", baseUrl, e);
+            throw new ServiceException(
+                    Status.INTERNAL_SERVER_ERROR_ARGS,
+                    "SeaTunnel 客户端连接失败，请检查客户端地址、端口或 Zeta 引擎是否已启动"
+            );
         }
+
+        Object projectVersion = overview == null ? null : overview.get("projectVersion");
+        if (projectVersion == null || StringUtils.isBlank(String.valueOf(projectVersion))) {
+            throw new ServiceException(
+                    Status.INTERNAL_SERVER_ERROR_ARGS,
+                    "SeaTunnel 客户端连接成功，但未获取到版本信息"
+            );
+        }
+
+        String clientVersion = String.valueOf(projectVersion).trim();
+
+        if (!SUPPORTED_CLIENT_VERSIONS.contains(clientVersion)) {
+            throw new ServiceException(
+                    Status.INTERNAL_SERVER_ERROR_ARGS,
+                    String.format(
+                            "当前 SeaTunnel 客户端版本为 %s，暂不支持。当前仅支持 %s",
+                            clientVersion,
+                            String.join("、", SUPPORTED_CLIENT_VERSIONS)
+                    )
+            );
+        }
+
+        entity.setClientVersion(clientVersion);
     }
 
     /**
@@ -227,12 +269,22 @@ public class SeaTunnelClientServiceImpl implements SeaTunnelClientService {
         if (StringUtils.isBlank(dto.getEngineType())) {
             throw new IllegalArgumentException("引擎类型不能为空");
         }
+        if (StringUtils.isBlank(dto.getClientAddress())) {
+            throw new IllegalArgumentException("客户端地址不能为空");
+        }
+        if (dto.getClientPort() == null) {
+            throw new IllegalArgumentException("客户端端口不能为空");
+        }
     }
 
     /**
      * 查询客户端实体，不存在则抛异常
      */
     private SeaTunnelClient getEntity(Long id) {
-        return seaTunnelClientDao.queryById(id);
+        SeaTunnelClient entity = seaTunnelClientDao.queryById(id);
+        if (entity == null) {
+            throw new IllegalArgumentException("客户端不存在, id=" + id);
+        }
+        return entity;
     }
 }

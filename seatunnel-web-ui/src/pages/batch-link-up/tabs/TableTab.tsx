@@ -69,15 +69,16 @@ const EmptyTableState: React.FC<{ text: string }> = ({ text }) => {
 const TableNode: React.FC<{
   item: TableItem;
   type: "source" | "sink";
-}> = ({ item, type }) => {
+  instanceItem: any;
+}> = ({ item, type, instanceItem }) => {
   const isSource = type === "source";
-
+  const datasourceId =
+    item.sourceId ||
+    (isSource
+      ? instanceItem?.sourceDatasourceId
+      : instanceItem?.sinkDatasourceId);
   return (
-    <TableColumnsPopover
-      sourceId={item.sourceId}
-      table={item.table}
-      type={type}
-    >
+    <TableColumnsPopover sourceId={datasourceId} table={item.table} type={type}>
       <button
         type="button"
         className={[
@@ -85,8 +86,8 @@ const TableNode: React.FC<{
           "bg-white transition-all duration-200 ease-out",
           "hover:shadow-[0_8px_22px_rgba(15,23,42,0.06)]",
           isSource
-            ? "border-blue-100 hover:border-blue-200"
-            : "border-emerald-100 hover:border-emerald-200",
+            ? "border-transparent bg-blue-50 hover:bg-blue-100"
+            : "border-transparent bg-emerald-50 hover:bg-emerald-100",
         ].join(" ")}
       >
         <span
@@ -120,11 +121,12 @@ const TableGroup: React.FC<{
   items: TableItem[];
   emptyText: string;
   type: "source" | "sink";
-}> = ({ title, typeLabel, dbType, items, emptyText, type }) => {
+  instanceItem: any;
+}> = ({ title, typeLabel, dbType, items, emptyText, type, instanceItem }) => {
   const isSource = type === "source";
 
   return (
-    <div className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_1px_3px_rgba(15,23,42,0.04)]">
+    <div className="min-w-0 rounded-2xl bg-white p-4 shadow-sm">
       <div className="mb-3 flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2.5">
           <div
@@ -144,7 +146,7 @@ const TableGroup: React.FC<{
           </div>
         </div>
 
-        <div className="shrink-0 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-500">
+        <div className="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-500">
           {dbType || "-"}
         </div>
       </div>
@@ -158,6 +160,7 @@ const TableGroup: React.FC<{
               }-${index}`}
               item={item}
               type={type}
+              instanceItem={instanceItem}
             />
           ))
         ) : (
@@ -206,6 +209,7 @@ const TableTab: React.FC<TableTabProps> = ({ instanceItem }) => {
           dbType={instanceItem?.sourceType}
           items={sourceTableList}
           emptyText="暂无来源表"
+          instanceItem={instanceItem}
         />
 
         <div className="hidden h-full items-center justify-center xl:flex">
@@ -221,6 +225,7 @@ const TableTab: React.FC<TableTabProps> = ({ instanceItem }) => {
           dbType={instanceItem?.sinkType}
           items={sinkTableList}
           emptyText="暂无目标表"
+          instanceItem={instanceItem}
         />
       </div>
     </div>

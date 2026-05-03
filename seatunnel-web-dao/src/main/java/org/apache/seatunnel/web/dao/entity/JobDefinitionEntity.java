@@ -29,4 +29,7 @@ public class JobDefinitionEntity extends BaseEntity {
     private String sinkType;
     private String sourceTable;
     private String sinkTable;
+
+    private Long sourceDatasourceId;
+    private Long sinkDatasourceId;
 }

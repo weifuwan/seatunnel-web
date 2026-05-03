@@ -1,6 +1,5 @@
 package org.apache.seatunnel.web.core.job.handler.single;
 
-
 import org.apache.seatunnel.web.core.job.model.JobDefinitionAnalysisResult;
 import org.springframework.stereotype.Component;
 
@@ -24,6 +23,8 @@ public class GuideSingleWorkflowAnalyzer {
         return JobDefinitionAnalysisResult.builder()
                 .sourceType(extractNodeDbType(sourceNode))
                 .sinkType(extractNodeDbType(sinkNode))
+                .sourceDatasourceId(extractDatasourceId(sourceNode))
+                .sinkDatasourceId(extractDatasourceId(sinkNode))
                 .sourceTable(extractSourceTable(sourceNode))
                 .sinkTable(extractSinkTable(sinkNode))
                 .build();
@@ -43,6 +44,56 @@ public class GuideSingleWorkflowAnalyzer {
         }
 
         return WorkflowNodeHelper.getString(config, "dbType");
+    }
+
+    private Long extractDatasourceId(Map<String, Object> node) {
+        if (node == null || node.isEmpty()) {
+            return null;
+        }
+
+        Map<String, Object> data = WorkflowNodeHelper.safeMap(node.get("data"));
+        Map<String, Object> config = WorkflowNodeHelper.safeMap(data.get("config"));
+
+        Object rawDatasourceId = firstNonNull(
+                config.get("dataSourceId")
+        );
+
+        return parseLong(rawDatasourceId);
+    }
+
+    private Object firstNonNull(Object... values) {
+        if (values == null) {
+            return null;
+        }
+
+        for (Object value : values) {
+            if (value != null) {
+                return value;
+            }
+        }
+
+        return null;
+    }
+
+    private Long parseLong(Object value) {
+        if (value == null) {
+            return null;
+        }
+
+        if (value instanceof Number) {
+            return ((Number) value).longValue();
+        }
+
+        String text = WorkflowNodeHelper.safeTrim(String.valueOf(value));
+        if (text.isEmpty()) {
+            return null;
+        }
+
+        try {
+            return Long.parseLong(text);
+        } catch (NumberFormatException ignored) {
+            return null;
+        }
     }
 
     private String extractSourceTable(Map<String, Object> sourceNode) {

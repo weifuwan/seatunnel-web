@@ -1,15 +1,15 @@
-import React, { useEffect, useState } from "react";
-import { message, Tabs } from "antd";
 import { useIntl } from "@umijs/max";
+import { Tabs } from "antd";
+import React, { useEffect, useState } from "react";
 
-import TaskHeader from "./TaskHeader";
+import { seatunnelJobInstanceApi } from "./api";
 import BasicInfoSection from "./BasicInfoSection";
-import LogTab from "./tabs/LogTab";
 import HoconTab from "./tabs/HoconTab";
+import LogTab from "./tabs/LogTab";
 import MetricsTab from "./tabs/MetricsTab";
 import ScheduleTab from "./tabs/ScheduleTab";
 import TableTab from "./tabs/TableTab";
-import { seatunnelJobInstanceApi } from "./api";
+import TaskHeader from "./TaskHeader";
 
 interface TaskDetailPanelProps {
   instanceItem: any;
@@ -41,7 +41,6 @@ const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({ instanceItem }) => {
         defaultMessage: "Failed to load log",
       });
 
-     
       setLogContent(errorText);
     } finally {
       setLogLoading(false);
@@ -66,6 +65,10 @@ const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({ instanceItem }) => {
       </div>
     );
   }
+
+  const showTableTab = ["GUIDE_SINGLE", "GUIDE_MULTI"].includes(
+    instanceItem?.definitionMode
+  );
 
   const tabs = [
     {
@@ -100,14 +103,18 @@ const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({ instanceItem }) => {
       }),
       children: <ScheduleTab instanceItem={instanceItem} />,
     },
-    {
-      key: "table",
-      label: intl.formatMessage({
-        id: "pages.job.detail.tabs.table",
-        defaultMessage: "Table",
-      }),
-      children: <TableTab instanceItem={instanceItem} />,
-    },
+    ...(showTableTab
+      ? [
+          {
+            key: "table",
+            label: intl.formatMessage({
+              id: "pages.job.detail.tabs.table",
+              defaultMessage: "Table",
+            }),
+            children: <TableTab instanceItem={instanceItem} />,
+          },
+        ]
+      : []),
   ];
 
   return (

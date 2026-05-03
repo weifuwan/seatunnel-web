@@ -87,6 +87,8 @@
         d.sink_type AS sinkType,
         d.source_table AS sourceTable,
         d.sink_table AS sinkTable,
+        d.source_datasource_id as sourceDatasourceId,
+        d.sink_datasource_id as sinkDatasourceId,
 
         IFNULL(m.read_row_count, 0) AS readRowCount,
         IFNULL(m.write_row_count, 0) AS writeRowCount,

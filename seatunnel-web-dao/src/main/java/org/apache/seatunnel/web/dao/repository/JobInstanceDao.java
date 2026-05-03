@@ -9,6 +9,7 @@ import org.apache.seatunnel.web.spi.bean.vo.JobInstanceVO;
 import java.util.Date;
 
 public interface JobInstanceDao extends IDao<JobInstance> {
+
     IPage<JobInstanceVO> pageWithDefinition(SeaTunnelJobInstanceDTO dto);
 
     JobInstanceVO selectDetailById(Long id);

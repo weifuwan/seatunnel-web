@@ -28,6 +28,8 @@ public class JobDefinitionAssembler {
                 .jobVersion(1)
                 .sourceType(analysis.getSourceType())
                 .sinkType(analysis.getSinkType())
+                .sourceDatasourceId(analysis.getSourceDatasourceId())
+                .sinkDatasourceId(analysis.getSinkDatasourceId())
                 .sourceTable(analysis.getSourceTable())
                 .sinkTable(analysis.getSinkTable())
                 .build();

@@ -4,14 +4,15 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.seatunnel.web.core.exceptions.ServiceException;
 import org.apache.seatunnel.web.api.service.ConnectorParamMetaService;
+import org.apache.seatunnel.web.core.exceptions.ServiceException;
 import org.apache.seatunnel.web.dao.entity.ConnectorParamMetaEntity;
 import org.apache.seatunnel.web.dao.repository.ConnectorParamMetaDao;
 import org.apache.seatunnel.web.spi.bean.dto.ConnectorParamMetaCreateDTO;
 import org.apache.seatunnel.web.spi.bean.dto.ConnectorParamMetaQueryDTO;
 import org.apache.seatunnel.web.spi.bean.dto.ConnectorParamMetaUpdateDTO;
 import org.apache.seatunnel.web.spi.bean.entity.PaginationResult;
+import org.apache.seatunnel.web.spi.bean.vo.ConnectorParamMetaOptionVO;
 import org.apache.seatunnel.web.spi.bean.vo.ConnectorParamMetaVO;
 import org.apache.seatunnel.web.spi.enums.Status;
 import org.springframework.beans.BeanUtils;
@@ -25,6 +26,9 @@ import java.util.stream.Collectors;
 @Service
 public class ConnectorParamMetaServiceImpl implements ConnectorParamMetaService {
 
+    private static final String DEFAULT_TYPE = "connector";
+    private static final String DEFAULT_CONNECTOR_NAME = "Jdbc";
+
     @Resource
     private ConnectorParamMetaDao connectorParamMetaDao;
 
@@ -34,12 +38,18 @@ public class ConnectorParamMetaServiceImpl implements ConnectorParamMetaService 
         validateCreateDto(dto);
 
         try {
-            if (connectorParamMetaDao.checkDuplicate(dto.getType(), dto.getConnectorName(), dto.getParamName())) {
+            if (connectorParamMetaDao.checkDuplicate(
+                    dto.getType(),
+                    dto.getConnectorName(),
+                    dto.getParamName()
+            )) {
                 throw new ServiceException(Status.CONNECTOR_PARAM_META_ALREADY_EXISTS);
             }
 
             ConnectorParamMetaEntity entity = new ConnectorParamMetaEntity();
             BeanUtils.copyProperties(dto, entity);
+
+            normalizeEntity(entity);
 
             connectorParamMetaDao.insert(entity);
             return entity.getId();
@@ -60,22 +70,34 @@ public class ConnectorParamMetaServiceImpl implements ConnectorParamMetaService 
         ConnectorParamMetaEntity existing = getEntityOrThrow(id);
 
         try {
-            String targetType = StringUtils.isNotBlank(dto.getType()) ? dto.getType() : existing.getType();
+            String targetType = StringUtils.isNotBlank(dto.getType())
+                    ? dto.getType()
+                    : existing.getType();
+
             String targetConnectorName = StringUtils.isNotBlank(dto.getConnectorName())
                     ? dto.getConnectorName()
                     : existing.getConnectorName();
+
             String targetParamName = StringUtils.isNotBlank(dto.getParamName())
                     ? dto.getParamName()
                     : existing.getParamName();
 
-            if (connectorParamMetaDao.checkDuplicateExcludeId(targetType, targetConnectorName, targetParamName, id)) {
+            if (connectorParamMetaDao.checkDuplicateExcludeId(
+                    targetType,
+                    targetConnectorName,
+                    targetParamName,
+                    id
+            )) {
                 throw new ServiceException(Status.CONNECTOR_PARAM_META_ALREADY_EXISTS);
             }
 
             ConnectorParamMetaEntity entity = new ConnectorParamMetaEntity();
             BeanUtils.copyProperties(dto, entity);
             entity.setId(id);
+
+            normalizeEntity(entity);
             entity.initUpdate();
+
             return connectorParamMetaDao.updateById(entity);
         } catch (ServiceException e) {
             throw e;
@@ -131,12 +153,51 @@ public class ConnectorParamMetaServiceImpl implements ConnectorParamMetaService 
     @Override
     public List<ConnectorParamMetaVO> list(String connectorName, String type) {
         try {
-            return connectorParamMetaDao.queryList(connectorName, type)
+            return connectorParamMetaDao.queryList(
+                    normalizeConnectorName(connectorName),
+                    normalizeType(type)
+            )
                     .stream()
                     .map(this::toVO)
                     .collect(Collectors.toList());
         } catch (Exception e) {
-            log.error("List connector param meta failed, connectorName={}, type={}", connectorName, type, e);
+            log.error(
+                    "List connector param meta failed, connectorName={}, type={}",
+                    connectorName,
+                    type,
+                    e
+            );
+            throw new ServiceException(Status.INTERNAL_SERVER_ERROR_ARGS, e.getMessage());
+        }
+    }
+
+    @Override
+    public List<ConnectorParamMetaOptionVO> option(
+            String connectorName,
+            String connectorType,
+            String type
+    ) {
+        String finalConnectorName = normalizeConnectorName(connectorName);
+        String finalConnectorType = normalizeConnectorType(connectorType);
+        String finalType = normalizeType(type);
+
+        try {
+            return connectorParamMetaDao.queryOptionList(
+                    finalConnectorName,
+                    finalConnectorType,
+                    finalType
+            )
+                    .stream()
+                    .map(this::toOptionVO)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error(
+                    "Query connector param option failed, connectorName={}, connectorType={}, type={}",
+                    connectorName,
+                    connectorType,
+                    type,
+                    e
+            );
             throw new ServiceException(Status.INTERNAL_SERVER_ERROR_ARGS, e.getMessage());
         }
     }
@@ -167,6 +228,9 @@ public class ConnectorParamMetaServiceImpl implements ConnectorParamMetaService 
         if (StringUtils.isBlank(dto.getConnectorName())) {
             throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "connectorName");
         }
+        if (StringUtils.isBlank(dto.getConnectorType())) {
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "connectorType");
+        }
         if (StringUtils.isBlank(dto.getParamName())) {
             throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "paramName");
         }
@@ -196,5 +260,82 @@ public class ConnectorParamMetaServiceImpl implements ConnectorParamMetaService 
         ConnectorParamMetaVO vo = new ConnectorParamMetaVO();
         BeanUtils.copyProperties(entity, vo);
         return vo;
+    }
+
+    private ConnectorParamMetaOptionVO toOptionVO(ConnectorParamMetaEntity entity) {
+        ConnectorParamMetaOptionVO vo = new ConnectorParamMetaOptionVO();
+        vo.setValue(entity.getParamName());
+        vo.setLabel(resolveOptionLabel(entity));
+        vo.setDescription(entity.getParamDesc());
+        vo.setDefaultValue(entity.getDefaultValue());
+        vo.setExampleValue(entity.getExampleValue());
+        vo.setParamType(entity.getParamType());
+        vo.setRequiredFlag(entity.getRequiredFlag());
+        return vo;
+    }
+
+    private String resolveOptionLabel(ConnectorParamMetaEntity entity) {
+        if (StringUtils.isNotBlank(entity.getRemark())) {
+            return entity.getRemark();
+        }
+        if (StringUtils.isNotBlank(entity.getParamDesc())) {
+            return entity.getParamDesc();
+        }
+        return entity.getParamName();
+    }
+
+    private void normalizeEntity(ConnectorParamMetaEntity entity) {
+        if (entity == null) {
+            return;
+        }
+
+        if (StringUtils.isNotBlank(entity.getType())) {
+            entity.setType(entity.getType().trim());
+        }
+
+        if (StringUtils.isNotBlank(entity.getConnectorName())) {
+            entity.setConnectorName(entity.getConnectorName().trim());
+        }
+
+        if (StringUtils.isNotBlank(entity.getConnectorType())) {
+            entity.setConnectorType(entity.getConnectorType().trim().toLowerCase());
+        }
+
+
+        if (StringUtils.isNotBlank(entity.getParamName())) {
+            entity.setParamName(entity.getParamName().trim());
+        }
+
+        if (entity.getRequiredFlag() == null) {
+            entity.setRequiredFlag(0);
+        }
+    }
+
+    private String normalizeConnectorName(String connectorName) {
+        if (StringUtils.isBlank(connectorName)) {
+            return DEFAULT_CONNECTOR_NAME;
+        }
+        return connectorName.trim();
+    }
+
+    private String normalizeConnectorType(String connectorType) {
+        if (StringUtils.isBlank(connectorType)) {
+            return null;
+        }
+        return connectorType.trim().toLowerCase();
+    }
+
+    private String normalizeDbType(String dbType) {
+        if (StringUtils.isBlank(dbType)) {
+            return null;
+        }
+        return dbType.trim().toUpperCase();
+    }
+
+    private String normalizeType(String type) {
+        if (StringUtils.isBlank(type)) {
+            return DEFAULT_TYPE;
+        }
+        return type.trim();
     }
 }

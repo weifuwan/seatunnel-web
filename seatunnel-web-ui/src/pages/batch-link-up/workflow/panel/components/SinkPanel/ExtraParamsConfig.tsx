@@ -1,15 +1,41 @@
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
-import { Input, Popover, Select, Tooltip } from "antd";
+import { Input, Popover, Select, Spin, Tooltip } from "antd";
 import type { FC } from "react";
 import { useEffect, useMemo, useState } from "react";
-import { mysqlParams } from "./config";
+import { fetchConnectorParamOptions } from "@/pages/knowledge-management/api";
+
+interface ExtraParamItem {
+  key: string;
+  value: string;
+}
+
+interface ConnectorParamOptionVO {
+  value: string;
+  label?: string;
+  description?: string;
+  defaultValue?: string;
+  exampleValue?: string;
+  paramType?: string;
+  requiredFlag?: number;
+}
 
 interface ExtraParamsConfigProps {
-  params: Array<{ key: string; value: string }>;
-  onParamsChange: (params: Array<{ key: string; value: string }>) => void;
-  selectedNode: { id: string; data: { text?: string; dbType?: string } };
+  params: ExtraParamItem[];
+  onParamsChange: (params: ExtraParamItem[]) => void;
+  selectedNode: {
+    id: string;
+    data: {
+      text?: string;
+      connectorType?: string;
+      connectorName?: string;
+    };
+  };
   hideHeader?: boolean;
 }
+
+const DEFAULT_CONNECTOR_NAME = "Jdbc";
+const DEFAULT_PARAM_TYPE = "connector";
+const DEFAULT_CONNECTOR_TYPE = "sink";
 
 const ExtraParamsConfig: FC<ExtraParamsConfigProps> = ({
   params,
@@ -17,55 +43,109 @@ const ExtraParamsConfig: FC<ExtraParamsConfigProps> = ({
   selectedNode,
   hideHeader = false,
 }) => {
-  const getParamMeta = (type?: string) => {
-    switch (type?.toUpperCase()) {
-      case "MYSQL":
-        return mysqlParams;
-      default:
-        return [];
-    }
-  };
+  const [paramOptions, setParamOptions] = useState<ConnectorParamOptionVO[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const [keyOptions, setKeyOptions] = useState<any[]>([]);
+  const connectorName =
+    selectedNode?.data?.connectorName || DEFAULT_CONNECTOR_NAME;
 
-  const dbType = selectedNode?.data?.dbType || "MYSQL";
+  const connectorType =
+    selectedNode?.data?.connectorType || DEFAULT_CONNECTOR_TYPE;
 
   useEffect(() => {
-    const meta = getParamMeta(dbType);
+    let ignore = false;
 
-    const formatMeta = meta?.map((item) => ({
-      value: item?.value,
-      label: (
-        <Popover
-          placement="left"
-          overlayStyle={{ maxWidth: 320 }}
-          content={
-            <div className="workflow-panel__param-popover">
-              <div>
-                参数：<span>{item?.value}</span>
-              </div>
-              <div>
-                简介：<span>{item?.description}</span>
-              </div>
-              <div>
-                示例：<span>{item?.example}</span>
-              </div>
-            </div>
-          }
-        >
-          <div>
-            {item?.value}（{item?.label}）
-          </div>
-        </Popover>
-      ),
-    }));
+    const loadOptions = async () => {
+      try {
+        setLoading(true);
 
-    setKeyOptions(formatMeta);
-  }, [dbType]);
+        const res = await fetchConnectorParamOptions({
+          type: DEFAULT_PARAM_TYPE,
+          connectorName,
+          connectorType,
+        });
+
+        if (ignore) {
+          return;
+        }
+
+        setParamOptions(res?.data || []);
+      } catch (error) {
+        if (!ignore) {
+          setParamOptions([]);
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadOptions();
+
+    return () => {
+      ignore = true;
+    };
+  }, [connectorName, connectorType]);
 
   const selectedKeys = useMemo(() => {
     return params.map((item) => item.key).filter(Boolean);
   }, [params]);
+
+  const selectOptions = useMemo(() => {
+    return paramOptions.map((item) => ({
+      value: item.value,
+      label: (
+        <Popover
+          placement="left"
+          overlayStyle={{ maxWidth: 360 }}
+          content={
+            <div className="workflow-panel__param-popover">
+              <div>
+                参数：<span>{item.value}</span>
+              </div>
+
+              {item.description ? (
+                <div>
+                  简介：<span>{item.description}</span>
+                </div>
+              ) : null}
+
+              {item.defaultValue ? (
+                <div>
+                  默认值：<span>{item.defaultValue}</span>
+                </div>
+              ) : null}
+
+              {item.exampleValue ? (
+                <div>
+                  示例：<span>{item.exampleValue}</span>
+                </div>
+              ) : null}
+
+              {item.paramType ? (
+                <div>
+                  类型：<span>{item.paramType}</span>
+                </div>
+              ) : null}
+            </div>
+          }
+        >
+          <div className="workflow-panel__param-option">
+            <span className="workflow-panel__param-option-name">
+              {item.value}
+            </span>
+
+            {item.label ? (
+              <span className="workflow-panel__param-option-desc">
+                （{item.label}）
+              </span>
+            ) : null}
+          </div>
+        </Popover>
+      ),
+    }));
+  }, [paramOptions]);
 
   const handleAddParam = () => {
     onParamsChange([...params, { key: "", value: "" }]);
@@ -77,10 +157,25 @@ const ExtraParamsConfig: FC<ExtraParamsConfigProps> = ({
     value: string
   ) => {
     const draft = [...params];
+
+    if (field === "key") {
+      const selectedOption = paramOptions.find((item) => item.value === value);
+
+      draft[index] = {
+        ...draft[index],
+        key: value,
+        value: draft[index]?.value || selectedOption?.defaultValue || "",
+      };
+
+      onParamsChange(draft);
+      return;
+    }
+
     draft[index] = {
       ...draft[index],
-      [field]: value,
+      value,
     };
+
     onParamsChange(draft);
   };
 
@@ -90,31 +185,18 @@ const ExtraParamsConfig: FC<ExtraParamsConfigProps> = ({
     onParamsChange(draft);
   };
 
-  return (
-    <div className="workflow-panel__params">
-      {hideHeader ? (
+  const renderHeader = () => {
+    if (hideHeader) {
+      return (
         <div
           className="workflow-panel__params-toolbar"
           style={{ display: "flex", justifyContent: "space-between" }}
         >
           <div className="workflow-panel__group-head">
-            <div className="workflow-panel__group-kicker">额外参数</div>
+            <div className="workflow-panel__group-kicker">写入参数</div>
           </div>
-          <Tooltip title="添加一个额外参数">
-            <button
-              type="button"
-              className="workflow-panel__icon-btn"
-              onClick={handleAddParam}
-            >
-              <PlusOutlined />
-            </button>
-          </Tooltip>
-        </div>
-      ) : (
-        <div className="workflow-panel__params-head">
-          <div className="workflow-panel__params-title">参数列表</div>
 
-          <Tooltip title="添加一个额外参数">
+          <Tooltip title="添加一个写入端额外参数">
             <button
               type="button"
               className="workflow-panel__icon-btn"
@@ -124,21 +206,49 @@ const ExtraParamsConfig: FC<ExtraParamsConfigProps> = ({
             </button>
           </Tooltip>
         </div>
-      )}
+      );
+    }
+
+    return (
+      <div className="workflow-panel__params-head">
+        <div className="workflow-panel__params-title">写入参数列表</div>
+
+        <Tooltip title="添加一个写入端额外参数">
+          <button
+            type="button"
+            className="workflow-panel__icon-btn"
+            onClick={handleAddParam}
+          >
+            <PlusOutlined />
+          </button>
+        </Tooltip>
+      </div>
+    );
+  };
+
+  return (
+    <div className="workflow-panel__params">
+      {renderHeader()}
 
       {params.length === 0 ? (
-        <div className="workflow-panel__empty">暂无额外参数</div>
+        <div className="workflow-panel__empty">
+          {loading ? "正在加载写入参数元数据..." : "暂无写入端额外参数"}
+        </div>
       ) : (
         <div className="workflow-panel__params-list">
           {params.map((param, idx) => {
             const currentKey = param.key;
 
-            const options = keyOptions.map((option) => {
+            const options = selectOptions.map((option) => {
               const disabled =
                 !!option.value &&
                 option.value !== currentKey &&
                 selectedKeys.includes(option.value);
-              return { ...option, disabled };
+
+              return {
+                ...option,
+                disabled,
+              };
             });
 
             return (
@@ -147,11 +257,20 @@ const ExtraParamsConfig: FC<ExtraParamsConfigProps> = ({
                   value={param.key || undefined}
                   onChange={(value) => handleParamChange(idx, "key", value)}
                   options={options}
-                  placeholder="选择参数"
+                  placeholder={loading ? "参数加载中..." : "选择写入参数"}
                   showSearch
+                  loading={loading}
+                  disabled={loading}
                   optionFilterProp="value"
                   className="workflow-panel__antd-select workflow-panel__param-key"
                   popupClassName="workflow-panel__dropdown"
+                  notFoundContent={
+                    loading ? (
+                      <Spin size="small" />
+                    ) : (
+                      <span>暂无可选写入参数</span>
+                    )
+                  }
                 />
 
                 <Input

@@ -60,13 +60,56 @@ export async function deleteConnectorParam(id: number) {
 }
 
 export async function fetchConnectorParamList(
-  params?: ConnectorParamListQuery
 ) {
   return HttpUtils.get<ConnectorParamVO[]>(
-    "/api/v1/connector-param-meta/list",
-    params
+    "/api/v1/connector-param-meta/list"
   );
 }
+
+export interface ConnectorParamOptionQuery {
+  type?: string;
+  connectorName?: string;
+  connectorType?: string;
+  dbType?: string;
+}
+
+export interface ConnectorParamOptionVO {
+  value: string;
+  label?: string;
+  description?: string;
+  defaultValue?: string;
+  exampleValue?: string;
+  paramType?: string;
+  requiredFlag?: number;
+}
+
+function buildQuery(params?: Record<string, any>) {
+  if (!params) {
+    return "";
+  }
+
+  const searchParams = new URLSearchParams();
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (value === undefined || value === null || value === "") {
+      return;
+    }
+
+    searchParams.append(key, String(value));
+  });
+
+  const queryString = searchParams.toString();
+  return queryString ? `?${queryString}` : "";
+}
+
+export async function fetchConnectorParamOptions(
+  params?: ConnectorParamOptionQuery
+) {
+  return HttpUtils.get<ConnectorParamOptionVO[]>(
+    `/api/v1/connector-param-meta/option${buildQuery(params)}`
+  );
+}
+
 
 /**
  * 时间变量分页查询

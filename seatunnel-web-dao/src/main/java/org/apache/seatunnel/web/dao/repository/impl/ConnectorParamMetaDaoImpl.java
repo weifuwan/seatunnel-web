@@ -69,4 +69,28 @@ public class ConnectorParamMetaDaoImpl
 
         return connectorParamMetaMapper.selectList(wrapper);
     }
+
+    @Override
+    public List<ConnectorParamMetaEntity> queryOptionList(
+            String connectorName,
+            String connectorType,
+            String type) {
+
+        LambdaQueryWrapper<ConnectorParamMetaEntity> wrapper =
+                new LambdaQueryWrapper<ConnectorParamMetaEntity>()
+                        .eq(StringUtils.isNotBlank(type),
+                                ConnectorParamMetaEntity::getType,
+                                type)
+                        .eq(StringUtils.isNotBlank(connectorName),
+                                ConnectorParamMetaEntity::getConnectorName,
+                                connectorName)
+                        .eq(StringUtils.isNotBlank(connectorType),
+                                ConnectorParamMetaEntity::getConnectorType,
+                                connectorType)
+                        .orderByDesc(ConnectorParamMetaEntity::getRequiredFlag)
+                        .orderByAsc(ConnectorParamMetaEntity::getParamName)
+                        .orderByAsc(ConnectorParamMetaEntity::getId);
+
+        return connectorParamMetaMapper.selectList(wrapper);
+    }
 }

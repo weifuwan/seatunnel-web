@@ -15,4 +15,9 @@ public interface ConnectorParamMetaDao extends IDao<ConnectorParamMetaEntity> {
     IPage<ConnectorParamMetaEntity> queryPage(ConnectorParamMetaQueryDTO dto);
 
     List<ConnectorParamMetaEntity> queryList(String connectorName, String type);
+
+    List<ConnectorParamMetaEntity> queryOptionList(
+            String connectorName,
+            String connectorType,
+            String type);
 }

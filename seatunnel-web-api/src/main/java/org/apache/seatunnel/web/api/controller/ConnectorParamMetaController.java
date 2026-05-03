@@ -13,6 +13,7 @@ import org.apache.seatunnel.web.spi.bean.dto.ConnectorParamMetaQueryDTO;
 import org.apache.seatunnel.web.spi.bean.dto.ConnectorParamMetaUpdateDTO;
 import org.apache.seatunnel.web.spi.bean.entity.PaginationResult;
 import org.apache.seatunnel.web.spi.bean.entity.Result;
+import org.apache.seatunnel.web.spi.bean.vo.ConnectorParamMetaOptionVO;
 import org.apache.seatunnel.web.spi.bean.vo.ConnectorParamMetaVO;
 import org.springframework.web.bind.annotation.*;
 
@@ -83,8 +84,8 @@ public class ConnectorParamMetaController {
     @Operation(summary = "listConnectorParamMeta", description = "LIST_CONNECTOR_PARAM_META_NOTES")
     @ApiException(QUERY_CONNECTOR_PARAM_META_ERROR)
     public Result<List<ConnectorParamMetaVO>> list(
-            @RequestParam(required = false) String connectorName,
-            @RequestParam(required = false) String type
+            @RequestParam(name = "connectorName", required = false) String connectorName,
+            @RequestParam(name = "type", required = false) String type
     ) {
         return Result.buildSuc(connectorParamMetaService.list(connectorName, type));
     }
@@ -101,5 +102,24 @@ public class ConnectorParamMetaController {
     public Result<Boolean> delete(@PathVariable("id") Long id) {
         connectorParamMetaService.delete(id);
         return Result.buildSuc(true);
+    }
+
+    /**
+     * 获取连接器参数选项，用于前端任务配置面板下拉选择
+     */
+    @GetMapping("/option")
+    @Operation(
+            summary = "optionConnectorParamMeta",
+            description = "OPTION_CONNECTOR_PARAM_META_NOTES"
+    )
+    @ApiException(QUERY_CONNECTOR_PARAM_META_ERROR)
+    public Result<List<ConnectorParamMetaOptionVO>> option(
+            @RequestParam(name = "connectorName", required = false) String connectorName,
+            @RequestParam(name = "connectorType", required = false) String connectorType,
+            @RequestParam(name = "type", required = false) String type
+    ) {
+        return Result.buildSuc(
+                connectorParamMetaService.option(connectorName, connectorType, type)
+        );
     }
 }

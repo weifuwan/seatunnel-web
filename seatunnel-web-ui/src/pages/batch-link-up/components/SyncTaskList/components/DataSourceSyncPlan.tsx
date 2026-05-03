@@ -1,6 +1,7 @@
+import { selectDataSourceById } from "@/pages/data-source/service";
 import { DoubleRightOutlined } from "@ant-design/icons";
 import { Empty, Popover } from "antd";
-import { CSSProperties } from "react";
+import { CSSProperties, useState } from "react";
 import DatabaseIcons from "../../../../data-source/icon/DatabaseIcons";
 
 interface DataSourceSyncPlanProps {
@@ -12,6 +13,10 @@ const DataSourceSyncPlan: React.FC<DataSourceSyncPlanProps> = ({ record }) => {
     fontSize: 10,
     animation: "float 2s ease-in-out infinite",
   };
+
+  const [sourcePopoverVisible, setSourcePopoverVisible] = useState(false);
+  const [sinkPopoverVisible, setSinkPopoverVisible] = useState(false);
+  const [jsonData, setJsonData] = useState<any>(null); // Store the JSON data
 
   const safeParse = (value: any) => {
     if (!value) return null;
@@ -30,6 +35,91 @@ const DataSourceSyncPlan: React.FC<DataSourceSyncPlanProps> = ({ record }) => {
 
     return null;
   };
+
+  const renderJsonPopoverContent = () => {
+  if (!jsonData) {
+    return (
+      <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无数据" />
+    );
+  }
+
+  const renderValue = (value: any): React.ReactNode => {
+    if (value === null) {
+      return <span className="text-gray-400">null</span>;
+    }
+
+    if (typeof value === "string") {
+      return <span className="text-emerald-600">"{value}"</span>;
+    }
+
+    if (typeof value === "number") {
+      return <span className="text-amber-500">{value}</span>;
+    }
+
+    if (typeof value === "boolean") {
+      return (
+        <span className={value ? "text-blue-600" : "text-red-500"}>
+          {String(value)}
+        </span>
+      );
+    }
+
+    return <span className="text-gray-700">{String(value)}</span>;
+  };
+
+  const renderObject = (obj: any, level = 0): React.ReactNode => {
+    if (typeof obj !== "object" || obj === null) {
+      return renderValue(obj);
+    }
+
+    const isArray = Array.isArray(obj);
+    const indent = level * 14;
+
+    return (
+      <div>
+        {/* 开括号 */}
+        <div style={{ paddingLeft: indent }} className="text-gray-400">
+          {isArray ? "[" : "{"}
+        </div>
+
+        {/* 内容 */}
+        <div>
+          {Object.entries(obj).map(([key, value]) => (
+            <div
+              key={key}
+              style={{ paddingLeft: indent + 14 }}
+              className="leading-5"
+            >
+              {!isArray && (
+                <>
+                  <span className="text-purple-600">"{key}"</span>
+                  <span className="text-gray-400">: </span>
+                </>
+              )}
+
+              {typeof value === "object" && value !== null ? (
+                renderObject(value, level + 1)
+              ) : (
+                renderValue(value)
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* 闭括号 */}
+        <div style={{ paddingLeft: indent }} className="text-gray-400">
+          {isArray ? "]" : "}"}
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="w-[340px] max-h-[320px] overflow-auto text-xs font-mono bg-gradient-to-br from-gray-50 to-white p-3 rounded-xl border border-gray-200 shadow-sm">
+      {renderObject(jsonData)}
+    </div>
+  );
+};
 
   const formatTables = (tableValue: any, fallback?: string) => {
     if (!tableValue) return fallback || "-";
@@ -299,7 +389,38 @@ const DataSourceSyncPlan: React.FC<DataSourceSyncPlanProps> = ({ record }) => {
                 width="24"
                 height="24"
               />
-              <span style={{ marginLeft: 8 }}>{record.sourceType}</span>
+              <Popover
+                open={sourcePopoverVisible}
+                onVisibleChange={(visible) => setSourcePopoverVisible(visible)}
+                title="数据源信息"
+                content={renderJsonPopoverContent()}
+                trigger="click"
+                placement="right"
+              >
+                <a
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    selectDataSourceById(record?.sourceDatasourceId).then(
+                      (data) => {
+                        if (data?.code === 0) {
+                          setJsonData(
+                            safeParse(data?.data?.connectionParams || {})
+                          );
+                          setSourcePopoverVisible(true);
+                        }
+                      }
+                    );
+                  }}
+                  style={{
+                    marginLeft: 8,
+                    cursor: "pointer",
+                    color: "hsl(231 48% 48%)",
+                  }}
+                >
+                  {record.sourceDatasourceName}
+                </a>
+              </Popover>
             </>
           ) : (
             <span>-</span>
@@ -322,7 +443,10 @@ const DataSourceSyncPlan: React.FC<DataSourceSyncPlanProps> = ({ record }) => {
                   whiteSpace: "nowrap",
                   display: "inline-block",
                   cursor: "pointer",
-                  color: sourceTableCount > 0 ? "hsl(231 48% 48%)" : "rgba(0,0,0,0.45)",
+                  color:
+                    sourceTableCount > 0
+                      ? "hsl(231 48% 48%)"
+                      : "rgba(0,0,0,0.45)",
                 }}
               >
                 {sourceTableCount > 0
@@ -356,7 +480,38 @@ const DataSourceSyncPlan: React.FC<DataSourceSyncPlanProps> = ({ record }) => {
           {record?.sinkType ? (
             <>
               <DatabaseIcons dbType={record.sinkType} width="24" height="24" />
-              <span style={{ marginLeft: 8 }}>{record.sinkType}</span>
+              <Popover
+                open={sinkPopoverVisible}
+                onVisibleChange={(visible) => setSinkPopoverVisible(visible)}
+                title="数据源信息"
+                content={renderJsonPopoverContent()}
+                trigger="click"
+                placement="right"
+              >
+                <a
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    selectDataSourceById(record?.sinkDatasourceId).then(
+                      (data) => {
+                        if (data?.code === 0) {
+                          setJsonData(
+                            safeParse(data?.data?.connectionParams || {})
+                          );
+                          setSinkPopoverVisible(true);
+                        }
+                      }
+                    );
+                  }}
+                  style={{
+                    marginLeft: 8,
+                    cursor: "pointer",
+                    color: "hsl(231 48% 48%)",
+                  }}
+                >
+                  {record.sinkDatasourceName}
+                </a>
+              </Popover>
             </>
           ) : (
             <span>-</span>
@@ -379,7 +534,10 @@ const DataSourceSyncPlan: React.FC<DataSourceSyncPlanProps> = ({ record }) => {
                   whiteSpace: "nowrap",
                   display: "inline-block",
                   cursor: "pointer",
-                  color: sinkTableCount > 0 ? "hsl(231 48% 48%)" : "rgba(0,0,0,0.45)",
+                  color:
+                    sinkTableCount > 0
+                      ? "hsl(231 48% 48%)"
+                      : "rgba(0,0,0,0.45)",
                 }}
               >
                 {sinkTableCount > 0

@@ -82,4 +82,10 @@ public class BatchJobDefinitionVO {
     private Date nextScheduleTime;
 
     private String scheduleConfig;
+
+    private Long sourceDatasourceId;
+    private Long sinkDatasourceId;
+
+    private String sourceDatasourceName;
+    private String sinkDatasourceName;
 }

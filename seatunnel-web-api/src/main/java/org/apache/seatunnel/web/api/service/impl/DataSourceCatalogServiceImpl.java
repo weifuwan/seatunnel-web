@@ -204,17 +204,20 @@ public class DataSourceCatalogServiceImpl implements DataSourceCatalogService {
         validateDatasourceId(datasourceId);
         validateRequestBody(requestBody, "requestBody");
 
-        String query = getRequiredText(requestBody, KEY_QUERY);
-
         DataSource dataSource = getDataSourceOrThrow(datasourceId);
         BaseConnectionParam connectionParam = buildConnectionParam(dataSource);
 
         try {
+            Map<String, Object> resolvedRequestBody =
+                    renderSqlQueryIfNecessary(dataSource, requestBody);
+
+            String query = getRequiredText(resolvedRequestBody, KEY_QUERY);
+
             return getJdbcCatalog(dataSource, connectionParam).resolveSqlVariables(query);
         } catch (ServiceException e) {
             throw e;
         } catch (Exception e) {
-            log.error("Failed to resolve sql, datasourceId={}, query={}", datasourceId, query, e);
+            log.error("Failed to resolve sql, datasourceId={}, requestBody={}", datasourceId, requestBody, e);
             throw new ServiceException(Status.DATASOURCE_METADATA_ERROR, e.getMessage());
         }
     }

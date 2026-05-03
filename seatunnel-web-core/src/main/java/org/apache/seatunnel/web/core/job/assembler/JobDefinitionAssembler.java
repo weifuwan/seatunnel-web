@@ -54,6 +54,8 @@ public class JobDefinitionAssembler {
         entity.setJobVersion(nextVersion);
         entity.setSourceType(analysis.getSourceType());
         entity.setSinkType(analysis.getSinkType());
+        entity.setSourceDatasourceId(analysis.getSourceDatasourceId());
+        entity.setSinkDatasourceId(analysis.getSinkDatasourceId());
         entity.setSourceTable(analysis.getSourceTable());
         entity.setSinkTable(analysis.getSinkTable());
         entity.setUpdateTime(now);

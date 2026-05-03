@@ -1,4 +1,10 @@
-import { DownOutlined } from "@ant-design/icons";
+import {
+  CloudDownloadOutlined,
+  CloudUploadOutlined,
+  DownOutlined,
+  PauseCircleOutlined,
+  PlayCircleOutlined,
+} from "@ant-design/icons";
 import { useIntl } from "@umijs/max";
 import { Dropdown, Modal, Popconfirm, Space, message } from "antd";
 import { useRef, useState } from "react";
@@ -8,7 +14,6 @@ import {
 } from "../../../api";
 import TaskViewModal from "../../../TaskViewModal";
 
-
 interface ActionColumnProps {
   record: any;
   menuItems: any[];
@@ -17,6 +22,18 @@ interface ActionColumnProps {
 }
 
 const { confirm } = Modal;
+
+const actionBaseClass =
+  "inline-flex h-7 items-center gap-1 rounded-full px-2.5 text-xs font-medium transition-all duration-150";
+
+const primaryActionClass = `${actionBaseClass} bg-[#eef3ff] text-[#3157d5] hover:bg-[#e1e9ff] hover:text-[#2448c2]`;
+
+const dangerActionClass = `${actionBaseClass} bg-[#fff1f0] text-[#cf1322] hover:bg-[#ffe1de] hover:text-[#a8071a]`;
+
+const secondaryActionClass = `${actionBaseClass} bg-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-900`;
+
+const moreActionClass =
+  "inline-flex h-7 items-center gap-1 rounded-full px-2 text-xs font-medium text-slate-500 transition-all duration-150 hover:bg-slate-100 hover:text-slate-800";
 
 const ActionColumn: React.FC<ActionColumnProps> = ({
   record,
@@ -34,14 +51,12 @@ const ActionColumn: React.FC<ActionColumnProps> = ({
     record?.releaseState === "ONLINE" || record?.releaseState === 1;
 
   const handleStop = () => {
-
-    console.log(record)
-
     const instanceId = record?.instanceId;
 
     if (instanceId !== undefined) {
       seatunnelJobExecuteApi.pause(instanceId).then((data) => {
         if (data?.code === 0) {
+          message.success("停止成功");
           cbk();
         } else {
           message.error(data?.msg || "停止失败");
@@ -178,9 +193,11 @@ const ActionColumn: React.FC<ActionColumnProps> = ({
     defaultMessage: "No",
   });
 
+  const canRun = isOnline;
+
   return (
     <>
-      <Space size="middle">
+      <Space size={6} className="whitespace-nowrap">
         {record?.lastJobStatus === "RUNNING" ? (
           <Popconfirm
             title={intl.formatMessage({
@@ -199,7 +216,14 @@ const ActionColumn: React.FC<ActionColumnProps> = ({
             cancelText={noText}
             onConfirm={handleStop}
           >
-            <a style={{ fontWeight: 500 }}>停止</a>
+            <button
+              type="button"
+              className={dangerActionClass}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <PauseCircleOutlined />
+              停止
+            </button>
           </Popconfirm>
         ) : (
           <Popconfirm
@@ -207,8 +231,13 @@ const ActionColumn: React.FC<ActionColumnProps> = ({
               id: "pages.job.action.run.title",
               defaultMessage: "Run Task",
             })}
-            open={runOpen}
+            open={canRun ? runOpen : false}
             onOpenChange={(open) => {
+              if (!canRun) {
+                message.warning("请先上线任务，再执行运行操作");
+                return;
+              }
+
               if (!runLoading) {
                 setRunOpen(open);
               }
@@ -225,6 +254,11 @@ const ActionColumn: React.FC<ActionColumnProps> = ({
             okText={yesText}
             cancelText={noText}
             onConfirm={async () => {
+              if (!canRun) {
+                message.warning("请先上线任务，再执行运行操作");
+                return;
+              }
+
               try {
                 setRunLoading(true);
 
@@ -247,7 +281,25 @@ const ActionColumn: React.FC<ActionColumnProps> = ({
               }
             }}
           >
-            <a style={{ fontWeight: 500 }}>运行</a>
+            <button
+              type="button"
+              disabled={!canRun}
+              className={
+                canRun
+                  ? primaryActionClass
+                  : `${actionBaseClass} cursor-not-allowed bg-slate-100 text-slate-400`
+              }
+              onClick={(event) => {
+                event.stopPropagation();
+
+                if (!canRun) {
+                  message.warning("请先上线任务，再执行运行操作");
+                }
+              }}
+            >
+              <PlayCircleOutlined />
+              运行
+            </button>
           </Popconfirm>
         )}
 
@@ -256,32 +308,51 @@ const ActionColumn: React.FC<ActionColumnProps> = ({
             title="任务下线"
             description={
               <div style={{ marginRight: 12 }}>
-                下线后任务将不会再被调度触发，<br />确认下线该任务吗？
+                下线后任务将不会再被调度触发，
+                <br />
+                确认下线该任务吗？
               </div>
             }
             okText="确认"
             cancelText="取消"
             onConfirm={handleOffline}
           >
-            <a style={{ fontWeight: 500 }}>下线</a>
+            <button
+              type="button"
+              className={secondaryActionClass}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <CloudDownloadOutlined />
+              下线
+            </button>
           </Popconfirm>
         ) : (
           <Popconfirm
             title="任务上线"
             description={
               <div style={{ marginRight: 12 }}>
-                上线后任务将恢复可运行状态，并同步恢复调度，<br />确认上线该任务吗？
+                上线后任务将恢复可运行状态，并同步恢复调度，
+                <br />
+                确认上线该任务吗？
               </div>
             }
             okText="确认"
             cancelText="取消"
             onConfirm={handleOnline}
           >
-            <a style={{ fontWeight: 500 }}>上线</a>
+            <button
+              type="button"
+              className={secondaryActionClass}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <CloudUploadOutlined />
+              上线
+            </button>
           </Popconfirm>
         )}
 
         <Dropdown
+          trigger={["click"]}
           menu={{
             items: menuItems.map((menuItem) => ({
               ...menuItem,
@@ -289,17 +360,18 @@ const ActionColumn: React.FC<ActionColumnProps> = ({
             })),
           }}
         >
-          <a style={{ fontWeight: 500 }}>
-            {intl.formatMessage({
-              id: "pages.job.action.more",
-              defaultMessage: "More",
-            })}{" "}
-            <DownOutlined style={{ fontSize: 12 }} />
-          </a>
+          <button
+            type="button"
+            className={moreActionClass}
+            onClick={(event) => event.stopPropagation()}
+          >
+            更多
+            <DownOutlined style={{ fontSize: 10 }} />
+          </button>
         </Dropdown>
-
-        <TaskViewModal ref={ref} />
       </Space>
+
+      <TaskViewModal ref={ref} />
     </>
   );
 };

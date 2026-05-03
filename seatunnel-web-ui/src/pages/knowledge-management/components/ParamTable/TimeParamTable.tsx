@@ -1,8 +1,8 @@
-import React from "react";
 import { Empty, Space, Table, Tag, Typography } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { MenuKey, ParamItem, TimeParamItem } from "../../types";
+import React from "react";
 import { BLUE, BORDER_COLOR } from "../../constants/ui";
+import { MenuKey, ParamItem, TimeParamItem } from "../../types";
 
 const { Text } = Typography;
 
@@ -23,6 +23,18 @@ const sourceTextMap: Record<string, string> = {
 const valueTypeTextMap: Record<string, string> = {
   FIXED: "固定值",
   DYNAMIC: "动态表达式",
+};
+
+const actionStyle: React.CSSProperties = {
+  fontSize: 13,
+  fontWeight: 500,
+  cursor: "pointer",
+  padding: "4px 10px",
+  borderRadius: 8,
+  border: "none",
+  outline: "none",
+  transition: "all 180ms cubic-bezier(0.22, 1, 0.36, 1)",
+  transform: "translateY(0) scale(1)",
 };
 
 const TimeParamTable: React.FC<Props> = ({
@@ -58,7 +70,8 @@ const TimeParamTable: React.FC<Props> = ({
                 style={{
                   marginInlineEnd: 0,
                   borderRadius: 999,
-                  color: item.variableSource === "SYSTEM" ? "#6941C6" : "#3478f6",
+                  color:
+                    item.variableSource === "SYSTEM" ? "#6941C6" : "#3478f6",
                   background:
                     item.variableSource === "SYSTEM" ? "#F4F3FF" : "#EFF6FF",
                   borderColor:
@@ -168,18 +181,35 @@ const TimeParamTable: React.FC<Props> = ({
       fixed: "right",
       render: (_: unknown, record: ParamItem) => {
         const item = record as TimeParamItem;
+        console.log(item);
         const isSystem = item.variableSource === "SYSTEM";
 
         return (
           <Space size={16}>
-            <a onClick={() => onEdit(record)} style={{ color: BLUE }}>
+            <button
+              type="button"
+              className="connector-param-table__action connector-param-table__action--edit"
+              onClick={() => onEdit(record)}
+              style={{
+                ...actionStyle,
+                color: BLUE,
+                background: "#F5F8FF",
+              }}
+            >
               {isSystem ? "查看" : "编辑"}
-            </a>
+            </button>
 
             {!isSystem && (
-              <a onClick={() => onDelete(record)} style={{ color: "#ff4d4f" }}>
-                删除
-              </a>
+              <button
+                type="button"
+                className="connector-param-table__action connector-param-table__action--edit"
+                onClick={() => onDelete(record)}
+                style={{
+                  ...actionStyle,
+                  color: "#D92D20",
+                  background: "#FEF3F2",
+                }}
+              >删除</button>
             )}
           </Space>
         );

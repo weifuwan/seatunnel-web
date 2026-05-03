@@ -1,10 +1,20 @@
-import React, { useMemo, useState } from "react";
 import { ClockCircleOutlined } from "@ant-design/icons";
-import { Alert, Button, Form, Input, Modal, Radio, Select, Switch, message } from "antd";
-import { FormValues, MenuKey, ParamItem, TimeParamItem } from "../../types";
-import { TEXT_SECONDARY } from "../../constants/ui";
-import { timeFormatOptions } from "../../constants/options";
+import {
+  Alert,
+  Button,
+  Form,
+  Input,
+  Modal,
+  Radio,
+  Select,
+  Switch,
+  message,
+} from "antd";
+import React, { useMemo, useState } from "react";
 import { previewTimeVariable } from "../../api";
+import { timeFormatOptions } from "../../constants/options";
+import { TEXT_SECONDARY } from "../../constants/ui";
+import { FormValues, MenuKey, ParamItem, TimeParamItem } from "../../types";
 
 const { TextArea } = Input;
 
@@ -27,7 +37,8 @@ const TimeParamModal: React.FC<Props> = ({
   onSubmit,
 }) => {
   const isEdit = !!editingRecord;
-  const timeRecord = editingRecord?.type === "time" ? (editingRecord as TimeParamItem) : null;
+  const timeRecord =
+    editingRecord?.type === "time" ? (editingRecord as TimeParamItem) : null;
   const isSystem = timeRecord?.variableSource === "SYSTEM";
 
   const [previewLoading, setPreviewLoading] = useState(false);
@@ -127,6 +138,20 @@ const TimeParamModal: React.FC<Props> = ({
           >
             保存前建议先预览一次结果，确认变量会按预期替换到任务配置中
           </div>
+
+          <div className="flex items-center gap-2">
+            <Button onClick={onCancel} style={{ borderRadius: 16 }}>
+              取消
+            </Button>
+            <Button
+              type="primary"
+              loading={submitting}
+              style={{ borderRadius: 16 }}
+              onClick={onSubmit}
+            >
+              保存
+            </Button>
+          </div>
         </div>
       }
     >
@@ -222,7 +247,10 @@ const TimeParamModal: React.FC<Props> = ({
               name="timeFormat"
               rules={[{ required: true, message: "请选择时间格式" }]}
             >
-              <Select placeholder="请选择时间格式" options={timeFormatOptions} />
+              <Select
+                placeholder="请选择时间格式"
+                options={timeFormatOptions}
+              />
             </Form.Item>
 
             {valueType === "FIXED" ? (
@@ -283,9 +311,7 @@ const TimeParamModal: React.FC<Props> = ({
                     {previewValue}
                   </div>
                 ) : (
-                  <div className="text-[13px] text-[#98A2B3]">
-                    暂无预览结果
-                  </div>
+                  <div className="text-[13px] text-[#98A2B3]">暂无预览结果</div>
                 )}
               </div>
             </div>

@@ -99,8 +99,11 @@ public class DataSourceCatalogServiceImpl implements DataSourceCatalogService {
         BaseConnectionParam connectionParam = buildConnectionParam(dataSource);
 
         try {
+            Map<String, Object> columnRequestBody =
+                    renderSqlQueryIfNecessary(dataSource, requestBody);
+
             List<DataSourceTableColumn> columns =
-                    getJdbcCatalog(dataSource, connectionParam).listColumns(requestBody);
+                    getJdbcCatalog(dataSource, connectionParam).listColumns(columnRequestBody);
 
             return columns.stream()
                     .map(column -> {

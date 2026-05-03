@@ -226,6 +226,7 @@ export function useSourcePanelLogic({
     },
     [updateNode]
   );
+ const scheduleParamsList = scheduleConfig?.paramsList || [];
 
   const resolveSourceOutputSchema = useCallback(async () => {
     const currentDataSourceId = dataSourceId;
@@ -260,6 +261,7 @@ export function useSourcePanelLogic({
         read_mode: currentReadMode,
         table_path: currentReadMode === "table" ? currentTable : "",
         query: currentReadMode === "sql" ? sqlText : "",
+        paramsList: scheduleConfig?.paramsList || [],
       };
 
       const resp = await dataSourceCatalogApi.listColumn(
@@ -303,14 +305,13 @@ export function useSourcePanelLogic({
         schemaError: "字段解析失败",
       });
 
-      message.error("字段解析失败");
       return [];
     } finally {
       setTableLoading(false);
     }
-  }, [dataSourceId, readMode, table, sql, updateNode]);
+  }, [dataSourceId, readMode, table, sql, updateNode, scheduleParamsList]);
 
-  const scheduleParamsList = scheduleConfig?.paramsList || [];
+ 
 
   const handlePreview = useCallback(async () => {
     if (!dataSourceId) {

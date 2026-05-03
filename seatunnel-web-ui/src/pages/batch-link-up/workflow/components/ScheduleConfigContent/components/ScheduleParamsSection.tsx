@@ -102,14 +102,14 @@ const ScheduleParamsSection: React.FC<Props> = ({ value, onChange }) => {
 
   // Preview content inside Popover
   const previewContent = (
-    <div className="p-4 max-w-xs min-w-[200px] rounded-lg  bg-white">
+    <div className="max-w-xs min-w-[200px] rounded-lg  bg-white" style={{padding: "4px 0"}}>
       <p className="mb-2 text-sm font-semibold text-gray-700">
         🌟 <span className="text-blue-600">时间变量预览</span>{" "}
         帮助您快速理解时间表达式的效果！
       </p>
       {previewResult ? (
         <p className="text-sm text-green-500">
-          🕒 <span className="font-semibold">预览结果:</span> {previewResult} 🎉
+          🕒 <span className="font-semibold">预览结果:</span> {previewResult} 
         </p>
       ) : (
         <div className="flex items-center space-x-2">

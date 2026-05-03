@@ -99,6 +99,10 @@ public class JobInstanceVO {
 
     private Date lastScheduleTime;
 
+    private Long sourceDatasourceId;
+
+    private Long sinkDatasourceId;
+
     private Date nextScheduleTime;
 
     /**

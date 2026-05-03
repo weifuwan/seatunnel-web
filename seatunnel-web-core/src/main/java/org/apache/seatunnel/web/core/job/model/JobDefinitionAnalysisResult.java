@@ -22,6 +22,16 @@ public class JobDefinitionAnalysisResult {
     private String sinkType;
 
     /**
+     * Source datasource id
+     */
+    private Long sourceDatasourceId;
+
+    /**
+     * Sink datasource id
+     */
+    private Long sinkDatasourceId;
+
+    /**
      * Source table map json
      */
     private String sourceTable;
@@ -30,5 +40,4 @@ public class JobDefinitionAnalysisResult {
      * Sink table map json
      */
     private String sinkTable;
-
 }

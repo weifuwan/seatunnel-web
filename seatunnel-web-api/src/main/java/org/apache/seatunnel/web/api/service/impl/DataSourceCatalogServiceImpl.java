@@ -137,7 +137,17 @@ public class DataSourceCatalogServiceImpl implements DataSourceCatalogService {
             Map<String, Object> previewRequestBody =
                     renderSqlQueryIfNecessary(dataSource, requestBody);
 
-            return getJdbcCatalog(dataSource, connectionParam).getTop20Data(previewRequestBody);
+            JdbcCatalog jdbcCatalog = getJdbcCatalog(dataSource, connectionParam);
+
+            QueryResult queryResult = jdbcCatalog.getTop20Data(previewRequestBody);
+            Integer total = jdbcCatalog.count(previewRequestBody);
+
+            if (queryResult == null) {
+                queryResult = new QueryResult();
+            }
+
+            queryResult.setTotal(total);
+            return queryResult;
         } catch (ServiceException e) {
             throw e;
         } catch (Exception e) {

@@ -79,7 +79,7 @@ export const dataSourceCatalogApi = {
         return HttpUtils.post(`${apiPrefixCatalog}/count/${datasourceId}`, requestBody);
     },
 
-    listColumn: (id: string, requestBody: any): Promise<{ code: number; data: any[]; message?: string }> => {
+    listColumn: (id: any, requestBody: any): Promise<{ code: number; data: any[]; message?: string }> => {
         return HttpUtils.post(`${apiPrefixCatalog}/column/${id}`, requestBody);
     },
 

@@ -28,6 +28,8 @@ public class JobDefinitionAssembler {
                 .jobVersion(1)
                 .sourceType(analysis.getSourceType())
                 .sinkType(analysis.getSinkType())
+                .sourceDatasourceId(analysis.getSourceDatasourceId())
+                .sinkDatasourceId(analysis.getSinkDatasourceId())
                 .sourceTable(analysis.getSourceTable())
                 .sinkTable(analysis.getSinkTable())
                 .build();
@@ -52,6 +54,8 @@ public class JobDefinitionAssembler {
         entity.setJobVersion(nextVersion);
         entity.setSourceType(analysis.getSourceType());
         entity.setSinkType(analysis.getSinkType());
+        entity.setSourceDatasourceId(analysis.getSourceDatasourceId());
+        entity.setSinkDatasourceId(analysis.getSinkDatasourceId());
         entity.setSourceTable(analysis.getSourceTable());
         entity.setSinkTable(analysis.getSinkTable());
         entity.setUpdateTime(now);

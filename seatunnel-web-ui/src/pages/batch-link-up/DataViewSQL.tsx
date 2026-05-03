@@ -10,11 +10,14 @@ const QualityDetail = forwardRef((_: any, ref: any) => {
   const [visible, setVisible] = useState<boolean>(false);
   const [data, setData] = useState<any[]>([]);
   const [columns, setColumns] = useState<any[]>([]);
+  const [total, setTotal] = useState<number>(0);
 
   const onOpen = (status: boolean, content: any) => {
-    const { columns, data } = content?.data || {};
+    const { columns, data, total } = content?.data || {};
+
     setColumns(columns || []);
     setData(data || []);
+    setTotal(Number(total || 0));
     setVisible(status);
   };
 
@@ -50,7 +53,8 @@ const QualityDetail = forwardRef((_: any, ref: any) => {
               <div className="quality-detail-drawer__subtext">
                 {intl.formatMessage({
                   id: "pages.quality.preview.desc",
-                  defaultMessage: "Preview sample rows for the current query result",
+                  defaultMessage:
+                    "Preview sample rows for the current query result",
                 })}
               </div>
             </div>
@@ -61,7 +65,10 @@ const QualityDetail = forwardRef((_: any, ref: any) => {
               {`${columns?.length || 0} Columns`}
             </Tag>
             <Tag className="quality-detail-drawer__tag">
-              {`${data?.length || 0} Rows`}
+              {`${data?.length || 0} Preview Rows`}
+            </Tag>
+            <Tag className="quality-detail-drawer__tag quality-detail-drawer__tag--total">
+              {`${total} Total Rows`}
             </Tag>
           </div>
         </div>
@@ -76,7 +83,8 @@ const QualityDetail = forwardRef((_: any, ref: any) => {
         <div className="quality-detail-drawer__tip">
           <InfoCircleFilled className="quality-detail-drawer__tip-icon" />
           <span className="quality-detail-drawer__tip-text">
-            仅展示当前读取配置下的样例数据，用于快速预览与核对
+            仅展示当前读取配置下的样例数据，共 {total} 条，当前预览{" "}
+            {data?.length || 0} 条
           </span>
         </div>
 

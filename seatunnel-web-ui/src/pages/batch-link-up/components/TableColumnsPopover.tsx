@@ -1,12 +1,10 @@
 import React, { useState } from "react";
 import { Popover, Table, message } from "antd";
-import { TableOutlined } from "@ant-design/icons";
-
-import "../index.less"
+import "../index.less";
 import { dataSourceCatalogApi } from "@/pages/data-source/service";
 
 interface TableColumnsPopoverProps {
-  sourceId: string;
+  sourceId?: string | number;
   table: string;
   type: "source" | "sink";
   children: React.ReactNode;
@@ -44,7 +42,6 @@ const TABLE_COLUMNS = [
     dataIndex: "isNullable",
     key: "isNullable",
     width: "18%",
-    ellipsis: true,
   },
   {
     title: "Key",
@@ -61,44 +58,53 @@ const TableColumnsPopover: React.FC<TableColumnsPopoverProps> = ({
   children,
 }) => {
   const [columns, setColumns] = useState<any[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState(false);
 
   const fetchColumns = async () => {
+    if (!sourceId) {
+      message.warning("DatasourceId is missing");
+      return;
+    }
+
     try {
       setLoading(true);
+
       const params = {
         taskExecuteType: "SINGLE_TABLE",
         table_path: table,
         query: "",
+        read_mode: "table"
       };
-      const data = await dataSourceCatalogApi.listColumn(sourceId, params);
-      if (data?.code === 0) {
-        setColumns(data?.data || []);
+
+      const res = await dataSourceCatalogApi.listColumn(sourceId, params);
+
+      if (res?.code === 0) {
+        setColumns(res.data || []);
       } else {
-       
+        
       }
-    } catch (error) {
+    } catch (e) {
+      message.error("Load columns failed");
     } finally {
       setLoading(false);
     }
   };
 
-  const popoverContent = (
-    <div style={{ width: "60vh" }}>
-      <Table
-        dataSource={columns}
-        columns={TABLE_COLUMNS}
-        pagination={false}
-        loading={loading}
-        bordered
-        scroll={{ y: "35vh" }}
-      />
-    </div>
-  );
-
   return (
     <Popover
-      content={popoverContent}
+      content={
+        <div style={{ width: "60vh" }}>
+          <Table
+            rowKey="fieldName"
+            dataSource={columns}
+            columns={TABLE_COLUMNS}
+            pagination={false}
+            loading={loading}
+            bordered
+            scroll={{ y: "35vh" }}
+          />
+        </div>
+      }
       title="Column Info"
       trigger="click"
       placement={type === "source" ? "bottomLeft" : "bottomRight"}

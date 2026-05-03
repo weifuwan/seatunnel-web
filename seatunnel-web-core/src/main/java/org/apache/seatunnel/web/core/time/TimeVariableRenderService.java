@@ -10,5 +10,7 @@ public interface TimeVariableRenderService {
 
     TimeVariableRenderVO render(TimeVariableRenderReq req);
 
+    String renderContent(String content);
+
     List<TimeVariable> getAllEnabledVariables();
 }

@@ -22,7 +22,6 @@ const ScheduleParamsSection: React.FC<Props> = ({ value, onChange }) => {
 
   useEffect(() => {
     if (value?.paramsList) {
-      console.log(value?.paramsList ?? []);
       setDataSource(value?.paramsList ?? []);
     }
   }, [value?.paramsList]);
@@ -75,6 +74,7 @@ const ScheduleParamsSection: React.FC<Props> = ({ value, onChange }) => {
 
   const handleDelete = (key: string) => {
     const newList = dataSource.filter((item: any) => item.key !== key);
+    console.log(newList);
     onChange?.({
       paramsList: newList,
     });
@@ -135,12 +135,12 @@ const ScheduleParamsSection: React.FC<Props> = ({ value, onChange }) => {
             content={previewContent} // Use the previewContent here
             title="参数预览"
             trigger="click"
-            visible={isPopoverVisible} // Control visibility
-            onVisibleChange={(visible) => setPopoverVisible(visible)} // Toggle visibility
+            visible={isPopoverVisible} 
+            onVisibleChange={(visible) => setPopoverVisible(visible)} 
           >
             <Link
               className="inline-flex h-7 items-center justify-center gap-1 rounded-[10px] border px-2.5 text-[13px] font-medium"
-              onClick={handlePreview} // Call previewTimeVariable when clicked
+              onClick={handlePreview} 
             >
               参数预览
             </Link>

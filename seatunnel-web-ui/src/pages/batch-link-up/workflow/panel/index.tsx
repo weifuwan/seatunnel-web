@@ -23,6 +23,7 @@ interface WorkflowPanelProps {
     pluginInput?: string;
     pluginOutput?: string;
   };
+  scheduleConfig: any;
 }
 
 const WorkflowPanel: FC<WorkflowPanelProps> = ({
@@ -34,6 +35,7 @@ const WorkflowPanel: FC<WorkflowPanelProps> = ({
   refreshNodeSchema,
   refreshDownstreamSchemas,
   syncTransformPluginConfig,
+  scheduleConfig
 }) => {
   const nodeType = selectedNode?.data?.nodeType;
 
@@ -45,6 +47,7 @@ const WorkflowPanel: FC<WorkflowPanelProps> = ({
         selectedNode={selectedNode}
         onClose={onClose}
         onNodeDataChange={onNodeDataChange}
+        scheduleConfig={scheduleConfig}
       />
     );
   }

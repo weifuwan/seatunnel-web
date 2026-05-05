@@ -115,7 +115,7 @@ public class ReflectionFormGenerator {
             fields.add(config);
         }
 
-        /**
+        /*
          * Sort fields according to the configured order.
          */
         fields.sort(Comparator.comparing(FormFieldConfig::getOrder));

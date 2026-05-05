@@ -1,6 +1,11 @@
 import { useIntl } from "@umijs/max";
 import { Button, Form, message, Modal } from "antd";
-import React, { forwardRef, useImperativeHandle, useRef, useState } from "react";
+import React, {
+  forwardRef,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from "react";
 import DynamicDataSourceForm from "./DynamicDataSourceForm";
 import DatabaseIcons from "../icon/DatabaseIcons";
 import { dataSourceGroupList } from "../constants";
@@ -21,6 +26,7 @@ import type {
 
 const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
   const intl = useIntl();
+
   const [basicForm] = Form.useForm<DataSourceFormValues>();
   const [configForm] = Form.useForm();
 
@@ -31,24 +37,25 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
   const [currentRecord, setCurrentRecord] = useState<DataSourceRecord>();
   const [selectedDbType, setSelectedDbType] = useState("");
   const [showFormStep, setShowFormStep] = useState(false);
-
-  /**
-   * 新增分支：
-   * 当外部已经传入 dbType 时，直接进入配置表单。
-   * 这种场景没有类型选择页，所以不应该显示“上一步”。
-   */
   const [hideBackButton, setHideBackButton] = useState(false);
 
   const successCallbackRef = useRef<(() => void) | undefined>();
 
-  const handleClose = () => {
-    setOpen(false);
+  const isCreateMode = operateType === ("CREATE" as DataSourceOperateType);
+  const isEditMode = operateType === ("EDIT" as DataSourceOperateType);
+
+  const resetModalState = () => {
     setCurrentRecord(undefined);
     setSelectedDbType("");
     setShowFormStep(false);
     setHideBackButton(false);
     basicForm.resetFields();
     configForm.resetFields();
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+    resetModalState();
   };
 
   const initializeEditForm = (record: DataSourceRecord) => {
@@ -69,22 +76,22 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
       dbType,
       hideBack,
     }: DataSourceModalOpenPayload) => {
+      /**
+       * 每次打开前，先清理上一次弹窗状态。
+       * 这里非常关键，避免 MySQL / PostgreSQL 动态表单互相污染。
+       */
+      resetModalState();
+
       setOpen(true);
       setOperateType(nextOperateType);
       setCurrentRecord(nextRecord);
       successCallbackRef.current = onSuccess;
 
       /**
-       * 每次打开前先重置表单，避免上一次弹窗状态污染。
+       * 编辑模式：保持原来的逻辑。
+       * 编辑时直接进入表单页，不显示“上一步”。
        */
-      basicForm.resetFields();
-      configForm.resetFields();
-
-      /**
-       * 编辑模式：保持原来的逻辑不变。
-       * 编辑天然没有“选择类型”这一步，所以不显示“上一步”。
-       */
-      if (nextOperateType === "EDIT" && nextRecord) {
+      if (nextOperateType === ("EDIT" as DataSourceOperateType) && nextRecord) {
         setSelectedDbType(nextRecord.dbType || "");
         setShowFormStep(true);
         setHideBackButton(true);
@@ -94,9 +101,9 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
 
       /**
        * 创建模式 + 外部传入 dbType：
-       * 直接进入动态表单页。
+       * 直接进入动态表单页，不走类型选择页。
        */
-      if (nextOperateType === "CREATE" && dbType) {
+      if (nextOperateType === ("CREATE" as DataSourceOperateType) && dbType) {
         setSelectedDbType(dbType);
         setShowFormStep(true);
         setHideBackButton(Boolean(hideBack));
@@ -105,7 +112,7 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
 
       /**
        * 普通创建模式：
-       * 仍然先进入数据源类型选择页。
+       * 先进入数据源类型选择页。
        */
       setSelectedDbType("");
       setShowFormStep(false);
@@ -115,6 +122,9 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
   }));
 
   const handleSelectDbType = (dbType: string) => {
+    basicForm.resetFields();
+    configForm.resetFields();
+
     setSelectedDbType(dbType);
     setShowFormStep(true);
     setHideBackButton(false);
@@ -159,7 +169,7 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
         return;
       }
 
-      message.error(response.message);
+      message.error(response.message || response.msg || "连接测试失败");
     } catch (error: any) {
       if (error?.errorFields) return;
       message.error(error?.message || "连接测试失败");
@@ -170,22 +180,23 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
     try {
       const basicValues = await basicForm.validateFields();
       const connectionValues = await configForm.validateFields();
+
       const payload = buildSubmitPayload(
         selectedDbType,
         basicValues,
         connectionValues
       );
 
-      if (operateType === "CREATE") {
+      if (isCreateMode) {
         const response = await createDataSource(payload);
 
         if (response.code !== 0) {
-          message.error(response.message);
+          message.error(response.message || response.msg || "创建数据源失败");
           return;
         }
       }
 
-      if (operateType === "EDIT") {
+      if (isEditMode) {
         if (!currentRecord?.id) {
           message.error(
             intl.formatMessage({
@@ -199,7 +210,7 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
         const response = await updateDataSource(currentRecord.id, payload);
 
         if (response.code !== 0) {
-          message.error(response.message);
+          message.error(response.message || response.msg || "更新数据源失败");
           return;
         }
       }
@@ -219,9 +230,8 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
     }
   };
 
-  const isCreateMode = operateType === "CREATE";
   const modalActionText =
-    operateType === "EDIT"
+    operateType === ("EDIT" as DataSourceOperateType)
       ? intl.formatMessage({
           id: "pages.datasource.modal.title.edit",
           defaultMessage: "Edit",
@@ -389,6 +399,7 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
     >
       {showFormStep ? (
         <DynamicDataSourceForm
+          key={`${operateType}-${selectedDbType}-${currentRecord?.id || "create"}`}
           dbType={selectedDbType}
           form={basicForm}
           configForm={configForm}

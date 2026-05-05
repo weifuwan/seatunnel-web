@@ -32,7 +32,6 @@ public class MySQLConnectionParam extends BaseConnectionParam {
             order = 6,
             defaultValue = "mysql-connector-java-8.0.29.jar"
     )
-
     protected String driverLocation;
 
     @FormField(label = "Port", required = true, order = 2, defaultValue = "3306", type = FieldType.NUMBER)

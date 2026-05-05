@@ -32,6 +32,13 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
   const [selectedDbType, setSelectedDbType] = useState("");
   const [showFormStep, setShowFormStep] = useState(false);
 
+  /**
+   * 新增分支：
+   * 当外部已经传入 dbType 时，直接进入配置表单。
+   * 这种场景没有类型选择页，所以不应该显示“上一步”。
+   */
+  const [hideBackButton, setHideBackButton] = useState(false);
+
   const successCallbackRef = useRef<(() => void) | undefined>();
 
   const handleClose = () => {
@@ -39,6 +46,7 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
     setCurrentRecord(undefined);
     setSelectedDbType("");
     setShowFormStep(false);
+    setHideBackButton(false);
     basicForm.resetFields();
     configForm.resetFields();
   };
@@ -58,17 +66,50 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
       operateType: nextOperateType,
       currentRecord: nextRecord,
       onSuccess,
+      dbType,
+      hideBack,
     }: DataSourceModalOpenPayload) => {
       setOpen(true);
       setOperateType(nextOperateType);
       setCurrentRecord(nextRecord);
       successCallbackRef.current = onSuccess;
 
+      /**
+       * 每次打开前先重置表单，避免上一次弹窗状态污染。
+       */
+      basicForm.resetFields();
+      configForm.resetFields();
+
+      /**
+       * 编辑模式：保持原来的逻辑不变。
+       * 编辑天然没有“选择类型”这一步，所以不显示“上一步”。
+       */
       if (nextOperateType === "EDIT" && nextRecord) {
         setSelectedDbType(nextRecord.dbType || "");
         setShowFormStep(true);
+        setHideBackButton(true);
         initializeEditForm(nextRecord);
+        return;
       }
+
+      /**
+       * 创建模式 + 外部传入 dbType：
+       * 直接进入动态表单页。
+       */
+      if (nextOperateType === "CREATE" && dbType) {
+        setSelectedDbType(dbType);
+        setShowFormStep(true);
+        setHideBackButton(Boolean(hideBack));
+        return;
+      }
+
+      /**
+       * 普通创建模式：
+       * 仍然先进入数据源类型选择页。
+       */
+      setSelectedDbType("");
+      setShowFormStep(false);
+      setHideBackButton(false);
     },
     close: handleClose,
   }));
@@ -76,11 +117,13 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
   const handleSelectDbType = (dbType: string) => {
     setSelectedDbType(dbType);
     setShowFormStep(true);
+    setHideBackButton(false);
   };
 
   const handleBackToTypeSelection = () => {
     setShowFormStep(false);
     setSelectedDbType("");
+    setHideBackButton(false);
     basicForm.resetFields();
     configForm.resetFields();
   };
@@ -118,7 +161,8 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
 
       message.error(response.message);
     } catch (error: any) {
-      
+      if (error?.errorFields) return;
+      message.error(error?.message || "连接测试失败");
     }
   };
 
@@ -155,7 +199,7 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
         const response = await updateDataSource(currentRecord.id, payload);
 
         if (response.code !== 0) {
-          
+          message.error(response.message);
           return;
         }
       }
@@ -166,11 +210,12 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
           defaultMessage: "Success",
         })
       );
+
       handleClose();
       successCallbackRef.current?.();
     } catch (error: any) {
       if (error?.errorFields) return;
-      
+      message.error(error?.message || "保存失败");
     }
   };
 
@@ -205,7 +250,7 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
           background: "#F8FAFC",
           maxHeight: "72vh",
           overflowY: "auto",
-          minHeight: "60vh"
+          minHeight: "60vh",
         },
         footer: {
           padding: "14px 24px 18px",
@@ -276,7 +321,9 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
                     lineHeight: "20px",
                   }}
                 >
-                  {selectedDbType ? `当前类型：${selectedDbType}` : "请选择数据源类型"}
+                  {selectedDbType
+                    ? `当前类型：${selectedDbType}`
+                    : "请选择数据源类型"}
                 </div>
               </div>
             </div>
@@ -294,14 +341,21 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
         >
           <div>
             {showFormStep ? (
-              isCreateMode ? (
+              isCreateMode && !hideBackButton ? (
                 <Button
                   onClick={handleBackToTypeSelection}
                   style={{ height: 32, borderRadius: 16 }}
                 >
                   上一步
                 </Button>
-              ) : null
+              ) : (
+                <Button
+                  onClick={handleClose}
+                  style={{ height: 32, borderRadius: 16 }}
+                >
+                  取消
+                </Button>
+              )
             ) : (
               <Button
                 onClick={handleClose}

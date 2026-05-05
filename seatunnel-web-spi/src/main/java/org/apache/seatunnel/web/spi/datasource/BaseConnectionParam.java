@@ -19,7 +19,7 @@ public abstract class BaseConnectionParam implements ConnectionParam {
     @FormField(label = "端口号", required = true, placeholder = "3306", type = FieldType.NUMBER, order = 2)
     private String port;
 
-    @FormField(label = "数据库", required = true, order = 3)
+    @FormField(label = "数据库", required = true, order = 3, defaultValue = "")
     protected String database;
 
     @FormField(label = "用户名", required = true, order = 4)

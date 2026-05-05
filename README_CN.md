@@ -1,4 +1,10 @@
 <img width="1920" height="945" alt="image" src="https://github.com/user-attachments/assets/901d765c-cbd7-4f39-ae3a-de6716ae09f2" />
+<p align="center">
+<a href="http://111.230.213.87:8000" target="_blank">Live Demo</a>｜
+<a href="https://https://doc.seatunnel-web.com//">中文文档</a>
+</p>
+
+
 ## SeaTunnel Web
 
 **SeaTunnel Web** 是一个面向 **Apache SeaTunnel** 的现代化 Web 管理平台，用于简化数据集成任务的创建、配置和运行管理。

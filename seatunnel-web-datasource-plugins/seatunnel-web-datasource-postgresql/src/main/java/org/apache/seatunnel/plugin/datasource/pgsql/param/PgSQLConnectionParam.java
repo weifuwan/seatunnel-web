@@ -31,10 +31,17 @@ public class PgSQLConnectionParam extends BaseConnectionParam {
     @FormField(label = "模式", order = 4, required = true, defaultValue = "public", placeholder = "Please enter the schema name")
     protected String schemaName;
 
+    @FormField(
+            label = "驱动Jar包",
+            order = 6,
+            defaultValue = "postgresql-42.5.1.jar"
+    )
+    protected String driverLocation;
+
     /**
      * Connection parameters
      */
-    @FormField(label = "Connection Parameters", order = 7, type = FieldType.CUSTOM_SELECT,
+    @FormField(label = "连接参数", order = 7, type = FieldType.CUSTOM_SELECT,
             defaultValue = "[{\"key\":\"ssl\",\"value\":\"false\"}]")
     protected List<KeyValuePair> other;
 

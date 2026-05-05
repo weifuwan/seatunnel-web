@@ -56,6 +56,17 @@ export interface DataSourceModalOpenPayload {
   operateType: DataSourceOperateType;
   currentRecord?: DataSourceRecord;
   onSuccess?: () => void;
+   /**
+   * 外部创建入口已确定 dbType 时传入。
+   * 传入后弹窗会跳过数据源类型选择页。
+   */
+  dbType?: string;
+
+  /**
+   * 是否隐藏“上一步”按钮。
+   * 从任务配置页创建来源/去向数据源时建议为 true。
+   */
+  hideBack?: boolean;
 }
 
 export interface DataSourceModalRef {

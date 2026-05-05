@@ -1,11 +1,9 @@
 package org.apache.seatunnel.plugin.datasource.pgsql.param;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.seatunnel.web.common.KeyValuePair;
-import org.apache.seatunnel.web.common.deserializer.KeyValuePairListDeserializer;
 import org.apache.seatunnel.web.spi.datasource.BaseConnectionParam;
 import org.apache.seatunnel.web.spi.form.FieldType;
 import org.apache.seatunnel.web.spi.form.FormField;
@@ -21,31 +19,25 @@ import java.util.Map;
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class PgSQLConnectionParam extends BaseConnectionParam {
-
-    /**
-     * Database Host
-     */
-    @FormField(label = "Host", order = 2, placeholder = "Please enter the host")
-    protected String host;
-
     /**
      * Database Port
      */
-    @FormField(label = "Port", defaultValue = "5432", order = 3, type = FieldType.NUMBER, placeholder = "Please enter the port")
+    @FormField(label = "端口号", defaultValue = "5432", required = true, order = 2, type = FieldType.NUMBER, placeholder = "Please enter the port")
     protected String port;
+
+    /**
+     * Schema Name
+     */
+    @FormField(label = "模式", order = 4, required = true, defaultValue = "public", placeholder = "Please enter the schema name")
+    protected String schemaName;
 
     /**
      * Connection parameters
      */
     @FormField(label = "Connection Parameters", order = 7, type = FieldType.CUSTOM_SELECT,
-            defaultValue = "[{\"key\":\"ssl\",\"value\":\"false\"},{\"key\":\"stringtype\",\"value\":\"unspecified\"}]")
+            defaultValue = "[{\"key\":\"ssl\",\"value\":\"false\"}]")
     protected List<KeyValuePair> other;
 
-    /**
-     * Schema Name
-     */
-    @FormField(label = "Schema", order = 9, defaultValue = "public", placeholder = "Please enter the schema name")
-    protected String schemaName;
 
     /**
      * Convert other parameters to Map

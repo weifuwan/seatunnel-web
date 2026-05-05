@@ -1,16 +1,23 @@
 import { seatunnelClientApi } from "@/pages/client/api";
 import AddClientModal from "@/pages/client/components/AddClientModal";
+import AddOrEditDataSourceModal from "@/pages/data-source/components/AddOrEditDataSourceModal";
 import { fetchDataSourceOptions } from "@/pages/data-source/service";
+import {
+  DataSourceModalRef,
+  DataSourceOperateType,
+} from "@/pages/data-source/types";
 import {
   CheckCircleOutlined,
   CloseCircleOutlined,
   LoadingOutlined,
 } from "@ant-design/icons";
 import { Button, Form, message, Select } from "antd";
+import { PlusCircleIcon } from "lucide-react";
 import React, {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { generateDataSourceOptions } from "../../DataSourceSelect";
@@ -202,6 +209,8 @@ const ClientLinkSection: React.FC<Props> = ({
   const [form] = Form.useForm();
   const [clientForm] = Form.useForm();
 
+  const modalRef = useRef<DataSourceModalRef>(null);
+
   const dataSourceTypeOptions = useMemo(() => generateDataSourceOptions(), []);
 
   const [sourceDataSources, setSourceDataSources] = useState<any[]>([]);
@@ -247,6 +256,60 @@ const ClientLinkSection: React.FC<Props> = ({
     }
   }, []);
 
+  const loadSourceOptions = useCallback(
+    async (dbType?: string) => {
+      if (!dbType) {
+        setSourceDataSources([]);
+        setSourceDataSourceId(undefined);
+        form.setFieldValue("sourceId", undefined);
+        return [];
+      }
+
+      try {
+        setSourceLoading(true);
+        const res = await fetchDataSourceOptions(dbType);
+        const nextData = Array.isArray(res?.data) ? res.data : [];
+        setSourceDataSources(nextData);
+        return nextData;
+      } catch (error) {
+        console.error("加载来源数据源失败:", error);
+        setSourceDataSources([]);
+        message.error("加载来源数据源失败");
+        return [];
+      } finally {
+        setSourceLoading(false);
+      }
+    },
+    [form, setSourceDataSourceId]
+  );
+
+  const loadTargetOptions = useCallback(
+    async (dbType?: string) => {
+      if (!dbType) {
+        setTargetDataSources([]);
+        setTargetDataSourceId(undefined);
+        form.setFieldValue("targetId", undefined);
+        return [];
+      }
+
+      try {
+        setTargetLoading(true);
+        const res = await fetchDataSourceOptions(dbType);
+        const nextData = Array.isArray(res?.data) ? res.data : [];
+        setTargetDataSources(nextData);
+        return nextData;
+      } catch (error) {
+        console.error("加载目标数据源失败:", error);
+        setTargetDataSources([]);
+        message.error("加载目标数据源失败");
+        return [];
+      } finally {
+        setTargetLoading(false);
+      }
+    },
+    [form, setTargetDataSourceId]
+  );
+
   const handleCreateClient = async () => {
     try {
       const values = await clientForm.validateFields();
@@ -265,13 +328,6 @@ const ClientLinkSection: React.FC<Props> = ({
 
       const options = await loadClientOptions();
 
-      /**
-       * 优先自动选中新建的 Client。
-       * 这里兼容几种常见后端返回：
-       * 1. res.data.id
-       * 2. res.data.value
-       * 3. res.data 直接就是 id
-       */
       const newClientId =
         res?.data?.id ??
         res?.data?.value ??
@@ -291,10 +347,6 @@ const ClientLinkSection: React.FC<Props> = ({
         }
       }
 
-      /**
-       * 如果后端没有返回新建 Client 的 id，
-       * 就保持当前选择；如果当前没有选择，则默认选第一个。
-       */
       if (!clientId && options.length) {
         setClientId(options[0].value);
       }
@@ -306,59 +358,54 @@ const ClientLinkSection: React.FC<Props> = ({
     }
   };
 
+  const handleCreateDataSource = (side: "source" | "target") => {
+    const dbType = side === "source" ? sourceType?.dbType : targetType?.dbType;
+
+    if (!dbType) {
+      message.warning(
+        side === "source" ? "请先选择来源类型" : "请先选择去向类型"
+      );
+      return;
+    }
+
+    modalRef.current?.open({
+      operateType: "CREATE" as DataSourceOperateType,
+      dbType,
+      hideBack: true,
+      onSuccess: async () => {
+        const nextData =
+          side === "source"
+            ? await loadSourceOptions(dbType)
+            : await loadTargetOptions(dbType);
+
+        const createdValue = nextData?.[0]?.id ?? nextData?.[0]?.value;
+
+        if (!createdValue) {
+          return;
+        }
+
+        const nextValue = String(createdValue);
+
+        if (side === "source") {
+          setSourceDataSourceId(nextValue);
+          form.setFieldValue("sourceId", nextValue);
+          resetSourceTestStatus();
+        } else {
+          setTargetDataSourceId(nextValue);
+          form.setFieldValue("targetId", nextValue);
+          resetTargetTestStatus();
+        }
+      },
+    });
+  };
+
   useEffect(() => {
-    const loadSourceOptions = async () => {
-      const dbType = sourceType?.dbType;
-
-      if (!dbType) {
-        setSourceDataSources([]);
-        setSourceDataSourceId(undefined);
-        form.setFieldValue("sourceId", undefined);
-        return;
-      }
-
-      try {
-        setSourceLoading(true);
-        const res = await fetchDataSourceOptions(dbType);
-        setSourceDataSources(Array.isArray(res?.data) ? res.data : []);
-      } catch (error) {
-        console.error("加载来源数据源失败:", error);
-        setSourceDataSources([]);
-        message.error("加载来源数据源失败");
-      } finally {
-        setSourceLoading(false);
-      }
-    };
-
-    loadSourceOptions();
-  }, [sourceType?.dbType, form, setSourceDataSourceId]);
+    loadSourceOptions(sourceType?.dbType);
+  }, [sourceType?.dbType, loadSourceOptions]);
 
   useEffect(() => {
-    const loadTargetOptions = async () => {
-      const dbType = targetType?.dbType;
-
-      if (!dbType) {
-        setTargetDataSources([]);
-        setTargetDataSourceId(undefined);
-        form.setFieldValue("targetId", undefined);
-        return;
-      }
-
-      try {
-        setTargetLoading(true);
-        const res = await fetchDataSourceOptions(dbType);
-        setTargetDataSources(Array.isArray(res?.data) ? res.data : []);
-      } catch (error) {
-        console.error("加载目标数据源失败:", error);
-        setTargetDataSources([]);
-        message.error("加载目标数据源失败");
-      } finally {
-        setTargetLoading(false);
-      }
-    };
-
-    loadTargetOptions();
-  }, [targetType?.dbType, form, setTargetDataSourceId]);
+    loadTargetOptions(targetType?.dbType);
+  }, [targetType?.dbType, loadTargetOptions]);
 
   useEffect(() => {
     loadClientOptions();
@@ -587,6 +634,76 @@ const ClientLinkSection: React.FC<Props> = ({
                       loading={sourceLoading}
                       showSearch
                       options={sourceOptions}
+                      dropdownRender={(menu) => (
+                        <>
+                          {menu}
+
+                          <div className="border-t border-slate-100 bg-white px-2 py-1">
+                            <Button
+                              block
+                              type="default"
+                              style={{ marginTop: 8 }}
+                              className={[
+                                "group/detail relative h-[32px] overflow-hidden rounded-full p-0",
+                                "border border-[#D9D9D9] bg-white font-bold",
+                                "transition-all duration-300 ease-out",
+                                "hover:!border-[hsl(231_48%_48%)]",
+                              ].join(" ")}
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                              }}
+                              onClick={() => {
+                                handleCreateDataSource("source");
+                              }}
+                            >
+                              <span
+                                className={[
+                                  "absolute inset-0 z-[1] flex items-center justify-center rounded-full bg-white",
+                                  "transition-all duration-300 ease-out",
+                                  "group-hover/detail:translate-y-1.5 group-hover/detail:opacity-0",
+                                ].join(" ")}
+                              >
+                                <span style={{ fontWeight: 400, fontSize: 13 }}>
+                                  新建来源数据源
+                                </span>
+                              </span>
+
+                              <span
+                                className={[
+                                  "absolute inset-0 z-[2] flex items-center justify-center gap-2 rounded-full",
+                                  "bg-[hsl(231_48%_48%)] text-white opacity-0",
+                                  "transition-all duration-300 ease-out",
+                                  "group-hover/detail:opacity-100",
+                                ].join(" ")}
+                              >
+                                <span
+                                  className={[
+                                    "translate-x-[-4px] transition-transform duration-300 ease-out",
+                                    "group-hover/detail:translate-x-0",
+                                  ].join(" ")}
+                                >
+                                  <span style={{ fontWeight: 400, fontSize: 13 }}>
+                                  新建来源数据源
+                                </span>
+                                </span>
+
+                                <span
+                                  className={[
+                                    "translate-x-[-8px] opacity-0 transition-all duration-300 ease-out",
+                                    "group-hover/detail:translate-x-0 group-hover/detail:opacity-100",
+                                  ].join(" ")}
+                                >
+                                  <PlusCircleIcon
+                                    size={16}
+                                    className="mr-1.5"
+                                  />
+                                </span>
+                              </span>
+                            </Button>
+                          </div>
+                        </>
+                      )}
                     />
                   </Form.Item>
                 </div>
@@ -684,6 +801,72 @@ const ClientLinkSection: React.FC<Props> = ({
                       loading={targetLoading}
                       placeholder="请选择目标数据源"
                       options={targetOptions}
+                      dropdownRender={(menu) => (
+                        <>
+                          {menu}
+
+                          <div className="border-t border-slate-100 bg-white px-3 py-2">
+                            <Button
+                              block
+                              type="default"
+                              style={{ marginTop: 8 }}
+                              className={[
+                                "group/detail relative h-[32px] overflow-hidden rounded-full p-0",
+                                "border border-[#D9D9D9] bg-white font-bold",
+                                "transition-all duration-300 ease-out",
+                                "hover:!border-[hsl(231_48%_48%)]",
+                              ].join(" ")}
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                              }}
+                              onClick={() => {
+                                handleCreateDataSource("target");
+                              }}
+                            >
+                              <span
+                                className={[
+                                  "absolute inset-0 z-[1] flex items-center justify-center rounded-full bg-white",
+                                  "transition-all duration-300 ease-out",
+                                  "group-hover/detail:translate-y-1.5 group-hover/detail:opacity-0",
+                                ].join(" ")}
+                              >
+                                新建去向数据源
+                              </span>
+
+                              <span
+                                className={[
+                                  "absolute inset-0 z-[2] flex items-center justify-center gap-2 rounded-full",
+                                  "bg-[hsl(231_48%_48%)] text-white opacity-0",
+                                  "transition-all duration-300 ease-out",
+                                  "group-hover/detail:opacity-100",
+                                ].join(" ")}
+                              >
+                                <span
+                                  className={[
+                                    "translate-x-[-4px] transition-transform duration-300 ease-out",
+                                    "group-hover/detail:translate-x-0",
+                                  ].join(" ")}
+                                >
+                                  新建去向数据源
+                                </span>
+
+                                <span
+                                  className={[
+                                    "translate-x-[-8px] opacity-0 transition-all duration-300 ease-out",
+                                    "group-hover/detail:translate-x-0 group-hover/detail:opacity-100",
+                                  ].join(" ")}
+                                >
+                                  <PlusCircleIcon
+                                    size={16}
+                                    className="mr-1.5"
+                                  />
+                                </span>
+                              </span>
+                            </Button>
+                          </div>
+                        </>
+                      )}
                     />
                   </Form.Item>
                 </div>
@@ -703,6 +886,8 @@ const ClientLinkSection: React.FC<Props> = ({
         }}
         onSubmit={handleCreateClient}
       />
+
+      <AddOrEditDataSourceModal ref={modalRef} />
     </>
   );
 };

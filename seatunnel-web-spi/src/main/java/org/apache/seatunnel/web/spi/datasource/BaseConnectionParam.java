@@ -13,7 +13,7 @@ public abstract class BaseConnectionParam implements ConnectionParam {
 
     protected String url;
 
-    @FormField(label = "主机地址IP", required = true, placeholder = "localhost", order = 1, defaultValue = "localhost")
+    @FormField(label = "主机地址IP", required = true, placeholder = "主机地址IP", order = 1, defaultValue = "127.0.0.1")
     private String host;
 
     @FormField(label = "端口号", required = true, placeholder = "3306", type = FieldType.NUMBER, order = 2)

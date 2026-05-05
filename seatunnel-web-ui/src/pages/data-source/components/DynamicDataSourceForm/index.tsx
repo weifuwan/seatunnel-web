@@ -12,7 +12,7 @@ import {
   Tooltip,
 } from "antd";
 import TextArea from "antd/es/input/TextArea";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import DatabaseIcons from "../../icon/DatabaseIcons";
 import { DataSourceOperateType, DynamicDataSourceFormProps } from "../../types";
 import CustomKVList from "./components/CustomKVList";
@@ -136,6 +136,13 @@ const isEmptyValue = (value: any) => {
   return value === undefined || value === null || value === "";
 };
 
+const isCreateOperateType = (operateType?: DataSourceOperateType) => {
+  return (
+    operateType === ("CREATE" as DataSourceOperateType) ||
+    operateType === (DataSourceOperateType as any)?.Create
+  );
+};
+
 const DynamicDataSourceForm: React.FC<DynamicDataSourceFormProps> = ({
   dbType,
   form,
@@ -151,6 +158,13 @@ const DynamicDataSourceForm: React.FC<DynamicDataSourceFormProps> = ({
   const [installing, setInstalling] = useState(false);
   const [loadErrMsg, setLoadErrMsg] = useState<string>("");
 
+  /**
+   * 用请求序号解决“慢一拍”的问题。
+   * 比如先请求 MySQL，再请求 PostgreSQL。
+   * 如果 MySQL 后返回，不能再覆盖 PostgreSQL 的表单。
+   */
+  const requestSeqRef = useRef(0);
+
   const defaultBaseInfo = useMemo(() => {
     return {
       name: pickRandomPreset(DATASOURCE_NAME_PRESETS),
@@ -159,16 +173,8 @@ const DynamicDataSourceForm: React.FC<DynamicDataSourceFormProps> = ({
     };
   }, []);
 
-  useEffect(() => {
-    loadFormConfig();
-  }, [dbType]);
-
-  useEffect(() => {
-    /**
-     * 如果你的 operateType 是枚举，例如 Operate.Add，
-     * 这里可以改成：operateType !== Operate.Add
-     */
-    if (operateType !== DataSourceOperateType.Create) {
+  const fillCreateDefaultBaseInfo = useCallback(() => {
+    if (!isCreateOperateType(operateType)) {
       return;
     }
 
@@ -192,55 +198,115 @@ const DynamicDataSourceForm: React.FC<DynamicDataSourceFormProps> = ({
     }
   }, [operateType, form, defaultBaseInfo]);
 
-  const loadFormConfig = async (): Promise<void> => {
-    try {
-      setLoading(true);
+  const loadFormConfig = useCallback(
+    async (currentDbType: string): Promise<void> => {
+      const requestSeq = requestSeqRef.current + 1;
+      requestSeqRef.current = requestSeq;
+
+      try {
+        setLoading(true);
+        setNeedInstall(false);
+        setLoadErrMsg("");
+
+        /**
+         * 切换 dbType 时，先把旧字段清掉。
+         * 否则 PostgreSQL 配置请求还没回来时，页面可能短暂显示 MySQL 字段。
+         */
+        setFormConfig([]);
+        configForm.resetFields();
+
+        const response = await HttpUtils.get<any>(
+          `/api/v1/data-source/plugin/config?pluginType=${currentDbType}`
+        );
+
+        /**
+         * 只允许最新请求更新页面。
+         * 旧请求回来直接丢弃。
+         */
+        if (requestSeq !== requestSeqRef.current) {
+          return;
+        }
+
+        if (response?.code === 0) {
+          const fields = response?.data?.formFields || [];
+
+          setNeedInstall(false);
+          setLoadErrMsg("");
+          setFormConfig(fields);
+
+          /**
+           * 注意：
+           * 这里不要用“只 patch 空值”的方式。
+           * 因为 MySQL 和 PostgreSQL 有很多同名字段，例如 host、port、user、password。
+           * 切换类型时应该以当前 dbType 的默认值为准。
+           */
+          const init = getConfigInitialValues(fields);
+          configForm.resetFields();
+          configForm.setFieldsValue(init);
+          return;
+        }
+
+        setNeedInstall(true);
+        setLoadErrMsg(
+          response?.msg || response?.message || "Plugin config not available"
+        );
+        setFormConfig([]);
+        configForm.resetFields();
+      } catch (error: any) {
+        if (requestSeq !== requestSeqRef.current) {
+          return;
+        }
+
+        setNeedInstall(true);
+        setLoadErrMsg(
+          error?.message ||
+            intl.formatMessage({
+              id: "pages.datasource.form.loadConfigFail",
+              defaultMessage: "Failed to load form config",
+            })
+        );
+        setFormConfig([]);
+        configForm.resetFields();
+      } finally {
+        if (requestSeq === requestSeqRef.current) {
+          setLoading(false);
+        }
+      }
+    },
+    [configForm, intl]
+  );
+
+  useEffect(() => {
+    fillCreateDefaultBaseInfo();
+  }, [fillCreateDefaultBaseInfo]);
+
+  useEffect(() => {
+    if (!dbType) {
+      requestSeqRef.current += 1;
+      setFormConfig([]);
       setNeedInstall(false);
       setLoadErrMsg("");
-
-      const response = await HttpUtils.get<any>(
-        `/api/v1/data-source/plugin/config?pluginType=${dbType}`
-      );
-
-      if (response?.code === 0) {
-        const fields = response?.data?.formFields || [];
-        setFormConfig(fields);
-
-        const init = getConfigInitialValues(fields);
-        const current = configForm.getFieldsValue(true);
-
-        const patch: Record<string, any> = {};
-        Object.keys(init).forEach((k) => {
-          const cur = current?.[k];
-          if (isEmptyValue(cur)) {
-            patch[k] = init[k];
-          }
-        });
-
-        if (Object.keys(patch).length) {
-          configForm.setFieldsValue(patch);
-        }
-      } else {
-        setNeedInstall(true);
-        setLoadErrMsg(response?.msg || "Plugin config not available");
-        setFormConfig([]);
-      }
-    } catch (error: any) {
-      setNeedInstall(true);
-      setLoadErrMsg(
-        error?.message ||
-          intl.formatMessage({
-            id: "pages.datasource.form.loadConfigFail",
-            defaultMessage: "Failed to load form config",
-          })
-      );
-      setFormConfig([]);
-    } finally {
       setLoading(false);
+      configForm.resetFields();
+      return;
     }
-  };
+
+    loadFormConfig(dbType);
+
+    return () => {
+      /**
+       * 组件卸载或 dbType 变化时，让旧请求失效。
+       */
+      requestSeqRef.current += 1;
+    };
+  }, [dbType, configForm, loadFormConfig]);
 
   const installPlugin = async () => {
+    if (!dbType) {
+      message.warning("请先选择数据源类型");
+      return;
+    }
+
     try {
       setInstalling(true);
 
@@ -250,13 +316,14 @@ const DynamicDataSourceForm: React.FC<DynamicDataSourceFormProps> = ({
       );
 
       if (resp?.code === 0) {
-        message.success("Plugin installed");
-        await loadFormConfig();
-      } else {
-        
+        message.success("插件安装成功");
+        await loadFormConfig(dbType);
+        return;
       }
+
+      message.error(resp?.msg || resp?.message || "插件安装失败");
     } catch (e: any) {
-      
+      message.error(e?.message || "插件安装失败");
     } finally {
       setInstalling(false);
     }
@@ -459,7 +526,6 @@ const DynamicDataSourceForm: React.FC<DynamicDataSourceFormProps> = ({
 
           <Form
             form={configForm}
-            initialValues={getConfigInitialValues(formConfig)}
             component={false}
             labelCol={{ flex: "110px" }}
             wrapperCol={{ flex: "1" }}

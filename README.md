@@ -44,7 +44,7 @@ SeaTunnel Web aims to make Apache SeaTunnel more accessible, maintainable, and e
 If you would like to be among the first to experience the adapted version of SeaTunnel Web,
 or join us in building the ecosystem from 0 to 1, you are warmly welcome to join the SeaTunnel Web Early Co-Creation Group.
 
-<img width="200" height="320" alt="7dde6c66e1dd1ed9bdeee3e438cdba13" src="https://github.com/user-attachments/assets/328ed162-3355-4ef1-b569-cf10f2de8ce9" />
+<img width="200" height="320" alt="7dde6c66e1dd1ed9bdeee3e438cdba13" src="https://github.com/user-attachments/assets/6d08b95d-0b1e-47cd-bdcf-ca7e0349aa49" />
 
 ## Github Address
 - https://github.com/weifuwan/seatunnel-web

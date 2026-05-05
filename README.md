@@ -5,11 +5,9 @@
 
 <p align="center">
 <a href="http://111.230.213.87:8000" target="_blank">Live Demo</a>｜
-<a href="https://https://doc.seatunnel-web.com//">中文文档</a>
+<a href="https://doc.seatunnel-web.com/">中文文档</a>
 </p>
 
-  <img src="https://github.com/user-attachments/assets/901d765c-cbd7-4f39-ae3a-de6716ae09f2" width="100%" alt="Nest Logo" /></a>
-</p>
 
 ## SeaTunnel Web
 

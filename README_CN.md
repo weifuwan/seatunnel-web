@@ -1,9 +1,13 @@
-<img width="1920" height="945" alt="image" src="https://github.com/user-attachments/assets/901d765c-cbd7-4f39-ae3a-de6716ae09f2" />
+
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/901d765c-cbd7-4f39-ae3a-de6716ae09f2" width="100%" alt="Nest Logo" /></a>
+</p>
+
 <p align="center">
 <a href="http://111.230.213.87:8000" target="_blank">Live Demo</a>｜
 <a href="https://https://doc.seatunnel-web.com//">中文文档</a>
 </p>
-
 
 ## SeaTunnel Web
 

@@ -65,7 +65,8 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
       remark: record.remark || "",
     });
 
-    configForm.setFieldsValue(parseOriginalJson(record.originalJson));
+    // 注意：不再在这里设置 configForm，而是将数据传递给 DynamicDataSourceForm
+    // 由 DynamicDataSourceForm 在加载完表单配置后再设置值
   };
 
   useImperativeHandle(ref, () => ({
@@ -404,6 +405,7 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
           form={basicForm}
           configForm={configForm}
           operateType={operateType}
+          initialConfig={isEditMode ? parseOriginalJson(currentRecord?.originalJson) : undefined}
         />
       ) : (
         <div style={{ padding: "4px 0 8px" }}>

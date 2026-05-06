@@ -33,7 +33,19 @@ public class DatasourcePluginServiceImpl implements DatasourcePluginService {
         validatePluginType(pluginType);
 
         DbType dbType = parseDbType(pluginType);
-        DataSourcePluginConfig config = getPluginConfigOrThrow(dbType);
+        DataSourcePluginConfig config = dataSourcePluginConfigDao.queryByPluginType(dbType);
+        
+        // If config not found, return empty response with install hint
+        if (config == null) {
+            log.warn("Datasource plugin config not found, pluginType={}", dbType);
+            PluginConfigResponse response = new PluginConfigResponse();
+            response.setPluginType(dbType);
+            response.setFormFields(new ArrayList<>());
+            response.setInstallRequired(true);
+            response.setInstallHint("请先安装 " + dbType.name() + " 数据源插件");
+            return response;
+        }
+        
         ObjectNode schema = parseSchema(config.getConfigSchema());
 
         PluginConfigResponse response = new PluginConfigResponse();

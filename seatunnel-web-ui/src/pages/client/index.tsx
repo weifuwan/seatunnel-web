@@ -58,7 +58,7 @@ const ClientPageTailwind: React.FC = () => {
               style={{
                 display: "grid",
                 gridTemplateColumns: "300px 1fr",
-                minHeight: "calc(100vh - 180px)",
+                minHeight: "calc(100vh - 80px)",
               }}
             >
               <ClientListPanel

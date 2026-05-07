@@ -320,23 +320,7 @@ export default function Workflow({
     }
   };
 
-  const handleRun = async () => {
-    if (!validateChecklistBeforeAction()) {
-      return;
-    }
-
-    if (!publishedJobDefineId) {
-      message.warning("请先发布任务，再执行");
-      return;
-    }
-
-    if (isDirty) {
-      message.warning("当前内容已变更，请重新发布后再执行");
-      return;
-    }
-
-    setRunVisible(true);
-  };
+ 
 
   const handleWorkflowChange = (nextGraph: { nodes: any[]; edges: any[] }) => {
     setWorkflowGraph((prev) => {
@@ -375,7 +359,7 @@ export default function Workflow({
 
             <div>
               <div className="mb-0 text-[20px] font-bold leading-[1.2] text-slate-900">
-                单表离线任务
+                单表实时任务
               </div>
               <div className="text-[14px] leading-6 text-slate-500">
                 配置同步链路、字段映射与运行参数，在一个页面完成创建与调试。
@@ -407,19 +391,6 @@ export default function Workflow({
                   </div>
 
                   <Space size={10}>
-                    <Tooltip title={runDisabledReason}>
-                      <Button
-                        type="default"
-                        icon={<PlayCircle size={15} strokeWidth={1.9} />}
-                        onClick={handleRun}
-                        loading={runLoading}
-                        disabled={!canRun}
-                        className="!inline-flex !h-[34px] !items-center !justify-center !rounded-full !border !border-slate-200 !bg-slate-50 !px-3.5 !text-[13px] !font-medium !text-slate-500 transition-colors duration-200 hover:!border-slate-300 hover:!bg-white/80 hover:!text-slate-700 hover:!shadow-[0_4px_12px_rgba(15,23,42,0.05)] disabled:!cursor-not-allowed disabled:!border-slate-200 disabled:!bg-slate-100 disabled:!text-slate-400 disabled:!shadow-none"
-                      >
-                        运行
-                      </Button>
-                    </Tooltip>
-
                     <CheckListPopover
                       checkStat={checkStat}
                       checkGroups={checkGroups}

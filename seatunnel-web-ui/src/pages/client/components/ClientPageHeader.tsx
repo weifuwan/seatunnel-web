@@ -9,26 +9,31 @@ interface Props {
 
 const ClientPageHeader: React.FC<Props> = ({ onAdd }) => {
   return (
-    <div className="mb-5 flex items-start justify-between gap-4">
-      <div className="flex items-start gap-4">
+    <div className="mb-1 flex items-start justify-between gap-4">
+      <div className="mb-4 flex items-center gap-4">
         <div
-          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-[20px]"
-          style={{ background: "#EEF4FF", color: BLUE }}
+          className="flex items-center justify-center text-indigo-600"
+          style={{
+            backgroundColor: "#eef2ff",
+            height: 44,
+            width: 44,
+            fontSize: 20,
+            borderRadius: 14,
+          }}
         >
           <CloudServerOutlined />
         </div>
 
         <div>
-          <div className="text-[20px] font-bold leading-8 text-[#101828]">
-            Client 管理
-          </div>
-          <div
-            className="mt-1 text-[14px] leading-7"
-            style={{ color: TEXT_SECONDARY }}
+          <h1
+            className="m-0 font-bold tracking-tight text-slate-950"
+            style={{ fontSize: 18, lineHeight: "26px" }}
           >
-            统一管理 SeaTunnel / Zeta Client，查看节点健康状态与核心资源指标，
-            让任务提交与运行监控更清晰。
-          </div>
+            Client 管理
+          </h1>
+          <p className="mt-1 text-slate-500" style={{ fontSize: 13 }}>
+            统一管理 SeaTunnel / Zeta Client，查看节点健康状态与核心资源指标，让任务提交与运行监控更清晰。
+          </p>
         </div>
       </div>
 

@@ -74,7 +74,7 @@ interface DataSourceSelectProps {
   width?: string;
 }
 
-const DataSourceSelect: React.FC<DataSourceSelectProps> = ({
+export const DataSourceSelect: React.FC<DataSourceSelectProps> = ({
   value,
   onChange,
   placeholder,

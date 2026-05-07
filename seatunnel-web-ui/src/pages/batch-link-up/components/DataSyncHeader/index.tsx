@@ -1,11 +1,8 @@
-import { DatabaseOutlined, PlusOutlined, SunOutlined } from "@ant-design/icons";
+import { ArrowRightOutlined, SunOutlined } from "@ant-design/icons";
 import { useIntl } from "@umijs/max";
-import { Button } from "antd";
+import { Button, Select } from "antd";
 import React from "react";
-import DataSourceSelect, {
-  generateDataSourceOptions,
-} from "../../DataSourceSelect";
-import IconRightArrow from "../../IconRightArrow";
+import { generateDataSourceOptions } from "../../DataSourceSelect";
 import "./index.less";
 
 interface DataSyncHeaderProps {
@@ -52,7 +49,7 @@ const DataSyncHeader: React.FC<DataSyncHeaderProps> = ({
 
   return (
     <div className="sync-page-header">
-      <div className="sync-page-header__top">
+      <div className="sync-page-header__top" style={{ marginBottom: 16 }}>
         <div className="sync-page-header__meta">
           <div className="sync-page-header__icon">
             <SunOutlined />
@@ -75,49 +72,71 @@ const DataSyncHeader: React.FC<DataSyncHeaderProps> = ({
         </div>
       </div>
 
-      <div className="sync-page-header__toolbar">
-        <div className="sync-page-header__toolbar-label">同步方向</div>
+      <div className="mb-5 rounded-[20px] border border-indigo-100 bg-white/90 p-5 ">
+        <div className="mb-4 flex items-center gap-3 font-semibold text-slate-900">
+          同步方向
+          <span className="inline-flex h-6 items-center gap-2 rounded-full bg-indigo-50 px-3 text-xs font-semibold " style={{color: "rgb(64, 81, 181)"}}>
+            <i className="h-1.5 w-1.5 rounded-full bg-indigo-500 shadow-[0_0_0_4px_rgba(99,102,241,0.14)]" />
+            离线批量
+          </span>
+        </div>
 
-        <div className="sync-page-header__selectors">
-          <DataSourceSelect
-            value={sourceType}
-            onChange={handleSourceChange}
-            dataSourceOptions={generateDataSourceOptions()}
-            placeholder={intl.formatMessage({
-              id: "pages.datasync.header.source.placeholder",
-              defaultMessage: "请选择来源",
-            })}
-            prefix={intl.formatMessage({
-              id: "pages.datasync.header.source.prefix",
-              defaultMessage: "来源：",
-            })}
-          />
-
-          <div className="sync-page-header__arrow">
-            <IconRightArrow />
+        <div className="grid grid-cols-[minmax(240px,1fr)_120px_minmax(240px,1fr)_180px] items-center gap-4 max-xl:grid-cols-1">
+          <div
+            className="flex h-10 items-center overflow-hidden rounded-full border border-slate-200 bg-white transition
+           hover:border-indigo-200 hover:shadow-[0_12px_30px_rgba(79,70,229,0.08)]"
+          >
+            <Select
+              prefix="来源："
+              value={sourceType?.dbType}
+              onChange={handleSourceChange}
+              options={generateDataSourceOptions()}
+              bordered={false}
+              showSearch
+              className="flex-1"
+            />
           </div>
 
-          <DataSourceSelect
-            value={targetType}
-            onChange={handleTargetChange}
-            dataSourceOptions={generateDataSourceOptions()}
-            placeholder={intl.formatMessage({
-              id: "pages.datasync.header.sink.placeholder",
-              defaultMessage: "请选择去向",
-            })}
-            prefix={intl.formatMessage({
-              id: "pages.datasync.header.sink.prefix",
-              defaultMessage: "去向：",
-            })}
-          />
+          <div className="flex items-center justify-center gap-4 text-slate-900 max-xl:justify-start">
+            <ArrowRightOutlined />
+          </div>
+
+          <div className="flex h-10 items-center overflow-hidden rounded-full border border-slate-200 bg-white transition hover:border-indigo-200 hover:shadow-[0_12px_30px_rgba(79,70,229,0.08)]">
+            <Select
+              prefix="去向："
+              value={targetType?.dbType}
+              onChange={handleTargetChange}
+              options={generateDataSourceOptions()}
+              bordered={false}
+              showSearch
+              className="flex-1"
+            />
+          </div>
+
           <Button
             type="primary"
-            className="sync-page-header__create-btn"
             disabled={isButtonDisabled}
             onClick={handleCreateClick}
+            className="h-10 rounded-full border-none bg-gradient-to-r  font-semibold "
           >
-            创建同步任务
+            创建离线任务
           </Button>
+        </div>
+
+        <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+          常用组合：
+          <span className="inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 text-slate-600 transition hover:border-indigo-200 hover:bg-white hover:text-indigo-600">
+            🐬 MySQL → Oracle
+          </span>
+          <span className="inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 text-slate-600 transition hover:border-indigo-200 hover:bg-white hover:text-indigo-600">
+            🐘 PostgreSQL → MySQL
+          </span>
+          <span className="inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 text-slate-600 transition hover:border-indigo-200 hover:bg-white hover:text-indigo-600">
+            🔶 Oracle → MySQL
+          </span>
+          <span className="inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 text-slate-600 transition hover:border-indigo-200 hover:bg-white hover:text-indigo-600">
+            ⭐ MySQL → PostgreSQL
+          </span>
         </div>
       </div>
     </div>

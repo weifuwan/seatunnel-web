@@ -402,7 +402,7 @@ const App: React.FC<Props> = ({ goDetail }) => {
               </div>
             </div>
 
-            <Divider style={{ margin: "0 0 24px" }} />
+            <Divider style={{ margin: "16px 0" }} />
 
             <Table
               columns={baseColumns as any}

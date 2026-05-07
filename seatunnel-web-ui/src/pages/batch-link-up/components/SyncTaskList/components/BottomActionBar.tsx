@@ -1,7 +1,7 @@
-import React from "react";
-import { Button, Divider } from "antd";
 import { PlayCircleOutlined, StopOutlined } from "@ant-design/icons";
 import { useIntl } from "@umijs/max";
+import { Button, Divider } from "antd";
+import React from "react";
 import CustomPagination from "../../../CustomPagination";
 
 interface BottomActionBarProps {
@@ -48,10 +48,10 @@ const BottomActionBar: React.FC<BottomActionBarProps> = ({
         <div style={{ display: "flex", alignItems: "center" }}>
           <Button
             size="small"
-            style={{ width: 70 }}
             type="primary"
             onClick={onStart}
             disabled={disabled}
+            className="h-8 min-w-[88px] rounded-full border-none bg-gradient-to-rfont-bold shadow-[0_12px_26px_rgba(53,84,209,0.23)]"
             icon={<PlayCircleOutlined />}
           >
             {intl.formatMessage({
@@ -63,12 +63,12 @@ const BottomActionBar: React.FC<BottomActionBarProps> = ({
           <Divider type="vertical" />
 
           <Button
-            style={{ width: 70 }}
             size="small"
             onClick={onStop}
             danger
             type="primary"
             disabled={disabled}
+            className="h-8 min-w-[88px] rounded-full border-none bg-gradient-to-rfont-bold shadow-[0_12px_26px_rgba(53,84,209,0.23)]"
             icon={<StopOutlined />}
           >
             {intl.formatMessage({

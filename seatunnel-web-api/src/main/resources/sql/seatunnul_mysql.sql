@@ -1,8 +1,7 @@
 CREATE
 DATABASE IF NOT EXISTS seatunnel_web;
 
-use
-seatunnel_web;
+use seatunnel_web;
 
 -- seatunnel_web.t_connector_param_meta definition
 

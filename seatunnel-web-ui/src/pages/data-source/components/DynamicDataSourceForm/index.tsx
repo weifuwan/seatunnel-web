@@ -148,6 +148,7 @@ const DynamicDataSourceForm: React.FC<DynamicDataSourceFormProps> = ({
   form,
   configForm,
   operateType,
+  initialConfig,
 }) => {
   const intl = useIntl();
 
@@ -228,21 +229,44 @@ const DynamicDataSourceForm: React.FC<DynamicDataSourceFormProps> = ({
         }
 
         if (response?.code === 0) {
-          const fields = response?.data?.formFields || [];
-
+          const data = response?.data || {};
+                  
+          // 检查是否需要安装插件
+          if (data.installRequired) {
+            setNeedInstall(true);
+            setLoadErrMsg(data.installHint || "请先安装数据源插件");
+            setFormConfig([]);
+            configForm.resetFields();
+            return;
+          }
+                  
+          const fields = data.formFields || [];
+        
           setNeedInstall(false);
           setLoadErrMsg("");
           setFormConfig(fields);
-
+        
           /**
            * 注意：
-           * 这里不要用“只 patch 空值”的方式。
+           * 这里不要用"只 patch 空值"的方式。
            * 因为 MySQL 和 PostgreSQL 有很多同名字段，例如 host、port、user、password。
            * 切换类型时应该以当前 dbType 的默认值为准。
            */
           const init = getConfigInitialValues(fields);
           configForm.resetFields();
-          configForm.setFieldsValue(init);
+          
+          /**
+           * 编辑模式：使用传入的 initialConfig 覆盖默认值
+           * 创建模式：使用表单的默认值
+           */
+          if (initialConfig && Object.keys(initialConfig).length > 0) {
+            configForm.setFieldsValue({
+              ...init,
+              ...initialConfig,
+            });
+          } else {
+            configForm.setFieldsValue(init);
+          }
           return;
         }
 

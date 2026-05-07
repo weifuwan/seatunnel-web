@@ -101,6 +101,8 @@ export interface DynamicDataSourceFormProps {
   form: FormInstance<DataSourceFormValues>;
   configForm: FormInstance;
   operateType: DataSourceOperateType;
+  /** 编辑模式下的初始配置数据 */
+  initialConfig?: Record<string, unknown>;
 }
 
 export interface DataSourceOptionItem {

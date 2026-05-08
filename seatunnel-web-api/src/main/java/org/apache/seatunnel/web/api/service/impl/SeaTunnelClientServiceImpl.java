@@ -14,6 +14,7 @@ import org.apache.seatunnel.web.core.utils.MetricValueParser;
 import org.apache.seatunnel.web.core.utils.SeaTunnelClientUrlUtils;
 import org.apache.seatunnel.web.core.verify.DatasourceConnectivityVerificationStrategy;
 import org.apache.seatunnel.web.core.verify.DatasourceConnectivityVerificationStrategyFactory;
+import org.apache.seatunnel.web.core.verify.modal.DatasourceVerifyContext;
 import org.apache.seatunnel.web.dao.entity.DataSource;
 import org.apache.seatunnel.web.dao.entity.SeaTunnelClient;
 import org.apache.seatunnel.web.dao.repository.SeaTunnelClientDao;
@@ -29,12 +30,7 @@ import org.apache.seatunnel.web.spi.enums.Status;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -178,6 +174,7 @@ public class SeaTunnelClientServiceImpl implements SeaTunnelClientService {
                     "clientId 不能为空"
             );
         }
+
         if (dto == null || dto.getDatasourceId() == null) {
             throw new ServiceException(
                     Status.INTERNAL_SERVER_ERROR_ARGS,
@@ -186,6 +183,7 @@ public class SeaTunnelClientServiceImpl implements SeaTunnelClientService {
         }
 
         SeaTunnelClient client = getEntity(clientId);
+
         if (StringUtils.isBlank(client.getBaseUrl())) {
             throw new ServiceException(
                     Status.INTERNAL_SERVER_ERROR_ARGS,
@@ -202,16 +200,36 @@ public class SeaTunnelClientServiceImpl implements SeaTunnelClientService {
         }
 
         DbType dbType = datasource.getDbType();
-        DatasourceConnectivityVerificationStrategy strategy = strategyFactory.getStrategy(dbType);
+        if (dbType == null) {
+            throw new ServiceException(
+                    Status.INTERNAL_SERVER_ERROR_ARGS,
+                    "数据源类型不能为空, datasourceId=" + dto.getDatasourceId()
+            );
+        }
 
         long timeoutMs = dto.getTimeoutMs() == null || dto.getTimeoutMs() <= 0
                 ? DEFAULT_DATASOURCE_VERIFY_TIMEOUT_MS
                 : dto.getTimeoutMs();
+
         long pollIntervalMs = dto.getPollIntervalMs() == null || dto.getPollIntervalMs() <= 0
                 ? DEFAULT_DATASOURCE_VERIFY_POLL_INTERVAL_MS
                 : dto.getPollIntervalMs();
 
-        return strategy.verify(client, datasource, timeoutMs, pollIntervalMs);
+        DatasourceVerifyContext context = DatasourceVerifyContext.builder()
+                .client(client)
+                .datasource(datasource)
+                .dbType(dbType)
+                .pluginName(dto.getPluginName())
+                .connectorType(dto.getConnectorType())
+                .role(dto.getRole())
+                .timeoutMs(timeoutMs)
+                .pollIntervalMs(pollIntervalMs)
+                .build();
+
+        DatasourceConnectivityVerificationStrategy strategy =
+                strategyFactory.getStrategy(context);
+
+        return strategy.verify(context);
     }
 
     private void createClient(SeaTunnelClientDTO dto, String baseUrl, Date now) {
@@ -246,7 +264,7 @@ public class SeaTunnelClientServiceImpl implements SeaTunnelClientService {
 
     /**
      * 校验 SeaTunnel Client 可用性，并从 overview 中填充客户端版本。
-     *
+     * <p>
      * 这里会完成三件事情：
      * 1. 网络连通性检测：overview 调用失败则不允许保存 / 更新。
      * 2. 版本识别：必须能从 overview 中获取到 projectVersion。

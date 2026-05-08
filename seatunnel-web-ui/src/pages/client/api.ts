@@ -58,7 +58,7 @@ export const seatunnelClientApi = {
   saveOrUpdate: (data: SeatunnelClient) => {
     return HttpUtils.post(`${apiPrefix}/saveOrUpdate`, data);
   },
-  
+
 
   selectById: (
     id: number
@@ -86,8 +86,13 @@ export const seatunnelClientApi = {
   },
 
   verifyDatasource: (
-    clientId:  string,
-    datasourceId: number | string
+    clientId: string,
+    params: {
+      datasourceId: number | string;
+      pluginName?: string;
+      connectorType?: string;
+      role?: "SOURCE" | "SINK";
+    }
   ): Promise<{
     code: number;
     data?: {
@@ -102,7 +107,10 @@ export const seatunnelClientApi = {
     message?: string;
   }> => {
     return HttpUtils.post(`/api/v1/devops/client/${clientId}/verify-datasource`, {
-      datasourceId,
+      datasourceId: params.datasourceId,
+      pluginName: params.pluginName,
+      connectorType: params.connectorType,
+      role: params.role,
       timeoutMs: 15000,
       pollIntervalMs: 1000,
     });

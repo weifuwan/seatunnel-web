@@ -21,8 +21,8 @@ import React, {
   useState,
 } from "react";
 
+import { generateCDCDataSourceOptions } from "@/pages/batch-link-up/DataSourceSelect";
 import "./client-link.less";
-import { generateDataSourceOptions } from "@/pages/batch-link-up/DataSourceSelect";
 
 export type ConnectivityStatus = "idle" | "loading" | "success" | "error";
 
@@ -212,7 +212,10 @@ const ClientLinkSection: React.FC<Props> = ({
 
   const modalRef = useRef<DataSourceModalRef>(null);
 
-  const dataSourceTypeOptions = useMemo(() => generateDataSourceOptions(), []);
+  const dataSourceTypeOptions = useMemo(
+    () => generateCDCDataSourceOptions(),
+    []
+  );
 
   const [sourceDataSources, setSourceDataSources] = useState<any[]>([]);
   const [targetDataSources, setTargetDataSources] = useState<any[]>([]);
@@ -518,10 +521,16 @@ const ClientLinkSection: React.FC<Props> = ({
     }
 
     try {
-      const res = await seatunnelClientApi.verifyDatasource(
-        clientId,
-        datasourceId
-      );
+      const res = await seatunnelClientApi.verifyDatasource(clientId, {
+        datasourceId,
+        pluginName:
+          type === "source" ? sourceType?.pluginName : targetType?.pluginName,
+        connectorType:
+          type === "source"
+            ? sourceType?.connectorType
+            : targetType?.connectorType,
+        role: type === "source" ? "SOURCE" : "SINK",
+      });
 
       const success = !!res?.data?.success;
 
@@ -684,9 +693,11 @@ const ClientLinkSection: React.FC<Props> = ({
                                     "group-hover/detail:translate-x-0",
                                   ].join(" ")}
                                 >
-                                  <span style={{ fontWeight: 400, fontSize: 13 }}>
-                                  新建来源数据源
-                                </span>
+                                  <span
+                                    style={{ fontWeight: 400, fontSize: 13 }}
+                                  >
+                                    新建来源数据源
+                                  </span>
                                 </span>
 
                                 <span

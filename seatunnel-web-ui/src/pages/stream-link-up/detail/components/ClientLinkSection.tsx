@@ -11,7 +11,7 @@ import {
   CloseCircleOutlined,
   LoadingOutlined,
 } from "@ant-design/icons";
-import { Button, Form, message, Select } from "antd";
+import { Button, Form, message, Popover, Select } from "antd";
 import { PlusCircleIcon } from "lucide-react";
 import React, {
   useCallback,
@@ -59,6 +59,15 @@ interface SelectOption {
   value: string;
 }
 
+interface VerifyItem {
+  code?: string;
+  name?: string;
+  success?: boolean;
+  actualValue?: string;
+  expectedValue?: string;
+  message?: string;
+}
+
 const statusMap: Record<
   ConnectivityStatus,
   {
@@ -98,20 +107,168 @@ const statusMap: Record<
   },
 };
 
-const SimpleStatus: React.FC<{ status: ConnectivityStatus }> = ({ status }) => {
-  const config = statusMap[status];
+const VerifyItemsPopoverContent: React.FC<{ items?: VerifyItem[] }> = ({
+  items = [],
+}) => {
+  if (!items.length) {
+    return (
+      <div className="w-[260px] rounded-2xl bg-white p-1">
+        <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-500">
+          暂无检查项详情，点击测试后可查看。
+        </div>
+      </div>
+    );
+  }
+
+  const passedCount = items.filter((item) => item.success).length;
 
   return (
+    <div className="w-[360px] max-w-[72vw]">
+      <div className="mb-3 flex items-center justify-between border-b border-slate-100 pb-2">
+        <div>
+          <div className="text-sm font-semibold text-slate-800">
+            连通性检查详情
+          </div>
+          <div className="mt-0.5 text-xs text-slate-500">
+            已通过 {passedCount}/{items.length} 项
+          </div>
+        </div>
+
+        <div
+          className={[
+            "rounded-full px-2.5 py-1 text-xs font-medium",
+            passedCount === items.length
+              ? "bg-emerald-50 text-emerald-600"
+              : "bg-rose-50 text-rose-600",
+          ].join(" ")}
+        >
+          {passedCount === items.length ? "全部通过" : "存在异常"}
+        </div>
+      </div>
+
+      <div className="max-h-[320px] space-y-2 overflow-y-auto pr-1">
+        {items.map((item, index) => {
+          const success = !!item.success;
+
+          return (
+            <div
+              key={`${item.code || item.name || "verify-item"}-${index}`}
+              className={[
+                "rounded-2xl border px-3 py-2.5",
+                success
+                  ? "border-emerald-100 bg-emerald-50/60"
+                  : "border-rose-100 bg-rose-50/60",
+              ].join(" ")}
+            >
+              <div className="flex items-start gap-2">
+                <span
+                  className={[
+                    "mt-1 h-2 w-2 shrink-0 rounded-full",
+                    success ? "bg-emerald-500" : "bg-rose-500",
+                  ].join(" ")}
+                />
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="truncate text-xs font-semibold text-slate-800">
+                      {item.name || "未命名检查项"}
+                    </div>
+                    <div
+                      className={[
+                        "shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium",
+                        success
+                          ? "bg-white text-emerald-600"
+                          : "bg-white text-rose-600",
+                      ].join(" ")}
+                    >
+                      {success ? "通过" : "失败"}
+                    </div>
+                  </div>
+
+                  {item.message ? (
+                    <div className="mt-1 text-xs leading-5 text-slate-600">
+                      {item.message}
+                    </div>
+                  ) : null}
+
+                  {(item.actualValue || item.expectedValue) && (
+                    <div className="mt-2 grid gap-1 rounded-xl bg-white/70 px-2 py-2 text-[11px] text-slate-500">
+                      {item.expectedValue ? (
+                        <div className="flex gap-1">
+                          <span className="shrink-0 text-slate-400">
+                            期望：
+                          </span>
+                          <span className="break-all text-slate-600">
+                            {item.expectedValue}
+                          </span>
+                        </div>
+                      ) : null}
+
+                      {item.actualValue ? (
+                        <div className="flex gap-1">
+                          <span className="shrink-0 text-slate-400">
+                            实际：
+                          </span>
+                          <span className="break-all text-slate-600">
+                            {item.actualValue}
+                          </span>
+                        </div>
+                      ) : null}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+const SimpleStatus: React.FC<{
+  status: ConnectivityStatus;
+  items?: VerifyItem[];
+}> = ({ status, items = [] }) => {
+  const config = statusMap[status];
+  const showPopover = status !== "idle" && items.length > 0;
+
+  const content = (
     <div
       className={[
-        "inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium",
+        "inline-flex cursor-default items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium",
         config.bgClass,
         config.textClass,
+        showPopover ? "transition hover:shadow-sm" : "",
       ].join(" ")}
     >
       <span className={["h-2 w-2 rounded-full", config.dot].join(" ")} />
       <span>{config.text}</span>
+
+      {items.length > 0 ? (
+        <span className="rounded-full bg-white/70 px-1.5 py-0.5 text-[10px]">
+          {items.length}项
+        </span>
+      ) : null}
     </div>
+  );
+
+  if (!showPopover) {
+    return content;
+  }
+
+  return (
+    <Popover
+      trigger="hover"
+      placement="right"
+      content={<VerifyItemsPopoverContent items={items} />}
+      overlayInnerStyle={{
+        borderRadius: 18,
+        padding: 12,
+      }}
+    >
+      {content}
+    </Popover>
   );
 };
 
@@ -157,16 +314,17 @@ const LinkStatusAction: React.FC<{
 const SectionCard: React.FC<{
   title: string;
   status?: ConnectivityStatus;
+  verifyItems?: VerifyItem[];
   headerExtra?: React.ReactNode;
   children: React.ReactNode;
   footer?: React.ReactNode;
-}> = ({ title, status, headerExtra, children, footer }) => {
+}> = ({ title, status, verifyItems, headerExtra, children, footer }) => {
   return (
     <section className="min-w-0 flex-1 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
       <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
         <div className="flex items-center gap-3">
           <div className="text-sm font-semibold text-slate-800">{title}</div>
-          {status ? <SimpleStatus status={status} /> : null}
+          {status ? <SimpleStatus status={status} items={verifyItems} /> : null}
         </div>
         {headerExtra}
       </div>
@@ -223,6 +381,9 @@ const ClientLinkSection: React.FC<Props> = ({
   const [sourceLoading, setSourceLoading] = useState(false);
   const [targetLoading, setTargetLoading] = useState(false);
 
+  const [sourceVerifyItems, setSourceVerifyItems] = useState<VerifyItem[]>([]);
+  const [targetVerifyItems, setTargetVerifyItems] = useState<VerifyItem[]>([]);
+
   const [clientOptions, setClientOptions] = useState<SelectOption[]>([]);
   const [clientLoading, setClientLoading] = useState(false);
 
@@ -231,10 +392,12 @@ const ClientLinkSection: React.FC<Props> = ({
 
   const resetSourceTestStatus = useCallback(() => {
     setSourceTestStatus("idle");
+    setSourceVerifyItems([]);
   }, [setSourceTestStatus]);
 
   const resetTargetTestStatus = useCallback(() => {
     setTargetTestStatus("idle");
+    setTargetVerifyItems([]);
   }, [setTargetTestStatus]);
 
   const loadClientOptions = useCallback(async () => {
@@ -516,8 +679,10 @@ const ClientLinkSection: React.FC<Props> = ({
 
     if (type === "source") {
       setSourceTestStatus("loading");
+      setSourceVerifyItems([]);
     } else {
       setTargetTestStatus("loading");
+      setTargetVerifyItems([]);
     }
 
     try {
@@ -533,19 +698,33 @@ const ClientLinkSection: React.FC<Props> = ({
       });
 
       const success = !!res?.data?.success;
+      const items = Array.isArray(res?.data?.items) ? res.data.items : [];
 
       if (type === "source") {
         setSourceTestStatus(success ? "success" : "error");
+        setSourceVerifyItems(items);
       } else {
         setTargetTestStatus(success ? "success" : "error");
+        setTargetVerifyItems(items);
       }
     } catch (error) {
       console.error("连通性测试失败:", error);
 
+      const errorItem: VerifyItem = {
+        code: "REQUEST_ERROR",
+        name: "请求异常",
+        success: false,
+        actualValue: "接口请求失败",
+        expectedValue: "接口正常返回",
+        message: "连通性测试失败，请稍后重试",
+      };
+
       if (type === "source") {
         setSourceTestStatus("error");
+        setSourceVerifyItems([errorItem]);
       } else {
         setTargetTestStatus("error");
+        setTargetVerifyItems([errorItem]);
       }
 
       message.error("连通性测试失败，请稍后重试");
@@ -601,6 +780,7 @@ const ClientLinkSection: React.FC<Props> = ({
             <SectionCard
               title="来源"
               status={sourceTestStatus}
+              verifyItems={sourceVerifyItems}
               footer={
                 <Button
                   className="w-full !rounded-full"
@@ -770,6 +950,7 @@ const ClientLinkSection: React.FC<Props> = ({
             <SectionCard
               title="去向"
               status={targetTestStatus}
+              verifyItems={targetVerifyItems}
               footer={
                 <Button
                   className="w-full !rounded-full"

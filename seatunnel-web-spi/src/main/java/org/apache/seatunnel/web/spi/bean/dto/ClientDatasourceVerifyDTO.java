@@ -10,6 +10,20 @@ public class ClientDatasourceVerifyDTO {
     @Schema(description = "数据源ID", requiredMode = Schema.RequiredMode.REQUIRED)
     private Long datasourceId;
 
+    @Schema(description = "数据源插件名称", requiredMode = Schema.RequiredMode.REQUIRED)
+    private String pluginName;
+
+    /**
+     * 前端当前选择的连接器类型。
+     * 例如：Jdbc、CDC
+     */
+    private String connectorType;
+
+    /**
+     * SOURCE / SINK
+     */
+    private String role;
+
     @Schema(description = "超时时间，单位毫秒", example = "15000")
     private Long timeoutMs;
 

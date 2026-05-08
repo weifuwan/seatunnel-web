@@ -3,6 +3,9 @@ package org.apache.seatunnel.web.spi.bean.vo;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Data
 @Schema(description = "客户端验证数据源结果")
 public class ClientDatasourceVerifyVO {
@@ -45,4 +48,41 @@ public class ClientDatasourceVerifyVO {
 
     @Schema(description = "耗时，毫秒")
     private Long durationMs;
+
+    /**
+     * 分项校验结果。
+     *
+     * CDC 场景下很有用：
+     * - 基础连通性
+     * - binlog 是否开启
+     * - binlog_format 是否为 ROW
+     * - binlog_row_image 是否为 FULL
+     * - server_id 是否有效
+     * - 权限是否满足
+     */
+    private List<ClientDatasourceVerifyItemVO> items;
+
+    public static ClientDatasourceVerifyVO success(String message) {
+        ClientDatasourceVerifyVO vo = new ClientDatasourceVerifyVO();
+        vo.setSuccess(true);
+        vo.setMessage(message);
+        vo.setItems(new ArrayList<>());
+        return vo;
+    }
+
+    public static ClientDatasourceVerifyVO fail(String message) {
+        ClientDatasourceVerifyVO vo = new ClientDatasourceVerifyVO();
+        vo.setSuccess(false);
+        vo.setMessage(message);
+        vo.setErrorMessage(message);
+        vo.setItems(new ArrayList<>());
+        return vo;
+    }
+
+    public void addItem(ClientDatasourceVerifyItemVO item) {
+        if (this.items == null) {
+            this.items = new ArrayList<>();
+        }
+        this.items.add(item);
+    }
 }

@@ -1,20 +1,43 @@
 package org.apache.seatunnel.web.core.verify;
 
 import jakarta.annotation.Resource;
-import org.apache.seatunnel.web.spi.enums.DbType;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.seatunnel.web.core.exceptions.ServiceException;
+import org.apache.seatunnel.web.core.verify.modal.DatasourceVerifyContext;
+import org.apache.seatunnel.web.spi.enums.Status;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 
 @Component
 public class DatasourceConnectivityVerificationStrategyFactory {
+
     @Resource
     private List<DatasourceConnectivityVerificationStrategy> strategies;
 
-    public DatasourceConnectivityVerificationStrategy getStrategy(DbType dbType) {
+    public DatasourceConnectivityVerificationStrategy getStrategy(DatasourceVerifyContext context) {
+        if (context == null) {
+            throw new ServiceException(
+                    Status.INTERNAL_SERVER_ERROR_ARGS,
+                    "数据源测试上下文不能为空"
+            );
+        }
+
         return strategies.stream()
-                .filter(strategy -> strategy.supports(dbType))
+                .filter(strategy -> strategy.supports(context))
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("暂不支持该数据源类型的连通性验证: " + dbType));
+                .orElseThrow(() -> new ServiceException(
+                        Status.INTERNAL_SERVER_ERROR_ARGS,
+                        buildUnsupportedMessage(context)
+                ));
+    }
+
+    private String buildUnsupportedMessage(DatasourceVerifyContext context) {
+        return "暂不支持该数据源测试类型: dbType="
+                + context.getDbType()
+                + ", pluginName="
+                + StringUtils.defaultIfBlank(context.getPluginName(), "-")
+                + ", role="
+                + StringUtils.defaultIfBlank(context.getRole(), "-");
     }
 }

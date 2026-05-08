@@ -517,10 +517,16 @@ const ClientLinkSection: React.FC<Props> = ({
     }
 
     try {
-      const res = await seatunnelClientApi.verifyDatasource(
-        clientId,
-        datasourceId
-      );
+      const res = await seatunnelClientApi.verifyDatasource(clientId, {
+        datasourceId,
+        pluginName:
+          type === "source" ? sourceType?.pluginName : targetType?.pluginName,
+        connectorType:
+          type === "source"
+            ? sourceType?.connectorType
+            : targetType?.connectorType,
+        role: type === "source" ? "SOURCE" : "SINK",
+      });
 
       const success = !!res?.data?.success;
 
@@ -683,9 +689,11 @@ const ClientLinkSection: React.FC<Props> = ({
                                     "group-hover/detail:translate-x-0",
                                   ].join(" ")}
                                 >
-                                  <span style={{ fontWeight: 400, fontSize: 13 }}>
-                                  新建来源数据源
-                                </span>
+                                  <span
+                                    style={{ fontWeight: 400, fontSize: 13 }}
+                                  >
+                                    新建来源数据源
+                                  </span>
                                 </span>
 
                                 <span

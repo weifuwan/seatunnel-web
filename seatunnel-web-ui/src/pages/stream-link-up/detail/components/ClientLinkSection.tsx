@@ -21,7 +21,7 @@ import React, {
   useState,
 } from "react";
 
-import { generateCDCDataSourceOptions } from "@/pages/batch-link-up/DataSourceSelect";
+import { generateDataSourceOptions } from "@/pages/batch-link-up/DataSourceSelect";
 import "./client-link.less";
 
 export type ConnectivityStatus = "idle" | "loading" | "success" | "error";
@@ -291,6 +291,7 @@ const LinkStatusAction: React.FC<{
         size="small"
         className="!h-7 !rounded-full !px-3 !text-slate-700 hover:!bg-slate-100"
         onClick={onTest}
+        // loading={status === "loading"}
       >
         测试
       </Button>
@@ -345,6 +346,7 @@ const normalizeClientOptions = (data: any[]): SelectOption[] => {
 };
 
 const ClientLinkSection: React.FC<Props> = ({
+  activeStep,
   sourceType,
   targetType,
   sourceLabel,
@@ -370,19 +372,24 @@ const ClientLinkSection: React.FC<Props> = ({
 
   const modalRef = useRef<DataSourceModalRef>(null);
 
-  const dataSourceTypeOptions = useMemo(
-    () => generateCDCDataSourceOptions(),
-    []
-  );
+  /**
+   * 记录已经自动测试过的组合，避免同一个 client + datasource + plugin 被重复请求。
+   */
+  const autoTestKeyRef = useRef<{
+    source?: string;
+    target?: string;
+  }>({});
+
+  const dataSourceTypeOptions = useMemo(() => generateDataSourceOptions(), []);
 
   const [sourceDataSources, setSourceDataSources] = useState<any[]>([]);
   const [targetDataSources, setTargetDataSources] = useState<any[]>([]);
 
-  const [sourceLoading, setSourceLoading] = useState(false);
-  const [targetLoading, setTargetLoading] = useState(false);
-
   const [sourceVerifyItems, setSourceVerifyItems] = useState<VerifyItem[]>([]);
   const [targetVerifyItems, setTargetVerifyItems] = useState<VerifyItem[]>([]);
+
+  const [sourceLoading, setSourceLoading] = useState(false);
+  const [targetLoading, setTargetLoading] = useState(false);
 
   const [clientOptions, setClientOptions] = useState<SelectOption[]>([]);
   const [clientLoading, setClientLoading] = useState(false);
@@ -429,14 +436,19 @@ const ClientLinkSection: React.FC<Props> = ({
         setSourceDataSources([]);
         setSourceDataSourceId(undefined);
         form.setFieldValue("sourceId", undefined);
+        resetSourceTestStatus();
+        autoTestKeyRef.current.source = undefined;
         return [];
       }
 
       try {
         setSourceLoading(true);
+
         const res = await fetchDataSourceOptions(dbType);
         const nextData = Array.isArray(res?.data) ? res.data : [];
+
         setSourceDataSources(nextData);
+
         return nextData;
       } catch (error) {
         console.error("加载来源数据源失败:", error);
@@ -447,7 +459,7 @@ const ClientLinkSection: React.FC<Props> = ({
         setSourceLoading(false);
       }
     },
-    [form, setSourceDataSourceId]
+    [form, resetSourceTestStatus, setSourceDataSourceId]
   );
 
   const loadTargetOptions = useCallback(
@@ -456,14 +468,19 @@ const ClientLinkSection: React.FC<Props> = ({
         setTargetDataSources([]);
         setTargetDataSourceId(undefined);
         form.setFieldValue("targetId", undefined);
+        resetTargetTestStatus();
+        autoTestKeyRef.current.target = undefined;
         return [];
       }
 
       try {
         setTargetLoading(true);
+
         const res = await fetchDataSourceOptions(dbType);
         const nextData = Array.isArray(res?.data) ? res.data : [];
+
         setTargetDataSources(nextData);
+
         return nextData;
       } catch (error) {
         console.error("加载目标数据源失败:", error);
@@ -474,12 +491,335 @@ const ClientLinkSection: React.FC<Props> = ({
         setTargetLoading(false);
       }
     },
-    [form, setTargetDataSourceId]
+    [form, resetTargetTestStatus, setTargetDataSourceId]
   );
+
+  const sourceOptions = useMemo(
+    () =>
+      sourceDataSources.map((item) => ({
+        label: item.name ?? item.label ?? "",
+        value: String(item.id ?? item.value ?? ""),
+      })),
+    [sourceDataSources]
+  );
+
+  const targetOptions = useMemo(
+    () =>
+      targetDataSources.map((item) => ({
+        label: item.name ?? item.label ?? "",
+        value: String(item.id ?? item.value ?? ""),
+      })),
+    [targetDataSources]
+  );
+
+  const getConnectivityTestKey = useCallback(
+    (type: "source" | "target", datasourceId?: string | number) => {
+      const currentType = type === "source" ? sourceType : targetType;
+
+      return [
+        type,
+        clientId || "",
+        datasourceId || "",
+        currentType?.pluginName || "",
+        currentType?.connectorType || "",
+      ].join("__");
+    },
+    [clientId, sourceType, targetType]
+  );
+
+  const runConnectivityTest = useCallback(
+    async (
+      type: "source" | "target",
+      datasourceId?: string | number,
+      options?: {
+        silent?: boolean;
+      }
+    ) => {
+      if (!clientId) {
+        if (!options?.silent) {
+          message.warning("请先选择客户端节点");
+        }
+        return false;
+      }
+
+      if (
+        datasourceId === undefined ||
+        datasourceId === null ||
+        datasourceId === ""
+      ) {
+        if (!options?.silent) {
+          message.warning(
+            type === "source" ? "请先选择来源数据源" : "请先选择目标数据源"
+          );
+        }
+        return false;
+      }
+
+      if (type === "source") {
+        setSourceTestStatus("loading");
+        setSourceVerifyItems([]);
+      } else {
+        setTargetTestStatus("loading");
+        setTargetVerifyItems([]);
+      }
+
+      try {
+        const currentType = type === "source" ? sourceType : targetType;
+
+        const res = await seatunnelClientApi.verifyDatasource(clientId, {
+          datasourceId,
+          pluginName: currentType?.pluginName,
+          connectorType: currentType?.connectorType,
+          role: type === "source" ? "SOURCE" : "SINK",
+        });
+
+        const success = !!res?.data?.success;
+        const items = Array.isArray(res?.data?.items) ? res.data.items : [];
+        if (type === "source") {
+          setSourceTestStatus(success ? "success" : "error");
+          setSourceVerifyItems(items);
+        } else {
+          setTargetTestStatus(success ? "success" : "error");
+          setTargetVerifyItems(items);
+        }
+
+        if (!success && !options?.silent) {
+          message.error(res?.data?.message || "连通性测试未通过");
+        }
+
+        return success;
+      } catch (error) {
+        const errorItem: VerifyItem = {
+          code: "REQUEST_ERROR",
+          name: "请求异常",
+          success: false,
+          actualValue: "接口请求失败",
+          expectedValue: "接口正常返回",
+          message: "连通性测试失败，请稍后重试",
+        };
+        console.error("连通性测试失败:", error);
+
+        if (type === "source") {
+          setSourceTestStatus("error");
+          setSourceVerifyItems([errorItem]);
+        } else {
+          setTargetTestStatus("error");
+          setTargetVerifyItems([errorItem]);
+        }
+
+        if (!options?.silent) {
+          message.error("连通性测试失败，请稍后重试");
+        }
+
+        return false;
+      }
+    },
+    [clientId, sourceType, targetType, setSourceTestStatus, setTargetTestStatus]
+  );
+
+  /**
+   * 手动切换数据源时立即触发测试。
+   */
+  const triggerConnectivityTest = useCallback(
+    async (type: "source" | "target", datasourceId?: string | number) => {
+      if (!clientId || !datasourceId) {
+        return;
+      }
+
+      const key = getConnectivityTestKey(type, datasourceId);
+
+      autoTestKeyRef.current[type] = key;
+
+      await runConnectivityTest(type, datasourceId);
+    },
+    [clientId, getConnectivityTestKey, runConnectivityTest]
+  );
+
+  /**
+   * 加载 Client 列表。
+   */
+  useEffect(() => {
+    loadClientOptions();
+  }, [loadClientOptions]);
+
+  /**
+   * 如果没有选择 client，默认选中第一个。
+   */
+  useEffect(() => {
+    if (!clientOptions.length) return;
+
+    if (!clientId) {
+      setClientId(clientOptions[0].value);
+      autoTestKeyRef.current = {};
+      resetSourceTestStatus();
+      resetTargetTestStatus();
+    }
+  }, [
+    clientOptions,
+    clientId,
+    setClientId,
+    resetSourceTestStatus,
+    resetTargetTestStatus,
+  ]);
+
+  /**
+   * 根据来源类型加载来源数据源。
+   */
+  useEffect(() => {
+    loadSourceOptions(sourceType?.dbType);
+  }, [sourceType?.dbType, loadSourceOptions]);
+
+  /**
+   * 根据去向类型加载去向数据源。
+   */
+  useEffect(() => {
+    loadTargetOptions(targetType?.dbType);
+  }, [targetType?.dbType, loadTargetOptions]);
+
+  /**
+   * 来源数据源列表加载完成后，自动选中第一个。
+   */
+  useEffect(() => {
+    if (!sourceOptions.length) {
+      if (sourceDataSourceId) {
+        setSourceDataSourceId(undefined);
+        form.setFieldValue("sourceId", undefined);
+        resetSourceTestStatus();
+        autoTestKeyRef.current.source = undefined;
+      }
+      return;
+    }
+
+    const hasCurrentValue = sourceOptions.some(
+      (item) => item.value === sourceDataSourceId
+    );
+
+    if (!sourceDataSourceId || !hasCurrentValue) {
+      const firstValue = sourceOptions[0]?.value;
+
+      setSourceDataSourceId(firstValue);
+      form.setFieldValue("sourceId", firstValue);
+      resetSourceTestStatus();
+      autoTestKeyRef.current.source = undefined;
+    }
+  }, [
+    sourceOptions,
+    sourceDataSourceId,
+    form,
+    setSourceDataSourceId,
+    resetSourceTestStatus,
+  ]);
+
+  /**
+   * 目标数据源列表加载完成后，自动选中第一个。
+   */
+  useEffect(() => {
+    if (!targetOptions.length) {
+      if (targetDataSourceId) {
+        setTargetDataSourceId(undefined);
+        form.setFieldValue("targetId", undefined);
+        resetTargetTestStatus();
+        autoTestKeyRef.current.target = undefined;
+      }
+      return;
+    }
+
+    const hasCurrentValue = targetOptions.some(
+      (item) => item.value === targetDataSourceId
+    );
+
+    if (!targetDataSourceId || !hasCurrentValue) {
+      const firstValue = targetOptions[0]?.value;
+
+      setTargetDataSourceId(firstValue);
+      form.setFieldValue("targetId", firstValue);
+      resetTargetTestStatus();
+      autoTestKeyRef.current.target = undefined;
+    }
+  }, [
+    targetOptions,
+    targetDataSourceId,
+    form,
+    setTargetDataSourceId,
+    resetTargetTestStatus,
+  ]);
+
+  /**
+   * 同步表单展示值。
+   */
+  useEffect(() => {
+    form.setFieldsValue({
+      sourceType: sourceType?.dbType,
+      targetType: targetType?.dbType,
+      sourceId: sourceDataSourceId,
+      targetId: targetDataSourceId,
+      clientId,
+    });
+  }, [
+    form,
+    sourceType?.dbType,
+    targetType?.dbType,
+    sourceDataSourceId,
+    targetDataSourceId,
+    clientId,
+  ]);
+
+  /**
+   * 进入客户端链接配置后，自动测试来源和去向。
+   *
+   * 触发条件：
+   * 1. 当前步骤是 client
+   * 2. clientId 已经初始化完成
+   * 3. sourceDataSourceId / targetDataSourceId 至少有一个已经初始化完成
+   *
+   * 注意：
+   * autoTestKeyRef 用来避免同一组参数重复请求。
+   */
+  useEffect(() => {
+    if (activeStep !== "client") return;
+    if (!clientId) return;
+    if (!sourceDataSourceId && !targetDataSourceId) return;
+
+    const runAutoTest = async () => {
+      if (sourceDataSourceId) {
+        const sourceKey = getConnectivityTestKey("source", sourceDataSourceId);
+
+        if (autoTestKeyRef.current.source !== sourceKey) {
+          autoTestKeyRef.current.source = sourceKey;
+
+          await runConnectivityTest("source", sourceDataSourceId, {
+            silent: true,
+          });
+        }
+      }
+
+      if (targetDataSourceId) {
+        const targetKey = getConnectivityTestKey("target", targetDataSourceId);
+
+        if (autoTestKeyRef.current.target !== targetKey) {
+          autoTestKeyRef.current.target = targetKey;
+
+          await runConnectivityTest("target", targetDataSourceId, {
+            silent: true,
+          });
+        }
+      }
+    };
+
+    runAutoTest();
+  }, [
+    activeStep,
+    clientId,
+    sourceDataSourceId,
+    targetDataSourceId,
+    getConnectivityTestKey,
+    runConnectivityTest,
+  ]);
 
   const handleCreateClient = async () => {
     try {
       const values = await clientForm.validateFields();
+
       setConfirmLoading(true);
 
       const res = await seatunnelClientApi.saveOrUpdate(values);
@@ -490,6 +830,7 @@ const ClientLinkSection: React.FC<Props> = ({
       }
 
       message.success("Client 创建成功");
+
       setOpenAddModal(false);
       clientForm.resetFields();
 
@@ -508,6 +849,7 @@ const ClientLinkSection: React.FC<Props> = ({
 
         if (exists) {
           setClientId(nextClientId);
+          autoTestKeyRef.current = {};
           resetSourceTestStatus();
           resetTargetTestStatus();
           return;
@@ -516,6 +858,9 @@ const ClientLinkSection: React.FC<Props> = ({
 
       if (!clientId && options.length) {
         setClientId(options[0].value);
+        autoTestKeyRef.current = {};
+        resetSourceTestStatus();
+        resetTargetTestStatus();
       }
     } catch (error: any) {
       if (error?.errorFields) return;
@@ -557,178 +902,15 @@ const ClientLinkSection: React.FC<Props> = ({
           setSourceDataSourceId(nextValue);
           form.setFieldValue("sourceId", nextValue);
           resetSourceTestStatus();
+          autoTestKeyRef.current.source = undefined;
         } else {
           setTargetDataSourceId(nextValue);
           form.setFieldValue("targetId", nextValue);
           resetTargetTestStatus();
+          autoTestKeyRef.current.target = undefined;
         }
       },
     });
-  };
-
-  useEffect(() => {
-    loadSourceOptions(sourceType?.dbType);
-  }, [sourceType?.dbType, loadSourceOptions]);
-
-  useEffect(() => {
-    loadTargetOptions(targetType?.dbType);
-  }, [targetType?.dbType, loadTargetOptions]);
-
-  useEffect(() => {
-    loadClientOptions();
-  }, [loadClientOptions]);
-
-  useEffect(() => {
-    if (!clientOptions.length) return;
-
-    if (!clientId) {
-      setClientId(clientOptions[0].value);
-    }
-  }, [clientOptions, clientId, setClientId]);
-
-  const sourceOptions = useMemo(
-    () =>
-      sourceDataSources.map((item) => ({
-        label: item.name ?? item.label ?? "",
-        value: String(item.id ?? item.value ?? ""),
-      })),
-    [sourceDataSources]
-  );
-
-  const targetOptions = useMemo(
-    () =>
-      targetDataSources.map((item) => ({
-        label: item.name ?? item.label ?? "",
-        value: String(item.id ?? item.value ?? ""),
-      })),
-    [targetDataSources]
-  );
-
-  useEffect(() => {
-    if (!sourceOptions.length) {
-      setSourceDataSourceId(undefined);
-      form.setFieldValue("sourceId", undefined);
-      return;
-    }
-
-    const hasCurrentValue = sourceOptions.some(
-      (item) => item.value === sourceDataSourceId
-    );
-
-    if (!sourceDataSourceId || !hasCurrentValue) {
-      const firstValue = sourceOptions[0]?.value;
-      setSourceDataSourceId(firstValue);
-      form.setFieldValue("sourceId", firstValue);
-    }
-  }, [sourceOptions, sourceDataSourceId, form, setSourceDataSourceId]);
-
-  useEffect(() => {
-    if (!targetOptions.length) {
-      setTargetDataSourceId(undefined);
-      form.setFieldValue("targetId", undefined);
-      return;
-    }
-
-    const hasCurrentValue = targetOptions.some(
-      (item) => item.value === targetDataSourceId
-    );
-
-    if (!targetDataSourceId || !hasCurrentValue) {
-      const firstValue = targetOptions[0]?.value;
-      setTargetDataSourceId(firstValue);
-      form.setFieldValue("targetId", firstValue);
-    }
-  }, [targetOptions, targetDataSourceId, form, setTargetDataSourceId]);
-
-  useEffect(() => {
-    form.setFieldsValue({
-      sourceType: sourceType?.dbType,
-      targetType: targetType?.dbType,
-      sourceId: sourceDataSourceId,
-      targetId: targetDataSourceId,
-      clientId,
-    });
-  }, [
-    form,
-    sourceType,
-    targetType,
-    sourceDataSourceId,
-    targetDataSourceId,
-    clientId,
-  ]);
-
-  const runConnectivityTest = async (
-    type: "source" | "target",
-    datasourceId?: string | number
-  ) => {
-    if (!clientId) {
-      message.warning("请先选择客户端节点");
-      return;
-    }
-
-    if (
-      datasourceId === undefined ||
-      datasourceId === null ||
-      datasourceId === ""
-    ) {
-      message.warning(
-        type === "source" ? "请先选择来源数据源" : "请先选择目标数据源"
-      );
-      return;
-    }
-
-    if (type === "source") {
-      setSourceTestStatus("loading");
-      setSourceVerifyItems([]);
-    } else {
-      setTargetTestStatus("loading");
-      setTargetVerifyItems([]);
-    }
-
-    try {
-      const res = await seatunnelClientApi.verifyDatasource(clientId, {
-        datasourceId,
-        pluginName:
-          type === "source" ? sourceType?.pluginName : targetType?.pluginName,
-        connectorType:
-          type === "source"
-            ? sourceType?.connectorType
-            : targetType?.connectorType,
-        role: type === "source" ? "SOURCE" : "SINK",
-      });
-
-      const success = !!res?.data?.success;
-      const items = Array.isArray(res?.data?.items) ? res.data.items : [];
-
-      if (type === "source") {
-        setSourceTestStatus(success ? "success" : "error");
-        setSourceVerifyItems(items);
-      } else {
-        setTargetTestStatus(success ? "success" : "error");
-        setTargetVerifyItems(items);
-      }
-    } catch (error) {
-      console.error("连通性测试失败:", error);
-
-      const errorItem: VerifyItem = {
-        code: "REQUEST_ERROR",
-        name: "请求异常",
-        success: false,
-        actualValue: "接口请求失败",
-        expectedValue: "接口正常返回",
-        message: "连通性测试失败，请稍后重试",
-      };
-
-      if (type === "source") {
-        setSourceTestStatus("error");
-        setSourceVerifyItems([errorItem]);
-      } else {
-        setTargetTestStatus("error");
-        setTargetVerifyItems([errorItem]);
-      }
-
-      message.error("连通性测试失败，请稍后重试");
-    }
   };
 
   return (
@@ -803,7 +985,9 @@ const ClientLinkSection: React.FC<Props> = ({
                       onChange={(value, option) => {
                         handleSourceChange(value, option);
                         setSourceDataSourceId(undefined);
+                        form.setFieldValue("sourceId", undefined);
                         resetSourceTestStatus();
+                        autoTestKeyRef.current.source = undefined;
                       }}
                       className="w-full"
                       showSearch
@@ -817,7 +1001,10 @@ const ClientLinkSection: React.FC<Props> = ({
                       value={sourceDataSourceId}
                       onChange={(value) => {
                         setSourceDataSourceId(value);
+                        form.setFieldValue("sourceId", value);
                         resetSourceTestStatus();
+                        autoTestKeyRef.current.source = undefined;
+                        triggerConnectivityTest("source", value);
                       }}
                       className="w-full"
                       placeholder="请选择来源数据源"
@@ -925,6 +1112,7 @@ const ClientLinkSection: React.FC<Props> = ({
                     value={clientId}
                     onChange={(value) => {
                       setClientId(value);
+                      autoTestKeyRef.current = {};
                       resetSourceTestStatus();
                       resetTargetTestStatus();
                     }}
@@ -973,7 +1161,9 @@ const ClientLinkSection: React.FC<Props> = ({
                       onChange={(value, option) => {
                         handleTargetChange(value, option);
                         setTargetDataSourceId(undefined);
+                        form.setFieldValue("targetId", undefined);
                         resetTargetTestStatus();
+                        autoTestKeyRef.current.target = undefined;
                       }}
                       className="w-full"
                       showSearch
@@ -987,7 +1177,10 @@ const ClientLinkSection: React.FC<Props> = ({
                       value={targetDataSourceId}
                       onChange={(value) => {
                         setTargetDataSourceId(value);
+                        form.setFieldValue("targetId", value);
                         resetTargetTestStatus();
+                        autoTestKeyRef.current.target = undefined;
+                        triggerConnectivityTest("target", value);
                       }}
                       showSearch
                       className="w-full"

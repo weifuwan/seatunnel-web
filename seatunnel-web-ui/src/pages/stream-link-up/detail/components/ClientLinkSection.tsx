@@ -112,8 +112,8 @@ const VerifyItemsPopoverContent: React.FC<{ items?: VerifyItem[] }> = ({
 }) => {
   if (!items.length) {
     return (
-      <div className="w-[260px] rounded-2xl bg-white p-1">
-        <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-500">
+      <div className="w-[280px] rounded-2xl bg-white p-1">
+        <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 px-4 py-4 text-xs text-slate-500">
           暂无检查项详情，点击测试后可查看。
         </div>
       </div>
@@ -121,32 +121,45 @@ const VerifyItemsPopoverContent: React.FC<{ items?: VerifyItem[] }> = ({
   }
 
   const passedCount = items.filter((item) => item.success).length;
+  const allPassed = passedCount === items.length;
 
   return (
-    <div className="w-[360px] max-w-[72vw]">
-      <div className="mb-3 flex items-center justify-between border-b border-slate-100 pb-2">
+    <div className="w-[380px] max-w-[72vw] max-h-[560px] overflow-hidden rounded-2xl bg-white">
+      {/* Header */}
+      <div className="mb-3 flex items-start justify-between border-b border-slate-100" style={{padding: 8}}>
         <div>
-          <div className="text-sm font-semibold text-slate-800">
+          <div className="text-sm font-semibold text-slate-900">
             连通性检查详情
           </div>
-          <div className="mt-0.5 text-xs text-slate-500">
-            已通过 {passedCount}/{items.length} 项
+          <div className="mt-1 text-xs text-slate-500">
+            已通过{" "}
+            <span className="font-semibold text-slate-700">
+              {passedCount}/{items.length}
+            </span>{" "}
+            项
           </div>
         </div>
 
         <div
           className={[
-            "rounded-full px-2.5 py-1 text-xs font-medium",
-            passedCount === items.length
-              ? "bg-emerald-50 text-emerald-600"
-              : "bg-rose-50 text-rose-600",
+            "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium",
+            allPassed
+              ? "bg-teal-50 text-teal-700 ring-1 ring-teal-100"
+              : "bg-amber-50 text-amber-700 ring-1 ring-amber-100",
           ].join(" ")}
         >
-          {passedCount === items.length ? "全部通过" : "存在异常"}
+          <span
+            className={[
+              "h-1.5 w-1.5 rounded-full",
+              allPassed ? "bg-teal-500" : "bg-amber-500",
+            ].join(" ")}
+          />
+          {allPassed ? "全部通过" : "存在异常"}
         </div>
       </div>
 
-      <div className="max-h-[320px] space-y-2 overflow-y-auto pr-1">
+      {/* List */}
+      <div className="max-h-[330px] space-y-2 overflow-y-auto pr-1">
         {items.map((item, index) => {
           const success = !!item.success;
 
@@ -154,17 +167,20 @@ const VerifyItemsPopoverContent: React.FC<{ items?: VerifyItem[] }> = ({
             <div
               key={`${item.code || item.name || "verify-item"}-${index}`}
               className={[
-                "rounded-2xl border px-3 py-2.5",
+                "group relative overflow-hidden rounded-2xl border bg-white px-3 py-3 shadow-sm transition-all duration-200",
                 success
-                  ? "border-emerald-100 bg-emerald-50/60"
-                  : "border-rose-100 bg-rose-50/60",
+                  ? "border-slate-200 hover:border-teal-200 "
+                  : "border-rose-100 hover:border-rose-200 ",
               ].join(" ")}
             >
-              <div className="flex items-start gap-2">
+
+              <div className="flex items-start gap-3 pl-1.5">
                 <span
                   className={[
-                    "mt-1 h-2 w-2 shrink-0 rounded-full",
-                    success ? "bg-emerald-500" : "bg-rose-500",
+                    "mt-1.5 h-2 w-2 shrink-0 rounded-full shadow-sm",
+                    success
+                      ? "bg-teal-500 shadow-teal-200"
+                      : "bg-rose-500 shadow-rose-200",
                   ].join(" ")}
                 />
 
@@ -173,12 +189,13 @@ const VerifyItemsPopoverContent: React.FC<{ items?: VerifyItem[] }> = ({
                     <div className="truncate text-xs font-semibold text-slate-800">
                       {item.name || "未命名检查项"}
                     </div>
+
                     <div
                       className={[
-                        "shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium",
+                        "shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ring-1",
                         success
-                          ? "bg-white text-emerald-600"
-                          : "bg-white text-rose-600",
+                          ? "bg-teal-50 text-teal-700 ring-teal-100"
+                          : "bg-rose-50 text-rose-700 ring-rose-100",
                       ].join(" ")}
                     >
                       {success ? "通过" : "失败"}
@@ -186,17 +203,17 @@ const VerifyItemsPopoverContent: React.FC<{ items?: VerifyItem[] }> = ({
                   </div>
 
                   {item.message ? (
-                    <div className="mt-1 text-xs leading-5 text-slate-600">
+                    <div className="mt-1.5 text-xs leading-5 text-slate-500">
                       {item.message}
                     </div>
                   ) : null}
 
                   {(item.actualValue || item.expectedValue) && (
-                    <div className="mt-2 grid gap-1 rounded-xl bg-white/70 px-2 py-2 text-[11px] text-slate-500">
+                    <div className="mt-2.5 grid gap-1.5 rounded-xl border border-slate-100 bg-slate-50/80 px-2.5 py-2 text-[11px]">
                       {item.expectedValue ? (
-                        <div className="flex gap-1">
+                        <div className="flex gap-1.5">
                           <span className="shrink-0 text-slate-400">
-                            期望：
+                            期望
                           </span>
                           <span className="break-all text-slate-600">
                             {item.expectedValue}
@@ -205,9 +222,9 @@ const VerifyItemsPopoverContent: React.FC<{ items?: VerifyItem[] }> = ({
                       ) : null}
 
                       {item.actualValue ? (
-                        <div className="flex gap-1">
+                        <div className="flex gap-1.5">
                           <span className="shrink-0 text-slate-400">
-                            实际：
+                            实际
                           </span>
                           <span className="break-all text-slate-600">
                             {item.actualValue}

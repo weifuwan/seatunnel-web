@@ -92,25 +92,12 @@ export const seatunnelClientApi = {
       pluginName?: string;
       connectorType?: string;
       role?: "SOURCE" | "SINK";
+      triggerMode?: "AUTO" | "MANUAL";
+      forceRefresh?: boolean;
     }
-  ): Promise<{
-    code: number;
-    data?: {
-      success?: boolean;
-      message?: string;
-      errorMessage?: string;
-      finalJobStatus?: string;
-      durationMs?: number;
-      testJobId?: string;
-    };
-    msg?: string;
-    message?: string;
-  }> => {
-    return HttpUtils.post(`/api/v1/devops/client/${clientId}/verify-datasource`, {
-      datasourceId: params.datasourceId,
-      pluginName: params.pluginName,
-      connectorType: params.connectorType,
-      role: params.role,
+  ) => {
+    return HttpUtils.post(`${apiPrefix}/${clientId}/verify-datasource`, {
+      ...params,
       timeoutMs: 15000,
       pollIntervalMs: 1000,
     });

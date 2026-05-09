@@ -20,6 +20,21 @@ public class ClientDatasourceVerifyDTO {
     private String connectorType;
 
     /**
+     * 测试触发方式：
+     * AUTO   自动触发，可以走缓存
+     * MANUAL 手动点击，必须真实测试
+     */
+    @Schema(description = "触发方式：AUTO 自动触发；MANUAL 手动触发", example = "AUTO")
+    private String triggerMode;
+
+    /**
+     * 是否强制刷新。
+     * true 时不读缓存，直接真实测试。
+     */
+    @Schema(description = "是否强制刷新缓存", example = "false")
+    private Boolean forceRefresh;
+
+    /**
      * SOURCE / SINK
      */
     private String role;

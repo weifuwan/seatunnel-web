@@ -14,6 +14,7 @@ import org.apache.seatunnel.web.core.utils.MetricValueParser;
 import org.apache.seatunnel.web.core.utils.SeaTunnelClientUrlUtils;
 import org.apache.seatunnel.web.core.verify.DatasourceConnectivityVerificationStrategy;
 import org.apache.seatunnel.web.core.verify.DatasourceConnectivityVerificationStrategyFactory;
+import org.apache.seatunnel.web.core.verify.cache.ClientDatasourceVerifyMemoryCache;
 import org.apache.seatunnel.web.core.verify.modal.DatasourceVerifyContext;
 import org.apache.seatunnel.web.dao.entity.DataSource;
 import org.apache.seatunnel.web.dao.entity.SeaTunnelClient;
@@ -52,6 +53,9 @@ public class SeaTunnelClientServiceImpl implements SeaTunnelClientService {
 
     @Resource
     private DataSourceService dataSourceService;
+
+    @Resource
+    private ClientDatasourceVerifyMemoryCache verifyMemoryCache;
 
     @Resource
     private DatasourceConnectivityVerificationStrategyFactory strategyFactory;
@@ -226,10 +230,74 @@ public class SeaTunnelClientServiceImpl implements SeaTunnelClientService {
                 .pollIntervalMs(pollIntervalMs)
                 .build();
 
+        boolean autoMode = StringUtils.equalsIgnoreCase(dto.getTriggerMode(), "AUTO");
+        boolean forceRefresh = Boolean.TRUE.equals(dto.getForceRefresh());
+
+        String cacheKey = verifyMemoryCache.buildKey(
+                client,
+                datasource,
+                dto.getPluginName(),
+                dto.getConnectorType(),
+                dto.getRole()
+        );
+
+        /*
+         * 自动模式：优先读缓存。
+         * 手动模式：不读缓存，必须真实提交 SeaTunnel 测试任务。
+         */
+        if (autoMode && !forceRefresh) {
+            ClientDatasourceVerifyVO cached = verifyMemoryCache.get(cacheKey);
+            if (cached != null) {
+                fillBaseInfo(cached, client, datasource);
+                return cached;
+            }
+        }
+
         DatasourceConnectivityVerificationStrategy strategy =
                 strategyFactory.getStrategy(context);
 
-        return strategy.verify(context);
+        ClientDatasourceVerifyVO result = strategy.verify(context);
+
+        fillBaseInfo(result, client, datasource);
+        result.setFromCache(false);
+
+        /*
+         * 只缓存成功结果。
+         * 失败不缓存，避免数据库恢复后仍然被失败结果挡住。
+         */
+        if (autoMode && Boolean.TRUE.equals(result.getSuccess())) {
+            verifyMemoryCache.put(cacheKey, result);
+        }
+
+        return result;
+    }
+
+    private void fillBaseInfo(
+            ClientDatasourceVerifyVO vo,
+            SeaTunnelClient client,
+            DataSource datasource
+    ) {
+        if (vo == null) {
+            return;
+        }
+
+        if (client != null) {
+            vo.setClientId(client.getId());
+            vo.setClientName(client.getClientName());
+            vo.setClientBaseUrl(client.getBaseUrl());
+        }
+
+        if (datasource != null) {
+            vo.setDatasourceId(datasource.getId());
+            vo.setDatasourceName(datasource.getName());
+            vo.setDatasourceType(
+                    datasource.getDbType() == null ? null : datasource.getDbType().name()
+            );
+        }
+
+        if (vo.getItems() == null) {
+            vo.setItems(new ArrayList<>());
+        }
     }
 
     private void createClient(SeaTunnelClientDTO dto, String baseUrl, Date now) {

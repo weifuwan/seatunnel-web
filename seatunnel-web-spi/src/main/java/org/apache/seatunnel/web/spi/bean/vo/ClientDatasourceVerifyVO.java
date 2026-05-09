@@ -16,6 +16,12 @@ public class ClientDatasourceVerifyVO {
     @Schema(description = "结果摘要")
     private String message;
 
+    @Schema(description = "是否来自缓存")
+    private Boolean fromCache;
+
+    @Schema(description = "缓存过期时间戳，毫秒")
+    private Long cacheExpireAt;
+
     @Schema(description = "客户端ID")
     private Long clientId;
 
@@ -49,23 +55,13 @@ public class ClientDatasourceVerifyVO {
     @Schema(description = "耗时，毫秒")
     private Long durationMs;
 
-    /**
-     * 分项校验结果。
-     *
-     * CDC 场景下很有用：
-     * - 基础连通性
-     * - binlog 是否开启
-     * - binlog_format 是否为 ROW
-     * - binlog_row_image 是否为 FULL
-     * - server_id 是否有效
-     * - 权限是否满足
-     */
     private List<ClientDatasourceVerifyItemVO> items;
 
     public static ClientDatasourceVerifyVO success(String message) {
         ClientDatasourceVerifyVO vo = new ClientDatasourceVerifyVO();
         vo.setSuccess(true);
         vo.setMessage(message);
+        vo.setFromCache(false);
         vo.setItems(new ArrayList<>());
         return vo;
     }
@@ -75,6 +71,7 @@ public class ClientDatasourceVerifyVO {
         vo.setSuccess(false);
         vo.setMessage(message);
         vo.setErrorMessage(message);
+        vo.setFromCache(false);
         vo.setItems(new ArrayList<>());
         return vo;
     }

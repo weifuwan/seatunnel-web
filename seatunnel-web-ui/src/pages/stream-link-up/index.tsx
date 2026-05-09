@@ -77,7 +77,6 @@ const RealtimeSyncPage: React.FC = () => {
       const data = await seatunnelStremJobDefinitionApi.getUniqueId();
 
       if (data?.code !== 0) {
-        message.error(data?.message || "创建实时任务失败，请稍后重试");
         return;
       }
 
@@ -100,8 +99,6 @@ const RealtimeSyncPage: React.FC = () => {
 
       history.push(`/sync/stream-link-up/${returnId}/detail`);
     } catch (error) {
-      console.error("Create stream sync task failed:", error);
-      message.error("创建实时任务失败，请检查网络或稍后重试");
     } finally {
       setCreating(false);
     }

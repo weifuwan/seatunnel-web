@@ -1,11 +1,10 @@
 import { ArrowLeftOutlined } from "@ant-design/icons";
-import { Button, Col, Form, message, Popover, Row, Space, Tooltip } from "antd";
+import { Button, Col, Form, message, Popover, Row, Space } from "antd";
 import {
   Blocks,
   Braces,
   Database,
   Eye,
-  PlayCircle,
   Upload,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -17,7 +16,6 @@ import { CheckListPopover } from "./components/CheckListPopover";
 import {
   BasicConfig,
   EnvConfig,
-  ScheduleConfig,
 } from "./components/ScheduleConfigContent/types";
 import { useFlowChecks } from "./hooks/useFlowChecks";
 import "./index.less";
@@ -33,8 +31,6 @@ interface WorkflowProps {
   setTargetType: (value: any) => void;
   basicConfig: BasicConfig;
   setBasicConfig: React.Dispatch<React.SetStateAction<BasicConfig>>;
-  scheduleConfig: ScheduleConfig;
-  setScheduleConfig: (value: any) => void;
   setParams: React.Dispatch<React.SetStateAction<any>>;
   envConfig: EnvConfig;
   setEnvConfig: React.Dispatch<React.SetStateAction<EnvConfig>>;
@@ -51,7 +47,6 @@ const getInitialWorkflowGraph = (params?: any) => {
 
 const buildDirtySignature = (data: {
   basicConfig: BasicConfig;
-  scheduleConfig: ScheduleConfig;
   envConfig: EnvConfig;
   workflowGraph: {
     nodes: any[];
@@ -60,7 +55,6 @@ const buildDirtySignature = (data: {
 }) => {
   return JSON.stringify({
     basic: data.basicConfig,
-    schedule: data.scheduleConfig,
     env: data.envConfig,
     workflow: {
       nodes: data.workflowGraph?.nodes || [],
@@ -76,9 +70,7 @@ export default function Workflow({
   targetType,
   basicConfig,
   setBasicConfig,
-  scheduleConfig,
   setParams,
-  setScheduleConfig,
   envConfig,
   setEnvConfig,
 }: WorkflowProps) {
@@ -86,7 +78,7 @@ export default function Workflow({
 
   const [rightWidth, setRightWidth] = useState(540);
   const [activeTab, setActiveTab] = useState<
-    "basic" | "schedule" | "mapping" | "env" | null
+    "basic" | "mapping" | "env" | null
   >(null);
 
   const draggingRef = useRef(false);
@@ -107,16 +99,15 @@ export default function Workflow({
   >(params?.id);
 
   const [publishLoading, setPublishLoading] = useState(false);
-  const [runLoading, setRunLoading] = useState(false);
+  const [runLoading] = useState(false);
 
   const currentSignature = useMemo(() => {
     return buildDirtySignature({
       basicConfig,
-      scheduleConfig,
       envConfig,
       workflowGraph,
     });
-  }, [basicConfig, scheduleConfig, envConfig, workflowGraph]);
+  }, [basicConfig, envConfig, workflowGraph]);
 
   /**
    * baselineSignature 表示“已发布版本”的配置快照。
@@ -133,7 +124,8 @@ export default function Workflow({
   const [baselineSignature, setBaselineSignature] =
     useState<string>(currentSignature);
 
-  const isDirty = !!publishedJobDefineId && currentSignature !== baselineSignature;
+  const isDirty =
+    !!publishedJobDefineId && currentSignature !== baselineSignature;
 
   const { checkStat, checkGroups } = useFlowChecks(workflowGraph.nodes || []);
 
@@ -201,12 +193,8 @@ export default function Workflow({
   }, [params?.id]);
 
   /**
-   * 关键点：
    * 编辑页刚进来时，等当前 props + workflowGraph 形成当前快照后，
    * 把这份快照作为 baseline。
-   *
-   * 不使用 requestAnimationFrame，不做延迟归位，
-   * 避免视觉上的“多渲染一层 / 闪一下”。
    */
   useEffect(() => {
     if (!params?.id) return;
@@ -239,18 +227,11 @@ export default function Workflow({
     };
   };
 
-  const buildScheduleData = () => {
-    return {
-      ...scheduleConfig,
-    };
-  };
-
   const buildFinalPayload = () => {
     return {
       id: params?.id ?? publishedJobDefineId,
       basic: buildBasicData(),
       workflow: buildWorkflowData(),
-      schedule: buildScheduleData(),
       env: buildEnvData(),
     };
   };
@@ -271,7 +252,7 @@ export default function Workflow({
       setPreviewContent(res?.data || "");
       setPreviewOpen(true);
     } catch (error: any) {
-      
+      message.error(error?.message || "预览失败");
     } finally {
       setPreviewLoading(false);
     }
@@ -297,15 +278,12 @@ export default function Workflow({
 
         const nextSignature = buildDirtySignature({
           basicConfig,
-          scheduleConfig,
           envConfig,
           workflowGraph,
         });
 
         setBaselineSignature(nextSignature);
 
-        // 如果你希望发布后让 params.id 也同步，可以保留这段。
-        // 这里建议打开，避免新建发布后 params 里没有 id。
         setParams((prev: any) => ({
           ...prev,
           id: jobDefineId,
@@ -319,8 +297,6 @@ export default function Workflow({
       setPublishLoading(false);
     }
   };
-
- 
 
   const handleWorkflowChange = (nextGraph: { nodes: any[]; edges: any[] }) => {
     setWorkflowGraph((prev) => {
@@ -520,7 +496,6 @@ export default function Workflow({
                             sourceType={sourceType}
                             targetType={targetType}
                             onWorkflowChange={handleWorkflowChange}
-                            scheduleConfig={scheduleConfig}
                           />
                         </ReactFlowProvider>
                       </div>
@@ -565,8 +540,6 @@ export default function Workflow({
                 params={params}
                 basicConfig={basicConfig}
                 setBasicConfig={setBasicConfig}
-                scheduleConfig={scheduleConfig}
-                setScheduleConfig={setScheduleConfig}
                 envConfig={envConfig}
                 setEnvConfig={setEnvConfig}
               />

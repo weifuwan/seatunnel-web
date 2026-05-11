@@ -82,6 +82,9 @@ export function useSourcePanelLogic({
     );
   }, [dataSourceId, dataSourceOptions]);
 
+  /**
+   * 只根据 dbType 加载数据源列表。
+   */
   useEffect(() => {
     const loadDataSourceOptions = async () => {
       if (!dbType) {
@@ -92,11 +95,13 @@ export function useSourcePanelLogic({
       try {
         const res = await fetchDataSourceOptions(dbType);
         const list = Array.isArray(res?.data) ? res.data : [];
+
         const options = list.map((item: any) => ({
           label: item?.label,
           value: String(item?.value),
           dbType: item?.dbType,
         }));
+
         setDataSourceOptions(options);
       } catch (error) {
         console.error("load data source options error", error);
@@ -107,6 +112,13 @@ export function useSourcePanelLogic({
     loadDataSourceOptions();
   }, [dbType]);
 
+  /**
+   * 根据当前 dataSourceId 回填节点标题和 dbType。
+   *
+   * 注意：
+   * 这里虽然依赖 updateNode，但只在 title/dbType 真正不一致时才更新，
+   * 不会引发表列表接口重复加载。
+   */
   useEffect(() => {
     if (!dataSourceId || dataSourceOptions.length === 0) return;
 
@@ -127,8 +139,21 @@ export function useSourcePanelLogic({
       title: nextTitle,
       dbType: nextDbType,
     });
-  }, [dataSourceId, dataSourceOptions, nodeData, updateNode]);
+  }, [
+    dataSourceId,
+    dataSourceOptions,
+    nodeData?.title,
+    nodeData?.dbType,
+    updateNode,
+  ]);
 
+  /**
+   * 表列表只应该由 dataSourceId 决定。
+   *
+   * 关键修复点：
+   * 不要把 table / updateNode / selectedNode / config 放进依赖里。
+   * 否则切换 startupMode、extraParams、schemaStatus 都可能导致重新拉表。
+   */
   useEffect(() => {
     const loadTableOptions = async () => {
       if (!dataSourceId) {
@@ -137,6 +162,7 @@ export function useSourcePanelLogic({
       }
 
       setTableLoading(true);
+
       try {
         const res = await dataSourceCatalogApi.listTable(dataSourceId);
         const list = Array.isArray(res?.data) ? res.data : [];
@@ -172,13 +198,6 @@ export function useSourcePanelLogic({
         });
 
         setTableOptions(options);
-
-        if (
-          table &&
-          !options.some((item: any) => String(item.value) === String(table))
-        ) {
-          updateNode({ table: undefined });
-        }
       } catch (error) {
         console.error("load table options error", error);
         setTableOptions([]);
@@ -188,7 +207,26 @@ export function useSourcePanelLogic({
     };
 
     loadTableOptions();
-  }, [dataSourceId, table, updateNode]);
+  }, [dataSourceId]);
+
+  /**
+   * 单独校验当前已选 table 是否还存在。
+   *
+   * 这样 table 变化不会触发 listTable 接口，
+   * 只做本地 options 校验。
+   */
+  useEffect(() => {
+    if (!table) return;
+    if (tableOptions.length === 0) return;
+
+    const exists = tableOptions.some(
+      (item: any) => String(item.value) === String(table)
+    );
+
+    if (exists) return;
+
+    updateNode({ table: undefined, tableNames: [] });
+  }, [table, tableOptions, updateNode]);
 
   const handleDataSourceChange = useCallback(
     (value: string, option: any) => {
@@ -201,6 +239,7 @@ export function useSourcePanelLogic({
         {
           dataSourceId: value,
           table: undefined,
+          tableNames: [],
           sql: "",
         },
         {
@@ -210,15 +249,21 @@ export function useSourcePanelLogic({
         resetSchemaMeta
       );
     },
-    [nodeData, updateNode]
+    [nodeData?.title, nodeData?.dbType, updateNode]
   );
 
+  /**
+   * 兼容旧的 JDBC SourcePanel。
+   * CDC SourcePanel 当前已经不用这个方法。
+   */
   const handleReadModeChange = useCallback(
     (value: string) => {
       updateNode(
         {
           readMode: value,
-          ...(value === "table" ? { sql: "" } : { table: undefined }),
+          ...(value === "table"
+            ? { sql: "" }
+            : { table: undefined, tableNames: [] }),
         },
         undefined,
         resetSchemaMeta
@@ -226,26 +271,24 @@ export function useSourcePanelLogic({
     },
     [updateNode]
   );
+
   const scheduleParamsList = scheduleConfig?.paramsList || [];
 
+  /**
+   * CDC 当前固定按 table 解析字段。
+   * 这里不再根据 readMode 去判断 SQL。
+   */
   const resolveSourceOutputSchema = useCallback(async () => {
     const currentDataSourceId = dataSourceId;
-    const currentReadMode = readMode;
     const currentTable = table;
-    const sqlText = sql?.trim();
 
     if (!currentDataSourceId) {
       message.warning("请先选择来源数据源");
       return [];
     }
 
-    if (currentReadMode === "table" && !currentTable) {
+    if (!currentTable) {
       message.warning("请先选择来源表");
-      return [];
-    }
-
-    if (currentReadMode === "sql" && !sqlText) {
-      message.warning("请先输入 SQL");
       return [];
     }
 
@@ -258,9 +301,9 @@ export function useSourcePanelLogic({
       });
 
       const params = {
-        read_mode: currentReadMode,
-        table_path: currentReadMode === "table" ? currentTable : "",
-        query: currentReadMode === "sql" ? sqlText : "",
+        read_mode: "table",
+        table_path: currentTable,
+        query: "",
         paramsList: scheduleConfig?.paramsList || [],
       };
 
@@ -285,6 +328,7 @@ export function useSourcePanelLogic({
       const rawColumns = resp?.data || [];
 
       const outputSchema = rawColumns.map((item: any) => ({
+        name: item?.fieldName || "",
         type: item?.fieldType || "",
         nullable: item?.isNullable,
         comment: item?.fieldComment || "",
@@ -299,64 +343,64 @@ export function useSourcePanelLogic({
 
       return outputSchema;
     } catch (error: any) {
+      console.error("resolve source output schema error", error);
+
       updateNode(undefined, undefined, {
         outputSchema: [],
         schemaStatus: "error",
         schemaError: "字段解析失败",
       });
 
+      message.error("字段解析失败");
       return [];
     } finally {
       setTableLoading(false);
     }
-  }, [dataSourceId, readMode, table, sql, updateNode, scheduleParamsList]);
+  }, [dataSourceId, table, updateNode, scheduleParamsList]);
 
+  /**
+   * CDC 当前固定按 table 预览。
+   */
   const handlePreview = useCallback(async () => {
     if (!dataSourceId) {
       message.warning("请选择数据源");
       return;
     }
 
-    console.log(scheduleConfig);
+    if (!table) {
+      message.warning("请选择来源表");
+      return;
+    }
 
-    const getRequestParams = () => ({
-      read_mode: readMode,
-      ...(readMode === "table" ? { table_path: table } : { query: sql }),
+    const requestParams = {
+      read_mode: "table",
+      table_path: table,
       extra_params: extraParams,
       paramsList: scheduleConfig?.paramsList || [],
-    });
+    };
 
     try {
-      if (readMode === "table" && !table) {
-        message.warning("请选择来源表");
-        return;
-      }
-
-      if (readMode === "sql" && !sql?.trim()) {
-        message.warning("请输入 SQL");
-        return;
-      }
-
       setViewLoading(true);
 
       const data = await dataSourceCatalogApi.getTop20Data(
         dataSourceId,
-        getRequestParams()
+        requestParams
       );
 
       if (data?.code === 0) {
         qualityDetailRef.current?.onOpen(true, data);
       } else {
+        message.error(data?.message || "预览失败");
       }
     } catch (error) {
+      console.error("preview source data error", error);
+      message.error("预览失败");
     } finally {
       setViewLoading(false);
     }
   }, [
     dataSourceId,
-    readMode,
     table,
-    sql,
     extraParams,
     qualityDetailRef,
     scheduleParamsList,
@@ -373,6 +417,10 @@ export function useSourcePanelLogic({
     });
   }, [nodeId, dataSourceId, readMode, table, sql, extraParams]);
 
+  /**
+   * 以下 SQL 相关逻辑暂时保留，用于兼容旧组件。
+   * CDC SourcePanel 不再调用这些方法。
+   */
   const handleGenerateSql = useCallback(async () => {
     if (!dataSourceId) {
       message.warning("请先选择数据源");
@@ -447,11 +495,12 @@ export function useSourcePanelLogic({
     } finally {
       setResolveSqlLoading(false);
     }
-  }, [dataSourceId, sql, scheduleParamsList]);
+  }, [dataSourceId, sql, readMode, extraParams, scheduleParamsList]);
 
   const handleOpenResolvePopover = useCallback(
     async (open: boolean) => {
       setResolvePopoverOpen(open);
+
       if (open && sql) {
         await handleResolveSqlPreview();
       }

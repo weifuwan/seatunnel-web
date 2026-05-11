@@ -7,41 +7,7 @@ import {
   BasicConfig,
   defaultEnvConfig,
   EnvConfig,
-  ScheduleConfig,
 } from "../../workflow/components/ScheduleConfigContent/types";
-
-const defaultScheduleConfig: ScheduleConfig = {
-  paramsList: [],
-  instanceGenerateMode: "nextDay",
-  scheduleRunType: "normal",
-  timeoutMode: "system",
-  timeoutValue: 1,
-  timeoutUnit: "hour",
-  rerunPolicy: "success_or_fail",
-  autoRetry: true,
-  retryTimes: 1,
-  retryInterval: 1,
-  scheduleType: "day",
-  hourMode: "range",
-  hourlyRangeValue: {
-    startTime: "00:00",
-    intervalHour: 1,
-    endTime: "23:59",
-  },
-  hourlyAppointValue: {
-    hours: [0],
-    minute: "00",
-  },
-  dailyValue: {
-    time: "00:17",
-  },
-  weeklyValue: {
-    weekdays: ["MON"],
-    time: "00:17",
-  },
-  effectType: "forever",
-  cronExpression: "0 17 0 * * ?",
-};
 
 const defaultBasicConfig: BasicConfig = {
   jobName: "",
@@ -52,29 +18,6 @@ const defaultBasicConfig: BasicConfig = {
   targetType: "SINK",
   sourceDataSourceId: "",
   targetDataSourceId: "",
-};
-
-const buildInitialScheduleConfigForCreate = (rawData?: any): ScheduleConfig => {
-  return {
-    ...defaultScheduleConfig,
-    ...(rawData?.scheduleConfig || {}),
-    hourlyRangeValue: {
-      ...defaultScheduleConfig.hourlyRangeValue,
-      ...(rawData?.scheduleConfig?.hourlyRangeValue || {}),
-    },
-    hourlyAppointValue: {
-      ...defaultScheduleConfig.hourlyAppointValue,
-      ...(rawData?.scheduleConfig?.hourlyAppointValue || {}),
-    },
-    dailyValue: {
-      ...defaultScheduleConfig.dailyValue,
-      ...(rawData?.scheduleConfig?.dailyValue || {}),
-    },
-    weeklyValue: {
-      ...defaultScheduleConfig.weeklyValue,
-      ...(rawData?.scheduleConfig?.weeklyValue || {}),
-    },
-  };
 };
 
 const buildInitialBasicConfigForCreate = (rawData?: any): BasicConfig => {
@@ -88,31 +31,6 @@ const buildInitialBasicConfigForCreate = (rawData?: any): BasicConfig => {
     targetType: rawData?.targetType?.dbType || "SINK",
     sourceDataSourceId: rawData?.sourceDataSourceId || rawData?.sourceId || "",
     targetDataSourceId: rawData?.targetDataSourceId || rawData?.targetId || "",
-  };
-};
-
-const buildInitialScheduleConfigForEdit = (editData?: any): ScheduleConfig => {
-  const schedule = editData?.schedule || {};
-
-  return {
-    ...defaultScheduleConfig,
-    ...schedule,
-    hourlyRangeValue: {
-      ...defaultScheduleConfig.hourlyRangeValue,
-      ...(schedule?.hourlyRangeValue || {}),
-    },
-    hourlyAppointValue: {
-      ...defaultScheduleConfig.hourlyAppointValue,
-      ...(schedule?.hourlyAppointValue || {}),
-    },
-    dailyValue: {
-      ...defaultScheduleConfig.dailyValue,
-      ...(schedule?.dailyValue || {}),
-    },
-    weeklyValue: {
-      ...defaultScheduleConfig.weeklyValue,
-      ...(schedule?.weeklyValue || {}),
-    },
   };
 };
 
@@ -138,7 +56,6 @@ const buildInitialBasicConfigForEdit = (editData?: any): BasicConfig => {
 const buildPageParamsForEdit = (editData?: any) => {
   const basic = editData?.basic || {};
   const workflow = editData?.workflow || {};
-  const schedule = editData?.schedule || {};
 
   return {
     id: editData?.id,
@@ -152,7 +69,6 @@ const buildPageParamsForEdit = (editData?: any) => {
       workflow?.sourceDataSourceId || workflow?.sourceId || "",
     targetDataSourceId:
       workflow?.targetDataSourceId || workflow?.targetId || "",
-    scheduleConfig: schedule,
     workflow,
     basic,
   };
@@ -165,10 +81,10 @@ export default function SingleConfigPage() {
   const [params, setParams] = useState<any>(null);
   const [sourceType, setSourceType] = useState<any>(null);
   const [targetType, setTargetType] = useState<any>(null);
-  const [scheduleConfig, setScheduleConfig] = useState<ScheduleConfig>(
-    defaultScheduleConfig
-  );
-  const [envConfig, setEnvConfig] = useState<EnvConfig>(defaultEnvConfig);
+  const [envConfig, setEnvConfig] = useState<EnvConfig>({
+    jobMode: "STREAMING",
+    parallelism: 1,
+  });
   const [basicConfig, setBasicConfig] =
     useState<BasicConfig>(defaultBasicConfig);
   const [loading, setLoading] = useState(false);
@@ -192,7 +108,7 @@ export default function SingleConfigPage() {
 
     const searchParams = new URLSearchParams(location.search);
     const scene = searchParams.get("scene");
-    const cacheKey = `batch-link-up-detail-${id}`;
+    const cacheKey = `stream-link-up-detail-${id}`;
 
     const initCreate = () => {
       const cache = sessionStorage.getItem(cacheKey);
@@ -202,11 +118,11 @@ export default function SingleConfigPage() {
       }
 
       const data = JSON.parse(cache);
+
       setParams(data);
       setSourceType(data?.sourceType || null);
       setTargetType(data?.targetType || null);
       setBasicConfig(buildInitialBasicConfigForCreate(data));
-      setScheduleConfig(buildInitialScheduleConfigForCreate(data));
       setEnvConfig(buildInitialEnvConfigForCreate(data));
     };
 
@@ -227,7 +143,6 @@ export default function SingleConfigPage() {
         setSourceType(data?.workflow?.sourceType || null);
         setTargetType(data?.workflow?.targetType || null);
         setBasicConfig(buildInitialBasicConfigForEdit(data));
-        setScheduleConfig(buildInitialScheduleConfigForEdit(data));
         setEnvConfig(buildInitialEnvConfigForEdit(data));
       } catch (error) {
         message.error("获取编辑详情失败");
@@ -261,11 +176,11 @@ export default function SingleConfigPage() {
     const scene = searchParams.get("scene");
 
     if (scene === "edit") {
-      history.push(`/sync/batch-link-up`);
+      history.push(`/sync/stream-link-up`);
       return;
     }
 
-    history.push(`/sync/batch-link-up/${id}/detail`);
+    history.push(`/sync/stream-link-up/${id}/detail`);
   };
 
   if (loading) {
@@ -296,8 +211,6 @@ export default function SingleConfigPage() {
         setParams={setParams}
         basicConfig={basicConfig}
         setBasicConfig={setBasicConfig}
-        scheduleConfig={scheduleConfig}
-        setScheduleConfig={setScheduleConfig}
         envConfig={envConfig}
         setEnvConfig={setEnvConfig}
       />

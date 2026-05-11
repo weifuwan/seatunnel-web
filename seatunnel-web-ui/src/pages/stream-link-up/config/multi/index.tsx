@@ -232,7 +232,7 @@ export default function MultiConfigPage() {
 
     const searchParams = new URLSearchParams(location.search);
     const scene = searchParams.get("scene");
-    const cacheKey = `batch-link-up-detail-${id}`;
+    const cacheKey = `stream-link-up-detail-${id}`;
 
     const initCreate = () => {
       const cache = sessionStorage.getItem(cacheKey);
@@ -304,11 +304,11 @@ export default function MultiConfigPage() {
     const scene = searchParams.get("scene");
 
     if (scene === "edit") {
-      history.push("/sync/batch-link-up");
+      history.push("/sync/stream-link-up");
       return;
     }
 
-    history.push(`/sync/batch-link-up/${id}/detail`);
+    history.push(`/sync/stream-link-up/${id}/detail`);
   };
 
   if (loading) {

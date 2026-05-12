@@ -6,10 +6,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.seatunnel.web.common.utils.JSONUtils;
 import org.apache.seatunnel.web.core.builder.HoconConfigBuilder;
 import org.apache.seatunnel.web.core.dag.DagGraph;
+import org.apache.seatunnel.web.core.job.handler.JobRuntimeContext;
+import org.apache.seatunnel.web.core.job.handler.JobRuntimeContextFactory;
 import org.apache.seatunnel.web.core.utils.DagUtil;
-import org.apache.seatunnel.web.spi.bean.dto.batch.BatchGuideMultiJobSaveCommand;
-import org.apache.seatunnel.web.spi.bean.dto.config.BatchJobEnvConfig;
+import org.apache.seatunnel.web.spi.bean.dto.command.JobDefinitionSaveCommand;
 import org.apache.seatunnel.web.spi.bean.dto.config.GuideMultiJobContent;
+import org.apache.seatunnel.web.spi.bean.dto.config.JobEnvConfig;
 import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
@@ -32,7 +34,6 @@ public class GuideMultiHoconBuildService {
     private static final String KEY_TABLE_LIST = "table_list";
     private static final String KEY_SOURCE_TABLE_LIST = "source_table_list";
     private static final String KEY_SINK_TABLE_LIST = "sink_table_list";
-
     private static final String KEY_TABLE_PATTERN = "tablePattern";
 
     @Resource
@@ -41,10 +42,15 @@ public class GuideMultiHoconBuildService {
     @Resource
     private GuideMultiTableMatchResolver tableMatchResolver;
 
-    public String build(BatchGuideMultiJobSaveCommand command) {
-        validateCommand(command);
+    @Resource
+    private JobRuntimeContextFactory runtimeContextFactory;
 
-        Map<String, Object> workflow = buildWorkflow(command);
+    public String build(GuideMultiJobContent content, JobDefinitionSaveCommand command) {
+        validateContent(content);
+
+        JobRuntimeContext runtimeContext = runtimeContextFactory.create(command);
+
+        Map<String, Object> workflow = buildWorkflow(content, runtimeContext);
 
         String dagJson = JSONUtils.toJsonString(workflow);
         if (StringUtils.isBlank(dagJson)) {
@@ -53,22 +59,18 @@ public class GuideMultiHoconBuildService {
 
         DagGraph dagGraph = DagUtil.parseAndCheck(dagJson);
 
-
-        return hoconConfigBuilder.build(dagGraph, command.getEnv());
+        return hoconConfigBuilder.build(dagGraph, runtimeContext.getEnv());
     }
 
-    private Map<String, Object> buildWorkflow(BatchGuideMultiJobSaveCommand command) {
-        GuideMultiJobContent content = command.getContent();
-
+    private Map<String, Object> buildWorkflow(GuideMultiJobContent content,
+                                              JobRuntimeContext runtimeContext) {
         List<String> sourceTables = tableMatchResolver.resolveSourceTables(content);
         List<String> sinkTables = tableMatchResolver.resolveSinkTables(content);
 
         validateTables(sourceTables, sinkTables);
 
-        BatchJobEnvConfig env = command.getEnv();
-
-        Map<String, Object> sourceNode = buildSourceNode(content.getSource(), sourceTables, env);
-        Map<String, Object> sinkNode = buildSinkNode(content.getTarget(), sinkTables, env);
+        Map<String, Object> sourceNode = buildSourceNode(content.getSource(), sourceTables, runtimeContext);
+        Map<String, Object> sinkNode = buildSinkNode(content.getTarget(), sinkTables, runtimeContext);
 
         Map<String, Object> edge = new LinkedHashMap<>();
         edge.put("id", EDGE_ID);
@@ -85,7 +87,7 @@ public class GuideMultiHoconBuildService {
     private Map<String, Object> buildSourceNode(
             GuideMultiJobContent.WorkflowSourceConfig source,
             List<String> sourceTables,
-            BatchJobEnvConfig env) {
+            JobRuntimeContext runtimeContext) {
 
         boolean multiTable = sourceTables.size() > 1;
         String firstSourceTable = firstTable(sourceTables);
@@ -105,7 +107,7 @@ public class GuideMultiHoconBuildService {
         config.put(KEY_TABLE_LIST, sourceTables);
         config.put(KEY_SOURCE_TABLE_LIST, sourceTables);
 
-        appendBatchJobEnvConfig(config, env);
+        appendRuntimeConfig(config, runtimeContext);
 
         if (source.getFetchSize() != null) {
             config.put("fetchSize", source.getFetchSize());
@@ -124,7 +126,7 @@ public class GuideMultiHoconBuildService {
         data.put("connectorType", source.getConnectorType());
         data.put("pluginName", source.getPluginName());
 
-        appendBatchJobEnvConfig(data, env);
+        appendRuntimeConfig(data, runtimeContext);
 
         data.putAll(config);
         data.put("config", config);
@@ -140,7 +142,7 @@ public class GuideMultiHoconBuildService {
     private Map<String, Object> buildSinkNode(
             GuideMultiJobContent.WorkflowTargetConfig target,
             List<String> sinkTables,
-            BatchJobEnvConfig env) {
+            JobRuntimeContext runtimeContext) {
 
         boolean multiTable = sinkTables.size() > 1;
         String firstSinkTable = firstTable(sinkTables);
@@ -157,17 +159,6 @@ public class GuideMultiHoconBuildService {
         config.put(KEY_SINK_TABLE_LIST, sinkTables);
 
         if (multiTable) {
-            /*
-             * 多表同步时，sink table 不应该固定为某一个目标表。
-             * 先默认使用官方变量：
-             *
-             *   table = "${table_name}"
-             *
-             * 后续支持前缀/后缀时，可以改为：
-             *
-             *   tablePattern = "${table_name}_test"
-             *   tablePattern = "ods_${table_name}"
-             */
             config.put(KEY_TABLE_PATTERN, "${table_name}");
         } else {
             config.put("table", firstSinkTable);
@@ -175,7 +166,7 @@ public class GuideMultiHoconBuildService {
             config.put("targetTableName", firstSinkTable);
         }
 
-        appendBatchJobEnvConfig(config, env);
+        appendRuntimeConfig(config, runtimeContext);
 
         putIfNotBlank(config, "dataSaveMode", target.getDataSaveMode());
         putIfNotBlank(config, "schemaSaveMode", target.getSchemaSaveMode());
@@ -204,7 +195,7 @@ public class GuideMultiHoconBuildService {
         data.put("connectorType", target.getConnectorType());
         data.put("pluginName", target.getPluginName());
 
-        appendBatchJobEnvConfig(data, env);
+        appendRuntimeConfig(data, runtimeContext);
 
         data.putAll(config);
         data.put("config", config);
@@ -217,37 +208,30 @@ public class GuideMultiHoconBuildService {
         return node;
     }
 
-
-
-    private void appendBatchJobEnvConfig(Map<String, Object> target, BatchJobEnvConfig env) {
-        if (env == null) {
+    private void appendRuntimeConfig(Map<String, Object> target, JobRuntimeContext runtimeContext) {
+        if (target == null || runtimeContext == null) {
             return;
         }
 
-        if (env.getJobMode() != null) {
-            target.put("jobMode", env.getJobMode().name());
-            target.put("job_mode", env.getJobMode().name());
+        JobEnvConfig env = runtimeContext.getEnv();
+        if (env != null) {
+            if (env.getJobMode() != null) {
+                target.put("jobMode", env.getJobMode().name());
+                target.put("job_mode", env.getJobMode().name());
+            }
+
+            if (env.getParallelism() != null) {
+                target.put("parallelism", env.getParallelism());
+            }
         }
 
-        if (env.getParallelism() != null) {
-            target.put("parallelism", env.getParallelism());
-        }
+
     }
 
-    private void validateCommand(BatchGuideMultiJobSaveCommand command) {
-        if (command == null) {
-            throw new IllegalArgumentException("command can not be null");
-        }
-
-        if (command.getBasic() == null) {
-            throw new IllegalArgumentException("basic can not be null");
-        }
-
-        if (command.getContent() == null) {
+    private void validateContent(GuideMultiJobContent content) {
+        if (content == null) {
             throw new IllegalArgumentException("content can not be null");
         }
-
-        GuideMultiJobContent content = command.getContent();
 
         if (content.getSource() == null) {
             throw new IllegalArgumentException("content.source can not be null");

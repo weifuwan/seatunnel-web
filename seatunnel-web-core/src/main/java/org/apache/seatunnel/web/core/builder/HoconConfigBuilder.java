@@ -11,6 +11,7 @@ import org.apache.seatunnel.web.core.builder.transform.TransformNodeConfigBuilde
 import org.apache.seatunnel.web.core.dag.DagGraph;
 import org.apache.seatunnel.web.core.utils.SeaTunnelConfigUtil;
 import org.apache.seatunnel.web.spi.bean.dto.config.BatchJobEnvConfig;
+import org.apache.seatunnel.web.spi.bean.dto.config.JobEnvConfig;
 import org.apache.seatunnel.web.spi.bean.dto.config.JobScheduleConfig;
 import org.springframework.stereotype.Component;
 
@@ -36,7 +37,7 @@ public class HoconConfigBuilder {
     @Resource
     private EnvConfigBuilder envConfigBuilder;
 
-    public String build(DagGraph dagGraph, BatchJobEnvConfig envConfig) {
+    public String build(DagGraph dagGraph, JobEnvConfig envConfig) {
         DagBuildContext context = DagBuildContext.from(dagGraph);
 
         NodeGroup group = groupNodes(dagGraph.getNodesAsConfig(), context);
@@ -108,7 +109,7 @@ public class HoconConfigBuilder {
         log.warn("Unknown builder type: {}", builder.getClass());
     }
 
-    public String build(DagGraph dagGraph, BatchJobEnvConfig envConfig, JobScheduleConfig scheduleConfig) {
+    public String build(DagGraph dagGraph, JobEnvConfig envConfig, JobScheduleConfig scheduleConfig) {
         DagBuildContext context = DagBuildContext.from(dagGraph, scheduleConfig);
 
         NodeGroup group = groupNodes(dagGraph.getNodesAsConfig(), context);

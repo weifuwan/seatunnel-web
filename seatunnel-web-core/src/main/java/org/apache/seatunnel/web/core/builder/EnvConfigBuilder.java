@@ -4,6 +4,7 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigRenderOptions;
 import org.apache.seatunnel.web.spi.bean.dto.config.BatchJobEnvConfig;
+import org.apache.seatunnel.web.spi.bean.dto.config.JobEnvConfig;
 import org.springframework.stereotype.Component;
 
 import java.util.LinkedHashMap;
@@ -12,7 +13,7 @@ import java.util.Map;
 @Component
 public class EnvConfigBuilder {
 
-    public String build(BatchJobEnvConfig envConfig) {
+    public String build(JobEnvConfig envConfig) {
         if (envConfig == null) {
             throw new IllegalArgumentException("JobBasicConfig cannot be null");
         }
@@ -29,7 +30,7 @@ public class EnvConfigBuilder {
         );
     }
 
-    private void fillCommonConfig(Map<String, Object> envMap, BatchJobEnvConfig envConfig) {
+    private void fillCommonConfig(Map<String, Object> envMap, JobEnvConfig envConfig) {
         if (envConfig.getJobMode() != null) {
             envMap.put("job.mode", envConfig.getJobMode().getCode());
         }

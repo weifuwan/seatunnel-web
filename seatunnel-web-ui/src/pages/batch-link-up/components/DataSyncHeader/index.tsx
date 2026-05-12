@@ -72,13 +72,13 @@ const DataSyncHeader: React.FC<DataSyncHeaderProps> = ({
         </div>
       </div>
 
-      <div className="mb-5 rounded-[20px] border border-indigo-100 bg-white/90 p-5 ">
-        <div className="mb-4 flex items-center gap-3 font-semibold text-slate-900">
+      <div className="mb-5 rounded-[20px] border border-indigo-100 bg-white/90 p-4 ">
+        <div className="mb-1 flex items-center gap-3 font-semibold text-slate-900">
           同步方向
-          <span className="inline-flex h-6 items-center gap-2 rounded-full bg-indigo-50 px-3 text-xs font-semibold " style={{color: "rgb(64, 81, 181)"}}>
+          {/* <span className="inline-flex h-6 items-center gap-2 rounded-full bg-indigo-50 px-3 text-xs font-semibold " style={{color: "rgb(64, 81, 181)"}}>
             <i className="h-1.5 w-1.5 rounded-full bg-indigo-500 shadow-[0_0_0_4px_rgba(99,102,241,0.14)]" />
             离线批量
-          </span>
+          </span> */}
         </div>
 
         <div className="grid grid-cols-[minmax(240px,1fr)_120px_minmax(240px,1fr)_180px] items-center gap-4 max-xl:grid-cols-1">
@@ -123,7 +123,7 @@ const DataSyncHeader: React.FC<DataSyncHeaderProps> = ({
           </Button>
         </div>
 
-        <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+        {/* <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-slate-500">
           常用组合：
           <span className="inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 text-slate-600 transition hover:border-indigo-200 hover:bg-white hover:text-indigo-600">
             🐬 MySQL → Oracle
@@ -137,7 +137,7 @@ const DataSyncHeader: React.FC<DataSyncHeaderProps> = ({
           <span className="inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 text-slate-600 transition hover:border-indigo-200 hover:bg-white hover:text-indigo-600">
             ⭐ MySQL → PostgreSQL
           </span>
-        </div>
+        </div> */}
       </div>
     </div>
   );

@@ -21,8 +21,6 @@ public class StreamingGuideSingleJobSaveCommand implements StreamingJobSaveComma
 
     private Map<String, Object> workflow;
 
-    private CheckpointConfig checkpoint;
-
     private StreamingJobEnvConfig env;
 
     @Override

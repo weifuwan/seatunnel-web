@@ -11,7 +11,7 @@ import org.apache.seatunnel.web.api.service.application.JobScheduleApplicationSe
 import org.apache.seatunnel.web.common.enums.ReleaseState;
 import org.apache.seatunnel.web.common.utils.JSONUtils;
 import org.apache.seatunnel.web.core.exceptions.ServiceException;
-import org.apache.seatunnel.web.core.job.assembler.JobDefinitionAssembler;
+import org.apache.seatunnel.web.core.job.assembler.BatchJobDefinitionAssembler;
 import org.apache.seatunnel.web.core.job.handler.JobDefinitionModeHandler;
 import org.apache.seatunnel.web.core.job.model.JobDefinitionAnalysisResult;
 import org.apache.seatunnel.web.core.job.registry.JobDefinitionModeHandlerRegistry;
@@ -20,7 +20,7 @@ import org.apache.seatunnel.web.dao.entity.JobDefinitionEntity;
 import org.apache.seatunnel.web.dao.entity.JobSchedule;
 import org.apache.seatunnel.web.dao.repository.JobDefinitionContentDao;
 import org.apache.seatunnel.web.dao.repository.JobDefinitionDao;
-import org.apache.seatunnel.web.spi.bean.dto.*;
+import org.apache.seatunnel.web.spi.bean.dto.BatchJobDefinitionQueryDTO;
 import org.apache.seatunnel.web.spi.bean.dto.batch.BatchGuideMultiJobSaveCommand;
 import org.apache.seatunnel.web.spi.bean.dto.batch.BatchGuideSingleJobSaveCommand;
 import org.apache.seatunnel.web.spi.bean.dto.batch.BatchScriptJobSaveCommand;
@@ -50,7 +50,7 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
     private JobDefinitionContentDao jobDefinitionContentDao;
 
     @Resource
-    private JobDefinitionAssembler jobDefinitionAssembler;
+    private BatchJobDefinitionAssembler jobDefinitionAssembler;
 
     @Resource
     private JobScheduleApplicationService scheduleApplicationService;
@@ -114,7 +114,7 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
         } catch (ServiceException e) {
             throw e;
         } catch (Exception e) {
-            log.error("Save or update job definition failed, command={}", command, e);
+            log.error("Save or update batch job definition failed, command={}", command, e);
             throw new ServiceException(Status.SAVE_OR_UPDATE_BATCH_JOB_DEFINITION_ERROR);
         }
     }
@@ -145,7 +145,7 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
         } catch (ServiceException e) {
             throw e;
         } catch (Exception e) {
-            log.error("Build hocon config failed, command={}", command, e);
+            log.error("Build batch hocon config failed, command={}", command, e);
             throw new ServiceException(Status.BUILD_BATCH_JOB_HOCON_CONFIG_ERROR);
         }
     }
@@ -229,12 +229,13 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
                     jobDefinitionContentDao.queryLatestByJobDefinitionId(id);
 
             if (latestContent == null) {
-                throw new ServiceException(Status.BATCH_JOB_DEFINITION_NOT_EXIST, "definition content not found");
+                throw new ServiceException(
+                        Status.BATCH_JOB_DEFINITION_NOT_EXIST,
+                        "definition content not found"
+                );
             }
 
-            JobDefinitionModeHandler handler = handlerRegistry.getHandler(definition.getMode());
-
-            return handler.buildEditCommand(
+            return definitionQueryService.buildEditCommand(
                     definition,
                     latestContent,
                     buildScheduleConfig(id)
@@ -242,7 +243,7 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
         } catch (ServiceException e) {
             throw e;
         } catch (Exception e) {
-            log.error("Query job definition edit detail failed, id={}", id, e);
+            log.error("Query batch job definition edit detail failed, id={}", id, e);
             throw new ServiceException(e.getMessage());
         }
     }
@@ -250,16 +251,15 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Boolean updateReleaseState(Long id, ReleaseState releaseState) {
-        if (id == null) {
-            throw new RuntimeException("Job definition id cannot be null");
-        }
+        validateId(id);
+
         if (releaseState == null) {
-            throw new RuntimeException("Release state cannot be null");
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "releaseState");
         }
 
         JobDefinitionEntity entity = jobDefinitionDao.queryById(id);
         if (entity == null) {
-            throw new RuntimeException("Job definition does not exist");
+            throw new ServiceException(Status.BATCH_JOB_DEFINITION_NOT_EXIST);
         }
 
         ReleaseState currentState = entity.getReleaseState();
@@ -267,7 +267,7 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
         // 状态已经一致时，也顺手同步一下调度状态，避免 Quartz 状态和业务状态不一致
         if (releaseState == currentState) {
             syncScheduleState(id, releaseState);
-            log.info("Job definition release state already synced, id={}, state={}", id, releaseState);
+            log.info("Batch job definition release state already synced, id={}, state={}", id, releaseState);
             return true;
         }
 
@@ -276,7 +276,7 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
             syncScheduleState(id, ReleaseState.OFFLINE);
             updateJobReleaseState(id, ReleaseState.OFFLINE);
 
-            log.info("Job definition offline completed, id={}", id);
+            log.info("Batch job definition offline completed, id={}", id);
             return true;
         }
 
@@ -285,7 +285,7 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
             updateJobReleaseState(id, ReleaseState.ONLINE);
             syncScheduleState(id, ReleaseState.ONLINE);
 
-            log.info("Job definition online completed, id={}", id);
+            log.info("Batch job definition online completed, id={}", id);
             return true;
         }
 
@@ -301,9 +301,7 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
         }
 
         if (definition.getReleaseState() == null) {
-            throw new RuntimeException(
-                    "job release state is empty"
-            );
+            throw new RuntimeException("job release state is empty");
         }
 
         if (!definition.getReleaseState().isOffline()) {
@@ -315,21 +313,21 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
         boolean updated = jobDefinitionDao.updateReleaseState(jobDefinitionId, releaseState);
 
         if (!updated) {
-            throw new RuntimeException("Failed to update job definition release state");
+            throw new RuntimeException("Failed to update batch job definition release state");
         }
     }
 
     private void syncScheduleState(Long jobDefinitionId, ReleaseState releaseState) {
         JobSchedule schedule = jobScheduleService.getByTaskDefinitionId(jobDefinitionId);
         if (schedule == null) {
-            log.info("No schedule found for job definition, skip schedule sync. jobDefinitionId={}", jobDefinitionId);
+            log.info("No schedule found for batch job definition, skip schedule sync. jobDefinitionId={}", jobDefinitionId);
             return;
         }
 
         if (releaseState.isOnline()) {
             jobScheduleService.startSchedule(schedule.getId());
             log.info(
-                    "Schedule started with job definition online, jobDefinitionId={}, scheduleId={}",
+                    "Schedule started with batch job definition online, jobDefinitionId={}, scheduleId={}",
                     jobDefinitionId,
                     schedule.getId()
             );
@@ -339,7 +337,7 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
         if (releaseState.isOffline()) {
             jobScheduleService.stopSchedule(schedule.getId());
             log.info(
-                    "Schedule stopped with job definition offline, jobDefinitionId={}, scheduleId={}",
+                    "Schedule stopped with batch job definition offline, jobDefinitionId={}, scheduleId={}",
                     jobDefinitionId,
                     schedule.getId()
             );
@@ -354,7 +352,10 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
         String hocon = handler.buildHoconConfig(command);
 
         if (StringUtils.isBlank(hocon)) {
-            throw new ServiceException(Status.BUILD_BATCH_JOB_HOCON_CONFIG_ERROR, "hocon config is empty");
+            throw new ServiceException(
+                    Status.BUILD_BATCH_JOB_HOCON_CONFIG_ERROR,
+                    "hocon config is empty"
+            );
         }
         return hocon;
     }
@@ -364,11 +365,12 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
      */
     private JobDefinitionModeHandler getAndValidateHandler(JobDefinitionSaveCommand command) {
         validateBase(command);
+
         JobDefinitionModeHandler handler = handlerRegistry.getHandler(command.getMode());
         handler.validate(command);
+
         return handler;
     }
-
 
     /**
      * Build schedule config.
@@ -384,8 +386,12 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
             try {
                 config = JSONUtils.parseObject(schedule.getScheduleConfig(), JobScheduleConfig.class);
             } catch (Exception e) {
-                log.warn("Parse schedule config failed, definitionId={}, raw={}",
-                        definitionId, schedule.getScheduleConfig(), e);
+                log.warn(
+                        "Parse schedule config failed, definitionId={}, raw={}",
+                        definitionId,
+                        schedule.getScheduleConfig(),
+                        e
+                );
             }
         }
 
@@ -396,6 +402,7 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
         if (StringUtils.isBlank(config.getCronExpression())) {
             config.setCronExpression(schedule.getCronExpression());
         }
+
         if (StringUtils.isBlank(config.getScheduleRunType()) && schedule.getScheduleStatus() != null) {
             config.setScheduleRunType(schedule.getScheduleStatus().getDesc());
         }
@@ -418,9 +425,11 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
             }
 
             vo.setCronExpression(schedule.getCronExpression());
+
             if (schedule.getScheduleStatus() != null) {
                 vo.setScheduleStatus(schedule.getScheduleStatus());
             }
+
             if (StringUtils.isNotBlank(schedule.getScheduleConfig())) {
                 vo.setScheduleConfig(schedule.getScheduleConfig());
             }
@@ -436,17 +445,25 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
         if (command == null) {
             throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "command");
         }
+
         if (command.getBasic() == null) {
             throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "basic");
         }
+
         if (command.getMode() == null) {
             throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "mode");
         }
+
         if (command.getId() == null) {
             throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "id");
         }
+
         if (StringUtils.isBlank(command.getBasic().getJobName())) {
             throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "jobName");
+        }
+
+        if (command.getEnv() == null) {
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "env");
         }
     }
 
@@ -457,9 +474,11 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
         if (dto == null) {
             throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "dto");
         }
+
         if (dto.getPageNo() == null || dto.getPageNo() <= 0) {
             throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "pageNo");
         }
+
         if (dto.getPageSize() == null || dto.getPageSize() <= 0) {
             throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "pageSize");
         }
@@ -479,14 +498,20 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
      */
     private void validateDelete(Long id) {
         if (jobInstanceService.existsRunningInstance(id)) {
-            throw new ServiceException(Status.DELETE_BATCH_JOB_DEFINITION_ERROR, "running instance exists");
+            throw new ServiceException(
+                    Status.DELETE_BATCH_JOB_DEFINITION_ERROR,
+                    "running instance exists"
+            );
         }
 
         JobSchedule schedule = scheduleApplicationService.getByTaskDefinitionId(id);
         if (schedule != null
                 && schedule.getScheduleStatus() != null
                 && schedule.getScheduleStatus().shouldStartQuartz()) {
-            throw new ServiceException(Status.DELETE_BATCH_JOB_DEFINITION_ERROR, "schedule is still active");
+            throw new ServiceException(
+                    Status.DELETE_BATCH_JOB_DEFINITION_ERROR,
+                    "schedule is still active"
+            );
         }
     }
 }

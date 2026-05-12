@@ -2,27 +2,16 @@ package org.apache.seatunnel.web.core.job.handler.multi;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.seatunnel.web.spi.bean.dto.batch.BatchGuideMultiJobSaveCommand;
 import org.apache.seatunnel.web.spi.bean.dto.config.GuideMultiJobContent;
 import org.springframework.stereotype.Component;
 
 @Component
 public class GuideMultiJobValidator {
 
-    public void validate(BatchGuideMultiJobSaveCommand command) {
-        if (command == null) {
-            throw new IllegalArgumentException("command can not be null");
-        }
-
-        if (command.getBasic() == null) {
-            throw new IllegalArgumentException("basic can not be null");
-        }
-
-        if (command.getContent() == null) {
+    public void validate(GuideMultiJobContent content) {
+        if (content == null) {
             throw new IllegalArgumentException("content can not be null");
         }
-
-        GuideMultiJobContent content = command.getContent();
 
         validateSource(content.getSource());
         validateTarget(content.getTarget());

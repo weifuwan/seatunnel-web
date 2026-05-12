@@ -1,24 +1,12 @@
 package org.apache.seatunnel.web.core.job.handler.single;
 
-
-import com.fasterxml.jackson.core.type.TypeReference;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.seatunnel.web.common.enums.JobDefinitionMode;
 import org.apache.seatunnel.web.common.utils.JSONUtils;
 import org.apache.seatunnel.web.core.job.handler.JobDefinitionModeHandler;
 import org.apache.seatunnel.web.core.job.model.JobDefinitionAnalysisResult;
-import org.apache.seatunnel.web.dao.entity.JobDefinitionContentEntity;
-import org.apache.seatunnel.web.dao.entity.JobDefinitionEntity;
-import org.apache.seatunnel.web.spi.bean.dto.*;
-import org.apache.seatunnel.web.spi.bean.dto.batch.BatchGuideSingleJobSaveCommand;
+import org.apache.seatunnel.web.spi.bean.dto.command.GuideSingleJobContentCommand;
 import org.apache.seatunnel.web.spi.bean.dto.command.JobDefinitionSaveCommand;
-import org.apache.seatunnel.web.spi.bean.dto.config.BatchJobEnvConfig;
-import org.apache.seatunnel.web.spi.bean.dto.config.JobEnvConfig;
-import org.apache.seatunnel.web.spi.bean.dto.config.JobScheduleConfig;
 import org.springframework.stereotype.Component;
-
-import java.util.Collections;
-import java.util.Map;
 
 @Component
 public class GuideSingleJobDefinitionHandler implements JobDefinitionModeHandler {
@@ -43,47 +31,32 @@ public class GuideSingleJobDefinitionHandler implements JobDefinitionModeHandler
 
     @Override
     public void validate(JobDefinitionSaveCommand command) {
-        BatchGuideSingleJobSaveCommand cmd = (BatchGuideSingleJobSaveCommand) command;
+        GuideSingleJobContentCommand cmd = cast(command);
         workflowValidator.validate(cmd.getWorkflow());
     }
 
     @Override
     public JobDefinitionAnalysisResult analyze(JobDefinitionSaveCommand command) {
-        BatchGuideSingleJobSaveCommand cmd = (BatchGuideSingleJobSaveCommand) command;
+        GuideSingleJobContentCommand cmd = cast(command);
         return workflowAnalyzer.analyze(cmd.getWorkflow());
     }
 
     @Override
     public String serializeDefinition(JobDefinitionSaveCommand command) {
-        BatchGuideSingleJobSaveCommand cmd = (BatchGuideSingleJobSaveCommand) command;
+        GuideSingleJobContentCommand cmd = cast(command);
         return JSONUtils.toJsonString(cmd.getWorkflow());
     }
 
     @Override
     public String buildHoconConfig(JobDefinitionSaveCommand command) {
-        BatchGuideSingleJobSaveCommand cmd = (BatchGuideSingleJobSaveCommand) command;
-        return hoconBuildService.build(cmd);
+        GuideSingleJobContentCommand cmd = cast(command);
+        return hoconBuildService.build(cmd.getWorkflow(), command);
     }
 
-    @Override
-    public JobDefinitionSaveCommand buildEditCommand(
-            JobDefinitionEntity definition,
-            JobDefinitionContentEntity jobDefinitionContentEntity,
-            JobScheduleConfig scheduleConfig) {
-
-        BatchGuideSingleJobSaveCommand cmd = new BatchGuideSingleJobSaveCommand();
-        cmd.setId(definition.getId());
-        cmd.setBasic(buildBasicConfig(definition));
-        cmd.setSchedule(scheduleConfig);
-        Map<String, Object> workflow = JSONUtils.parseObject(
-                jobDefinitionContentEntity.getDefinitionContent(),
-                new TypeReference<>() {
-                }
-        );
-        cmd.setEnv(JSONUtils.parseObject(jobDefinitionContentEntity.getEnvConfig(), BatchJobEnvConfig.class));
-
-        cmd.setWorkflow(workflow != null ? workflow : Collections.emptyMap());
-        return cmd;
+    private GuideSingleJobContentCommand cast(JobDefinitionSaveCommand command) {
+        if (!(command instanceof GuideSingleJobContentCommand)) {
+            throw new IllegalArgumentException("command must implement GuideSingleJobContentCommand");
+        }
+        return (GuideSingleJobContentCommand) command;
     }
-
 }

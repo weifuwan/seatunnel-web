@@ -20,8 +20,6 @@ public class StreamingScriptJobSaveCommand implements StreamingJobSaveCommand, S
 
     private ScriptJobContent content;
 
-    private CheckpointConfig checkpoint;
-
     private StreamingJobEnvConfig env;
 
     @Override

@@ -6,7 +6,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.seatunnel.web.core.exceptions.ServiceException;
 import org.apache.seatunnel.web.core.job.handler.JobDefinitionModeHandler;
 import org.apache.seatunnel.web.core.job.registry.JobDefinitionModeHandlerRegistry;
-import org.apache.seatunnel.web.spi.bean.dto.JobDefinitionSaveCommand;
+import org.apache.seatunnel.web.spi.bean.dto.command.JobDefinitionSaveCommand;
 import org.apache.seatunnel.web.spi.enums.Status;
 import org.springframework.stereotype.Component;
 

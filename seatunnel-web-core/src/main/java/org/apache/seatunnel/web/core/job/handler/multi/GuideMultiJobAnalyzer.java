@@ -2,8 +2,8 @@ package org.apache.seatunnel.web.core.job.handler.multi;
 
 import org.apache.seatunnel.web.common.utils.JSONUtils;
 import org.apache.seatunnel.web.core.job.model.JobDefinitionAnalysisResult;
-import org.apache.seatunnel.web.spi.bean.dto.GuideMultiJobContent;
-import org.apache.seatunnel.web.spi.bean.dto.GuideMultiJobSaveCommand;
+import org.apache.seatunnel.web.spi.bean.dto.batch.BatchGuideMultiJobSaveCommand;
+import org.apache.seatunnel.web.spi.bean.dto.config.GuideMultiJobContent;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -17,7 +17,7 @@ public class GuideMultiJobAnalyzer {
         this.tableMatchResolver = tableMatchResolver;
     }
 
-    public JobDefinitionAnalysisResult analyze(GuideMultiJobSaveCommand command) {
+    public JobDefinitionAnalysisResult analyze(BatchGuideMultiJobSaveCommand command) {
         GuideMultiJobContent content = command.getContent();
 
         List<String> sourceTables = tableMatchResolver.resolveSourceTables(content);

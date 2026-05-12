@@ -1,7 +1,7 @@
 package org.apache.seatunnel.web.core.hocon;
 
 
-import org.apache.seatunnel.web.spi.bean.dto.JobDefinitionSaveCommand;
+import org.apache.seatunnel.web.spi.bean.dto.command.JobDefinitionSaveCommand;
 
 /**
  * Resolve persisted job definition into executable save command.

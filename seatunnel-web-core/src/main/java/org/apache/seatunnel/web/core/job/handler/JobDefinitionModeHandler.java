@@ -4,9 +4,9 @@ import org.apache.seatunnel.web.common.enums.JobDefinitionMode;
 import org.apache.seatunnel.web.core.job.model.JobDefinitionAnalysisResult;
 import org.apache.seatunnel.web.dao.entity.JobDefinitionContentEntity;
 import org.apache.seatunnel.web.dao.entity.JobDefinitionEntity;
-import org.apache.seatunnel.web.spi.bean.dto.JobBasicConfig;
-import org.apache.seatunnel.web.spi.bean.dto.JobDefinitionSaveCommand;
-import org.apache.seatunnel.web.spi.bean.dto.JobScheduleConfig;
+import org.apache.seatunnel.web.spi.bean.dto.command.JobDefinitionSaveCommand;
+import org.apache.seatunnel.web.spi.bean.dto.config.JobBasicConfig;
+import org.apache.seatunnel.web.spi.bean.dto.config.JobScheduleConfig;
 
 public interface JobDefinitionModeHandler {
 

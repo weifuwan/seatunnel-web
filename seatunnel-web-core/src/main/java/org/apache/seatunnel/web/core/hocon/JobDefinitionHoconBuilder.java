@@ -1,6 +1,6 @@
 package org.apache.seatunnel.web.core.hocon;
 
-import org.apache.seatunnel.web.spi.bean.dto.JobDefinitionSaveCommand;
+import org.apache.seatunnel.web.spi.bean.dto.command.JobDefinitionSaveCommand;
 
 /**
  * Build executable hocon config from job definition command.

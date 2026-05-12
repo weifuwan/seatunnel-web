@@ -1,4 +1,4 @@
-package org.apache.seatunnel.web.spi.bean.dto;
+package org.apache.seatunnel.web.spi.bean.dto.config;
 
 import lombok.Data;
 import org.apache.seatunnel.web.common.enums.ScheduleStatusEnum;
@@ -22,23 +22,33 @@ public class JobScheduleConfig {
     private String scheduleRunType;
 
     private String timeoutMode;
+
     private Integer timeoutValue;
+
     private String timeoutUnit;
 
     private String rerunPolicy;
+
     private Boolean autoRetry;
+
     private Integer retryTimes;
+
     private Integer retryInterval;
 
     private String scheduleType;
+
     private String hourMode;
 
     private Map<String, Object> hourlyRangeValue;
+
     private Map<String, Object> hourlyAppointValue;
+
     private Map<String, Object> dailyValue;
+
     private Map<String, Object> weeklyValue;
 
     private String effectType;
+
     private String cronExpression;
 
     public ScheduleStatusEnum resolveScheduleStatus() {
@@ -47,8 +57,11 @@ public class JobScheduleConfig {
 
     @Data
     public static class ScheduleParamItem {
+
         private String key;
+
         private String paramName;
+
         private String paramValue;
     }
 }

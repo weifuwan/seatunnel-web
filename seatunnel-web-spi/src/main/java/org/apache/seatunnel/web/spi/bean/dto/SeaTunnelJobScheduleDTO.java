@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.apache.seatunnel.web.common.enums.ScheduleStatusEnum;
+import org.apache.seatunnel.web.spi.bean.dto.config.JobScheduleConfig;
 import org.apache.seatunnel.web.spi.bean.dto.pagination.PaginationBaseDTO;
 
 import java.sql.Date;

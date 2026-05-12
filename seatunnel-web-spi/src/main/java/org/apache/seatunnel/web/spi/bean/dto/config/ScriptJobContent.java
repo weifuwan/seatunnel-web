@@ -1,4 +1,4 @@
-package org.apache.seatunnel.web.spi.bean.dto;
+package org.apache.seatunnel.web.spi.bean.dto.config;
 
 import lombok.Data;
 
@@ -18,3 +18,4 @@ public class ScriptJobContent {
     private String hoconContent;
 
 }
+

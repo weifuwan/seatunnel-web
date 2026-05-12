@@ -10,6 +10,11 @@ import org.apache.seatunnel.web.core.job.model.JobDefinitionAnalysisResult;
 import org.apache.seatunnel.web.dao.entity.JobDefinitionContentEntity;
 import org.apache.seatunnel.web.dao.entity.JobDefinitionEntity;
 import org.apache.seatunnel.web.spi.bean.dto.*;
+import org.apache.seatunnel.web.spi.bean.dto.batch.BatchGuideSingleJobSaveCommand;
+import org.apache.seatunnel.web.spi.bean.dto.command.JobDefinitionSaveCommand;
+import org.apache.seatunnel.web.spi.bean.dto.config.BatchJobEnvConfig;
+import org.apache.seatunnel.web.spi.bean.dto.config.JobEnvConfig;
+import org.apache.seatunnel.web.spi.bean.dto.config.JobScheduleConfig;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
@@ -38,25 +43,25 @@ public class GuideSingleJobDefinitionHandler implements JobDefinitionModeHandler
 
     @Override
     public void validate(JobDefinitionSaveCommand command) {
-        GuideSingleJobSaveCommand cmd = (GuideSingleJobSaveCommand) command;
+        BatchGuideSingleJobSaveCommand cmd = (BatchGuideSingleJobSaveCommand) command;
         workflowValidator.validate(cmd.getWorkflow());
     }
 
     @Override
     public JobDefinitionAnalysisResult analyze(JobDefinitionSaveCommand command) {
-        GuideSingleJobSaveCommand cmd = (GuideSingleJobSaveCommand) command;
+        BatchGuideSingleJobSaveCommand cmd = (BatchGuideSingleJobSaveCommand) command;
         return workflowAnalyzer.analyze(cmd.getWorkflow());
     }
 
     @Override
     public String serializeDefinition(JobDefinitionSaveCommand command) {
-        GuideSingleJobSaveCommand cmd = (GuideSingleJobSaveCommand) command;
+        BatchGuideSingleJobSaveCommand cmd = (BatchGuideSingleJobSaveCommand) command;
         return JSONUtils.toJsonString(cmd.getWorkflow());
     }
 
     @Override
     public String buildHoconConfig(JobDefinitionSaveCommand command) {
-        GuideSingleJobSaveCommand cmd = (GuideSingleJobSaveCommand) command;
+        BatchGuideSingleJobSaveCommand cmd = (BatchGuideSingleJobSaveCommand) command;
         return hoconBuildService.build(cmd);
     }
 
@@ -66,7 +71,7 @@ public class GuideSingleJobDefinitionHandler implements JobDefinitionModeHandler
             JobDefinitionContentEntity jobDefinitionContentEntity,
             JobScheduleConfig scheduleConfig) {
 
-        GuideSingleJobSaveCommand cmd = new GuideSingleJobSaveCommand();
+        BatchGuideSingleJobSaveCommand cmd = new BatchGuideSingleJobSaveCommand();
         cmd.setId(definition.getId());
         cmd.setBasic(buildBasicConfig(definition));
         cmd.setSchedule(scheduleConfig);
@@ -75,7 +80,7 @@ public class GuideSingleJobDefinitionHandler implements JobDefinitionModeHandler
                 new TypeReference<>() {
                 }
         );
-        cmd.setEnv(JSONUtils.parseObject(jobDefinitionContentEntity.getEnvConfig(), EnvConfig.class));
+        cmd.setEnv(JSONUtils.parseObject(jobDefinitionContentEntity.getEnvConfig(), BatchJobEnvConfig.class));
 
         cmd.setWorkflow(workflow != null ? workflow : Collections.emptyMap());
         return cmd;

@@ -5,9 +5,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.seatunnel.web.api.service.JobScheduleService;
 import org.apache.seatunnel.web.common.enums.ScheduleStatusEnum;
 import org.apache.seatunnel.web.dao.entity.JobSchedule;
-import org.apache.seatunnel.web.spi.bean.dto.JobDefinitionSaveCommand;
-import org.apache.seatunnel.web.spi.bean.dto.JobScheduleConfig;
 import org.apache.seatunnel.web.spi.bean.dto.SeaTunnelJobScheduleDTO;
+import org.apache.seatunnel.web.spi.bean.dto.command.BatchJobSaveCommand;
+import org.apache.seatunnel.web.spi.bean.dto.command.JobDefinitionSaveCommand;
+import org.apache.seatunnel.web.spi.bean.dto.config.JobScheduleConfig;
 import org.quartz.SchedulerException;
 import org.springframework.stereotype.Service;
 
@@ -17,7 +18,7 @@ public class JobScheduleApplicationService {
     @Resource
     private JobScheduleService jobScheduleService;
 
-    public void saveOrUpdateSchedule(Long jobDefinitionId, JobDefinitionSaveCommand command) {
+    public void saveOrUpdateSchedule(Long jobDefinitionId, BatchJobSaveCommand command) {
         if (jobDefinitionId == null || command == null) {
             return;
         }

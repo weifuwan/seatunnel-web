@@ -2,6 +2,8 @@ package org.apache.seatunnel.web.spi.bean.dto;
 
 import lombok.Data;
 import org.apache.seatunnel.web.common.enums.JobDefinitionMode;
+import org.apache.seatunnel.web.spi.bean.dto.config.JobBasicConfig;
+import org.apache.seatunnel.web.spi.bean.dto.config.JobScheduleConfig;
 
 import java.util.Map;
 

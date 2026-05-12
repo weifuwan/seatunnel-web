@@ -3,7 +3,7 @@ package org.apache.seatunnel.web.core.builder.context;
 import com.typesafe.config.Config;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.seatunnel.web.core.dag.DagGraph;
-import org.apache.seatunnel.web.spi.bean.dto.JobScheduleConfig;
+import org.apache.seatunnel.web.spi.bean.dto.config.JobScheduleConfig;
 
 import java.util.HashMap;
 import java.util.List;

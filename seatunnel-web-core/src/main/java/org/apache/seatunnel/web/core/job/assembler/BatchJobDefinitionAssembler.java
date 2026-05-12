@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 import java.util.Date;
 
 @Component
-public class JobDefinitionAssembler {
+public class BatchJobDefinitionAssembler {
 
     public JobDefinitionEntity create(JobDefinitionSaveCommand command,
                                       JobDefinitionAnalysisResult analysis) {

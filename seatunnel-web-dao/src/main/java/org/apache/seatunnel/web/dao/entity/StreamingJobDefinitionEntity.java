@@ -1,16 +1,22 @@
-package org.apache.seatunnel.web.spi.bean.vo;
+package org.apache.seatunnel.web.dao.entity;
 
+import com.baomidou.mybatisplus.annotation.TableName;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import org.apache.seatunnel.web.common.enums.JobDefinitionMode;
 import org.apache.seatunnel.web.common.enums.JobMode;
 import org.apache.seatunnel.web.common.enums.ReleaseState;
 
-import java.util.Date;
-
 @Data
-public class StreamingJobDefinitionVO {
-
-    private Long id;
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode(callSuper = true)
+@TableName("t_seatunnel_streaming_job_definition")
+public class StreamingJobDefinitionEntity extends BaseEntity {
 
     private String jobName;
 
@@ -37,14 +43,4 @@ public class StreamingJobDefinitionVO {
     private Long sourceDatasourceId;
 
     private Long sinkDatasourceId;
-
-    private Date createTime;
-
-    private Date updateTime;
-
-    /**
-     * 最近一次保存的 checkpoint 配置 JSON。
-     * 列表页如果暂时不用，可以不填。
-     */
-    private String checkpointConfig;
 }

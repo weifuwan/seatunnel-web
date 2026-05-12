@@ -4,14 +4,9 @@ import org.apache.seatunnel.web.common.enums.JobDefinitionMode;
 import org.apache.seatunnel.web.common.utils.JSONUtils;
 import org.apache.seatunnel.web.core.job.handler.JobDefinitionModeHandler;
 import org.apache.seatunnel.web.core.job.model.JobDefinitionAnalysisResult;
-import org.apache.seatunnel.web.dao.entity.JobDefinitionContentEntity;
-import org.apache.seatunnel.web.dao.entity.JobDefinitionEntity;
-import org.apache.seatunnel.web.spi.bean.dto.*;
-import org.apache.seatunnel.web.spi.bean.dto.batch.BatchGuideMultiJobSaveCommand;
+import org.apache.seatunnel.web.spi.bean.dto.command.GuideMultiJobContentCommand;
 import org.apache.seatunnel.web.spi.bean.dto.command.JobDefinitionSaveCommand;
-import org.apache.seatunnel.web.spi.bean.dto.config.BatchJobEnvConfig;
 import org.apache.seatunnel.web.spi.bean.dto.config.GuideMultiJobContent;
-import org.apache.seatunnel.web.spi.bean.dto.config.JobScheduleConfig;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -37,47 +32,32 @@ public class GuideMultiJobDefinitionHandler implements JobDefinitionModeHandler 
 
     @Override
     public void validate(JobDefinitionSaveCommand command) {
-        BatchGuideMultiJobSaveCommand cmd = cast(command);
-        validator.validate(cmd);
+        GuideMultiJobContent content = cast(command).getContent();
+        validator.validate(content);
     }
 
     @Override
     public JobDefinitionAnalysisResult analyze(JobDefinitionSaveCommand command) {
-        BatchGuideMultiJobSaveCommand cmd = cast(command);
-        return analyzer.analyze(cmd);
+        GuideMultiJobContent content = cast(command).getContent();
+        return analyzer.analyze(content);
     }
 
     @Override
     public String serializeDefinition(JobDefinitionSaveCommand command) {
-        BatchGuideMultiJobSaveCommand cmd = cast(command);
-        return JSONUtils.toJsonString(cmd.getContent());
+        GuideMultiJobContent content = cast(command).getContent();
+        return JSONUtils.toJsonString(content);
     }
 
     @Override
     public String buildHoconConfig(JobDefinitionSaveCommand command) {
-        BatchGuideMultiJobSaveCommand cmd = cast(command);
-        return hoconBuildService.build(cmd);
+        GuideMultiJobContent content = cast(command).getContent();
+        return hoconBuildService.build(content, command);
     }
 
-    @Override
-    public JobDefinitionSaveCommand buildEditCommand(
-            JobDefinitionEntity definition,
-            JobDefinitionContentEntity jobDefinitionContentEntity,
-            JobScheduleConfig scheduleConfig) {
-
-        BatchGuideMultiJobSaveCommand cmd = new BatchGuideMultiJobSaveCommand();
-        cmd.setId(definition.getId());
-        cmd.setBasic(buildBasicConfig(definition));
-        cmd.setSchedule(scheduleConfig);
-        cmd.setContent(JSONUtils.parseObject(jobDefinitionContentEntity.getDefinitionContent(), GuideMultiJobContent.class));
-        cmd.setEnv(JSONUtils.parseObject(jobDefinitionContentEntity.getEnvConfig(), BatchJobEnvConfig.class));
-        return cmd;
-    }
-
-    private BatchGuideMultiJobSaveCommand cast(JobDefinitionSaveCommand command) {
-        if (!(command instanceof BatchGuideMultiJobSaveCommand)) {
-            throw new IllegalArgumentException("command must be GuideMultiJobSaveCommand");
+    private GuideMultiJobContentCommand cast(JobDefinitionSaveCommand command) {
+        if (!(command instanceof GuideMultiJobContentCommand)) {
+            throw new IllegalArgumentException("command must implement GuideMultiJobContentCommand");
         }
-        return (BatchGuideMultiJobSaveCommand) command;
+        return (GuideMultiJobContentCommand) command;
     }
 }

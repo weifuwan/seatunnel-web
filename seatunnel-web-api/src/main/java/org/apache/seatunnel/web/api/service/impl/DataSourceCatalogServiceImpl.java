@@ -15,7 +15,7 @@ import org.apache.seatunnel.web.common.QueryResult;
 import org.apache.seatunnel.web.core.exceptions.ServiceException;
 import org.apache.seatunnel.web.core.time.TimeVariableJdbcSqlRenderService;
 import org.apache.seatunnel.web.dao.entity.DataSource;
-import org.apache.seatunnel.web.spi.bean.dto.JobScheduleConfig;
+import org.apache.seatunnel.web.spi.bean.dto.config.JobScheduleConfig;
 import org.apache.seatunnel.web.spi.bean.vo.ColumnOptionVO;
 import org.apache.seatunnel.web.spi.bean.vo.OptionVO;
 import org.apache.seatunnel.web.spi.datasource.BaseConnectionParam;

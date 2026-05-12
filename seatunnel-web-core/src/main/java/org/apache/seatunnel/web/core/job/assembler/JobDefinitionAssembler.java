@@ -3,9 +3,9 @@ package org.apache.seatunnel.web.core.job.assembler;
 import org.apache.seatunnel.web.common.enums.ReleaseState;
 import org.apache.seatunnel.web.core.job.model.JobDefinitionAnalysisResult;
 import org.apache.seatunnel.web.dao.entity.JobDefinitionEntity;
-import org.apache.seatunnel.web.spi.bean.dto.EnvConfig;
-import org.apache.seatunnel.web.spi.bean.dto.JobBasicConfig;
-import org.apache.seatunnel.web.spi.bean.dto.JobDefinitionSaveCommand;
+import org.apache.seatunnel.web.spi.bean.dto.command.JobDefinitionSaveCommand;
+import org.apache.seatunnel.web.spi.bean.dto.config.JobBasicConfig;
+import org.apache.seatunnel.web.spi.bean.dto.config.JobEnvConfig;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
@@ -16,7 +16,7 @@ public class JobDefinitionAssembler {
     public JobDefinitionEntity create(JobDefinitionSaveCommand command,
                                       JobDefinitionAnalysisResult analysis) {
         JobBasicConfig basic = command.getBasic();
-        EnvConfig env = command.getEnv();
+        JobEnvConfig env = command.getEnv();
 
         JobDefinitionEntity build = JobDefinitionEntity.builder()
                 .jobName(basic.getJobName())
@@ -45,7 +45,7 @@ public class JobDefinitionAssembler {
                        Date now,
                        int nextVersion) {
         JobBasicConfig basic = command.getBasic();
-        EnvConfig env = command.getEnv();
+        JobEnvConfig env = command.getEnv();
         entity.setJobName(basic.getJobName());
         entity.setJobDesc(basic.getJobDesc());
         entity.setMode(command.getMode());

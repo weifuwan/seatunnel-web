@@ -11,6 +11,10 @@ import org.apache.seatunnel.web.api.service.BatchJobDefinitionService;
 import org.apache.seatunnel.web.common.enums.ReleaseState;
 import org.apache.seatunnel.web.common.utils.CodeGenerateUtils;
 import org.apache.seatunnel.web.spi.bean.dto.*;
+import org.apache.seatunnel.web.spi.bean.dto.batch.BatchGuideMultiJobSaveCommand;
+import org.apache.seatunnel.web.spi.bean.dto.batch.BatchGuideSingleJobSaveCommand;
+import org.apache.seatunnel.web.spi.bean.dto.batch.BatchScriptJobSaveCommand;
+import org.apache.seatunnel.web.spi.bean.dto.command.JobDefinitionSaveCommand;
 import org.apache.seatunnel.web.spi.bean.entity.PaginationResult;
 import org.apache.seatunnel.web.spi.bean.entity.Result;
 import org.apache.seatunnel.web.spi.bean.vo.BatchJobDefinitionVO;
@@ -38,7 +42,7 @@ public class BatchJobDefinitionController {
     @PostMapping("/script/saveOrUpdate")
     @Operation(summary = "saveOrUpdateScriptJobDefinition", description = "SAVE_OR_UPDATE_SCRIPT_JOB_DEFINITION_NOTES")
     @ApiException(SAVE_OR_UPDATE_BATCH_JOB_DEFINITION_ERROR)
-    public Result<Long> saveScript(@RequestBody ScriptJobSaveCommand command) {
+    public Result<Long> saveScript(@RequestBody BatchScriptJobSaveCommand command) {
         return Result.buildSuc(batchJobDefinitionService.saveOrUpdate(command));
     }
 
@@ -48,7 +52,7 @@ public class BatchJobDefinitionController {
     @PostMapping("/script/build-config")
     @Operation(summary = "buildScriptJobHoconConfig", description = "BUILD_SCRIPT_JOB_HOCON_CONFIG_NOTES")
     @ApiException(QUERY_BATCH_JOB_DEFINITION_ERROR)
-    public Result<String> buildScriptConfig(@RequestBody ScriptJobSaveCommand command) {
+    public Result<String> buildScriptConfig(@RequestBody BatchScriptJobSaveCommand command) {
         return Result.buildSuc(batchJobDefinitionService.buildHoconConfig(command));
     }
 
@@ -58,7 +62,7 @@ public class BatchJobDefinitionController {
     @PostMapping("/guide-single/saveOrUpdate")
     @Operation(summary = "saveOrUpdateGuideSingleJobDefinition", description = "SAVE_OR_UPDATE_GUIDE_SINGLE_JOB_DEFINITION_NOTES")
     @ApiException(SAVE_OR_UPDATE_BATCH_JOB_DEFINITION_ERROR)
-    public Result<Long> saveGuideSingle(@RequestBody GuideSingleJobSaveCommand command) {
+    public Result<Long> saveGuideSingle(@RequestBody BatchGuideSingleJobSaveCommand command) {
         return Result.buildSuc(batchJobDefinitionService.saveOrUpdate(command));
     }
 
@@ -68,7 +72,7 @@ public class BatchJobDefinitionController {
     @PostMapping("/guide-single/build-config")
     @Operation(summary = "buildGuideSingleJobHoconConfig", description = "BUILD_GUIDE_SINGLE_JOB_HOCON_CONFIG_NOTES")
     @ApiException(QUERY_BATCH_JOB_DEFINITION_ERROR)
-    public Result<String> buildGuideSingleConfig(@RequestBody GuideSingleJobSaveCommand command) {
+    public Result<String> buildGuideSingleConfig(@RequestBody BatchGuideSingleJobSaveCommand command) {
         return Result.buildSuc(batchJobDefinitionService.buildHoconConfig(command));
     }
 
@@ -78,7 +82,7 @@ public class BatchJobDefinitionController {
     @PostMapping("/guide-multi/saveOrUpdate")
     @Operation(summary = "saveOrUpdateGuideMultiJobDefinition", description = "SAVE_OR_UPDATE_GUIDE_MULTI_JOB_DEFINITION_NOTES")
     @ApiException(SAVE_OR_UPDATE_BATCH_JOB_DEFINITION_ERROR)
-    public Result<Long> saveGuideMulti(@RequestBody GuideMultiJobSaveCommand command) {
+    public Result<Long> saveGuideMulti(@RequestBody BatchGuideMultiJobSaveCommand command) {
         return Result.buildSuc(batchJobDefinitionService.saveOrUpdate(command));
     }
 
@@ -88,7 +92,7 @@ public class BatchJobDefinitionController {
     @PostMapping("/guide-multi/build-config")
     @Operation(summary = "buildGuideMultiJobHoconConfig", description = "BUILD_GUIDE_MULTI_JOB_HOCON_CONFIG_NOTES")
     @ApiException(QUERY_BATCH_JOB_DEFINITION_ERROR)
-    public Result<String> buildGuideMultiConfig(@RequestBody GuideMultiJobSaveCommand command) {
+    public Result<String> buildGuideMultiConfig(@RequestBody BatchGuideMultiJobSaveCommand command) {
         return Result.buildSuc(batchJobDefinitionService.buildHoconConfig(command));
     }
 

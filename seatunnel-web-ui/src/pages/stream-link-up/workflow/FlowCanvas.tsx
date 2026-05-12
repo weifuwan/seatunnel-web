@@ -91,6 +91,11 @@ function buildInitialGraph(
           pluginOutput: sourceId,
           readMode: "table",
           table: undefined,
+          tableNames: [],
+          startupMode: "initial",
+          startupSpecificOffsetFile: undefined,
+          startupSpecificOffsetPos: undefined,
+          startupTimestamp: undefined,
           sql: "",
           extraParams: [],
         },
@@ -149,7 +154,7 @@ export default function FlowCanvas({
   sourceType,
   targetType,
   onWorkflowChange,
-  scheduleConfig
+  scheduleConfig,
 }: FlowCanvasProps) {
   const flow = useFlowBuilder({ form, params });
   const placement = useNodePlacement({

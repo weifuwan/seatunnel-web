@@ -10,6 +10,12 @@ import org.apache.seatunnel.web.core.job.model.JobDefinitionAnalysisResult;
 import org.apache.seatunnel.web.dao.entity.JobDefinitionContentEntity;
 import org.apache.seatunnel.web.dao.entity.JobDefinitionEntity;
 import org.apache.seatunnel.web.spi.bean.dto.*;
+import org.apache.seatunnel.web.spi.bean.dto.batch.BatchScriptJobSaveCommand;
+import org.apache.seatunnel.web.spi.bean.dto.command.JobDefinitionSaveCommand;
+import org.apache.seatunnel.web.spi.bean.dto.config.BatchJobEnvConfig;
+import org.apache.seatunnel.web.spi.bean.dto.config.JobEnvConfig;
+import org.apache.seatunnel.web.spi.bean.dto.config.JobScheduleConfig;
+import org.apache.seatunnel.web.spi.bean.dto.config.ScriptJobContent;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -25,7 +31,7 @@ public class ScriptJobDefinitionHandler implements JobDefinitionModeHandler {
 
     @Override
     public void validate(JobDefinitionSaveCommand command) {
-        ScriptJobSaveCommand cmd = cast(command);
+        BatchScriptJobSaveCommand cmd = cast(command);
 
         ScriptJobContent content = cmd.getContent();
         if (content == null) {
@@ -47,20 +53,20 @@ public class ScriptJobDefinitionHandler implements JobDefinitionModeHandler {
 
     @Override
     public JobDefinitionAnalysisResult analyze(JobDefinitionSaveCommand command) {
-        ScriptJobSaveCommand cmd = cast(command);
+        BatchScriptJobSaveCommand cmd = cast(command);
         return scriptJobDefinitionParser.analyze(cmd.getContent().getHoconContent());
     }
 
 
     @Override
     public String serializeDefinition(JobDefinitionSaveCommand command) {
-        ScriptJobSaveCommand cmd = (ScriptJobSaveCommand) command;
+        BatchScriptJobSaveCommand cmd = (BatchScriptJobSaveCommand) command;
         return JSONUtils.toJsonString(cmd.getContent());
     }
 
     @Override
     public String buildHoconConfig(JobDefinitionSaveCommand command) {
-        ScriptJobSaveCommand cmd = (ScriptJobSaveCommand) command;
+        BatchScriptJobSaveCommand cmd = (BatchScriptJobSaveCommand) command;
         return cmd.getContent().getHoconContent();
     }
 
@@ -70,19 +76,19 @@ public class ScriptJobDefinitionHandler implements JobDefinitionModeHandler {
             JobDefinitionContentEntity jobDefinitionContentEntity,
             JobScheduleConfig scheduleConfig) {
 
-        ScriptJobSaveCommand cmd = new ScriptJobSaveCommand();
+        BatchScriptJobSaveCommand cmd = new BatchScriptJobSaveCommand();
         cmd.setId(definition.getId());
         cmd.setBasic(buildBasicConfig(definition));
         cmd.setSchedule(scheduleConfig);
         cmd.setContent(JSONUtils.parseObject(jobDefinitionContentEntity.getDefinitionContent(), ScriptJobContent.class));
-        cmd.setEnv(JSONUtils.parseObject(jobDefinitionContentEntity.getEnvConfig(), EnvConfig.class));
+        cmd.setEnv(JSONUtils.parseObject(jobDefinitionContentEntity.getEnvConfig(), BatchJobEnvConfig.class));
         return cmd;
     }
 
-    private ScriptJobSaveCommand cast(JobDefinitionSaveCommand command) {
-        if (!(command instanceof ScriptJobSaveCommand)) {
+    private BatchScriptJobSaveCommand cast(JobDefinitionSaveCommand command) {
+        if (!(command instanceof BatchScriptJobSaveCommand)) {
             throw new IllegalArgumentException("command must be ScriptJobSaveCommand");
         }
-        return (ScriptJobSaveCommand) command;
+        return (BatchScriptJobSaveCommand) command;
     }
 }

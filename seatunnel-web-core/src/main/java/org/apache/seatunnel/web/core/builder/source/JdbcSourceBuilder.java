@@ -14,7 +14,7 @@ import org.apache.seatunnel.web.core.builder.context.DagBuildContext;
 import org.apache.seatunnel.web.core.time.TimeVariableJdbcSqlRenderService;
 import org.apache.seatunnel.web.dao.entity.DataSource;
 import org.apache.seatunnel.web.dao.repository.DataSourceDao;
-import org.apache.seatunnel.web.spi.bean.dto.JobScheduleConfig;
+import org.apache.seatunnel.web.spi.bean.dto.config.JobScheduleConfig;
 import org.apache.seatunnel.web.spi.enums.DbType;
 import org.springframework.stereotype.Component;
 

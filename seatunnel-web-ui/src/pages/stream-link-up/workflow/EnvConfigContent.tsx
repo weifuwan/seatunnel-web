@@ -1,18 +1,19 @@
 import { InputNumber, Select } from "antd";
-import { Activity, Gauge } from "lucide-react";
+import { Activity, Gauge, TimerReset } from "lucide-react";
 
 interface EnvConfigContentProps {
   value?: {
-    "jobMode"?: "BATCH" | "STREAMING";
+    jobMode?: "BATCH" | "STREAMING";
     parallelism?: number;
+    checkpointInterval?: number;
   };
   onChange?: React.Dispatch<React.SetStateAction<any>>;
 }
 
 const JOB_MODE_OPTIONS = [
   {
-    label: "BATCH",
-    value: "BATCH",
+    label: "STREAMING",
+    value: "STREAMING",
   },
 ];
 
@@ -20,8 +21,9 @@ export default function EnvConfigContent({
   value,
   onChange,
 }: EnvConfigContentProps) {
-  const jobMode = value?.jobMode || "BATCH";
+  const jobMode = value?.jobMode || "STREAMING";
   const parallelism = value?.parallelism ?? 1;
+  const checkpointInterval = value?.checkpointInterval ?? 30000;
 
   const handleFieldChange = (field: string, fieldValue: any) => {
     onChange?.((prev: any) => ({
@@ -40,9 +42,6 @@ export default function EnvConfigContent({
           <div className="min-w-0">
             <div className="text-[13px] font-medium text-slate-400">
               运行环境
-            </div>
-            <div className="mt-1 text-[12px] leading-5 text-slate-400">
-              配置任务运行模式与并行度，发布后将写入 Env 配置。
             </div>
           </div>
 
@@ -66,8 +65,14 @@ export default function EnvConfigContent({
               </div>
             </div>
 
-            <div className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-500">
-              并行度 {parallelism}
+            <div className="flex shrink-0 items-center gap-2">
+              <div className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-500">
+                并行度 {parallelism}
+              </div>
+
+              <div className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-500">
+                Checkpoint {checkpointInterval}ms
+              </div>
             </div>
           </div>
         </div>
@@ -78,9 +83,7 @@ export default function EnvConfigContent({
             <Select
               value={jobMode}
               options={JOB_MODE_OPTIONS}
-              onChange={(nextValue) =>
-                handleFieldChange("jobMode", nextValue)
-              }
+              onChange={(nextValue) => handleFieldChange("jobMode", nextValue)}
               className="w-full"
             />
             <div className="mt-1.5 text-[11px] leading-5 text-slate-400">
@@ -100,7 +103,7 @@ export default function EnvConfigContent({
               }
               className="w-full"
             />
-            <div className="mt-1.5 flex items-start gap-2 text-[11px] leading-5 text-slate-400" style={{paddingBottom: 12}}>
+            <div className="mt-1.5 flex items-start gap-2 text-[11px] leading-5 text-slate-400">
               <Gauge
                 size={13}
                 strokeWidth={1.8}
@@ -108,6 +111,37 @@ export default function EnvConfigContent({
               />
               <span>
                 并行度会影响 Source/Sink 的执行并发，建议先使用较小值验证链路稳定性。
+              </span>
+            </div>
+          </div>
+
+          <div>
+            <div className="mb-1 text-[12px] text-slate-400">
+              Checkpoint 间隔
+            </div>
+            <InputNumber
+              min={1000}
+              max={86_400_000}
+              step={1000}
+              precision={0}
+              suffix="ms"
+              value={checkpointInterval}
+              onChange={(nextValue) =>
+                handleFieldChange("checkpointInterval", nextValue || 30000)
+              }
+              className="w-full"
+            />
+            <div
+              className="mt-1.5 flex items-start gap-2 text-[11px] leading-5 text-slate-400"
+              style={{ paddingBottom: 12 }}
+            >
+              <TimerReset
+                size={15}
+                strokeWidth={1.8}
+                className="mt-[3px] shrink-0"
+              />
+              <span>
+                Checkpoint 间隔用于控制流式任务状态快照频率，默认 30000ms，建议根据数据量与资源情况调整。
               </span>
             </div>
           </div>

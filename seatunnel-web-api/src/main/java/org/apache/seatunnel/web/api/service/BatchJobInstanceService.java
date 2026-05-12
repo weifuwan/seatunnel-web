@@ -2,8 +2,8 @@ package org.apache.seatunnel.web.api.service;
 
 import org.apache.seatunnel.web.common.enums.RunMode;
 import org.apache.seatunnel.web.dao.entity.JobInstance;
-import org.apache.seatunnel.web.spi.bean.dto.JobDefinitionSaveCommand;
 import org.apache.seatunnel.web.spi.bean.dto.SeaTunnelJobInstanceDTO;
+import org.apache.seatunnel.web.spi.bean.dto.command.JobDefinitionSaveCommand;
 import org.apache.seatunnel.web.spi.bean.entity.PaginationResult;
 import org.apache.seatunnel.web.spi.bean.vo.JobInstanceVO;
 import org.apache.seatunnel.web.spi.bean.vo.JobTableMetricsVO;

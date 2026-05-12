@@ -6,12 +6,10 @@ import type { TabKey } from "./types";
 
 interface RightConfigPanelProps {
   activeTab?: TabKey | null;
-  onTabChange?: (tab: TabKey | null) => void;
+  onTabChange?: (tab: any) => void;
   params?: any;
   basicConfig?: any;
   setBasicConfig?: React.Dispatch<React.SetStateAction<any>>;
-  scheduleConfig?: any;
-  setScheduleConfig?: React.Dispatch<React.SetStateAction<any>>;
   envConfig?: any;
   setEnvConfig?: React.Dispatch<React.SetStateAction<any>>;
 }
@@ -22,8 +20,6 @@ export default function RightConfigPanel({
   params,
   basicConfig,
   setBasicConfig,
-  scheduleConfig,
-  setScheduleConfig,
   envConfig,
   setEnvConfig,
 }: RightConfigPanelProps) {
@@ -33,8 +29,6 @@ export default function RightConfigPanel({
     params,
     basicConfig,
     setBasicConfig,
-    scheduleConfig,
-    setScheduleConfig,
     envConfig,
     setEnvConfig
   );

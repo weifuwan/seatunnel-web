@@ -13,6 +13,11 @@ import org.apache.seatunnel.web.dao.repository.JobDefinitionContentDao;
 import org.apache.seatunnel.web.dao.repository.JobDefinitionDao;
 import org.apache.seatunnel.web.dao.repository.JobScheduleDao;
 import org.apache.seatunnel.web.spi.bean.dto.*;
+import org.apache.seatunnel.web.spi.bean.dto.batch.BatchGuideMultiJobSaveCommand;
+import org.apache.seatunnel.web.spi.bean.dto.batch.BatchGuideSingleJobSaveCommand;
+import org.apache.seatunnel.web.spi.bean.dto.batch.BatchScriptJobSaveCommand;
+import org.apache.seatunnel.web.spi.bean.dto.command.JobDefinitionSaveCommand;
+import org.apache.seatunnel.web.spi.bean.dto.config.*;
 import org.apache.seatunnel.web.spi.enums.Status;
 import org.springframework.stereotype.Component;
 
@@ -87,8 +92,8 @@ public class DefaultJobDefinitionCommandResolver implements JobDefinitionCommand
         }
     }
 
-    private ScriptJobSaveCommand buildScriptCommand(JobDefinitionEntity definition, JobDefinitionContentEntity jobDefinitionContentEntity) {
-        ScriptJobSaveCommand command = new ScriptJobSaveCommand();
+    private BatchScriptJobSaveCommand buildScriptCommand(JobDefinitionEntity definition, JobDefinitionContentEntity jobDefinitionContentEntity) {
+        BatchScriptJobSaveCommand command = new BatchScriptJobSaveCommand();
         command.setContent(JSONUtils.parseObject(jobDefinitionContentEntity.getDefinitionContent(), ScriptJobContent.class));
         command.setBasic(buildBasic(definition));
         command.setId(definition.getId());
@@ -96,8 +101,8 @@ public class DefaultJobDefinitionCommandResolver implements JobDefinitionCommand
         return command;
     }
 
-    private GuideSingleJobSaveCommand buildGuideSingleCommand(JobDefinitionEntity definition, JobDefinitionContentEntity jobDefinitionContentEntity) {
-        GuideSingleJobSaveCommand command = new GuideSingleJobSaveCommand();
+    private BatchGuideSingleJobSaveCommand buildGuideSingleCommand(JobDefinitionEntity definition, JobDefinitionContentEntity jobDefinitionContentEntity) {
+        BatchGuideSingleJobSaveCommand command = new BatchGuideSingleJobSaveCommand();
         command.setBasic(buildBasic(definition));
         command.setWorkflow(JSONUtils.parseObject(
                 jobDefinitionContentEntity.getDefinitionContent(),
@@ -106,15 +111,15 @@ public class DefaultJobDefinitionCommandResolver implements JobDefinitionCommand
         ));
         command.setSchedule(buildScheduleConfig(definition.getId()));
         command.setId(definition.getId());
-        command.setEnv(JSONUtils.parseObject(jobDefinitionContentEntity.getEnvConfig(), EnvConfig.class));
+        command.setEnv(JSONUtils.parseObject(jobDefinitionContentEntity.getEnvConfig(), BatchJobEnvConfig.class));
         return command;
     }
 
-    private GuideMultiJobSaveCommand buildGuideMultiCommand(JobDefinitionEntity definition, JobDefinitionContentEntity jobDefinitionContentEntity) {
-        GuideMultiJobSaveCommand command = new GuideMultiJobSaveCommand();
+    private BatchGuideMultiJobSaveCommand buildGuideMultiCommand(JobDefinitionEntity definition, JobDefinitionContentEntity jobDefinitionContentEntity) {
+        BatchGuideMultiJobSaveCommand command = new BatchGuideMultiJobSaveCommand();
         command.setBasic(buildBasic(definition));
         command.setContent(JSONUtils.parseObject(jobDefinitionContentEntity.getDefinitionContent(), GuideMultiJobContent.class));
-        command.setEnv(JSONUtils.parseObject(jobDefinitionContentEntity.getEnvConfig(), EnvConfig.class));
+        command.setEnv(JSONUtils.parseObject(jobDefinitionContentEntity.getEnvConfig(), BatchJobEnvConfig.class));
         command.setId(definition.getId());
         command.setSchedule(buildScheduleConfig(definition.getId()));
         return command;

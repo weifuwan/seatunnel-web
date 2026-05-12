@@ -9,8 +9,6 @@ export const getTabDefinitions = (
   params?: any,
   basicConfig?: BasicConfig,
   setBasicConfig?: React.Dispatch<React.SetStateAction<BasicConfig>>,
-  scheduleConfig?: any,
-  setScheduleConfig?: React.Dispatch<React.SetStateAction<any>>,
   envConfig?: any,
   setEnvConfig?: any
 ): TabDefinition[] => [
@@ -21,16 +19,16 @@ export const getTabDefinitions = (
       <BasicConfigContent value={basicConfig} onChange={setBasicConfig} />
     ),
   },
-  {
-    key: "schedule",
-    label: "调度",
-    content: (
-      <ScheduleConfigContent
-        value={scheduleConfig}
-        onChange={setScheduleConfig}
-      />
-    ),
-  },
+  // {
+  //   key: "schedule",
+  //   label: "调度",
+  //   content: (
+  //     <ScheduleConfigContent
+  //       value={scheduleConfig}
+  //       onChange={setScheduleConfig}
+  //     />
+  //   ),
+  // },
   // {
   //   key: "mapping",
   //   label: "映射",

@@ -256,3 +256,49 @@
 .icon-action-hover:active {
   background: rgba(24, 144, 255, 0.08);
 }
+
+
+// 
+
+.workflow-panel__startup-segmented {
+  width: 100%;
+
+  &.ant-segmented {
+    background: transparent;
+  }
+
+  .ant-segmented-group {
+    width: 100%;
+    gap: 4px;
+  }
+
+  .ant-segmented-item {
+    flex: 1;
+    border-radius: 14px;
+    color: #64748b;
+    transition: all 0.2s ease;
+  }
+
+  .ant-segmented-item:hover {
+    color: #334155;
+    background: rgba(255, 255, 255, 0.72);
+  }
+
+  .ant-segmented-item-selected {
+    color: #1e293b;
+    background: #ffffff;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+  }
+
+  .ant-segmented-thumb {
+    border-radius: 14px;
+    background: #ffffff;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+  }
+
+  .ant-segmented-item-label {
+    min-height: 54px;
+    padding: 0;
+    line-height: normal;
+  }
+}

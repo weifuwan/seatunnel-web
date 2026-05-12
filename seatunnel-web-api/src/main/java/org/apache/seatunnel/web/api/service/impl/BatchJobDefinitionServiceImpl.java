@@ -21,6 +21,12 @@ import org.apache.seatunnel.web.dao.entity.JobSchedule;
 import org.apache.seatunnel.web.dao.repository.JobDefinitionContentDao;
 import org.apache.seatunnel.web.dao.repository.JobDefinitionDao;
 import org.apache.seatunnel.web.spi.bean.dto.*;
+import org.apache.seatunnel.web.spi.bean.dto.batch.BatchGuideMultiJobSaveCommand;
+import org.apache.seatunnel.web.spi.bean.dto.batch.BatchGuideSingleJobSaveCommand;
+import org.apache.seatunnel.web.spi.bean.dto.batch.BatchScriptJobSaveCommand;
+import org.apache.seatunnel.web.spi.bean.dto.command.BatchJobSaveCommand;
+import org.apache.seatunnel.web.spi.bean.dto.command.JobDefinitionSaveCommand;
+import org.apache.seatunnel.web.spi.bean.dto.config.JobScheduleConfig;
 import org.apache.seatunnel.web.spi.bean.entity.PaginationResult;
 import org.apache.seatunnel.web.spi.bean.vo.BatchJobDefinitionVO;
 import org.apache.seatunnel.web.spi.enums.Status;
@@ -62,7 +68,7 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
      * Save or update batch job definition.
      */
     @Transactional(rollbackFor = Exception.class)
-    protected Long doSaveOrUpdate(JobDefinitionSaveCommand command) {
+    protected Long doSaveOrUpdate(BatchJobSaveCommand command) {
         validateBase(command);
 
         try {
@@ -114,17 +120,17 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
     }
 
     @Override
-    public Long saveOrUpdate(ScriptJobSaveCommand command) {
+    public Long saveOrUpdate(BatchScriptJobSaveCommand command) {
         return doSaveOrUpdate(command);
     }
 
     @Override
-    public Long saveOrUpdate(GuideSingleJobSaveCommand command) {
+    public Long saveOrUpdate(BatchGuideSingleJobSaveCommand command) {
         return doSaveOrUpdate(command);
     }
 
     @Override
-    public Long saveOrUpdate(GuideMultiJobSaveCommand command) {
+    public Long saveOrUpdate(BatchGuideMultiJobSaveCommand command) {
         return doSaveOrUpdate(command);
     }
 
@@ -145,17 +151,17 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
     }
 
     @Override
-    public String buildHoconConfig(ScriptJobSaveCommand command) {
+    public String buildHoconConfig(BatchScriptJobSaveCommand command) {
         return doBuildHoconConfig(command);
     }
 
     @Override
-    public String buildHoconConfig(GuideSingleJobSaveCommand command) {
+    public String buildHoconConfig(BatchGuideSingleJobSaveCommand command) {
         return doBuildHoconConfig(command);
     }
 
     @Override
-    public String buildHoconConfig(GuideMultiJobSaveCommand command) {
+    public String buildHoconConfig(BatchGuideMultiJobSaveCommand command) {
         return doBuildHoconConfig(command);
     }
 

@@ -162,22 +162,22 @@ export default function useDetailPage() {
 
       if (id) {
         sessionStorage.setItem(
-          `batch-link-up-detail-${id}`,
+          `stream-link-up-detail-${id}`,
           JSON.stringify(merged)
         );
 
         if (currentMode === "GUIDE_SINGLE") {
-          history.push(`/sync/batch-link-up/${id}/config/single?scene=create`);
+          history.push(`/sync/stream-link-up/${id}/config/single?scene=create`);
           return;
         }
 
         if (currentMode === "GUIDE_MULTI") {
-          history.push(`/sync/batch-link-up/${id}/config/multi?scene=create`);
+          history.push(`/sync/stream-link-up/${id}/config/multi?scene=create`);
           return;
         }
 
         if (currentMode === "SCRIPT") {
-          history.push(`/sync/batch-link-up/${id}/config/script?scene=create`);
+          history.push(`/sync/stream-link-up/${id}/config/script?scene=create`);
           return;
         }
       }

@@ -7,10 +7,9 @@ import org.apache.seatunnel.web.common.utils.JSONUtils;
 import org.apache.seatunnel.web.core.builder.HoconConfigBuilder;
 import org.apache.seatunnel.web.core.dag.DagGraph;
 import org.apache.seatunnel.web.core.utils.DagUtil;
-import org.apache.seatunnel.web.spi.bean.dto.EnvConfig;
-import org.apache.seatunnel.web.spi.bean.dto.GuideMultiJobContent;
-import org.apache.seatunnel.web.spi.bean.dto.GuideMultiJobSaveCommand;
-import org.apache.seatunnel.web.spi.bean.dto.JobBasicConfig;
+import org.apache.seatunnel.web.spi.bean.dto.batch.BatchGuideMultiJobSaveCommand;
+import org.apache.seatunnel.web.spi.bean.dto.config.BatchJobEnvConfig;
+import org.apache.seatunnel.web.spi.bean.dto.config.GuideMultiJobContent;
 import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
@@ -42,7 +41,7 @@ public class GuideMultiHoconBuildService {
     @Resource
     private GuideMultiTableMatchResolver tableMatchResolver;
 
-    public String build(GuideMultiJobSaveCommand command) {
+    public String build(BatchGuideMultiJobSaveCommand command) {
         validateCommand(command);
 
         Map<String, Object> workflow = buildWorkflow(command);
@@ -58,7 +57,7 @@ public class GuideMultiHoconBuildService {
         return hoconConfigBuilder.build(dagGraph, command.getEnv());
     }
 
-    private Map<String, Object> buildWorkflow(GuideMultiJobSaveCommand command) {
+    private Map<String, Object> buildWorkflow(BatchGuideMultiJobSaveCommand command) {
         GuideMultiJobContent content = command.getContent();
 
         List<String> sourceTables = tableMatchResolver.resolveSourceTables(content);
@@ -66,7 +65,7 @@ public class GuideMultiHoconBuildService {
 
         validateTables(sourceTables, sinkTables);
 
-        EnvConfig env = command.getEnv();
+        BatchJobEnvConfig env = command.getEnv();
 
         Map<String, Object> sourceNode = buildSourceNode(content.getSource(), sourceTables, env);
         Map<String, Object> sinkNode = buildSinkNode(content.getTarget(), sinkTables, env);
@@ -86,7 +85,7 @@ public class GuideMultiHoconBuildService {
     private Map<String, Object> buildSourceNode(
             GuideMultiJobContent.WorkflowSourceConfig source,
             List<String> sourceTables,
-            EnvConfig env) {
+            BatchJobEnvConfig env) {
 
         boolean multiTable = sourceTables.size() > 1;
         String firstSourceTable = firstTable(sourceTables);
@@ -106,7 +105,7 @@ public class GuideMultiHoconBuildService {
         config.put(KEY_TABLE_LIST, sourceTables);
         config.put(KEY_SOURCE_TABLE_LIST, sourceTables);
 
-        appendEnvConfig(config, env);
+        appendBatchJobEnvConfig(config, env);
 
         if (source.getFetchSize() != null) {
             config.put("fetchSize", source.getFetchSize());
@@ -125,7 +124,7 @@ public class GuideMultiHoconBuildService {
         data.put("connectorType", source.getConnectorType());
         data.put("pluginName", source.getPluginName());
 
-        appendEnvConfig(data, env);
+        appendBatchJobEnvConfig(data, env);
 
         data.putAll(config);
         data.put("config", config);
@@ -141,7 +140,7 @@ public class GuideMultiHoconBuildService {
     private Map<String, Object> buildSinkNode(
             GuideMultiJobContent.WorkflowTargetConfig target,
             List<String> sinkTables,
-            EnvConfig env) {
+            BatchJobEnvConfig env) {
 
         boolean multiTable = sinkTables.size() > 1;
         String firstSinkTable = firstTable(sinkTables);
@@ -176,7 +175,7 @@ public class GuideMultiHoconBuildService {
             config.put("targetTableName", firstSinkTable);
         }
 
-        appendEnvConfig(config, env);
+        appendBatchJobEnvConfig(config, env);
 
         putIfNotBlank(config, "dataSaveMode", target.getDataSaveMode());
         putIfNotBlank(config, "schemaSaveMode", target.getSchemaSaveMode());
@@ -205,7 +204,7 @@ public class GuideMultiHoconBuildService {
         data.put("connectorType", target.getConnectorType());
         data.put("pluginName", target.getPluginName());
 
-        appendEnvConfig(data, env);
+        appendBatchJobEnvConfig(data, env);
 
         data.putAll(config);
         data.put("config", config);
@@ -220,7 +219,7 @@ public class GuideMultiHoconBuildService {
 
 
 
-    private void appendEnvConfig(Map<String, Object> target, EnvConfig env) {
+    private void appendBatchJobEnvConfig(Map<String, Object> target, BatchJobEnvConfig env) {
         if (env == null) {
             return;
         }
@@ -235,7 +234,7 @@ public class GuideMultiHoconBuildService {
         }
     }
 
-    private void validateCommand(GuideMultiJobSaveCommand command) {
+    private void validateCommand(BatchGuideMultiJobSaveCommand command) {
         if (command == null) {
             throw new IllegalArgumentException("command can not be null");
         }

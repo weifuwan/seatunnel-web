@@ -2,7 +2,7 @@ package org.apache.seatunnel.web.core.job.handler.multi;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.seatunnel.web.spi.bean.dto.GuideMultiJobContent;
+import org.apache.seatunnel.web.spi.bean.dto.config.GuideMultiJobContent;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;

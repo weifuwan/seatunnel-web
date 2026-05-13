@@ -30,12 +30,29 @@ public abstract class AbstractCdcSourceBuilder implements DataSourceHoconBuilder
     protected static final String STOP_MODE = "stop.mode";
     protected static final String TABLE_NAMES_CONFIG = "table-names-config";
 
+    protected static final String STARTUP_SPECIFIC_OFFSET_FILE = "startup.specific-offset.file";
+    protected static final String STARTUP_SPECIFIC_OFFSET_POS = "startup.specific-offset.pos";
+    protected static final String STARTUP_TIMESTAMP = "startup.timestamp";
+
     /**
      * Frontend / node config field.
      */
     protected static final String DATABASE = "database";
     protected static final String TABLE = "table";
     protected static final String TABLE_NAMES_NODE = "tableNames";
+
+    /**
+     * Frontend startup fields.
+     */
+    protected static final String STARTUP_MODE_NODE = "startupMode";
+    protected static final String STARTUP_SPECIFIC_OFFSET_FILE_NODE = "startupSpecificOffsetFile";
+    protected static final String STARTUP_SPECIFIC_OFFSET_POS_NODE = "startupSpecificOffsetPos";
+    protected static final String STARTUP_TIMESTAMP_NODE = "startupTimestamp";
+
+    protected static final String STARTUP_MODE_INITIAL = "initial";
+    protected static final String STARTUP_MODE_LATEST = "latest";
+    protected static final String STARTUP_MODE_SPECIFIC = "specific";
+    protected static final String STARTUP_MODE_TIMESTAMP = "timestamp";
 
     @Override
     public boolean supportsSink() {
@@ -52,7 +69,6 @@ public abstract class AbstractCdcSourceBuilder implements DataSourceHoconBuilder
         appendConnectionOptions(conn, node, map);
         appendCaptureOptions(conn, node, map);
         appendStartupOptions(node, map);
-        appendAdvancedOptions(node, map);
         appendPluginRelation(node, map);
         appendExtraParams(node, map);
 
@@ -65,9 +81,6 @@ public abstract class AbstractCdcSourceBuilder implements DataSourceHoconBuilder
     }
 
     protected void appendConnectionOptions(Config conn, Config node, Map<String, Object> map) {
-        /*
-         * 优先从 datasource connectionParam 取连接信息。
-         */
         putIfPresent(conn, URL, map);
         putAliasIfPresent(conn, "user", USERNAME, map);
         putIfPresent(conn, USERNAME, map);
@@ -75,21 +88,9 @@ public abstract class AbstractCdcSourceBuilder implements DataSourceHoconBuilder
         putIfPresent(conn, HOSTNAME, map);
         putIfPresent(conn, PORT, map);
 
-        /*
-         * 兼容你的 datasource 字段：
-         * host -> hostname
-         */
+        // datasource 里面常见字段是 host，这里转成 SeaTunnel CDC 需要的 hostname
         putAliasIfPresent(conn, "host", HOSTNAME, map);
 
-        /*
-         * node 允许覆盖 connectionParam。
-         */
-        putIfPresent(node, URL, map);
-        putIfPresent(node, USERNAME, map);
-        putIfPresent(node, PASSWORD, map);
-        putIfPresent(node, HOSTNAME, map);
-        putIfPresent(node, PORT, map);
-        putAliasIfPresent(node, "host", HOSTNAME, map);
     }
 
     protected void appendCaptureOptions(Config conn, Config node, Map<String, Object> map) {
@@ -106,18 +107,11 @@ public abstract class AbstractCdcSourceBuilder implements DataSourceHoconBuilder
     }
 
     protected void appendDatabaseNames(Config conn, Config node, Map<String, Object> map) {
-        /*
-         * 如果 node 已经传了 SeaTunnel CDC 原生字段 database-names，
-         * 说明是高级/手动配置场景，直接尊重 node 配置。
-         */
         if (node != null && node.hasPath(DATABASE_NAMES)) {
             putListIfPresent(node, DATABASE_NAMES, map);
             return;
         }
 
-        /*
-         * 常规场景：从 datasource connectionParam.database 推导。
-         */
         String database = getString(conn, DATABASE);
         if (StringUtils.isNotBlank(database)) {
             map.put(DATABASE_NAMES, Collections.singletonList(database));
@@ -125,10 +119,6 @@ public abstract class AbstractCdcSourceBuilder implements DataSourceHoconBuilder
     }
 
     protected void appendTableNames(Config conn, Config node, Map<String, Object> map) {
-        /*
-         * 如果 node 已经传了 SeaTunnel CDC 原生字段 table-names，
-         * 说明已经是 db.table 格式，直接使用。
-         */
         if (node != null && node.hasPath(TABLE_NAMES)) {
             putListIfPresent(node, TABLE_NAMES, map);
             return;
@@ -136,13 +126,6 @@ public abstract class AbstractCdcSourceBuilder implements DataSourceHoconBuilder
 
         String database = getString(conn, DATABASE);
 
-        /*
-         * 前端当前字段：
-         * tableNames = ["t_cockpit_code_detail"]
-         *
-         * SeaTunnel CDC 需要：
-         * table-names = ["cockpit.t_cockpit_code_detail"]
-         */
         if (node != null && node.hasPath(TABLE_NAMES_NODE)) {
             List<String> tables = node.getStringList(TABLE_NAMES_NODE);
             List<String> fullTableNames = buildFullTableNames(database, tables);
@@ -152,10 +135,6 @@ public abstract class AbstractCdcSourceBuilder implements DataSourceHoconBuilder
             return;
         }
 
-        /*
-         * 兼容单表字段：
-         * table = "t_cockpit_code_detail"
-         */
         String table = getString(node, TABLE);
         if (StringUtils.isNotBlank(table)) {
             map.put(TABLE_NAMES, Collections.singletonList(buildFullTableName(database, table)));
@@ -183,10 +162,6 @@ public abstract class AbstractCdcSourceBuilder implements DataSourceHoconBuilder
     protected String buildFullTableName(String database, String table) {
         String trimmedTable = table.trim();
 
-        /*
-         * 如果前端已经传了 cockpit.t_xxx，
-         * 避免拼成 cockpit.cockpit.t_xxx。
-         */
         if (trimmedTable.contains(".")) {
             return trimmedTable;
         }
@@ -198,34 +173,125 @@ public abstract class AbstractCdcSourceBuilder implements DataSourceHoconBuilder
         return database.trim() + "." + trimmedTable;
     }
 
+    /**
+     * 这里重点处理 CDC 启动模式。
+     *
+     * 前端字段：
+     * startupMode
+     * startupSpecificOffsetFile
+     * startupSpecificOffsetPos
+     * startupTimestamp
+     *
+     * SeaTunnel HOCON 字段：
+     * startup.mode
+     * startup.specific-offset.file
+     * startup.specific-offset.pos
+     * startup.timestamp
+     */
     protected void appendStartupOptions(Config node, Map<String, Object> map) {
-        putIfPresent(node, STARTUP_MODE, map);
-        putIfPresent(node, STOP_MODE, map);
+        if (node == null) {
+            return;
+        }
 
-        putIfPresent(node, "startup.specific-offset.file", map);
-        putIfPresent(node, "startup.specific-offset.pos", map);
-        putIfPresent(node, "startup.timestamp", map);
+        String startupMode = resolveStartupMode(node);
 
-        putIfPresent(node, "stop.specific-offset.file", map);
-        putIfPresent(node, "stop.specific-offset.pos", map);
+        if (StringUtils.isBlank(startupMode)) {
+            startupMode = STARTUP_MODE_INITIAL;
+        }
+
+        map.put(STARTUP_MODE, startupMode);
+
+        if (STARTUP_MODE_SPECIFIC.equalsIgnoreCase(startupMode)) {
+            appendSpecificStartupOptions(node, map);
+            return;
+        }
+
+        if (STARTUP_MODE_TIMESTAMP.equalsIgnoreCase(startupMode)) {
+            appendTimestampStartupOptions(node, map);
+        }
+
+        // initial / latest 不需要额外位点参数
     }
 
-    protected void appendAdvancedOptions(Config node, Map<String, Object> map) {
-        putIfPresent(node, "connect.timeout.ms", map);
-        putIfPresent(node, "connect.max-retries", map);
-        putIfPresent(node, "connection.pool.size", map);
-        putIfPresent(node, "chunk-key.even-distribution.factor.lower-bound", map);
-        putIfPresent(node, "chunk-key.even-distribution.factor.upper-bound", map);
-        putIfPresent(node, "sample-sharding.threshold", map);
-        putIfPresent(node, "inverse-sampling.rate", map);
-        putIfPresent(node, "schema-changes.enabled", map);
-        putIfPresent(node, "int_type_narrowing", map);
-        putIfPresent(node, "exactly_once", map);
+    protected String resolveStartupMode(Config node) {
+        // 优先尊重 SeaTunnel 原生字段，兼容高级配置
+        String rawMode = getString(node, STARTUP_MODE);
+        if (StringUtils.isNotBlank(rawMode)) {
+            return normalizeStartupMode(rawMode);
+        }
+
+        // 兼容前端字段
+        rawMode = getString(node, STARTUP_MODE_NODE);
+        if (StringUtils.isNotBlank(rawMode)) {
+            return normalizeStartupMode(rawMode);
+        }
+
+        return STARTUP_MODE_INITIAL;
+    }
+
+    protected String normalizeStartupMode(String startupMode) {
+        if (StringUtils.isBlank(startupMode)) {
+            return STARTUP_MODE_INITIAL;
+        }
+
+        String mode = startupMode.trim();
+
+        if (STARTUP_MODE_INITIAL.equalsIgnoreCase(mode)) {
+            return STARTUP_MODE_INITIAL;
+        }
+
+        if (STARTUP_MODE_LATEST.equalsIgnoreCase(mode)) {
+            return STARTUP_MODE_LATEST;
+        }
+
+        if (STARTUP_MODE_SPECIFIC.equalsIgnoreCase(mode)) {
+            return STARTUP_MODE_SPECIFIC;
+        }
+
+        if (STARTUP_MODE_TIMESTAMP.equalsIgnoreCase(mode)) {
+            return STARTUP_MODE_TIMESTAMP;
+        }
+
+        // 不认识的模式不要直接吞掉，保留用户配置，方便兼容 SeaTunnel 后续新增模式
+        return mode;
+    }
+
+    protected void appendSpecificStartupOptions(Config node, Map<String, Object> map) {
+        Object file = getFirstPresentValue(node, STARTUP_SPECIFIC_OFFSET_FILE, STARTUP_SPECIFIC_OFFSET_FILE_NODE);
+        Object pos = getFirstPresentValue(node, STARTUP_SPECIFIC_OFFSET_POS, STARTUP_SPECIFIC_OFFSET_POS_NODE);
+
+        if (isEmptyValue(file)) {
+            throw new IllegalArgumentException(
+                    "CDC startup mode is specific, but startup specific offset file is empty");
+        }
+
+        if (isEmptyValue(pos)) {
+            throw new IllegalArgumentException(
+                    "CDC startup mode is specific, but startup specific offset position is empty");
+        }
+
+        map.put(STARTUP_SPECIFIC_OFFSET_FILE, file);
+        map.put(STARTUP_SPECIFIC_OFFSET_POS, pos);
+    }
+
+    protected void appendTimestampStartupOptions(Config node, Map<String, Object> map) {
+        Object timestamp = getFirstPresentValue(node, STARTUP_TIMESTAMP, STARTUP_TIMESTAMP_NODE);
+
+        if (isEmptyValue(timestamp)) {
+            throw new IllegalArgumentException(
+                    "CDC startup mode is timestamp, but startup timestamp is empty");
+        }
+
+        map.put(STARTUP_TIMESTAMP, timestamp);
     }
 
     protected void appendPluginRelation(Config node, Map<String, Object> map) {
         putIfPresent(node, "plugin_input", map);
         putIfPresent(node, "plugin_output", map);
+
+        // 兼容前端常见驼峰字段
+        putAliasIfPresent(node, "pluginInput", "plugin_input", map);
+        putAliasIfPresent(node, "pluginOutput", "plugin_output", map);
     }
 
     protected void appendExtraParams(Config node, Map<String, Object> map) {
@@ -244,8 +310,34 @@ public abstract class AbstractCdcSourceBuilder implements DataSourceHoconBuilder
                     ? item.getValue("value").unwrapped()
                     : "";
 
+            if (isEmptyValue(value)) {
+                continue;
+            }
+
             map.put(key.trim(), value);
         }
+    }
+
+    protected Object getFirstPresentValue(Config config, String primaryKey, String fallbackKey) {
+        if (config == null) {
+            return null;
+        }
+
+        if (config.hasPath(primaryKey)) {
+            Object value = config.getValue(primaryKey).unwrapped();
+            if (!isEmptyValue(value)) {
+                return value;
+            }
+        }
+
+        if (config.hasPath(fallbackKey)) {
+            Object value = config.getValue(fallbackKey).unwrapped();
+            if (!isEmptyValue(value)) {
+                return value;
+            }
+        }
+
+        return null;
     }
 
     protected void putIfPresent(Config config, String key, Map<String, Object> map) {
@@ -254,23 +346,24 @@ public abstract class AbstractCdcSourceBuilder implements DataSourceHoconBuilder
         }
 
         Object value = config.getValue(key).unwrapped();
-        if (value instanceof String && StringUtils.isBlank((String) value)) {
+        if (isEmptyValue(value)) {
             return;
         }
 
         map.put(key, value);
     }
 
-    protected void putAliasIfPresent(Config config,
-                                     String sourceKey,
-                                     String targetKey,
-                                     Map<String, Object> map) {
+    protected void putAliasIfPresent(
+            Config config,
+            String sourceKey,
+            String targetKey,
+            Map<String, Object> map) {
         if (config == null || !config.hasPath(sourceKey)) {
             return;
         }
 
         Object value = config.getValue(sourceKey).unwrapped();
-        if (value instanceof String && StringUtils.isBlank((String) value)) {
+        if (isEmptyValue(value)) {
             return;
         }
 
@@ -282,7 +375,12 @@ public abstract class AbstractCdcSourceBuilder implements DataSourceHoconBuilder
             return;
         }
 
-        map.put(key, config.getValue(key).unwrapped());
+        Object value = config.getValue(key).unwrapped();
+        if (isEmptyValue(value)) {
+            return;
+        }
+
+        map.put(key, value);
     }
 
     protected String getString(Config config, String key) {
@@ -292,5 +390,21 @@ public abstract class AbstractCdcSourceBuilder implements DataSourceHoconBuilder
 
         String value = config.getString(key);
         return StringUtils.isBlank(value) ? null : value.trim();
+    }
+
+    protected boolean isEmptyValue(Object value) {
+        if (value == null) {
+            return true;
+        }
+
+        if (value instanceof String) {
+            return StringUtils.isBlank((String) value);
+        }
+
+        if (value instanceof List) {
+            return ((List<?>) value).isEmpty();
+        }
+
+        return false;
     }
 }

@@ -58,7 +58,7 @@ export const generateCDCDataSourceOptions = (): DataSourceType[] => [
     label: (
       <div style={{ display: "flex", alignItems: "center" }}>
         <MysqlIcon height="24px" width="24px" />
-        <span style={{ marginLeft: 8 }}>MYSQL-CDC</span>
+        <span style={{ marginLeft: 8 }}>MySQL-CDC</span>
       </div>
     ),
   },

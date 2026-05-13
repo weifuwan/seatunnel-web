@@ -4,10 +4,13 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import jakarta.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.seatunnel.plugin.datasource.api.hocon.DataSourceHoconBuilder;
+import org.apache.seatunnel.plugin.datasource.api.hocon.HoconBuildContext;
 import org.apache.seatunnel.plugin.datasource.api.jdbc.DataSourceProcessor;
 import org.apache.seatunnel.plugin.datasource.api.utils.DataSourceUtils;
 import org.apache.seatunnel.web.common.config.ConfigValidator;
 import org.apache.seatunnel.web.common.config.ReadonlyConfig;
+import org.apache.seatunnel.web.common.enums.HoconBuildStage;
 import org.apache.seatunnel.web.core.builder.context.DagBuildContext;
 import org.apache.seatunnel.web.dao.entity.DataSource;
 import org.apache.seatunnel.web.dao.repository.DataSourceDao;
@@ -18,18 +21,23 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * JDBC sink node builder.
+ * DataSource sink node builder.
+ *
+ * <p>
+ * Although the current main implementation is JDBC Sink,
+ * this builder is designed to support other sink plugin types later,
+ * such as Kafka, File, Hive, StarRocks, Doris, etc.
+ * </p>
  */
 @Component
 public class JdbcSinkBuilder implements SinkNodeConfigBuilder {
 
     private static final String NODE_TYPE = "sink";
+
     private static final String KEY_DATA_SOURCE_ID = "dataSourceId";
     private static final String KEY_DB_TYPE = "dbType";
     private static final String KEY_PLUGIN_NAME = "pluginName";
     private static final String KEY_CONNECTOR_TYPE = "connectorType";
-
-    private static final String KEY_PLUGIN_INPUT = "plugin_input";
 
     @Resource
     private DataSourceDao dataSourceDao;
@@ -51,16 +59,43 @@ public class JdbcSinkBuilder implements SinkNodeConfigBuilder {
 
         Long dataSourceId = parseDataSourceId(config);
         DataSource dataSource = getRequiredDataSource(dataSourceId);
-        DbType dbType = parseDbType(data);
 
+        DbType dbType = parseDbType(data);
         String pluginName = getRequiredPluginName(data);
 
         DataSourceProcessor processor = DataSourceUtils.getDatasourceProcessor(dbType);
-        Config sinkConfig = processor.getQueryBuilder(pluginName)
-                .buildSinkHocon(dataSource.getConnectionParams(), config);
+        DataSourceHoconBuilder hoconBuilder = processor.getQueryBuilder(pluginName);
 
-        validateSinkConfig(processor, sinkConfig);
+        if (!hoconBuilder.supportsSink()) {
+            throw new IllegalArgumentException(pluginName + " does not support sink side");
+        }
+
+        HoconBuildContext buildContext = buildHoconContext(
+                dataSource,
+                config,
+                context
+        );
+
+        Config sinkConfig = hoconBuilder.buildSinkHocon(buildContext);
+
+        validateSinkConfig(processor, pluginName, sinkConfig);
+
         return sinkConfig;
+    }
+
+    private HoconBuildContext buildHoconContext(DataSource dataSource,
+                                                Config nodeConfig,
+                                                DagBuildContext dagContext) {
+        String connectionParam = dataSource.getConnectionParams();
+        Config connectionConfig = ConfigFactory.parseString(connectionParam);
+
+        return HoconBuildContext.builder()
+                .connectionParam(connectionParam)
+                .connectionConfig(connectionConfig)
+                .nodeConfig(nodeConfig)
+                .scheduleConfig(dagContext == null ? null : dagContext.getScheduleConfig())
+                .stage(HoconBuildStage.INSTANCE)
+                .build();
     }
 
     private Config appendPluginInputIfNecessary(Config data,
@@ -79,10 +114,12 @@ public class JdbcSinkBuilder implements SinkNodeConfigBuilder {
             return config;
         }
 
-        Map<String, Object> extra = new HashMap<>();
+        Map<String, Object> extra = new HashMap<String, Object>();
         extra.put("plugin_input", pluginInput);
 
-        return ConfigFactory.parseMap(extra).withFallback(config).resolve();
+        return ConfigFactory.parseMap(extra)
+                .withFallback(config)
+                .resolve();
     }
 
     @Override
@@ -143,7 +180,9 @@ public class JdbcSinkBuilder implements SinkNodeConfigBuilder {
         return pluginName;
     }
 
-    private void validateSinkConfig(DataSourceProcessor processor, Config sinkConfig) {
+    private void validateSinkConfig(DataSourceProcessor processor,
+                                    String pluginName,
+                                    Config sinkConfig) {
         ConfigValidator.of(ReadonlyConfig.fromConfig(sinkConfig))
                 .validate(processor.sinkOptionRule());
     }

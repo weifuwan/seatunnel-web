@@ -16,7 +16,7 @@ const RealtimeSyncPage: React.FC = () => {
   const [sourceType, setSourceType] = useState<any>({
     dbType: "MYSQL",
     connectorType: "Jdbc",
-    pluginName: "MYSQL-CDC",
+    pluginName: "MySQL-CDC",
   });
 
 

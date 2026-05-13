@@ -5,8 +5,9 @@ import com.typesafe.config.ConfigFactory;
 import jakarta.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.seatunnel.plugin.datasource.api.hocon.DataSourceHoconBuilder;
-import org.apache.seatunnel.plugin.datasource.api.jdbc.DataSourceProcessor;
+import org.apache.seatunnel.plugin.datasource.api.hocon.HoconBuildContext;
 import org.apache.seatunnel.plugin.datasource.api.utils.DataSourceUtils;
+import org.apache.seatunnel.plugin.datasource.api.jdbc.DataSourceProcessor;
 import org.apache.seatunnel.web.common.config.ConfigValidator;
 import org.apache.seatunnel.web.common.config.ReadonlyConfig;
 import org.apache.seatunnel.web.common.enums.HoconBuildStage;
@@ -21,13 +22,11 @@ import org.springframework.stereotype.Component;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * JDBC source node builder.
- */
 @Component
-public class JdbcSourceBuilder implements SourceNodeConfigBuilder {
+public class DataSourceSourceBuilder implements SourceNodeConfigBuilder {
 
     private static final String NODE_TYPE = "source";
+
     private static final String KEY_DATA_SOURCE_ID = "dataSourceId";
     private static final String KEY_DB_TYPE = "dbType";
     private static final String KEY_PLUGIN_NAME = "pluginName";
@@ -35,8 +34,6 @@ public class JdbcSourceBuilder implements SourceNodeConfigBuilder {
 
     private static final String KEY_SQL = "sql";
     private static final String KEY_WHERE_CONDITION = "where_condition";
-
-    private static final String KEY_PLUGIN_OUTPUT = "plugin_output";
 
     @Resource
     private DataSourceDao dataSourceDao;
@@ -55,40 +52,53 @@ public class JdbcSourceBuilder implements SourceNodeConfigBuilder {
     }
 
     @Override
-    public Config build(Config data, DagBuildContext context) {
-        Config config = resolveNodeConfig(data);
-        config = appendPluginOutputIfNecessary(data, config, context);
+    public Config build(Config data, DagBuildContext dagContext) {
+        Config nodeConfig = resolveNodeConfig(data);
+        nodeConfig = appendPluginOutputIfNecessary(data, nodeConfig, dagContext);
 
-        Long dataSourceId = parseDataSourceId(config);
+        Long dataSourceId = parseDataSourceId(nodeConfig);
         DataSource dataSource = getRequiredDataSource(dataSourceId);
-        DbType dbType = parseDbType(config);
 
-        String pluginName = getRequiredPluginName(config);
+        DbType dbType = parseDbType(nodeConfig);
+        String pluginName = getRequiredPluginName(nodeConfig);
 
         DataSourceProcessor processor = DataSourceUtils.getDatasourceProcessor(dbType);
-
         DataSourceHoconBuilder hoconBuilder = processor.getQueryBuilder(pluginName);
 
-        config = renderSqlTimeVariablesIfNecessary(
-                config,
+        if (!hoconBuilder.supportsSource()) {
+            throw new IllegalArgumentException(pluginName + " does not support source side");
+        }
+
+        nodeConfig = renderTimeVariablesIfNecessary(
+                nodeConfig,
                 hoconBuilder,
-                context.getScheduleConfig()
+                dagContext.getScheduleConfig()
         );
 
-        Config sourceConfig = hoconBuilder.buildSourceHocon(
-                dataSource.getConnectionParams(),
-                config,
-                processor.getConnectionManager(),
-                HoconBuildStage.INSTANCE
-        );
+        Config connectionConfig = ConfigFactory.parseString(dataSource.getConnectionParams());
+
+        HoconBuildContext buildContext = HoconBuildContext.builder()
+                .connectionParam(dataSource.getConnectionParams())
+                .connectionConfig(connectionConfig)
+                .nodeConfig(nodeConfig)
+                .scheduleConfig(dagContext.getScheduleConfig())
+                .stage(HoconBuildStage.INSTANCE)
+                .build();
+
+        Config sourceConfig = hoconBuilder.buildSourceHocon(buildContext);
 
         validateSourceConfig(processor, pluginName, sourceConfig);
+
         return sourceConfig;
     }
 
-    private Config renderSqlTimeVariablesIfNecessary(Config config,
-                                                     DataSourceHoconBuilder hoconBuilder,
-                                                     JobScheduleConfig scheduleConfig) {
+    private Config renderTimeVariablesIfNecessary(Config config,
+                                                  DataSourceHoconBuilder hoconBuilder,
+                                                  JobScheduleConfig scheduleConfig) {
+        /*
+         * 这里先只处理 JDBC SQL 类场景。
+         * CDC 一般不需要渲染 sql / where_condition。
+         */
         Map<String, Object> extra = new HashMap<>();
 
         renderSqlFragmentIfNecessary(config, hoconBuilder, scheduleConfig, KEY_SQL, extra);
@@ -202,10 +212,9 @@ public class JdbcSourceBuilder implements SourceNodeConfigBuilder {
         return pluginName;
     }
 
-    private void validateSourceConfig(
-            DataSourceProcessor processor,
-            String pluginName,
-            Config sourceConfig) {
+    private void validateSourceConfig(DataSourceProcessor processor,
+                                      String pluginName,
+                                      Config sourceConfig) {
         ConfigValidator.of(ReadonlyConfig.fromConfig(sourceConfig))
                 .validate(processor.sourceOptionRule(pluginName));
     }

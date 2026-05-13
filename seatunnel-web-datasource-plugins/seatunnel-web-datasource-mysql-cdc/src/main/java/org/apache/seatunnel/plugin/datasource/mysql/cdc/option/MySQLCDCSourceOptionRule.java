@@ -1,10 +1,10 @@
-package org.apache.seatunnel.plugin.datasource.mysql.option;
+package org.apache.seatunnel.plugin.datasource.mysql.cdc.option;
 
 import com.google.auto.service.AutoService;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.seatunnel.web.common.config.OptionRule;
 import org.apache.seatunnel.plugin.datasource.api.jdbc.SourceOptionRule;
 import org.apache.seatunnel.plugin.datasource.api.option.*;
+import org.apache.seatunnel.web.common.config.OptionRule;
 
 @AutoService(SourceOptionRule.class)
 @Slf4j

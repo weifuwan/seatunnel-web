@@ -15,7 +15,7 @@ const REALTIME_DETAIL_CACHE_PREFIX = "stream-link-up-detail";
 const RealtimeSyncPage: React.FC = () => {
   const [sourceType, setSourceType] = useState<any>({
     dbType: "MYSQL",
-    connectorType: "Jdbc",
+    connectorType: "MySQL-CDC",
     pluginName: "MySQL-CDC",
   });
 

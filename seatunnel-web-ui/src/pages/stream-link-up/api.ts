@@ -18,7 +18,7 @@ export interface SeatunnelJobDefinition {
   updateTime?: any;
 }
 
-export const apiPrefix = '/api/v1/job/batch-definition';
+export const apiPrefix = '/api/v1/job/streaming-definition';
 
 export const seatunnelStremJobDefinitionApi = {
   /**

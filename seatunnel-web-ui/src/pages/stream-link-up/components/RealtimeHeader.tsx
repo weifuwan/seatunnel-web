@@ -74,7 +74,7 @@ const RealtimeHeader: React.FC<RealtimeHeaderProps> = ({
       </div>
 
       <div className="mb-5 rounded-[20px] border border-indigo-100 bg-white/90 p-4">
-        <div className="mb-1 flex items-center gap-3 font-semibold text-slate-900">
+        <div className="mb-2 flex items-center gap-3 font-semibold text-slate-900">
           同步方向
           {/* <span className="inline-flex h-6 items-center gap-2 rounded-full bg-sky-50 px-3 text-xs font-semibold text-sky-600">
             <i className="h-1.5 w-1.5 rounded-full bg-sky-500 shadow-[0_0_0_4px_rgba(14,165,233,0.12)]" />

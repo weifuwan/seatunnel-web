@@ -6,6 +6,7 @@
 <p align="center">
 <a href="http://111.230.213.87:8000" target="_blank">Live Demo</a>｜
 <a href="https://doc.seatunnel-web.com/">中文文档</a>
+<a href="http://111.230.213.87:9001/">官网</a>
 </p>
 
 

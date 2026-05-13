@@ -41,4 +41,9 @@ public class OracleBatchBuilder extends AbstractJdbcBatchBuilder {
                 .replace("ss", "SS")
                 .replace("SSS", "FF3");
     }
+
+    @Override
+    protected String defaultDriver() {
+        return null;
+    }
 }

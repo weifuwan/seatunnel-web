@@ -54,21 +54,21 @@ public class PgSQLBatchBuilder extends AbstractJdbcBatchBuilder {
         return String.format("%s.%s.%s", database, schema, table);
     }
     
-    @Override
-    public Config buildSinkHocon(String connectionParam, Config config) {
-        Config conn = ConfigFactory.parseString(connectionParam);
-        Map<String, Object> map = new HashMap<>(32);
-        
-        putConnCommon(conn, map);
-        
-        // Use PostgreSQL-specific sink builder
-//        pgSingleSinkBuilder.build(config, conn, map);
-        
-        // Append common options
-        appendSinkOptions(config, map);
-        
-        return ConfigFactory.parseMap(map);
-    }
+//    @Override
+//    public Config buildSinkHocon(String connectionParam, Config config) {
+//        Config conn = ConfigFactory.parseString(connectionParam);
+//        Map<String, Object> map = new HashMap<>(32);
+//
+//        putConnCommon(conn, map);
+//
+//        // Use PostgreSQL-specific sink builder
+////        pgSingleSinkBuilder.build(config, conn, map);
+//
+//        // Append common options
+//        appendSinkOptions(config, map);
+//
+//        return ConfigFactory.parseMap(map);
+//    }
     
     private void appendSinkOptions(Config config, Map<String, Object> map) {
         // Add common sink options

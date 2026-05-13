@@ -4,6 +4,7 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import jakarta.annotation.Resource;
 import org.apache.seatunnel.plugin.datasource.api.hocon.DataSourceHoconBuilder;
+import org.apache.seatunnel.plugin.datasource.api.hocon.HoconBuildContext;
 import org.apache.seatunnel.plugin.datasource.api.jdbc.DataSourceProcessor;
 import org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConnectionProvider;
 import org.apache.seatunnel.plugin.datasource.api.utils.DataSourceUtils;
@@ -56,12 +57,14 @@ public class JdbcConnectivityTestJobDefinitionBuilder implements ConnectivityTes
         JdbcConnectionProvider connectionProvider = processor.getConnectionManager();
 
         Config sourceNodeConfig = buildMinimalSourceNodeConfig();
-        Config sourcePluginConfig = sourceBuilder.buildSourceHocon(
-                datasource.getConnectionParams(),
-                sourceNodeConfig,
-                connectionProvider,
-                HoconBuildStage.INSTANCE
-        );
+        Config connectionConfig = ConfigFactory.parseString(datasource.getConnectionParams());
+        HoconBuildContext buildContext = HoconBuildContext.builder()
+                .connectionParam(datasource.getConnectionParams())
+                .connectionConfig(connectionConfig)
+                .nodeConfig(sourceNodeConfig)
+                .stage(HoconBuildStage.INSTANCE)
+                .build();
+        Config sourcePluginConfig = sourceBuilder.buildSourceHocon(buildContext);
 
         String jobName = buildJobName(client.getId(), datasource.getId());
         String jobConfig = seaTunnelJobConfigAssembler.assemble(

@@ -16,6 +16,7 @@ import { GlobalSearch, Knowledge, OpenAPI } from "./components/RightContent";
 import { errorConfig } from "./requestErrorConfig";
 import HttpUtils from "./utils/HttpUtils";
 
+
 const isDev = process.env.NODE_ENV === "development";
 const loginPath = "/login";
 

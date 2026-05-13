@@ -30,7 +30,7 @@ import java.util.Map;
  * </p>
  */
 @Component
-public class JdbcSinkBuilder implements SinkNodeConfigBuilder {
+public class DataSourceSinkBuilder implements SinkNodeConfigBuilder {
 
     private static final String NODE_TYPE = "sink";
 

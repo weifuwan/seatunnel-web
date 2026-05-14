@@ -40,7 +40,7 @@ const ClientPageTailwind: React.FC = () => {
       extraScale={1}
     >
       <div
-        className="h-[calc(100vh-48px)] overflow-auto"
+        className="h-[calc(100vh-48px)]"
         style={{ background: PAGE_BG }}
       >
         <div className="box-border px-6 py-6">

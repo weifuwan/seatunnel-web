@@ -219,10 +219,10 @@ const App: React.FC<Props> = ({ goDetail }) => {
         defaultMessage: "Sync Plan",
       }),
       dataIndex: "",
-      width: "20%",
+      width: "21%",
       render: (_content: any, record: any) => (
         <DataSourceSyncPlan record={record} />
-      ),
+      ), 
     },
     {
       title: intl.formatMessage({

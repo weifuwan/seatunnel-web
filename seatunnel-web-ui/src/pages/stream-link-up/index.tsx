@@ -396,19 +396,7 @@ const RealtimeSyncPage: React.FC = () => {
           dataSource={dataSource}
           selectedRowKeys={selectedRowKeys}
           onSelectedRowKeysChange={setSelectedRowKeys}
-          pagination={{
-            current,
-            pageSize,
-            total,
-            showSizeChanger: true,
-            showQuickJumper: true,
-            showTotal: (value) => `共 ${value} 个实时任务`,
-            onChange: (nextPage, nextPageSize) => {
-              setCurrent(nextPage);
-              setPageSize(nextPageSize || 10);
-              setSelectedRowKeys([]);
-            },
-          }}
+          pagination={false}
           onView={handleView}
           onEdit={handleEdit}
           onOnline={handleOnline}

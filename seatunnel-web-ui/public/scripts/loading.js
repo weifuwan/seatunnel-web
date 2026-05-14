@@ -1,6 +1,6 @@
 /**
  * SeaTunnel Web initial loading
- * React 接管前展示一次启动动画，避免双 loading 动画
+ * React 接管前展示一次启动动画
  */
 (function () {
   const root = document.querySelector("#root");
@@ -45,47 +45,26 @@
           position: absolute;
           left: 50%;
           top: 50%;
-          width: 330px;
-          height: 330px;
+          width: 320px;
+          height: 320px;
           border-radius: 9999px;
-          background: #f7f8fa;
+          background: #f6f7f8;
           opacity: 0;
           pointer-events: none;
           transform: translate(-50%, -50%) scale(0.42);
-          filter: blur(0.4px);
-          animation-name: stwSoftWave;
-          animation-duration: 1.55s;
-          animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
-          animation-fill-mode: both;
-          animation-iteration-count: 3;
+          animation: stwSoftWave 1.8s cubic-bezier(0.16, 1, 0.3, 1) both;
           will-change: transform, opacity;
         }
 
         .stw-soft-wave-1 {
-          animation-delay: 1.58s;
+          animation-delay: 1.62s;
         }
 
         .stw-soft-wave-2 {
-          width: 430px;
-          height: 430px;
+          width: 440px;
+          height: 440px;
           background: #fafafa;
-          animation-delay: 1.78s;
-        }
-
-        @keyframes stwSoftWave {
-          0% {
-            opacity: 0;
-            transform: translate(-50%, -50%) scale(0.42);
-          }
-
-          26% {
-            opacity: 0.64;
-          }
-
-          100% {
-            opacity: 0;
-            transform: translate(-50%, -50%) scale(1.52);
-          }
+          animation-delay: 1.82s;
         }
 
         .stw-content {
@@ -95,7 +74,7 @@
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          transform: translateY(-4px);
+          transform: translateY(-6px);
         }
 
         .stw-logo-wrap {
@@ -103,14 +82,17 @@
           align-items: center;
           justify-content: center;
           transform-origin: center;
-          animation: stwLogoEnter 1.08s cubic-bezier(0.16, 1, 0.3, 1) both;
+          opacity: 0;
+          transform: scale(0.9);
+          filter: blur(1.5px);
+          animation: stwLogoEnter 0.72s cubic-bezier(0.16, 1, 0.3, 1) 0.18s forwards;
           will-change: transform, opacity, filter;
         }
 
         .stw-logo {
           display: block;
-          width: 152px;
-          height: 152px;
+          width: 164px;
+          height: 164px;
           overflow: visible;
         }
 
@@ -120,36 +102,61 @@
 
         .stw-s-color {
           opacity: 0;
-          animation: stwColorIn 0.56s ease-out forwards;
+          animation: stwColorIn 0.42s ease-out forwards;
         }
 
         .stw-s-blue {
-          animation-delay: 1.02s;
+          animation-delay: 0.9s;
         }
 
         .stw-s-red {
-          animation-delay: 1.09s;
+          animation-delay: 1.06s;
         }
 
         .stw-s-yellow {
-          animation-delay: 1.17s;
+          animation-delay: 1.22s;
         }
 
         .stw-s-green {
-          animation-delay: 1.25s;
+          animation-delay: 1.38s;
+        }
+
+        .stw-progress {
+          position: relative;
+          width: 300px;
+          height: 3px;
+          margin-top: 24px;
+          overflow: hidden;
+          border-radius: 999px;
+          background: #f1f3f4;
+          opacity: 0;
+          transform: translateY(5px);
+          animation: stwProgressEnter 0.42s ease-out 1.82s forwards;
+        }
+
+        .stw-progress-bar {
+          position: absolute;
+          left: 0;
+          top: 0;
+          height: 100%;
+          width: 0%;
+          border-radius: inherit;
+          background: #ea4335;
+          animation: stwProgressMove 3.2s cubic-bezier(0.22, 1, 0.36, 1) 2.02s forwards;
+          will-change: width;
         }
 
         .stw-title {
-          margin-top: 28px;
+          margin-top: 24px;
           font-size: 25px;
           line-height: 1;
           font-weight: 400;
           letter-spacing: -0.035em;
           color: #5f6368;
           opacity: 0;
-          transform: translateY(8px) scale(0.86);
+          transform: translateY(8px) scale(0.96);
           transform-origin: center;
-          animation: stwTitleEnter 0.72s cubic-bezier(0.16, 1, 0.3, 1) 1.06s forwards;
+          animation: stwTitleEnter 0.68s cubic-bezier(0.16, 1, 0.3, 1) 2.12s forwards;
           will-change: transform, opacity, filter;
         }
 
@@ -166,17 +173,13 @@
         @keyframes stwLogoEnter {
           0% {
             opacity: 0;
-            transform: scale(0.72);
-            filter: blur(2px);
-          }
-
-          55% {
-            opacity: 1;
+            transform: scale(0.9);
+            filter: blur(1.5px);
           }
 
           100% {
             opacity: 1;
-            transform: scale(1.2);
+            transform: scale(1);
             filter: blur(0);
           }
         }
@@ -191,37 +194,67 @@
           }
         }
 
-        @keyframes stwTitleEnter {
-          0% {
-            opacity: 0;
-            transform: translateY(8px) scale(0.86);
-            filter: blur(2px);
-          }
-
-          60% {
-            opacity: 1;
-          }
-
-          100% {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-            filter: blur(0);
-          }
-        }
-
         @keyframes stwSoftWave {
           0% {
             opacity: 0;
             transform: translate(-50%, -50%) scale(0.42);
           }
 
-          28% {
-            opacity: 0.72;
+          24% {
+            opacity: 0.7;
           }
 
           100% {
             opacity: 0;
-            transform: translate(-50%, -50%) scale(1.52);
+            transform: translate(-50%, -50%) scale(1.55);
+          }
+        }
+
+        @keyframes stwProgressEnter {
+          0% {
+            opacity: 0;
+            transform: translateY(5px);
+          }
+
+          100% {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes stwProgressMove {
+          0% {
+            width: 0%;
+          }
+
+          28% {
+            width: 22%;
+          }
+
+          52% {
+            width: 48%;
+          }
+
+          76% {
+            width: 74%;
+          }
+
+          100% {
+            width: 100%;
+          }
+        }
+
+        @keyframes stwTitleEnter {
+          0% {
+            opacity: 0;
+            transform: translateY(8px) scale(0.96);
+            filter: blur(1.5px);
+          }
+
+          100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            filter: blur(0);
           }
         }
       </style>
@@ -251,7 +284,7 @@
                   C101 111 83 121 63 118
                   C48 116 37 109 31 98
                 "
-                stroke="#f1f3f4"
+                stroke="#eef0f2"
                 stroke-width="20"
                 stroke-linecap="round"
                 stroke-linejoin="round"
@@ -313,6 +346,10 @@
                 stroke-linejoin="round"
               />
             </svg>
+          </div>
+
+          <div class="stw-progress">
+            <div class="stw-progress-bar"></div>
           </div>
 
           <div class="stw-title">

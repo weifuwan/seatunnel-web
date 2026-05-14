@@ -1,5 +1,4 @@
 import {
-  ArrowRightOutlined,
   DeleteOutlined,
   DownOutlined,
   EditOutlined,
@@ -11,8 +10,7 @@ import { Dropdown, Empty, Space, Table, Tooltip } from "antd";
 import type { ColumnsType, TablePaginationConfig } from "antd/es/table";
 import React from "react";
 
-import ConnectorPill from "./ConnectorPill";
-import StatusBadge from "./StatusBadge";
+import RealtimeSyncPlan from "./RealtimeSyncPlan";
 
 interface StreamingJobDefinitionVO {
   id: string | number;
@@ -126,78 +124,10 @@ const RealtimeTaskTable: React.FC<RealtimeTaskTableProps> = ({
       ),
     },
     {
-      title: "实时同步方案",
+      title: "数据同步方案",
       dataIndex: "syncPlan",
-      width: 310,
-      render: (_, record) => {
-        const sourceType = normalizeConnectorType(record.sourceType);
-        const sinkType = normalizeConnectorType(record.sinkType);
-
-        return (
-          <div className="flex min-w-[260px] items-center gap-3">
-            <ConnectorPill
-              type={sourceType as any}
-              label={getConnectorLabel(record.sourceType)}
-            />
-
-            <ArrowRightOutlined className="text-xs text-slate-400" />
-
-            <ConnectorPill
-              type={sinkType as any}
-              label={getConnectorLabel(record.sinkType)}
-            />
-          </div>
-        );
-      },
-    },
-    {
-      title: "表映射",
-      dataIndex: "tableMapping",
-      width: 260,
-      render: (_, record) => (
-        <div className="text-sm leading-5 text-slate-600">
-          <div className="max-w-[220px] truncate">
-            来源：{formatEmpty(record.sourceTable)}
-          </div>
-          <div className="max-w-[220px] truncate">
-            去向：{formatEmpty(record.sinkTable)}
-          </div>
-        </div>
-      ),
-    },
-    {
-      title: "发布状态",
-      dataIndex: "releaseState",
-      width: 130,
-      render: (value) => {
-        /**
-         * 如果你现有 StatusBadge 只支持 RUNNING/PAUSED/STOPPED/WARNING，
-         * 建议给它补充 ONLINE/OFFLINE。
-         *
-         * 这里先直接传 value，保持你原来的组件风格。
-         */
-        return <>123</>;
-      },
-    },
-    {
-      title: "模式",
-      dataIndex: "mode",
-      width: 140,
-      render: (value) => (
-        <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
-          {formatEmpty(value)}
-        </span>
-      ),
-    },
-    {
-      title: "版本",
-      dataIndex: "jobVersion",
-      width: 90,
-      render: (value) => (
-        <span className="font-mono text-sm text-slate-600">
-          v{value || 1}
-        </span>
-      ),
+      width: 360,
+      render: (_, record) => <RealtimeSyncPlan record={record} />,
     },
     {
       title: "最近更新时间",

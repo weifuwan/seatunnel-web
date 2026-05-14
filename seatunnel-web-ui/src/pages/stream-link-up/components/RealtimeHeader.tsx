@@ -8,6 +8,7 @@ import {
   generateCDCDataSourceOptions,
   generateDataSourceOptions,
 } from "@/pages/batch-link-up/DataSourceSelect";
+import RealtimeFlowBridge from "./RealtimeFlowBridge";
 
 interface RealtimeHeaderProps {
   sourceType: any;
@@ -98,17 +99,7 @@ const RealtimeHeader: React.FC<RealtimeHeaderProps> = ({
             />
           </div>
 
-          <div className="flex items-center justify-center gap-4 text-slate-900 max-xl:justify-start">
-            <svg width="78" height="24" viewBox="0 0 90 24" fill="none">
-              <path
-                d="M2 13C11 13 12 16 20 16C30 16 30 5 41 5C52 5 52 20 64 20C74 20 75 12 88 12"
-                stroke="#4f66f6"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
-            </svg>
-            <ArrowRightOutlined />
-          </div>
+          <RealtimeFlowBridge />
 
           <div className="flex h-10 items-center overflow-hidden rounded-full border border-slate-200 bg-white transition hover:border-indigo-200 hover:shadow-[0_12px_30px_rgba(79,70,229,0.08)]">
             <Select

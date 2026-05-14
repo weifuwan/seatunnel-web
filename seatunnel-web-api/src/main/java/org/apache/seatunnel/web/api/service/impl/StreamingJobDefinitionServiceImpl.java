@@ -104,9 +104,8 @@ public class StreamingJobDefinitionServiceImpl extends BaseServiceImpl implement
                             .contentSchemaVersion(1)
                             .definitionContent(definitionContent)
                             .envConfig(JSONUtils.toJsonString(command.getEnv()))
-                            .createTime(now)
                             .build();
-
+            contentEntity.initInsert();
             streamingJobDefinitionContentDao.save(contentEntity);
 
             return entity.getId();

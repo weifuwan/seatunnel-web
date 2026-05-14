@@ -15,6 +15,7 @@ import defaultSettings from "../config/defaultSettings";
 import { GlobalSearch, Knowledge, OpenAPI } from "./components/RightContent";
 import { errorConfig } from "./requestErrorConfig";
 import HttpUtils from "./utils/HttpUtils";
+import ThemeSwitch from "./components/RightContent/ThemeSwitch";
 
 
 const isDev = process.env.NODE_ENV === "development";
@@ -76,6 +77,7 @@ export const layout: RunTimeLayoutConfig = ({
       <OpenAPI key="open-api" />,
       <Knowledge key="knowledge" />,
       <Question key="doc" />,
+      <ThemeSwitch key="theme-switch" />,
       <SelectLang key="SelectLang" />,
     ],
     avatarProps: {

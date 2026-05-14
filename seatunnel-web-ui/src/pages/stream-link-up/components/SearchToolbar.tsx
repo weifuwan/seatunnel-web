@@ -1,76 +1,75 @@
-import { DownOutlined, SearchOutlined } from "@ant-design/icons";
+import { SearchOutlined } from "@ant-design/icons";
 import { Button, Col, Form, Input, Row, Select, Space } from "antd";
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 
 interface SearchToolbarProps {
   keyword: string;
-  status?: string;
-  direction?: string;
+  releaseState?: string;
+  sourceType?: string;
+  sinkType?: string;
+
   onKeywordChange: (value: string) => void;
-  onStatusChange: (value?: string) => void;
-  onDirectionChange: (value?: string) => void;
+  onReleaseStateChange: (value?: string) => void;
+  onSourceTypeChange: (value?: string) => void;
+  onSinkTypeChange: (value?: string) => void;
   onReset: () => void;
 }
 
 interface SearchFormValues {
   keyword?: string;
-  status?: string;
-  direction?: string;
-  minLatency?: string;
-  maxLatency?: string;
-  checkpoint?: string;
+  releaseState?: string;
+  sourceType?: string;
+  sinkType?: string;
 }
 
-const directionOptions = [
-  { label: "MySQL → Kafka", value: "MYSQL_KAFKA" },
-  { label: "MySQL CDC → StarRocks", value: "MYSQL_STARROCKS" },
-  { label: "Kafka → Elasticsearch", value: "KAFKA_ELASTICSEARCH" },
-  { label: "PostgreSQL → Kafka", value: "POSTGRESQL_KAFKA" },
+const releaseStateOptions = [
+  { label: "已上线", value: "ONLINE" },
+  { label: "已下线", value: "OFFLINE" },
 ];
 
-const statusOptions = [
-  { label: "RUNNING", value: "RUNNING" },
-  { label: "WARNING", value: "WARNING" },
-  { label: "PAUSED", value: "PAUSED" },
-  { label: "STOPPED", value: "STOPPED" },
+const datasourceTypeOptions = [
+  { label: "MySQL", value: "MYSQL" },
+  { label: "MySQL-CDC", value: "MYSQL-CDC" },
+  { label: "Oracle", value: "ORACLE" },
+  { label: "PostgreSQL", value: "POSTGRE_SQL" },
+  { label: "SQL Server", value: "SQLSERVER" },
+  { label: "Kafka", value: "KAFKA" },
+  { label: "Doris", value: "DORIS" },
+  { label: "StarRocks", value: "STARROCKS" },
+  { label: "Elasticsearch", value: "ELASTICSEARCH" },
 ];
 
 const SearchToolbar: React.FC<SearchToolbarProps> = ({
   keyword,
-  status,
-  direction,
+  releaseState,
+  sourceType,
+  sinkType,
   onKeywordChange,
-  onStatusChange,
-  onDirectionChange,
+  onReleaseStateChange,
+  onSourceTypeChange,
+  onSinkTypeChange,
   onReset,
 }) => {
   const [form] = Form.useForm<SearchFormValues>();
-  const [expand, setExpand] = useState(false);
 
   useEffect(() => {
     form.setFieldsValue({
       keyword,
-      status,
-      direction,
+      releaseState,
+      sourceType,
+      sinkType,
     });
-  }, [form, keyword, status, direction]);
+  }, [form, keyword, releaseState, sourceType, sinkType]);
 
   const handleSearch = (values: SearchFormValues) => {
     onKeywordChange(values.keyword || "");
-    onStatusChange(values.status);
-    onDirectionChange(values.direction);
+    onReleaseStateChange(values.releaseState);
+    onSourceTypeChange(values.sourceType);
+    onSinkTypeChange(values.sinkType);
   };
 
   const handleReset = () => {
-    form.setFieldsValue({
-      keyword: undefined,
-      status: undefined,
-      direction: undefined,
-      minLatency: undefined,
-      maxLatency: undefined,
-      checkpoint: undefined,
-    });
-
+    form.resetFields();
     onReset();
   };
 
@@ -81,7 +80,7 @@ const SearchToolbar: React.FC<SearchToolbarProps> = ({
   const commonFormItemProps = {
     className: "mb-0",
     labelCol: {
-      flex: "86px",
+      flex: "76px",
     },
     wrapperCol: {
       flex: 1,
@@ -92,7 +91,7 @@ const SearchToolbar: React.FC<SearchToolbarProps> = ({
     <div className="bg-white px-5 py-4">
       <Form form={form} onFinish={handleSearch}>
         <Row gutter={[16, 14]} align="bottom">
-          <Col xs={24} md={12} xl={7}>
+          <Col xs={24} md={12} xl={6}>
             <Form.Item
               {...commonFormItemProps}
               name="keyword"
@@ -101,39 +100,57 @@ const SearchToolbar: React.FC<SearchToolbarProps> = ({
               <Input
                 allowClear
                 prefix={<SearchOutlined className="text-slate-400" />}
-                placeholder="请输入任务名称 / ID"
+                placeholder="请输入任务名称"
                 className="h-8"
                 style={{ borderRadius: 16 }}
               />
             </Form.Item>
           </Col>
 
-          <Col xs={24} md={12} xl={7}>
+          <Col xs={24} md={12} xl={5}>
             <Form.Item
               {...commonFormItemProps}
-              name="direction"
-              label={fieldLabel("同步方向")}
+              name="sourceType"
+              label={fieldLabel("来源类型")}
             >
               <Select
                 allowClear
                 showSearch
-                placeholder="请选择同步方向"
-                options={directionOptions}
+                placeholder="全部来源"
+                options={datasourceTypeOptions}
                 className="w-full"
+                optionFilterProp="label"
               />
             </Form.Item>
           </Col>
 
-          <Col xs={24} md={12} xl={6}>
+          <Col xs={24} md={12} xl={5}>
             <Form.Item
               {...commonFormItemProps}
-              name="status"
-              label={fieldLabel("任务状态")}
+              name="sinkType"
+              label={fieldLabel("去向类型")}
+            >
+              <Select
+                allowClear
+                showSearch
+                placeholder="全部去向"
+                options={datasourceTypeOptions}
+                className="w-full"
+                optionFilterProp="label"
+              />
+            </Form.Item>
+          </Col>
+
+          <Col xs={24} md={12} xl={4}>
+            <Form.Item
+              {...commonFormItemProps}
+              name="releaseState"
+              label={fieldLabel("发布状态")}
             >
               <Select
                 allowClear
                 placeholder="全部状态"
-                options={statusOptions}
+                options={releaseStateOptions}
                 className="w-full"
               />
             </Form.Item>
@@ -156,77 +173,10 @@ const SearchToolbar: React.FC<SearchToolbarProps> = ({
                 >
                   重置
                 </Button>
-
-                <button
-                  type="button"
-                  className="inline-flex h-8 items-center gap-1 rounded-full px-2 text-xs font-medium text-indigo-600 transition hover:bg-indigo-50"
-                  onClick={() => setExpand((prev) => !prev)}
-                >
-                  {expand ? "收起" : "展开"}
-                  <DownOutlined
-                    className={[
-                      "text-[10px] transition-transform duration-200",
-                      expand ? "rotate-180" : "rotate-0",
-                    ].join(" ")}
-                  />
-                </button>
               </Space>
             </div>
           </Col>
         </Row>
-
-        {expand && (
-          <Row gutter={[16, 14]} className="mt-4" align="bottom">
-            <Col xs={24} md={12} xl={7}>
-              <Form.Item
-                {...commonFormItemProps}
-                name="minLatency"
-                label={fieldLabel("最小延迟")}
-              >
-                <Input
-                  allowClear
-                  placeholder="例如 100"
-                  suffix={<span className="text-xs text-slate-400">ms</span>}
-                  className="h-8"
-                  style={{ borderRadius: 16 }}
-                />
-              </Form.Item>
-            </Col>
-
-            <Col xs={24} md={12} xl={7}>
-              <Form.Item
-                {...commonFormItemProps}
-                name="maxLatency"
-                label={fieldLabel("最大延迟")}
-              >
-                <Input
-                  allowClear
-                  placeholder="例如 500"
-                  suffix={<span className="text-xs text-slate-400">ms</span>}
-                  className="h-8"
-                  style={{ borderRadius: 16 }}
-                />
-              </Form.Item>
-            </Col>
-
-            <Col xs={24} md={12} xl={6}>
-              <Form.Item
-                {...commonFormItemProps}
-                name="checkpoint"
-                label={fieldLabel("检查点")}
-              >
-                <Input
-                  allowClear
-                  placeholder="offset / binlog / lsn"
-                  className="h-8"
-                  style={{ borderRadius: 16 }}
-                />
-              </Form.Item>
-            </Col>
-
-            <Col xs={24} md={12} xl={4} />
-          </Row>
-        )}
       </Form>
     </div>
   );

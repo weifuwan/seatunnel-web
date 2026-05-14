@@ -292,7 +292,7 @@ export default function Workflow({
 
       message.success("发布成功");
     } catch (error: any) {
-      message.error(error?.message || "发布失败");
+      
     } finally {
       setPublishLoading(false);
     }

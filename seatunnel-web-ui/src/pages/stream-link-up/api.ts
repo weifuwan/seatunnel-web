@@ -68,14 +68,14 @@ export const seatunnelStremJobDefinitionApi = {
   /**
  * 任务上线
  */
-  online: (id: string | number): Promise<{ code: number; data: boolean; message?: string; msg?: string }> => {
+  online: (id: any): Promise<{ code: number; data: boolean; message?: string; msg?: string }> => {
     return HttpUtils.put(`${apiPrefix}/${id}/online`);
   },
 
   /**
    * 任务下线
    */
-  offline: (id: string | number): Promise<{ code: number; data: boolean; message?: string; msg?: string }> => {
+  offline: (id: any): Promise<{ code: number; data: boolean; message?: string; msg?: string }> => {
     return HttpUtils.put(`${apiPrefix}/${id}/offline`);
   },
 

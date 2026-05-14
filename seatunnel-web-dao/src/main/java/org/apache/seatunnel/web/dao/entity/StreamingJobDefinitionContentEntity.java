@@ -11,9 +11,7 @@ import java.util.Date;
 @NoArgsConstructor
 @AllArgsConstructor
 @TableName("t_seatunnel_streaming_job_definition_content")
-public class StreamingJobDefinitionContentEntity {
-
-    private Long id;
+public class StreamingJobDefinitionContentEntity extends BaseEntity{
 
     private Long jobDefinitionId;
 
@@ -28,6 +26,4 @@ public class StreamingJobDefinitionContentEntity {
     private String envConfig;
 
     private String checkpointConfig;
-
-    private Date createTime;
 }

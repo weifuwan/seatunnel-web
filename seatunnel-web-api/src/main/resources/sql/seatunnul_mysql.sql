@@ -1,7 +1,8 @@
 CREATE
 DATABASE IF NOT EXISTS seatunnel_web;
 
-use seatunnel_web;
+use
+seatunnel_web;
 
 -- seatunnel_web.t_connector_param_meta definition
 
@@ -358,6 +359,53 @@ ALTER TABLE t_seatunnel_job_definition
   ADD COLUMN sink_datasource_id BIGINT DEFAULT NULL COMMENT '目标端数据源ID' AFTER sink_type,
   ADD KEY idx_source_datasource_id (source_datasource_id),
   ADD KEY idx_sink_datasource_id (sink_datasource_id);
+
+
+CREATE TABLE `t_seatunnel_streaming_job_definition`
+(
+    `id`                   bigint NOT NULL COMMENT '主键ID',
+    `job_name`             varchar(255) COLLATE utf8mb4_unicode_ci  DEFAULT NULL COMMENT '任务名称',
+    `job_desc`             varchar(1000) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '任务描述',
+    `mode`                 varchar(64) COLLATE utf8mb4_unicode_ci   DEFAULT NULL COMMENT '任务定义模式：GUIDE_SINGLE/GUIDE_MULTI/SCRIPT',
+    `job_type`             varchar(64) COLLATE utf8mb4_unicode_ci   DEFAULT NULL COMMENT '任务类型：BATCH/STREAMING',
+    `client_id`            bigint                                   DEFAULT NULL COMMENT 'SeaTunnel Client ID',
+    `job_version`          int                                      DEFAULT '1' COMMENT '任务当前版本',
+    `release_state`        varchar(64) COLLATE utf8mb4_unicode_ci   DEFAULT NULL COMMENT '发布状态：ONLINE/OFFLINE',
+    `source_type`          varchar(128) COLLATE utf8mb4_unicode_ci  DEFAULT NULL COMMENT '源端类型',
+    `sink_type`            varchar(128) COLLATE utf8mb4_unicode_ci  DEFAULT NULL COMMENT '目标端类型',
+    `source_table`         varchar(512) COLLATE utf8mb4_unicode_ci  DEFAULT NULL COMMENT '源表',
+    `sink_table`           varchar(512) COLLATE utf8mb4_unicode_ci  DEFAULT NULL COMMENT '目标表',
+    `source_datasource_id` bigint                                   DEFAULT NULL COMMENT '源数据源ID',
+    `sink_datasource_id`   bigint                                   DEFAULT NULL COMMENT '目标数据源ID',
+    `create_time`          datetime                                 DEFAULT NULL COMMENT '创建时间',
+    `update_time`          datetime                                 DEFAULT NULL COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    KEY                    `idx_streaming_job_name` (`job_name`),
+    KEY                    `idx_streaming_client_id` (`client_id`),
+    KEY                    `idx_streaming_release_state` (`release_state`),
+    KEY                    `idx_streaming_source_datasource_id` (`source_datasource_id`),
+    KEY                    `idx_streaming_sink_datasource_id` (`sink_datasource_id`),
+    KEY                    `idx_streaming_create_time` (`create_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='实时任务定义表';
+
+CREATE TABLE `t_seatunnel_streaming_job_definition_content`
+(
+    `id`                     bigint NOT NULL COMMENT '主键ID',
+    `job_definition_id`      bigint NOT NULL COMMENT '任务定义ID',
+    `version`                int    NOT NULL COMMENT '任务版本',
+    `mode`                   varchar(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '任务定义模式：GUIDE_SINGLE/GUIDE_MULTI/SCRIPT',
+    `content_schema_version` int                                    DEFAULT '1' COMMENT '内容结构版本',
+    `definition_content`     longtext COLLATE utf8mb4_unicode_ci COMMENT '任务定义内容，向导模式一般存 workflow，脚本模式一般存 HOCON',
+    `env_config`             longtext COLLATE utf8mb4_unicode_ci COMMENT '环境配置',
+    `checkpoint_config`      longtext COLLATE utf8mb4_unicode_ci COMMENT 'Checkpoint 配置',
+    `create_time`            datetime                               DEFAULT NULL COMMENT '创建时间',
+    `update_time`            datetime                               DEFAULT NULL COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_streaming_job_definition_version` (`job_definition_id`,`version`),
+    KEY                      `idx_streaming_content_job_definition_id` (`job_definition_id`),
+    KEY                      `idx_streaming_content_mode` (`mode`),
+    KEY                      `idx_streaming_content_create_time` (`create_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='实时任务定义内容表';
 
 
 -- ----------------------------

@@ -32,11 +32,11 @@ export async function getInitialState(): Promise<{
 }> {
   const fetchUserInfo = async () => {
     try {
-      console.log("-0-0-29093");
+      
       const msg = await HttpUtils.get<API.CurrentUser | undefined>(
         "/api/v1/users/currentUser"
       );
-      console.log(msg);
+      
       return msg.data;
     } catch (_error) {
       history.push(loginPath);
@@ -46,7 +46,7 @@ export async function getInitialState(): Promise<{
   // 如果不是登录页面，执行
   const { location } = history;
   if (
-    ![loginPath, "/user/register", "/user/register-result"].includes(
+    ![loginPath, "/", "/login"].includes(
       location.pathname
     )
   ) {

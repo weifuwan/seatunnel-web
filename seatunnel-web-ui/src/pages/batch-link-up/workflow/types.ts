@@ -103,13 +103,3 @@ export interface FieldMapperNodeData {
   config: FieldMapperNodeConfig;
   meta: TransformNodeMeta;
 }
-
-interface EnvConfig {
-  jobMode: "BATCH" | "STREAMING";
-  parallelism: number;
-}
-
-const defaultEnvConfig: EnvConfig = {
-  jobMode: "BATCH",
-  parallelism: 1,
-};

@@ -109,7 +109,3 @@ interface EnvConfig {
   parallelism: number;
 }
 
-const defaultEnvConfig: EnvConfig = {
-  jobMode: "BATCH",
-  parallelism: 1,
-};

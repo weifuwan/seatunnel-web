@@ -15,7 +15,7 @@ interface Props {
 }
 
 const DEFAULT_TEMPLATE = `env {
-  jobMode = "BATCH"
+  jobMode = "STREAMING"
   parallelism = 1
 }
 

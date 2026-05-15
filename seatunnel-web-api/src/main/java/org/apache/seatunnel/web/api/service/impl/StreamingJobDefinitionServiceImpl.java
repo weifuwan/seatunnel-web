@@ -1,10 +1,12 @@
 package org.apache.seatunnel.web.api.service.impl;
 
 import jakarta.annotation.Resource;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.seatunnel.web.api.service.StreamingJobDefinitionService;
+import org.apache.seatunnel.web.api.service.StreamingJobInstanceService;
 import org.apache.seatunnel.web.common.enums.ReleaseState;
 import org.apache.seatunnel.web.common.utils.JSONUtils;
 import org.apache.seatunnel.web.core.exceptions.ServiceException;
@@ -51,6 +53,9 @@ public class StreamingJobDefinitionServiceImpl extends BaseServiceImpl implement
     @Resource
     private StreamingJobDefinitionQueryService definitionQueryService;
 
+    @Resource
+    private StreamingJobInstanceService streamingJobInstanceService;
+
     @Override
     public Long saveOrUpdate(StreamingScriptJobSaveCommand command) {
         return doSaveOrUpdate(command);
@@ -68,45 +73,14 @@ public class StreamingJobDefinitionServiceImpl extends BaseServiceImpl implement
 
     @Transactional(rollbackFor = Exception.class)
     protected Long doSaveOrUpdate(StreamingJobSaveCommand command) {
-        validateBase(command);
+        validatePersistCommand(command);
         validateStreaming(command);
 
         try {
-            Date now = new Date();
+            SaveContext context = prepareSaveContext(command);
 
-            JobDefinitionModeHandler handler = getAndValidateHandler(command);
-            JobDefinitionAnalysisResult analysis = handler.analyze(command);
-            String definitionContent = handler.serializeDefinition(command);
-
-            StreamingJobDefinitionEntity existing = command.getId() == null
-                    ? null
-                    : streamingJobDefinitionDao.queryById(command.getId());
-
-            StreamingJobDefinitionEntity entity;
-            int nextVersion;
-
-            if (ObjectUtils.isEmpty(existing)) {
-                entity = streamingJobDefinitionAssembler.create(command, analysis);
-                nextVersion = 1;
-            } else {
-                nextVersion = existing.getJobVersion() == null ? 1 : existing.getJobVersion() + 1;
-                entity = existing;
-                streamingJobDefinitionAssembler.update(entity, command, analysis, now, nextVersion);
-            }
-
-            streamingJobDefinitionDao.saveOrUpdate(entity);
-
-            StreamingJobDefinitionContentEntity contentEntity =
-                    StreamingJobDefinitionContentEntity.builder()
-                            .jobDefinitionId(entity.getId())
-                            .version(nextVersion)
-                            .mode(command.getMode())
-                            .contentSchemaVersion(1)
-                            .definitionContent(definitionContent)
-                            .envConfig(JSONUtils.toJsonString(command.getEnv()))
-                            .build();
-            contentEntity.initInsert();
-            streamingJobDefinitionContentDao.save(contentEntity);
+            StreamingJobDefinitionEntity entity = saveDefinition(command, context);
+            saveDefinitionContent(command, context, entity);
 
             return entity.getId();
         } catch (ServiceException e) {
@@ -133,7 +107,7 @@ public class StreamingJobDefinitionServiceImpl extends BaseServiceImpl implement
     }
 
     protected String doBuildHoconConfig(StreamingJobSaveCommand command) {
-        validateBase(command);
+        validatePersistCommand(command);
         validateStreaming(command);
 
         try {
@@ -141,8 +115,12 @@ public class StreamingJobDefinitionServiceImpl extends BaseServiceImpl implement
             String hocon = handler.buildHoconConfig(command);
 
             if (StringUtils.isBlank(hocon)) {
-                throw new ServiceException(Status.BUILD_BATCH_JOB_HOCON_CONFIG_ERROR, "hocon config is empty");
+                throw new ServiceException(
+                        Status.BUILD_BATCH_JOB_HOCON_CONFIG_ERROR,
+                        "hocon config is empty"
+                );
             }
+
             return hocon;
         } catch (ServiceException e) {
             throw e;
@@ -154,6 +132,7 @@ public class StreamingJobDefinitionServiceImpl extends BaseServiceImpl implement
 
     @Override
     public StreamingJobDefinitionVO selectById(Long id) {
+        validateId(id);
         return definitionQueryService.selectById(id);
     }
 
@@ -187,8 +166,15 @@ public class StreamingJobDefinitionServiceImpl extends BaseServiceImpl implement
         validateDelete(definition.getId());
 
         try {
+            streamingJobInstanceService.removeAllByDefinitionId(jobDefinitionId);
             streamingJobDefinitionContentDao.deleteByJobDefinitionId(jobDefinitionId);
-            return streamingJobDefinitionDao.deleteById(jobDefinitionId);
+
+            boolean deleted = streamingJobDefinitionDao.deleteById(jobDefinitionId);
+            if (!deleted) {
+                throw new ServiceException(Status.DELETE_BATCH_JOB_DEFINITION_ERROR);
+            }
+
+            return true;
         } catch (ServiceException e) {
             throw e;
         } catch (Exception e) {
@@ -205,19 +191,14 @@ public class StreamingJobDefinitionServiceImpl extends BaseServiceImpl implement
             StreamingJobDefinitionEntity definition = definitionQueryService.getDefinitionOrThrow(id);
             validateEditable(definition);
 
-            StreamingJobDefinitionContentEntity latestContent =
-                    streamingJobDefinitionContentDao.queryLatestByJobDefinitionId(id);
-
-            if (latestContent == null) {
-                throw new ServiceException(Status.BATCH_JOB_DEFINITION_NOT_EXIST, "streaming definition content not found");
-            }
+            StreamingJobDefinitionContentEntity latestContent = getLatestContentOrThrow(id);
 
             return definitionQueryService.buildEditCommand(definition, latestContent);
         } catch (ServiceException e) {
             throw e;
         } catch (Exception e) {
             log.error("Query streaming job definition edit detail failed, id={}", id, e);
-            throw new ServiceException(e.getMessage());
+            throw new ServiceException(Status.QUERY_BATCH_JOB_DEFINITION_ERROR);
         }
     }
 
@@ -225,39 +206,221 @@ public class StreamingJobDefinitionServiceImpl extends BaseServiceImpl implement
     @Transactional(rollbackFor = Exception.class)
     public Boolean updateReleaseState(Long id, ReleaseState releaseState) {
         validateId(id);
+        validateReleaseState(releaseState);
 
-        if (releaseState == null) {
-            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "releaseState");
-        }
+        try {
+            StreamingJobDefinitionEntity entity = definitionQueryService.getDefinitionOrThrow(id);
 
-        StreamingJobDefinitionEntity entity = streamingJobDefinitionDao.queryById(id);
-        if (entity == null) {
-            throw new ServiceException(Status.BATCH_JOB_DEFINITION_NOT_EXIST);
-        }
+            ReleaseState currentState = entity.getReleaseState();
+            if (releaseState == currentState) {
+                log.info("Streaming job definition release state already synced, id={}, state={}",
+                        id, releaseState);
+                return true;
+            }
 
-        ReleaseState currentState = entity.getReleaseState();
+            if (releaseState.isOnline()) {
+                validateBeforeOnline(id);
+            }
 
-        if (releaseState == currentState) {
-            log.info("Streaming job definition release state already synced, id={}, state={}", id, releaseState);
+            if (releaseState.isOffline()) {
+                validateBeforeOffline(id);
+            }
+
+            boolean updated = streamingJobDefinitionDao.updateReleaseState(id, releaseState);
+            if (!updated) {
+                throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR);
+            }
+
+            log.info("Streaming job definition release state updated, id={}, from={}, to={}",
+                    id, currentState, releaseState);
             return true;
+        } catch (ServiceException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Update streaming job definition release state failed, id={}, state={}",
+                    id, releaseState, e);
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR);
+        }
+    }
+
+    private SaveContext prepareSaveContext(StreamingJobSaveCommand command) {
+        JobDefinitionModeHandler handler = getAndValidateHandler(command);
+        JobDefinitionAnalysisResult analysis = handler.analyze(command);
+        String definitionContent = handler.serializeDefinition(command);
+
+        if (StringUtils.isBlank(definitionContent)) {
+            throw new ServiceException(
+                    Status.SAVE_OR_UPDATE_BATCH_JOB_DEFINITION_ERROR,
+                    "definition content is empty"
+            );
         }
 
-        boolean updated = streamingJobDefinitionDao.updateReleaseState(id, releaseState);
-        if (!updated) {
-            throw new RuntimeException("Failed to update streaming job definition release state");
+        StreamingJobDefinitionEntity existing = command.getId() == null
+                ? null
+                : streamingJobDefinitionDao.queryById(command.getId());
+
+        validateWritable(existing);
+
+        int nextVersion = resolveNextVersion(existing);
+
+        SaveContext context = new SaveContext();
+        context.setHandler(handler);
+        context.setAnalysis(analysis);
+        context.setDefinitionContent(definitionContent);
+        context.setExisting(existing);
+        context.setNextVersion(nextVersion);
+        context.setNow(new Date());
+        return context;
+    }
+
+    private StreamingJobDefinitionEntity saveDefinition(StreamingJobSaveCommand command, SaveContext context) {
+        StreamingJobDefinitionEntity entity;
+
+        if (ObjectUtils.isEmpty(context.getExisting())) {
+            entity = streamingJobDefinitionAssembler.create(command, context.getAnalysis());
+        } else {
+            entity = context.getExisting();
+            streamingJobDefinitionAssembler.update(
+                    entity,
+                    command,
+                    context.getAnalysis(),
+                    context.getNow(),
+                    context.getNextVersion()
+            );
         }
 
-        log.info("Streaming job definition release state updated, id={}, state={}", id, releaseState);
-        return true;
+        streamingJobDefinitionDao.saveOrUpdate(entity);
+        return entity;
+    }
+
+    private void saveDefinitionContent(
+            StreamingJobSaveCommand command,
+            SaveContext context,
+            StreamingJobDefinitionEntity entity) {
+        if (entity == null || entity.getId() == null) {
+            throw new ServiceException(
+                    Status.SAVE_OR_UPDATE_BATCH_JOB_DEFINITION_ERROR,
+                    "streaming definition id is empty"
+            );
+        }
+
+        StreamingJobDefinitionContentEntity contentEntity =
+                StreamingJobDefinitionContentEntity.builder()
+                        .jobDefinitionId(entity.getId())
+                        .version(context.getNextVersion())
+                        .mode(command.getMode())
+                        .contentSchemaVersion(1)
+                        .definitionContent(context.getDefinitionContent())
+                        .envConfig(JSONUtils.toJsonString(command.getEnv()))
+                        .build();
+
+        contentEntity.initInsert();
+        streamingJobDefinitionContentDao.save(contentEntity);
+    }
+
+    private int resolveNextVersion(StreamingJobDefinitionEntity existing) {
+        if (existing == null || existing.getJobVersion() == null) {
+            return 1;
+        }
+
+        return existing.getJobVersion() + 1;
     }
 
     private JobDefinitionModeHandler getAndValidateHandler(JobDefinitionSaveCommand command) {
-        validateBase(command);
+        validatePersistCommand(command);
 
         JobDefinitionModeHandler handler = handlerRegistry.getHandler(command.getMode());
-
         handler.validate(command);
+
         return handler;
+    }
+
+    private void validateBeforeOnline(Long id) {
+        StreamingJobDefinitionEntity definition = definitionQueryService.getDefinitionOrThrow(id);
+        StreamingJobDefinitionContentEntity latestContent = getLatestContentOrThrow(id);
+
+        JobDefinitionSaveCommand command = definitionQueryService.buildEditCommand(definition, latestContent);
+
+        if (!(command instanceof StreamingJobSaveCommand)) {
+            throw new ServiceException(
+                    Status.REQUEST_PARAMS_NOT_VALID_ERROR,
+                    "streaming job command"
+            );
+        }
+
+        String hocon = doBuildHoconConfig((StreamingJobSaveCommand) command);
+        if (StringUtils.isBlank(hocon)) {
+            throw new ServiceException(
+                    Status.BUILD_BATCH_JOB_HOCON_CONFIG_ERROR,
+                    "hocon config is empty"
+            );
+        }
+    }
+
+    private void validateBeforeOffline(Long id) {
+        if (streamingJobInstanceService.existsRunningInstance(id)) {
+            throw new ServiceException(
+                    Status.JOB_DEFINITION_EXECUTE_ERROR,
+                    "streaming job has running instance, please stop it before offline"
+            );
+        }
+    }
+
+    private void validateDelete(Long id) {
+        if (streamingJobInstanceService.existsRunningInstance(id)) {
+            throw new ServiceException(
+                    Status.DELETE_BATCH_JOB_DEFINITION_ERROR,
+                    "streaming job has running instance"
+            );
+        }
+    }
+
+    private void validateWritable(StreamingJobDefinitionEntity existing) {
+        if (existing == null) {
+            return;
+        }
+
+        if (existing.getReleaseState() == null) {
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "releaseState");
+        }
+
+        if (!existing.getReleaseState().isOffline()) {
+            throw new ServiceException(
+                    Status.SAVE_OR_UPDATE_BATCH_JOB_DEFINITION_ERROR,
+                    "only offline streaming job definition can be updated"
+            );
+        }
+    }
+
+    private void validateEditable(StreamingJobDefinitionEntity definition) {
+        if (definition == null) {
+            throw new ServiceException(Status.BATCH_JOB_DEFINITION_NOT_EXIST);
+        }
+
+        if (definition.getReleaseState() == null) {
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "releaseState");
+        }
+
+        if (!definition.getReleaseState().isOffline()) {
+            throw new ServiceException(
+                    Status.QUERY_BATCH_JOB_DEFINITION_ERROR,
+                    "only offline streaming job definition can be edited"
+            );
+        }
+    }
+
+    private StreamingJobDefinitionContentEntity getLatestContentOrThrow(Long id) {
+        StreamingJobDefinitionContentEntity latestContent =
+                streamingJobDefinitionContentDao.queryLatestByJobDefinitionId(id);
+
+        if (latestContent == null) {
+            throw new ServiceException(
+                    Status.BATCH_JOB_DEFINITION_NOT_EXIST,
+                    "streaming definition content not found"
+            );
+        }
+
+        return latestContent;
     }
 
     private void validateStreaming(StreamingJobSaveCommand command) {
@@ -266,7 +429,7 @@ public class StreamingJobDefinitionServiceImpl extends BaseServiceImpl implement
         }
     }
 
-    private void validateBase(JobDefinitionSaveCommand command) {
+    private void validatePersistCommand(JobDefinitionSaveCommand command) {
         if (command == null) {
             throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "command");
         }
@@ -287,20 +450,10 @@ public class StreamingJobDefinitionServiceImpl extends BaseServiceImpl implement
         }
     }
 
-    private void validateEditable(StreamingJobDefinitionEntity definition) {
-        if (definition == null) {
-            throw new ServiceException(Status.BATCH_JOB_DEFINITION_NOT_EXIST);
+    private void validateReleaseState(ReleaseState releaseState) {
+        if (releaseState == null) {
+            throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "releaseState");
         }
-        if (definition.getReleaseState() == null) {
-            throw new RuntimeException("job release state is empty");
-        }
-        if (!definition.getReleaseState().isOffline()) {
-            throw new RuntimeException("only offline streaming job definition can be edited");
-        }
-    }
-
-    private void validateDelete(Long id) {
-        // 后面接 StreamingJobInstanceService 后，在这里判断是否存在运行中的实时实例。
     }
 
     private void validatePagingRequest(StreamingJobDefinitionQueryDTO dto) {
@@ -319,5 +472,15 @@ public class StreamingJobDefinitionServiceImpl extends BaseServiceImpl implement
         if (id == null || id <= 0) {
             throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "id");
         }
+    }
+
+    @Data
+    private static class SaveContext {
+        private JobDefinitionModeHandler handler;
+        private JobDefinitionAnalysisResult analysis;
+        private String definitionContent;
+        private StreamingJobDefinitionEntity existing;
+        private Integer nextVersion;
+        private Date now;
     }
 }

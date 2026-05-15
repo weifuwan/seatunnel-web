@@ -142,7 +142,7 @@
           width: 0%;
           border-radius: inherit;
           background: #ea4335;
-          animation: stwProgressMove 3.2s cubic-bezier(0.22, 1, 0.36, 1) 2.02s forwards;
+          animation: stwProgressMoveSmooth 3.2s cubic-bezier(0.22, 1, 0.36, 1) 2.02s forwards;
           will-change: width;
         }
 
@@ -222,24 +222,11 @@
           }
         }
 
-        @keyframes stwProgressMove {
-          0% {
+        @keyframes stwProgressMoveSmooth {
+          from {
             width: 0%;
           }
-
-          28% {
-            width: 22%;
-          }
-
-          52% {
-            width: 48%;
-          }
-
-          76% {
-            width: 74%;
-          }
-
-          100% {
+          to {
             width: 100%;
           }
         }

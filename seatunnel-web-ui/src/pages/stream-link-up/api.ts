@@ -226,6 +226,22 @@ export const seatunnelJobExecuteApi = {
   },
 };
 
+export const streamingExecuteApiPrefix = "/api/v1/streaming-executor";
+
+export const seatunnelStreamingJobExecuteApi = {
+  execute: (jobDefineId: any) => {
+    return HttpUtils.get(
+      `${streamingExecuteApiPrefix}/execute?jobDefineId=${jobDefineId}`,
+    );
+  },
+
+  pause: (jobInstanceId: any) => {
+    return HttpUtils.get(
+      `${streamingExecuteApiPrefix}/pause?jobInstanceId=${jobInstanceId}`,
+    );
+  },
+};
+
 const instanceApiPrefix = '/api/v1/job/batch-instance';
 
 export const seatunnelJobInstanceApi = {

@@ -99,7 +99,7 @@ export default function Workflow({
   >(params?.id);
 
   const [publishLoading, setPublishLoading] = useState(false);
-  const [runLoading] = useState(false);
+
 
   const currentSignature = useMemo(() => {
     return buildDirtySignature({
@@ -124,19 +124,9 @@ export default function Workflow({
   const [baselineSignature, setBaselineSignature] =
     useState<string>(currentSignature);
 
-  const isDirty =
-    !!publishedJobDefineId && currentSignature !== baselineSignature;
 
   const { checkStat, checkGroups } = useFlowChecks(workflowGraph.nodes || []);
 
-  const canRun =
-    !!publishedJobDefineId && !isDirty && !publishLoading && !runLoading;
-
-  const runDisabledReason = !publishedJobDefineId
-    ? "请先发布任务，再执行"
-    : isDirty
-      ? "当前内容已变更，请重新发布后再执行"
-      : "";
 
   const validateChecklistBeforeAction = () => {
     const total =

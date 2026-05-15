@@ -7,7 +7,11 @@ import RealtimeHeader from "./components/RealtimeHeader";
 import RealtimeTaskTable from "./components/RealtimeTaskTable";
 import SearchToolbar from "./components/SearchToolbar";
 import StreamingHelperSection from "./components/StreamingHelperSection";
-import { seatunnelStremJobDefinitionApi } from "./api";
+import {
+  seatunnelJobExecuteApi,
+  seatunnelStreamingJobExecuteApi,
+  seatunnelStremJobDefinitionApi,
+} from "./api";
 
 const REALTIME_DETAIL_CACHE_PREFIX = "stream-link-up-detail";
 
@@ -19,7 +23,9 @@ interface StreamingJobDefinitionVO {
   jobType?: string;
   clientId?: string | number;
   jobVersion?: number;
-  releaseState?: "ONLINE" | "OFFLINE" | string;
+  releaseState?: "ONLINE" | "OFFLINE" | string | number;
+  lastJobStatus?: string;
+  instanceId?: string | number;
   sourceType?: string;
   sinkType?: string;
   sourceTable?: string;
@@ -32,9 +38,6 @@ interface StreamingJobDefinitionVO {
 }
 
 const RealtimeSyncPage: React.FC = () => {
-  /**
-   * 顶部新建实时任务使用的来源 / 去向类型
-   */
   const [sourceType, setSourceType] = useState<any>({
     dbType: "MYSQL",
     connectorType: "MySQL-CDC",
@@ -47,45 +50,23 @@ const RealtimeSyncPage: React.FC = () => {
     pluginName: "JDBC-MYSQL",
   });
 
-  /**
-   * 搜索条件
-   */
   const [keyword, setKeyword] = useState("");
   const [releaseState, setReleaseState] = useState<string>();
   const [sourceQueryType, setSourceQueryType] = useState<string>();
   const [sinkQueryType, setSinkQueryType] = useState<string>();
 
-  /**
-   * 表格数据
-   */
   const [dataSource, setDataSource] = useState<StreamingJobDefinitionVO[]>([]);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
 
-  /**
-   * 页面状态
-   */
   const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState(false);
 
-  /**
-   * 分页
-   */
   const [current, setCurrent] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [total, setTotal] = useState(0);
 
   const hasSelected = selectedRowKeys.length > 0;
 
-  /**
-   * 后端分页查询参数
-   *
-   * 这里要和 StreamingJobDefinitionQueryDTO / DAO 查询字段保持一致：
-   * - jobName
-   * - jobType
-   * - releaseState
-   * - sourceType
-   * - sinkType
-   */
   const queryParams = useMemo(() => {
     const params: any = {
       pageNo: current,
@@ -95,7 +76,6 @@ const RealtimeSyncPage: React.FC = () => {
     if (keyword?.trim()) {
       params.jobName = keyword.trim();
     }
-     
 
     if (releaseState) {
       params.releaseState = releaseState;
@@ -112,30 +92,17 @@ const RealtimeSyncPage: React.FC = () => {
     return params;
   }, [current, pageSize, keyword, releaseState, sourceQueryType, sinkQueryType]);
 
-  /**
-   * 兼容不同 PaginationResult 返回结构。
-   *
-   * 常见结构可能是：
-   * 1. { code, data: { total, totalList } }
-   * 2. { code, data: { total, records } }
-   * 3. { code, data: { total, list } }
-   * 4. { total, totalList }
-   */
   const getPageRecords = (res: any) => {
     const payload = res?.data;
 
-    const records =
-      payload?.bizData || [];
-
-    const nextTotal =
-      payload?.pagination?.total;
+    const records = payload?.bizData || [];
+    const nextTotal = payload?.pagination?.total;
 
     return {
       records,
       total: Number(nextTotal || 0),
     };
   };
-
 
   const loadData = useCallback(async () => {
     try {
@@ -144,7 +111,7 @@ const RealtimeSyncPage: React.FC = () => {
       const res = await seatunnelStremJobDefinitionApi.page(queryParams);
 
       if (res?.code !== undefined && res.code !== 0) {
-        message.error(res?.message || res?.msg || "查询实时任务列表失败");
+        message.error(res?.message || "查询实时任务列表失败");
         setDataSource([]);
         setTotal(0);
         return;
@@ -167,12 +134,6 @@ const RealtimeSyncPage: React.FC = () => {
     loadData();
   }, [loadData]);
 
-  /**
-   * 新增实时任务：
-   * 1. 先申请唯一 ID
-   * 2. 将实时任务初始化信息写入 sessionStorage
-   * 3. 跳转到实时任务详情页
-   */
   const handleCreate = async () => {
     if (!sourceType?.dbType) {
       message.warning("请选择来源类型");
@@ -190,7 +151,7 @@ const RealtimeSyncPage: React.FC = () => {
       const data = await seatunnelStremJobDefinitionApi.getUniqueId();
 
       if (data?.code !== 0) {
-        message.error(data?.message || data?.msg || "获取实时任务ID失败");
+        message.error(data?.message  || "获取实时任务ID失败");
         return;
       }
 
@@ -255,12 +216,80 @@ const RealtimeSyncPage: React.FC = () => {
     history.push(`/sync/stream-link-up/${record.id}/detail?readonly=true`);
   };
 
-  const handleEdit = (record: StreamingJobDefinitionVO) => {
-    history.push(`/sync/stream-link-up/${record.id}/detail`);
+  const handleEdit = async (record: StreamingJobDefinitionVO) => {
+    if (!record?.id) {
+      message.warning("任务 ID 不存在");
+      return;
+    }
+
+    try {
+      const res = await seatunnelStremJobDefinitionApi.selectEditDetail(record.id);
+
+      if (res?.code !== 0) {
+        message.error(res?.message || res?.msg || "查询编辑详情失败");
+        return;
+      }
+
+      history.push(`/sync/stream-link-up/${record.id}/detail`);
+    } catch (error) {
+      message.error("查询编辑详情失败");
+    }
+  };
+
+  const handleRun = async (record: StreamingJobDefinitionVO) => {
+    if (!record?.id) {
+      message.warning("任务 ID 不存在");
+      return;
+    }
+
+    const isOnline = record.releaseState === "ONLINE" || record.releaseState === 1;
+
+    if (!isOnline) {
+      message.warning("请先上线任务，再执行运行操作");
+      return;
+    }
+
+    try {
+      const res = await seatunnelStreamingJobExecuteApi.execute(record.id);
+
+      if (res?.code !== 0) {
+        message.error(res?.msg || "运行实时任务失败");
+        return;
+      }
+
+      message.success("实时任务已启动");
+      loadData();
+    } catch (error) {
+      message.error("运行实时任务失败");
+    }
+  };
+
+  const handleStop = async (record: StreamingJobDefinitionVO) => {
+    if (!record?.instanceId) {
+      message.warning("当前任务没有运行实例");
+      return;
+    }
+
+    try {
+      const res = await seatunnelStreamingJobExecuteApi.pause(record.instanceId);
+
+      if (res?.code !== 0) {
+        message.error( res?.msg || "停止实时任务失败");
+        return;
+      }
+
+      message.success("实时任务已停止");
+      loadData();
+    } catch (error) {
+      message.error("停止实时任务失败");
+    }
   };
 
   const handleOnline = async (record: StreamingJobDefinitionVO) => {
-    if (!record?.id) return;
+    if (!record?.id) {
+      message.warning("任务 ID 不存在");
+      return;
+    }
 
     try {
       const res = await seatunnelStremJobDefinitionApi.online(record.id);
@@ -278,7 +307,10 @@ const RealtimeSyncPage: React.FC = () => {
   };
 
   const handleOffline = async (record: StreamingJobDefinitionVO) => {
-    if (!record?.id) return;
+    if (!record?.id) {
+      message.warning("任务 ID 不存在");
+      return;
+    }
 
     try {
       const res = await seatunnelStremJobDefinitionApi.offline(record.id);
@@ -296,31 +328,44 @@ const RealtimeSyncPage: React.FC = () => {
   };
 
   const handleDelete = (record: StreamingJobDefinitionVO) => {
-    if (!record?.id) return;
+    if (!record?.id) {
+      message.warning("任务 ID 不存在");
+      return;
+    }
 
     Modal.confirm({
       title: "确认删除实时任务？",
-      content: `删除后不可恢复：${record.jobName || record.id}`,
+      centered: true,
+      content: (
+        <span>
+          删除后不可恢复：
+          <span className="font-medium text-orange-500">
+            {record.jobName || record.id}
+          </span>
+        </span>
+      ),
       okText: "删除",
       cancelText: "取消",
       okButtonProps: {
         danger: true,
+        size: "small",
+      },
+      cancelButtonProps: {
+        size: "small",
       },
       async onOk() {
         try {
           const res = await seatunnelStremJobDefinitionApi.delete(String(record.id));
 
           if (res?.code !== 0) {
-            message.error(res?.message || res?.msg || "删除实时任务失败");
+            message.error(res?.msg || "删除实时任务失败");
             return;
           }
 
           message.success("实时任务已删除");
+
           setSelectedRowKeys((prev) => prev.filter((key) => key !== record.id));
 
-          /**
-           * 当前页只有一条数据，删除后自动回到上一页。
-           */
           if (dataSource.length === 1 && current > 1) {
             setCurrent(current - 1);
           } else {
@@ -330,6 +375,34 @@ const RealtimeSyncPage: React.FC = () => {
           message.error("删除实时任务失败");
         }
       },
+    });
+  };
+
+  const handleLog = (record: StreamingJobDefinitionVO) => {
+    if (!record?.id) {
+      message.warning("任务 ID 不存在");
+      return;
+    }
+
+    /**
+     * 这里先跳转到详情页的日志视图。
+     * 如果你后面有独立实例页，可以改成：
+     * history.push(`/sync/stream-link-up/${record.id}/instances`);
+     */
+    history.push(`/sync/stream-link-up/${record.id}/detail?tab=logs&readonly=true`);
+  };
+
+  const handleCheckpoint = (record: StreamingJobDefinitionVO) => {
+    Modal.info({
+      title: "检查点配置",
+      centered: true,
+      width: 720,
+      content: (
+        <pre className="max-h-[420px] overflow-auto rounded-lg bg-slate-950 p-4 text-xs leading-6 text-slate-100">
+          {record.checkpointConfig || "暂无检查点配置"}
+        </pre>
+      ),
+      okText: "关闭",
     });
   };
 
@@ -399,9 +472,13 @@ const RealtimeSyncPage: React.FC = () => {
           pagination={false}
           onView={handleView}
           onEdit={handleEdit}
+          onRun={handleRun}
+          onStop={handleStop}
           onOnline={handleOnline}
           onOffline={handleOffline}
           onDelete={handleDelete}
+          onLog={handleLog}
+          onCheckpoint={handleCheckpoint}
         />
       </div>
 

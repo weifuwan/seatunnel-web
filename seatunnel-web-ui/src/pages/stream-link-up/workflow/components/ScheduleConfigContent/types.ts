@@ -21,7 +21,7 @@ export interface EnvConfig {
 }
 
 export const defaultEnvConfig: EnvConfig = {
-  jobMode: "BATCH",
+  jobMode: "STREAMING",
   parallelism: 1,
 };
 

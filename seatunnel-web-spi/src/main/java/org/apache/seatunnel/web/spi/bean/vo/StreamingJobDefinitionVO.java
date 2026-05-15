@@ -43,8 +43,39 @@ public class StreamingJobDefinitionVO {
     private Date updateTime;
 
     /**
-     * 最近一次保存的 checkpoint 配置 JSON。
-     * 列表页如果暂时不用，可以不填。
+     * 最近一次运行实例 ID。
      */
-    private String checkpointConfig;
+    private Long instanceId;
+
+    /**
+     * 最近一次运行实例状态。
+     *
+     * INITIALIZING / CREATED / PENDING / RUNNING / FINISHED / FAILED / CANCELED ...
+     */
+    private String lastJobStatus;
+
+    /**
+     * 引擎侧 Job ID。
+     */
+    private Long engineJobId;
+
+    /**
+     * 最近一次提交时间。
+     */
+    private Date lastSubmitTime;
+
+    /**
+     * 最近一次开始时间。
+     */
+    private Date lastStartTime;
+
+    /**
+     * 最近一次结束时间。
+     */
+    private Date lastEndTime;
+
+    /**
+     * 最近一次错误信息。
+     */
+    private String lastErrorMessage;
 }

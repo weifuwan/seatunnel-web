@@ -1,15 +1,10 @@
 package org.apache.seatunnel.web.dao.repository.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import jakarta.annotation.Resource;
 import lombok.NonNull;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.seatunnel.web.common.enums.ReleaseState;
-import org.apache.seatunnel.web.common.utils.ConvertUtil;
-import org.apache.seatunnel.web.dao.entity.SeaTunnelClient;
 import org.apache.seatunnel.web.dao.entity.StreamingJobDefinitionEntity;
-import org.apache.seatunnel.web.dao.mapper.SeaTunnelClientMapper;
 import org.apache.seatunnel.web.dao.mapper.StreamingJobDefinitionMapper;
 import org.apache.seatunnel.web.dao.repository.BaseDao;
 import org.apache.seatunnel.web.dao.repository.StreamingJobDefinitionDao;
@@ -19,10 +14,11 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Repository
-public class StreamingJobDefinitionDaoImpl extends BaseDao<StreamingJobDefinitionEntity, StreamingJobDefinitionMapper> implements StreamingJobDefinitionDao {
+public class StreamingJobDefinitionDaoImpl
+        extends BaseDao<StreamingJobDefinitionEntity, StreamingJobDefinitionMapper>
+        implements StreamingJobDefinitionDao {
 
     @Resource
     private StreamingJobDefinitionMapper streamingJobDefinitionMapper;
@@ -78,56 +74,26 @@ public class StreamingJobDefinitionDaoImpl extends BaseDao<StreamingJobDefinitio
     }
 
     @Override
-    public List<StreamingJobDefinitionVO> selectPage(StreamingJobDefinitionQueryDTO dto, int offset, int pageSize) {
-        LambdaQueryWrapper<StreamingJobDefinitionEntity> wrapper = buildQueryWrapper(dto);
-        wrapper.orderByDesc(StreamingJobDefinitionEntity::getUpdateTime);
-
-        List<StreamingJobDefinitionEntity> records =
-                streamingJobDefinitionMapper.selectList(wrapper.last("LIMIT " + offset + ", " + pageSize));
-
-        if (records == null || records.isEmpty()) {
-            return Collections.emptyList();
+    public List<StreamingJobDefinitionVO> selectPage(
+            StreamingJobDefinitionQueryDTO dto,
+            int offset,
+            int pageSize) {
+        if (offset < 0) {
+            offset = 0;
+        }
+        if (pageSize <= 0) {
+            pageSize = 10;
         }
 
-        return records.stream()
-                .map(entity -> ConvertUtil.sourceToTarget(entity, StreamingJobDefinitionVO.class))
-                .collect(Collectors.toList());
+        List<StreamingJobDefinitionVO> records =
+                streamingJobDefinitionMapper.selectPageWithLatestInstance(dto, offset, pageSize);
+
+        return records == null ? Collections.emptyList() : records;
     }
 
     @Override
     public Long count(StreamingJobDefinitionQueryDTO dto) {
-        return streamingJobDefinitionMapper.selectCount(buildQueryWrapper(dto));
-    }
-
-    private LambdaQueryWrapper<StreamingJobDefinitionEntity> buildQueryWrapper(StreamingJobDefinitionQueryDTO dto) {
-        LambdaQueryWrapper<StreamingJobDefinitionEntity> wrapper = new LambdaQueryWrapper<>();
-
-        if (dto == null) {
-            return wrapper;
-        }
-
-        if (StringUtils.isNotBlank(dto.getJobName())) {
-            wrapper.like(StreamingJobDefinitionEntity::getJobName, dto.getJobName());
-        }
-        if (dto.getMode() != null) {
-            wrapper.eq(StreamingJobDefinitionEntity::getMode, dto.getMode());
-        }
-        if (dto.getJobType() != null) {
-            wrapper.eq(StreamingJobDefinitionEntity::getJobType, dto.getJobType());
-        }
-        if (dto.getReleaseState() != null) {
-            wrapper.eq(StreamingJobDefinitionEntity::getReleaseState, dto.getReleaseState());
-        }
-        if (dto.getClientId() != null) {
-            wrapper.eq(StreamingJobDefinitionEntity::getClientId, dto.getClientId());
-        }
-        if (StringUtils.isNotBlank(dto.getSourceType())) {
-            wrapper.eq(StreamingJobDefinitionEntity::getSourceType, dto.getSourceType());
-        }
-        if (StringUtils.isNotBlank(dto.getSinkType())) {
-            wrapper.eq(StreamingJobDefinitionEntity::getSinkType, dto.getSinkType());
-        }
-
-        return wrapper;
+        Long count = streamingJobDefinitionMapper.countPage(dto);
+        return count == null ? 0L : count;
     }
 }
